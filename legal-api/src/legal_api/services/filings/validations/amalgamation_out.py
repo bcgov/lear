@@ -18,7 +18,7 @@ from typing import Final
 from flask_babel import _ as babel
 
 from business_common.utils.legislation_datetime import LegislationDatetime
-from business_model.models import Business, ConsentContinuationOut
+from business_model.models import Business
 from legal_api.errors import Error
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
@@ -41,20 +41,11 @@ def validate(business: Business, filing: dict) -> Error | None:
     msg = []
     filing_type = "amalgamationOut"
 
-    is_valid_co_date = True
-    is_valid_foreign_jurisdiction = True
-
-    if err := validate_amalgamation_out_date(filing, f"/filing/{filing_type}/amalgamationOutDate"):
-        msg.extend(err)
-        is_valid_co_date = False
-
-    if err := validate_foreign_jurisdiction(filing["filing"][filing_type]["foreignJurisdiction"],
-                                            f"/filing/{filing_type}/foreignJurisdiction"):
-        msg.extend(err)
-        is_valid_foreign_jurisdiction = False
-
-    if is_valid_co_date and is_valid_foreign_jurisdiction:
-        msg.extend(validate_active_cao(business, filing, filing_type))
+    msg.extend(validate_amalgamation_out_date(filing, f"/filing/{filing_type}/amalgamationOutDate"))
+    msg.extend(validate_foreign_jurisdiction(
+        filing["filing"][filing_type]["foreignJurisdiction"],
+        f"/filing/{filing_type}/foreignJurisdiction"
+    ))
 
     if court_order := filing.get("filing", {}).get(filing_type, {}).get("courtOrder", None):
         court_order_path: Final = f"/filing/{filing_type}/courtOrder"
@@ -63,35 +54,6 @@ def validate(business: Business, filing: dict) -> Error | None:
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
-
-
-def validate_active_cao(business: Business, filing: dict, filing_type: str) -> list:
-    """Validate active consent amalgamation out."""
-    msg = []
-    amalgamation_out_date_str = filing["filing"][filing_type]["amalgamationOutDate"]
-    amalgamation_out_date = LegislationDatetime.as_legislation_timezone_from_date_str(amalgamation_out_date_str)
-
-    foreign_jurisdiction = filing["filing"][filing_type]["foreignJurisdiction"]
-    country_code = foreign_jurisdiction.get("country")
-    region = foreign_jurisdiction.get("region")
-
-    amalgamation_out_date_utc = LegislationDatetime.as_utc_timezone(amalgamation_out_date)
-    caos = ConsentContinuationOut.get_active_cco(business.id, amalgamation_out_date_utc, country_code, region,
-                                                 consent_type=ConsentContinuationOut.ConsentTypes.amalgamation_out)
-
-    active_consent = False
-    # Make sure amalgamation_out_date is on or after consent filing effective date
-    for consent in caos:
-        if amalgamation_out_date.date() >= \
-                LegislationDatetime.as_legislation_timezone(consent.filing.effective_date).date():
-            active_consent = True
-            break
-
-    if not active_consent:
-        msg.extend([{"error": "No active consent amalgamation out for this date and/or jurisdiction.",
-                    "path": f"/filing/{filing_type}/amalgamationOutDate"}])
-
-    return msg
 
 
 def validate_amalgamation_out_date(filing: dict, amalgamation_out_date_path: str) -> list:
