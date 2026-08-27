@@ -94,7 +94,7 @@ def test_get_tasks_no_filings(session, client, jwt):
 
     rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
     assert rv.status_code == HTTPStatus.OK
-    assert num_filings_owed == len(rv.json.get('tasks'))
+    assert len(rv.json.get('tasks')) == num_filings_owed
 
 
 def test_get_tasks_sentinel_founding_date_skips_ar(session, client, jwt):
@@ -126,7 +126,7 @@ def test_get_tasks_next_year(session, client, jwt):
 
     rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
     assert rv.status_code == HTTPStatus.OK
-    assert 1 == len(rv.json.get('tasks'))
+    assert len(rv.json.get('tasks')) == 1
 
 
 def test_bcorps_get_tasks_no_filings(session, client, jwt):
