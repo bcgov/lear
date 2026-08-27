@@ -97,6 +97,25 @@ def test_get_tasks_no_filings(session, client, jwt):
     assert num_filings_owed == len(rv.json.get('tasks'))
 
 
+def test_get_tasks_sentinel_founding_date_skips_ar(session, client, jwt):
+    """Assert COLIN year-1 sentinel founding date does not generate thousands of AR todos."""
+    identifier = 'RLY0000004'
+    factory_business(
+        identifier,
+        founding_date=datetime(1, 1, 1, 8, 0, 0, tzinfo=UTC),
+        entity_type=Business.LegalTypes.COMP.value,
+        state=Business.State.ACTIVE,
+    )
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
+    assert rv.status_code == HTTPStatus.OK
+    ar_tasks = [
+        t for t in rv.json.get('tasks')
+        if t.get('task', {}).get('todo', {}).get('header', {}).get('name') == 'annualReport'
+    ]
+    assert ar_tasks == []
+
+
 def test_get_tasks_next_year(session, client, jwt):
     """Assert that one todo item is returned in the calendar year following incorporation."""
     identifier = 'CP7654321'
