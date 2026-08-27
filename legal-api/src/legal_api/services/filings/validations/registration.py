@@ -27,6 +27,7 @@ from business_model.models import Business, PartyRole, User
 from legal_api.core.filing import Filing
 from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, NaicsService, flags
+from legal_api.services.authz import SBC_STAFF_ROLE
 from legal_api.services.filings.validations.common_validations import (
     is_same_str,
     validate_court_order,
@@ -171,14 +172,16 @@ def validate_completing_party_name(filing: dict, filing_type="registration") -> 
     """Validate the completing party name matches the submitting user's name.
 
     Clients cannot edit the completing party (it is pre-populated from their login),
-    so the submitted name must match their user record; staff enter it manually from
-    a paper form and API gateway users have their own workflow, so both are skipped.
+    so the submitted name must match their user record; registry and SBC staff enter it
+    manually from a paper form and API gateway users have their own workflow, so those
+    are skipped.
     """
     api_login_source = "API_GW"  # jwt loginSource of an API gateway user
     msg = []
     current_user = getattr(request_ctx, "current_user", None) if has_request_context() else None
     if (not current_user
             or jwt.validate_roles(current_user, [STAFF_ROLE])
+            or jwt.validate_roles(current_user, [SBC_STAFF_ROLE])
             or current_user.get("loginSource") == api_login_source):
         return msg
 
