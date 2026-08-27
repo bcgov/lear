@@ -24,7 +24,7 @@ from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business, User
 from legal_api.services import NaicsService, NameXService, flags 
 from legal_api.services.filings.validations.validation import validate
-from legal_api.services.authz import BASIC_USER, STAFF_ROLE
+from legal_api.services.authz import BASIC_USER, SBC_STAFF_ROLE, STAFF_ROLE
 from registry_schemas.example_data import FILING_HEADER, REGISTRATION
 
 from tests.unit.services.filings.validations import create_party, create_party_address
@@ -457,6 +457,7 @@ MISMATCH_ERROR = 'Completing party name must match the name of the logged in use
          MISMATCH_ERROR),
         ('client_user_record_no_name', [BASIC_USER], 'BCSC', (None, None, None), None, MISMATCH_ERROR),
         ('staff_skipped', [STAFF_ROLE], 'IDIR', ('Different', None, 'Person'), None, None),
+        ('sbc_staff_skipped', [SBC_STAFF_ROLE], 'IDIR', ('Different', None, 'Person'), None, None),
         ('api_gw_skipped', [BASIC_USER], 'API_GW', ('Different', None, 'Person'), None, None),
     ]
 )
