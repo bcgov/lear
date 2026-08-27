@@ -695,7 +695,8 @@ def _norm_directors(parties: list | None) -> set:
         officer = party.get("officer") or {}
         directors.add((
             _norm_value(officer.get("firstName")),
-            _norm_value(officer.get("middleInitial")),
+            # the UI submits "middleName" while LEAR/COLIN sources carry "middleInitial"
+            _norm_value(officer.get("middleInitial") or officer.get("middleName")),
             _norm_value(officer.get("lastName")),
             _norm_value(officer.get("organizationName")),
             _norm_address(party.get("deliveryAddress")),
