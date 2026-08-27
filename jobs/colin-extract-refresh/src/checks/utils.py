@@ -76,7 +76,7 @@ def get_updated_identifiers(timestamp: str, corp_list: str, chunk_size: int, sco
         FROM event e
         JOIN {join_ctes} c
             ON c.corp_num = e.corp_num
-        WHERE e.event_timestmp > FROM_TZ ( TIMESTAMP '{timestamp}','UTC') AT TIME ZONE 'America/Vancouver') - INTERVAL '2' HOUR
+        WHERE e.event_timestmp > (FROM_TZ ( TIMESTAMP '{timestamp}','UTC') AT TIME ZONE 'America/Vancouver') - INTERVAL '2' HOUR)
         {frozen_ctes}
     ) SELECT le.EVENT_ID,
         le.corp_num,
