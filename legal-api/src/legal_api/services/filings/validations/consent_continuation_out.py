@@ -58,6 +58,12 @@ def validate(business: Business, filing: dict) -> Error | None:
             msg.extend([{"error": "Can't have new consent for same jurisdiction if an unexpired one already exists",
                         "path": foreign_jurisdiction_path}])
 
+    if not filing["filing"][filing_type].get("confirmCompletionParty"):
+        msg.append({
+            "error": babel("Confirm Completion is required."),
+            "path": f"/filing/{filing_type}/confirmCompletionParty"
+        })
+
     if court_order := filing.get("filing", {}).get(filing_type, {}).get("courtOrder", None):
         court_order_path: Final = f"/filing/{filing_type}/courtOrder"
         msg.extend(validate_court_order(court_order_path, court_order))

@@ -198,6 +198,47 @@ def test_validate_existing_cco(session, test_name, expected_code, message, monke
 
 
 @pytest.mark.parametrize(
+    'test_name, confirm_completion, expected_code, message',
+    [
+        # Missing entirely — schema catches it first as a required field violation
+        ('FAIL_MISSING', None, HTTPStatus.UNPROCESSABLE_ENTITY, None),
+        # Present but False — business rule catches it
+        ('FAIL_FALSE', False, HTTPStatus.BAD_REQUEST, 'Confirm Completion is required.'),
+        ('SUCCESS', True, None, None),
+    ]
+)
+def test_consent_continuation_out_confirm_completion(session, test_name, confirm_completion, expected_code, message, monkeypatch):
+    """Assert confirmCompletionParty is required and must be true."""
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL" if flag == 'supported-consent-continuation-out-entities' else default
+    )
+    business = Business(
+        identifier='BC1234567',
+        legal_type='BC',
+        state=Business.State.ACTIVE,
+        founding_date=datetime.utcnow()
+    )
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['consentContinuationOut'] = copy.deepcopy(CONSENT_CONTINUATION_OUT)
+    filing['filing']['header']['name'] = 'consentContinuationOut'
+
+    if confirm_completion is None:
+        filing['filing']['consentContinuationOut'].pop('confirmCompletionParty', None)
+    else:
+        filing['filing']['consentContinuationOut']['confirmCompletionParty'] = confirm_completion
+
+    err = validate(business, filing)
+
+    if test_name != 'SUCCESS':
+        assert expected_code == err.code
+        if message:
+            assert message == err.msg[0]['error']
+    else:
+        assert not err
+
+
+@pytest.mark.parametrize(
     'test_status, file_number, expected_code',
     [
         ('FAIL', None, HTTPStatus.UNPROCESSABLE_ENTITY),

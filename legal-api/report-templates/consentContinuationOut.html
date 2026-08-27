@@ -42,5 +42,45 @@
             <div class="section-data pt-2">{{ jurisdiction }}</div>
          </div>
       </div>
+
+      <div class="container pt-4">
+         <div class="no-page-break">
+            <div class="section-title mt-4">Completing Party Confirmation</div>
+            <div class="section-data mt-4">
+               I, {{ header.certifiedBy }}, the completing party, confirm that the laws of the foreign jurisdiction
+               to which the continued corporation will be subject provide, in effect, for the following:
+               <ul class="mt-2">
+                  <li>the property, rights and interest of the company continue to be the property, rights and
+                     interests of the continued corporation,</li>
+                  <li>the continued corporation continues to be liable for the obligations of the company,</li>
+                  <li>an existing cause of action, claim or liability to prosecution is unaffected,</li>
+                  <li>a legal proceeding being prosecuted or pending by or against the company may be prosecuted
+                     or its prosecution may be continued, as the case may be, by or against the continued
+                     corporation, and</li>
+                  <li>a conviction against, or a ruling, or judgment in favour of or against, the company may be
+                     enforced by or against the continued corporation.</li>
+               </ul>
+            </div>
+         </div>
+      </div>
+
+      <div class="container pt-4">
+         <div class="no-page-break">
+            <div class="separator mt-4"></div>
+            <div class="section-title mt-4">Certification</div>
+            <div class="section-data mt-4">
+               I certify that the information provided is correct and that I am authorized to submit this
+               filing on behalf of the {{ entityDescription }}.
+            </div>
+            <div class="section-data mt-4">
+               <strong>Date:</strong> {{ header.date }}
+            </div>
+            <div class="section-data mt-4">
+               <strong>Note:</strong> It is an offence to make a false or misleading statement in respect of
+               a material fact in a record submitted to the Corporate Registry for filing. See section 427
+               of the <em>Business Corporations Act</em>.
+            </div>
+         </div>
+      </div>
    </body>
 </html>
