@@ -13,9 +13,11 @@
 # limitations under the License.
 
 """Tests to assure the business snapshot end-point."""
+from datetime import datetime
+
 from colin_api.exceptions import BusinessNotFoundException, PartiesNotFoundException
 from colin_api.models import Business, Party, ShareObject
-from tests.unit import LEAR_ADDRESS, build_business, bypass_auth
+from tests.unit import LEAR_ADDRESS, build_business, build_director, bypass_auth
 
 
 SNAPSHOT_URL = '/api/v1/businesses/BC0870226/snapshot'
@@ -107,6 +109,25 @@ def test_get_snapshot_reports_future_effective_filing(client, mocker, authorized
     # the count query runs against the bare corp num
     assert mock_db.cursor.execute.call_args.kwargs['corp_num'] == '0870226'
     assert 'effective_dt' in mock_db.cursor.execute.call_args.args[0]
+
+
+def test_get_snapshot_normalizes_role_dates(client, mocker, authorized, mock_db,
+                                            mock_lookups):  # pylint: disable=unused-argument
+    """Assert a raw datetime role date (the founding-date fallback) is normalized to YYYY-MM-DD."""
+    director = build_director()
+    director.roles = [{
+        'roleType': 'Director',
+        'appointmentDate': datetime(2013, 4, 24, 0, 0),
+        'cessationDate': None
+    }]
+    mocker.patch.object(Party, 'get_current', return_value=[director])
+
+    rv = client.get(SNAPSHOT_URL)
+
+    assert rv.status_code == 200
+    assert rv.json['parties'][0]['roles'] == [
+        {'roleType': 'Director', 'appointmentDate': '2013-04-24', 'cessationDate': None}
+    ]
 
 
 def test_get_snapshot_without_parties(client, mocker, authorized, mock_db,

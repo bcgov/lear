@@ -116,7 +116,14 @@ class BusinessSnapshot:  # pylint: disable=too-few-public-methods
             'officer': {**raw['officer'], 'id': raw['id'], 'email': None},
             'deliveryAddress': cls._normalize_address(raw['deliveryAddress']),
             'mailingAddress': cls._normalize_address(raw['mailingAddress']),
-            'roles': raw['roles'] or [],
+            'roles': [
+                {
+                    'roleType': role.get('roleType'),
+                    'appointmentDate': cls._to_iso_date(role.get('appointmentDate')),
+                    'cessationDate': cls._to_iso_date(role.get('cessationDate')),
+                }
+                for role in (raw['roles'] or [])
+            ],
         }
 
     @classmethod
@@ -201,3 +208,12 @@ class BusinessSnapshot:  # pylint: disable=too-few-public-methods
         if value and value.endswith('-00:00'):
             return value[:-6] + '+00:00'
         return value
+
+    @staticmethod
+    def _to_iso_date(value) -> Optional[str]:
+        """Coerce a role date to YYYY-MM-DD preserving None."""
+        if value is None:
+            return None
+        if isinstance(value, datetime):
+            return value.strftime('%Y-%m-%d')
+        return str(value)[:10]
