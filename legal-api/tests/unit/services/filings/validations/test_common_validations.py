@@ -35,6 +35,7 @@ from registry_schemas.example_data import (
     CHANGE_OF_REGISTRATION,
     CHANGE_OF_REGISTRATION_TEMPLATE,
     CONTINUATION_IN,
+    CONSENT_CONTINUATION_OUT,
     CORRECTION_INCORPORATION,
     DISSOLUTION,
     FILING_HEADER,
@@ -605,6 +606,11 @@ def test_validate_certified_by_corps(session, legal_type, input_value, expected_
             assert errors[0]['error'] == 'Certified by field is required.'
         assert errors[0]['path'] == '/filing/header/certifiedBy'
 
+
+@pytest.mark.parametrize('filing_type', [
+    CoreFiling.FilingTypes.INCORPORATIONAPPLICATION,
+    CoreFiling.FilingTypes.CONSENTCONTINUATIONOUT,
+])
 @pytest.mark.parametrize('test_name, roles, login_source, certified_by, expected_error', [
     ('api_user_missing', [], 'API_GW', '', 'Certified by field is required.'),
     ('api_user_whitespace', [], 'API_GW', ' John Doe ', 'Certified by field cannot start or end with whitespace.'),
@@ -613,12 +619,18 @@ def test_validate_certified_by_corps(session, legal_type, input_value, expected_
     ('staff_valid', ['staff'], 'IDIR', 'John Doe', None),
     ('public_user_not_required', [], 'BCSC', '', None),
 ])
-def test_validate_certified_by_corps_completing_party(app, session, test_name, roles,
-                                                      login_source, certified_by, expected_error):
-    """Corps IA requires certifiedBy for staff and API users (API users identified by loginSource)."""
+def test_validate_certified_by_corps_completing_party(app, session, filing_type, test_name, roles,
+                                                        login_source, certified_by, expected_error):
+    """Corps IA and CCO require certifiedBy for staff and API users (API users identified by loginSource)."""
+    filing_type_data = {
+        CoreFiling.FilingTypes.INCORPORATIONAPPLICATION: ('incorporationApplication', INCORPORATION),
+        CoreFiling.FilingTypes.CONSENTCONTINUATIONOUT: ('consentContinuationOut', CONSENT_CONTINUATION_OUT),
+    }
+    filing_key, filing_data = filing_type_data[filing_type]
+
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['certifiedBy'] = certified_by
-    filing['filing']['incorporationApplication'] = INCORPORATION
+    filing['filing'][filing_key] = filing_data
 
     with (
         patch('legal_api.services.filings.validations.common_validations.jwt.validate_roles',
@@ -627,7 +639,7 @@ def test_validate_certified_by_corps_completing_party(app, session, test_name, r
     ):
         from flask.globals import request_ctx
         request_ctx.current_user = {'sub': 'test-user', 'loginSource': login_source}
-        errors = validate_certified_by(filing, 'incorporationApplication', 'BEN')
+        errors = validate_certified_by(filing, filing_type, 'BEN')
 
     if expected_error:
         assert errors
