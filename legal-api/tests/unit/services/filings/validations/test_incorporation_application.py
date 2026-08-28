@@ -902,25 +902,6 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
             None
         ),
         (
-            'FAIL_FIRST_NAME_EMPTY', 'BEN',
-            [
-                {
-                    'partyName': 'officer1',
-                    'roles': ['Completing Party', 'Incorporator'],
-                    'officer': {'firstName': '', 'middleName': None, 'lastName': 'Doe'}
-                },
-                {
-                    'partyName': 'officer2',
-                    'roles': ['Incorporator', 'Director'],
-                    'officer': {'firstName': '', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
-                }
-            ],
-            [{'error': 'Completing Party, Incorporator first name is required',
-              'path': '/filing/incorporationApplication/parties'},
-             {'error': 'Incorporator, Director first name is required',
-              'path': '/filing/incorporationApplication/parties'}]
-        ),
-        (
             'FAIL_FIRST_NAME_LEADING_AND_TRAILING_WHITESPACE', 'BEN',
             [
                 {

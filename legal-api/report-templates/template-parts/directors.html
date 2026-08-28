@@ -5,8 +5,11 @@
     <tr class="no-page-break">
       <td class="col-33">
         <div class="section-sub-title">
-          <span class="capitalize-text">{{ director.officer.lastName }}</span>,
+          <span class="capitalize-text">{{ director.officer.lastName }}</span>
+          {% if director.officer.firstName or director.officer.middleInitial is defined %},{% endif %}
+          {% if director.officer.firstName %}
           <span class="capitalize-text">{{ director.officer.firstName }}</span>
+          {% endif %}
           {% if director.officer.middleInitial is defined %}
           <span class="capitalize-text">{{ director.officer.middleInitial }}</span>
           {% endif %}
@@ -61,8 +64,11 @@
     <tr class="no-page-break">
       <td class="col-33">
         <div class="section-sub-title">
-          <span class="capitalize-text">{{ director.officer.lastName }}</span>,
+          <span class="capitalize-text">{{ director.officer.lastName }}</span>
+          {% if director.officer.firstName or director.officer.middleInitial is defined %},{% endif %}
+          {% if director.officer.firstName %}
           <span class="capitalize-text">{{ director.officer.firstName }}</span>
+          {% endif %}
           {% if director.officer.middleInitial is defined %}
           <span class="capitalize-text">{{ director.officer.middleInitial }}</span>
           {% endif %}
@@ -118,8 +124,11 @@
       <tr class="no-page-break">
         <td class="col-33">
           <div class="section-sub-title">
-            <span class="capitalize-text">{{ director.officer.lastName }}</span>,
-            <span class="capitalize-text">{{ director.officer.firstName }}</span>
+            <span class="capitalize-text">{{ director.officer.lastName }}</span>
+            {% if director.officer.firstName or director.officer.middleInitial is defined %},{% endif %}
+            {% if director.officer.firstName %}
+              <span class="capitalize-text">{{ director.officer.firstName }}</span>
+            {% endif %}
             {% if director.officer.middleInitial is defined %}
               <span class="capitalize-text">{{ director.officer.middleInitial }}</span>
             {% endif %}
@@ -129,7 +138,12 @@
           {% endif %}
           {% if 'nameChanged' in director.actions %}
           <div class="director-former-name">
-            {% set prevName = director.officer.prevLastName + ', ' + director.officer.prevFirstName + ' ' + director.officer.prevMiddleInitial %}
+            {% set prevName = director.officer.prevLastName + 
+              (', ' if director.officer.prevFirstName or director.officer.prevMiddleInitial else '') + 
+              [director.officer.prevFirstName, director.officer.prevMiddleInitial] | 
+              reject('none') | reject('equalto', '') | 
+              map('trim') | join(' ') 
+            %}
             (Formerly {{ prevName | trim }})
           </div>
           {% endif %}

@@ -580,17 +580,22 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             director["deliveryAddress"]["changed"] = True
 
     def _find_director_id_using_name(self, director, prev_completed_filing):
-        director_name = (director["officer"].get("firstName") +
-            director["officer"].get("middleInitial", "") +
-            director["officer"].get("lastName"))
+        director_name = "".join([
+            x.strip() for x in [
+                director["officer"].get("firstName"),
+                director["officer"].get("middleInitial"),
+                director["officer"].get("lastName")] if x and x.strip()
+        ]).upper()
         previous_directors = VersionedBusinessDetailsService.get_party_role_revision(
             prev_completed_filing, self._business.id, role=PartyRole.RoleTypes.DIRECTOR.value)
         for previous_director in previous_directors:
-            previous_director_name = (previous_director["officer"].get("firstName") +
-                                    previous_director["officer"].get("middleInitial", "") +
-                                    previous_director["officer"].get("lastName"))
-            if (previous_director_name.upper() == director_name.upper() and
-                    previous_director["cessationDate"] is None):
+            previous_director_name = "".join([
+                x.strip() for x in [
+                    previous_director["officer"].get("firstName"),
+                    previous_director["officer"].get("middleInitial"),
+                    previous_director["officer"].get("lastName")] if x and x.strip()
+            ]).upper()
+            if previous_director_name == director_name and previous_director["cessationDate"] is None:
                 return previous_director["id"]
 
     def _format_directors(self, directors):
@@ -1206,10 +1211,12 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             # This is not a common scenario, adding it for migrated data
             changed = True
         elif officer.get("partyType") == "person":
-            middle_name = officer.get("middleName", officer.get("middleInitial", ""))
-            if prev_officer.get("firstName").upper() != officer.get("firstName").upper() or \
-                    prev_officer.get("middleName", "").upper() != middle_name.upper() or \
-                    prev_officer.get("lastName").upper() != officer.get("lastName").upper():
+            middle_name = officer.get("middleName", officer.get("middleInitial")) or ""
+            if (
+                (prev_officer.get("firstName") or "").upper() != (officer.get("firstName") or "").upper() or
+                (prev_officer.get("middleName") or "").upper() != middle_name.upper() or
+                prev_officer.get("lastName").upper() != officer.get("lastName").upper()
+            ):
                 changed = True
         elif (
             officer.get("partyType") == "organization" and
