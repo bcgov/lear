@@ -1451,7 +1451,8 @@ def validate_certified_by(filing_json: dict, filing_type: str, legal_type: str) 
         # so certifiedBy is required for them on a corp incorporation application
         api_login_source = "API_GW"  # jwt loginSource of an API gateway user
         current_user = getattr(request_ctx, "current_user", None) if has_request_context() else None
-        if ((filing_type == CoreFiling.FilingTypes.INCORPORATIONAPPLICATION or CoreFiling.FilingTypes.CONSENTCONTINUATIONOUT)
+        if (filing_type in (CoreFiling.FilingTypes.INCORPORATIONAPPLICATION,
+                    CoreFiling.FilingTypes.CONSENTCONTINUATIONOUT)
                 and current_user
                 and (jwt.validate_roles(current_user, [STAFF_ROLE])
                      or current_user.get("loginSource") == api_login_source)):
