@@ -38,8 +38,26 @@
       </div>
       <div class="container pt-4">
          <div class="no-page-break">
-            <div class="section-title mt-4">New jurisdiction</div>
-            <div class="section-data pt-2">{{ jurisdiction }}</div>
+            <div class="section-title mt-4">Foreign jurisdiction into which the company is continuing:</div>
+            <div class="section-data pt-2 bold">{{ jurisdiction }}</div>
+         </div>
+
+         <div class="no-page-break">
+            <div class="separator mt-4"></div>
+            <div class="section-title mt-4">Completing Party Confirmation</div>
+            <div class="section-data mt-4">
+               I,
+               <span class="capitalize-text">{{ header.certifiedBy }}</span>,
+               confirm that the laws of the foreign jurisdiction to which the continued corporation will be
+               subject provide, in effect, for the following:
+               <ul class="certify-statement-list">
+                  <li class="pt-2">the property, rights and interest of the company continue to be the property, rights and interests of the continued corporation,</li>
+                  <li class="pt-2">the continued corporation continues to be liable for the obligations of the company,</li>
+                  <li class="pt-2">an existing cause of action, claim or liability to prosecution is unaffected,</li>
+                  <li class="pt-2">a legal proceeding being prosecuted or pending by or against the company may be prosecuted or its prosecution may be continued, as the case may be, by or against the continued corporation, and</li>
+                  <li class="pt-2">a conviction against, or a ruling, or judgment in favour of or against, the company may be enforced by or against the continued corporation.</li>
+               </ul>
+            </div>
          </div>
       </div>
    </body>
