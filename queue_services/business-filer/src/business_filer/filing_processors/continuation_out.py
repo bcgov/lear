@@ -35,11 +35,11 @@
 from contextlib import suppress
 
 import dpath
-from business_model.models import Business, Comment, Document, DocumentType, Filing
+from business_model.models import Business, Comment, DocumentType, Filing
 
 from business_filer.common.legislation_datetime import LegislationDatetime
 from business_filer.filing_meta import FilingMeta
-from business_filer.filing_processors.filing_components import filings
+from business_filer.filing_processors.filing_components import documents, filings
 
 # DocumentType.CONTINUATION_OUT is added to business-registry-model in this change, but the
 # filer installs that package from bcgov/lear@main, which won't have it until this lands.
@@ -57,18 +57,12 @@ def create_uploaded_documents(continuation_out: dict,
                               filing: Filing,
                               filing_meta: FilingMeta):
     """Create document records for the supporting documents uploaded with the continuation out filing."""
-    files = []
-    for file in continuation_out.get("documents", []):
-        document = Document()
-        document.type = CONTINUATION_OUT_DOCUMENT_TYPE
-        document.file_key = file.get("fileKey")
-        document.file_name = file.get("fileName")
-        document.filing_id = filing.id
-        business.documents.append(document)
-        files.append({
-            "fileKey": document.file_key,
-            "fileName": document.file_name
-        })
+    files = documents.create_filing_documents(
+        continuation_out.get("documents", []),
+        CONTINUATION_OUT_DOCUMENT_TYPE,
+        business,
+        filing
+    )
 
     if files:
         filing_meta.continuation_out = {

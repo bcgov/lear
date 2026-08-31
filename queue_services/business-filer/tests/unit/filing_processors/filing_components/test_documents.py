@@ -31,41 +31,45 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""File processing rules and actions for the court order filing."""
-from business_model.models import Business, Document, DocumentType, Filing
+"""The Unit Tests for the documents filing component."""
+import copy
+import random
 
-from business_filer.filing_meta import FilingMeta
-from business_filer.filing_processors.filing_components import documents, filings
+import pytest
+from business_model.models import DocumentType
+from registry_schemas.example_data import ALTERATION_FILING_TEMPLATE
+
+from business_filer.filing_processors.filing_components import documents
+from tests.unit import create_business, create_filing
 
 
-def process(business: Business, court_order_filing: Filing, filing: dict, filing_meta: FilingMeta):
-    """Render the court order filing into the business model objects."""
-    court_order_data = filing["courtOrder"]
-    filings.create_court_order(court_order_filing, court_order_data, filing_meta)
+@pytest.mark.parametrize('test_name,files', [
+    ('no files', []),
+    ('one file', [
+        {'fileKey': 'aaaaaaaa-1111-2222-3333-444444444444', 'fileName': 'document-1.pdf'}
+    ]),
+    ('multiple files', [
+        {'fileKey': 'aaaaaaaa-1111-2222-3333-444444444444', 'fileName': 'document-1.pdf'},
+        {'fileKey': 'bbbbbbbb-5555-6666-7777-888888888888', 'fileName': 'document-2.pdf'}
+    ])
+])
+def test_create_filing_documents(app, session, test_name, files):
+    """Assert that a document record is created per file and the meta list mirrors the files."""
+    identifier = f'BC{random.randint(1000000, 9999999)}'
+    business = create_business(identifier, legal_type='BC')
+    json_filing = copy.deepcopy(ALTERATION_FILING_TEMPLATE)
+    filing = create_filing(token='123', json_filing=json_filing, business_id=business.id)
 
-    file_list = []
-    if file_key := court_order_data.get("fileKey"):
-        # This if can be removed once court order filings start using files
-        document = Document()
-        document.type = DocumentType.COURT_ORDER.value
-        document.file_key = file_key
-        document.business_id = business.id
-        document.filing_id = court_order_filing.id
-        business.documents.append(document)
-        file_list.append({
-            "fileKey": document.file_key,
-            "fileName": f'Court Order {court_order_data.get("fileNumber")}.pdf'
-        })
-    elif files := court_order_data.get("files", []):
-        file_list = documents.create_filing_documents(
-            files,
-            DocumentType.COURT_ORDER.value,
-            business,
-            court_order_filing
-        )
+    file_list = documents.create_filing_documents(
+        files, DocumentType.COURT_ORDER.value, business, filing)
 
-    if file_list:
-        filing_meta.court_order = {
-            **filing_meta.court_order,
-            "files": file_list
-        }
+    business_documents = business.documents.all()
+    assert len(business_documents) == len(files)
+    assert file_list == [
+        {'fileKey': file['fileKey'], 'fileName': file['fileName']} for file in files
+    ]
+    for file in files:
+        document = next(x for x in business_documents if x.file_key == file['fileKey'])
+        assert document.type == DocumentType.COURT_ORDER.value
+        assert document.file_name == file['fileName']
+        assert document.filing_id == filing.id

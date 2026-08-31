@@ -41,6 +41,7 @@ from business_filer.filing_processors.filing_components import (
     aliases,
     business_info,
     business_profile,
+    documents,
     filings,
     name_request,
     resolutions,
