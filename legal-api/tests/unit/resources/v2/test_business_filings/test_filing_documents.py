@@ -1636,7 +1636,8 @@ def test_document_list_for_various_filing_states(app, session, mocker, client, j
                 file_key = file.get('fileKey')
                 expected_msg['documents']['staticDocuments'] = [{
                     'name': file.get('fileName'),
-                    'url': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/static/{file_key}'
+                    'url': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/static/{file_key}',
+                    'documentType': 'court_order'
                 }]
 
 

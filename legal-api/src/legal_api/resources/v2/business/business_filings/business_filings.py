@@ -1150,14 +1150,20 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
                      .get("dissolution", {})
                      .get("affidavitFileKey", None)):
             ListFilingResource.delete_uploaded_file(affidavit_file_key)
-        elif filing_type == Filing.FILINGS["courtOrder"].get("name") \
-                and (file_key := filing_json
-                     .get("filing", {})
-                     .get("courtOrder", {})
-                     .get("fileKey", None)):
-            ListFilingResource.delete_uploaded_file(file_key)
+        elif filing_type == Filing.FILINGS["courtOrder"].get("name"):
+            ListFilingResource.delete_court_order_files(filing_json)
         elif filing_type == Filing.FILINGS["continuationIn"].get("name"):
             ListFilingResource.delete_continuation_in_files(filing_json)
+
+    @staticmethod
+    def delete_court_order_files(filing_json: dict):
+        """Delete court order files from DRS."""
+        if file_key := filing_json.get("filing", {}).get("courtOrder", {}).get("fileKey", None):
+            ListFilingResource.delete_uploaded_file(file_key)
+        elif files := filing_json.get("filing", {}).get("courtOrder", {}).get("files", []):
+            for file in files:
+                if (file_key := file.get("fileKey")):
+                    ListFilingResource.delete_uploaded_file(file_key)
 
     @staticmethod
     def delete_continuation_in_files(filing_json: dict):

@@ -67,9 +67,6 @@ file_key_path = '/filing/courtOrder/fileKey'
     ])
 def test_court_order_file(session, monkeypatch, test_name, expected_code, expected_msg, is_file_key):
     """Assert valid court order."""
-    for msg in expected_msg:
-        if not is_file_key:
-            msg['path'] = msg['path'].replace('fileKey', 'files/0/fileKey')
     mock_drs_get_document(monkeypatch)
     business = factory_business('BC1234567')
     filing = copy.deepcopy(COURT_ORDER_FILING_TEMPLATE)
@@ -99,6 +96,9 @@ def test_court_order_file(session, monkeypatch, test_name, expected_code, expect
     err = validate(business, filing)
 
     if expected_code:
+        for msg in expected_msg:
+            if not is_file_key:
+                msg['path'] = msg['path'].replace('fileKey', 'files/0/fileKey')
         assert err.code == expected_code
         assert lists_are_equal(err.msg, expected_msg)
     else:
