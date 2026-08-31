@@ -31,7 +31,7 @@ from tests.unit.services.filings.validations import lists_are_equal
     [
         ('FAIL', HTTPStatus.BAD_REQUEST, [
             {'error': 'Invalid effectOfOrder.', 'path': '/filing/courtOrder/effectOfOrder'},
-            {'error': 'Court Order is required (in orderDetails/fileKey).', 'path': '/filing/courtOrder'}]),
+            {'error': 'Court Order is required (in orderDetails/fileKey/files).', 'path': '/filing/courtOrder'}]),
         ('SUCCESS', None, None)
     ]
 )
@@ -55,6 +55,7 @@ def test_court_orders(session, test_status, expected_code, expected_msg):
 file_key_path = '/filing/courtOrder/fileKey'
 
 
+@pytest.mark.parametrize('is_file_key', [True, False])
 @pytest.mark.parametrize(
     'test_name, expected_code, expected_msg',
     [
@@ -64,16 +65,36 @@ file_key_path = '/filing/courtOrder/fileKey'
             'error': 'Document must be set to fit onto 8.5” x 11” letter-size paper.',
             'path': file_key_path}])
     ])
-def test_court_order_file(session, monkeypatch, test_name, expected_code, expected_msg):
+def test_court_order_file(session, monkeypatch, test_name, expected_code, expected_msg, is_file_key):
     """Assert valid court order."""
+    for msg in expected_msg:
+        if not is_file_key:
+            msg['path'] = msg['path'].replace('fileKey', 'files/0/fileKey')
     mock_drs_get_document(monkeypatch)
     business = factory_business('BC1234567')
     filing = copy.deepcopy(COURT_ORDER_FILING_TEMPLATE)
 
-    if test_name == 'SUCCESS':
-        filing['filing']['courtOrder']['fileKey'] = _upload_file(letter, invalid=False)
-    elif test_name == 'FAIL_INVALID_FILE_KEY_SIZE':
-        filing['filing']['courtOrder']['fileKey'] = _upload_file(letter, invalid=True)
+    if is_file_key:
+        if test_name == 'SUCCESS':
+            filing['filing']['courtOrder']['fileKey'] = _upload_file(letter, invalid=False)
+        elif test_name == 'FAIL_INVALID_FILE_KEY_SIZE':
+            filing['filing']['courtOrder']['fileKey'] = _upload_file(letter, invalid=True)
+    else:
+        files = []
+        if test_name == 'FAIL_INVALID_FILE_KEY':
+            files.append({
+                "fileName": "test_file.pdf",
+                "fileKey": filing['filing']['courtOrder']['fileKey'],
+                "documentType": "court_order"
+            })
+        else:
+            files.append({
+                "fileName": "test_file.pdf",
+                "fileKey": _upload_file(letter, invalid=(test_name == 'FAIL_INVALID_FILE_KEY_SIZE')),
+                "documentType": "court_order"
+            })
+        del filing['filing']['courtOrder']['fileKey']
+        filing['filing']['courtOrder']['files'] = files
 
     err = validate(business, filing)
 

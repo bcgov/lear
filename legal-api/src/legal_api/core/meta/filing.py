@@ -18,7 +18,7 @@ from contextlib import suppress
 from enum import Enum, auto
 from typing import Final
 
-from business_model.models import Business
+from business_model.models import Business, DocumentType
 from business_model.models import Filing as FilingStorage
 from legal_api.services import VersionedBusinessDetailsService as VersionService
 
@@ -1114,12 +1114,14 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             for file in files:
                 file_key = file.get("fileKey")
                 file_name = file.get("fileName")
+                document_type = file.get("documentType") or DocumentType.COURT_ORDER.value
                 if file_name.lower().endswith(".pdf"):
                     # This may not be required. Doing this to align with the current behavior
                     file_name = file_name[:-4]
                 outputs.append({
                     "name": file_name,
-                    "url": f"{url_prefix}/{file_key}"
+                    "url": f"{url_prefix}/{file_key}",
+                    "documentType": document_type
                 })
 
     @staticmethod

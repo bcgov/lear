@@ -30,7 +30,7 @@ from business_account import AccountService
 from business_common.utils.datetime import date
 from business_common.utils.datetime import datetime as dt
 from business_common.utils.legislation_datetime import LegislationDatetime
-from business_model.models import Address, Business, Filing, PartyRole
+from business_model.models import Address, Business, DocumentType, Filing, PartyRole
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, colin, doc_service, flags, namex
@@ -559,14 +559,7 @@ def validate_court_order(
             msg.append({"error": "Court order date cannot be in the future.", "path": f"{court_order_path}/orderDate"})
 
     if is_file_or_details_required:
-        file_key_path = f"{court_order_path}/fileKey"
-        file_key = court_order.get("fileKey")
-
-        if not court_order.get("orderDetails") and not file_key:
-            msg.append({"error": _("Court Order is required (in orderDetails/fileKey)."), "path": court_order_path})
-
-        if file_key:
-            msg.extend(validate_pdf(file_key, file_key_path))
+        msg.extend(_validate_court_order_documents(court_order_path, court_order))
 
     if flags.is_on("enabled-deeper-permission-action"):
         required_permission = ListActionsPermissionsAllowed.COURT_ORDER_POA.value
@@ -574,6 +567,32 @@ def validate_court_order(
         permission_error = PermissionService.check_user_permission(required_permission, message=message)
         if permission_error:
             msg.append({"error": permission_error.msg[0].get("message", message), "path": court_order_path})
+
+    return msg
+
+
+def _validate_court_order_documents(court_order_path, court_order):
+    msg = []
+    file_key = court_order.get("fileKey")
+    files = court_order.get("files", [])
+
+    if not court_order.get("orderDetails") and not file_key and not files:
+        msg.append({"error": _("Court Order is required (in orderDetails/fileKey/files)."), "path": court_order_path})
+
+    if file_key:
+        msg.extend(validate_pdf(file_key, f"{court_order_path}/fileKey"))
+    elif files:
+        court_order_document_count = 0
+        files_path = f"{court_order_path}/files"
+        for file_index, file in enumerate(files):
+            if file.get("documentType") == DocumentType.COURT_ORDER.value:
+                court_order_document_count += 1
+            msg.extend(validate_pdf(file.get("fileKey"), f"{files_path}/{file_index}/fileKey"))
+
+        if court_order_document_count == 0: # if only supporting documents and no court order documents were found
+            msg.append({"error": _("At least one Court Order document is required."), "path": files_path})
+        elif court_order_document_count > 1:
+            msg.append({"error": _("Only one Court Order document is allowed."), "path": files_path})
 
     return msg
 

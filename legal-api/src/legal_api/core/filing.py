@@ -26,7 +26,6 @@ from sqlalchemy import desc
 from business_model.models import Business, UserRoles
 from business_model.models import Filing as FilingStorage
 from legal_api.core.meta import FilingMeta
-from legal_api.reports.document_service import DocumentService
 from legal_api.services import VersionedBusinessDetailsService
 from legal_api.services.authz import has_any_roles, is_competent_authority
 
@@ -403,9 +402,6 @@ class Filing:  # pylint: disable=too-many-public-methods
 
         query = query.order_by(desc(FilingStorage.filing_date))
 
-        drs_service: DocumentService = DocumentService()
-        drs_docs = drs_service.get_documents_by_business_id(business.identifier) if business else []
-
         ledger = []
         for filing in query.all():
 
@@ -441,10 +437,6 @@ class Filing:  # pylint: disable=too-many-public-methods
 
             Filing._add_meta_data(filing, ledger_filing)
 
-            core_filing: Filing = Filing()  # Filing.get_document_list needs a core Filing.
-            core_filing._storage = filing  # pylint: disable=protected-access
-            filing_docs = Filing.get_document_list(business, core_filing, jwt)
-            ledger_filing["drsDocuments"] = drs_service.update_filing_documents(drs_docs, filing_docs, filing)
             ledger.append(ledger_filing)
 
         return ledger

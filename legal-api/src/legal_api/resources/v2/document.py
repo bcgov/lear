@@ -63,7 +63,8 @@ DRS_MAPPING_DOC_TYPE = {
     },
     "courtOrder": {
         "documentTypes": {
-            "court_order": "CRTO"
+            "court_order": "CRTO",
+            "supporting_document": "SUPP"
         }
     },
     "dissolution": {
