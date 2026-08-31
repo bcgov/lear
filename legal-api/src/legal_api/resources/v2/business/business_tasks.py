@@ -151,7 +151,16 @@ def construct_task_list(business: Business):  # noqa: PLR0915
         tasks.append(task)
         order += 1
 
-    if business.legal_type not in entity_types_no_ar and not business.in_liquidation:
+    # Skip AR todos when founding date is the COLIN year 0001 (for legacy data like railways). Without this,
+    # a sentinel founding_date of 0001-01-01 generates ~2000 AR todos and a multi-MB /tasks payload.
+    unknown_founding_date = (
+        not business.founding_date or business.founding_date.year <= 1
+    )
+    if (
+        business.legal_type not in entity_types_no_ar
+        and not business.in_liquidation
+        and not unknown_founding_date
+    ):
         # If this is the first calendar year since incorporation, there is no previous ar year.
         next_ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
 
