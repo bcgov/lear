@@ -28,6 +28,14 @@ def test_check_business(session, has_amalgamation, expected_warning):
     business = factory_business(identifier="BC1234567")
 
     mock_filing = Mock()
+    mock_filing.id = "filing-id"
+    mock_filing.filing_json = {
+        "filing": {
+            "amalgamationApplication": {
+                "amalgamatingBusinesses": [{"identifier": "BC7654321"}]
+            }
+        }
+    }
     if has_amalgamation:
         # Set effective_date in the future to simulate an amalgamation
         mock_filing.effective_date = datetime.now() + timedelta(days=1)
@@ -38,7 +46,7 @@ def test_check_business(session, has_amalgamation, expected_warning):
         mock_filing.payment_completion_date = datetime.now()
 
     with patch('business_model.models.business.Business.is_pending_amalgamating_business', return_value=mock_filing):
-        result = check_business(business)
+        result = check_business(business, is_staff=True)
 
         if expected_warning:
             assert len(result) == 1
@@ -48,5 +56,32 @@ def test_check_business(session, has_amalgamation, expected_warning):
             assert warning['warningType'] == WarningType.FUTURE_EFFECTIVE_AMALGAMATION
             assert 'amalgamationDate' in warning['data']
             assert isinstance(warning['data']['amalgamationDate'], datetime)
+            assert warning['data']['filingId'] == "filing-id"
+            assert warning['data']['amalgamatingBusinesses'] == [{"identifier": "BC7654321"}]
         else:
             assert len(result) == 0
+
+
+def test_check_business_excludes_filing_id_for_non_staff(session):
+    """Test that filing ids are only included for staff users."""
+    business = factory_business(identifier="BC1234567")
+    mock_filing = Mock(
+        id="filing-id",
+        effective_date=datetime.now() + timedelta(days=1),
+        payment_completion_date=datetime.now(),
+        filing_json={
+            "filing": {
+                "amalgamationApplication": {
+                    "amalgamatingBusinesses": [{"identifier": "BC7654321"}]
+                }
+            }
+        }
+    )
+
+    with patch('business_model.models.business.Business.is_pending_amalgamating_business', return_value=mock_filing):
+        warning = check_business(business)[0]
+
+    assert warning['data'] == {
+        "amalgamationDate": mock_filing.effective_date,
+        "amalgamatingBusinesses": [{"identifier": "BC7654321"}]
+    }
