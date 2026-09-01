@@ -15,11 +15,12 @@
 """Tests to assure the business snapshot end-point."""
 from datetime import datetime
 
+import pytest
+
 from colin_api.exceptions import BusinessNotFoundException, PartiesNotFoundException
 from colin_api.models import Business, Party, ShareObject
 from colin_api.models.shares import Share, ShareClass
 from tests.unit import LEAR_ADDRESS, build_business, build_director, bypass_auth
-import pytest
 
 
 SNAPSHOT_URL = '/api/v1/businesses/BC0870226/snapshot'
