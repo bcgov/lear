@@ -51,6 +51,6 @@ def create_filing_documents(files: list[dict],
         file_list.append({
             "fileKey": document.file_key,
             "fileName": document.file_name,
-            "documentType": document.type
+            **({"documentType": document.type} if document_type is None else {})
         })
     return file_list

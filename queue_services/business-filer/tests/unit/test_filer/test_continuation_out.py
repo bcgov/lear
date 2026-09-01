@@ -35,13 +35,12 @@
 import copy
 import random
 
-from business_model.models import Business, Comment, Document, Filing
+from business_model.models import Business, Comment, Document, DocumentType, Filing
 from registry_schemas.example_data import CONTINUATION_OUT, FILING_TEMPLATE
 
 from business_filer.common.legislation_datetime import LegislationDatetime
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors import continuation_out
-from business_filer.filing_processors.continuation_out import CONTINUATION_OUT_DOCUMENT_TYPE
 from tests.unit import create_business, create_filing
 
 
@@ -118,7 +117,7 @@ def tests_filer_continuation_out_uploaded_documents(app, session):
     # Check outcome
     final_filing = Filing.find_by_id(continuation_out_filing.id)
 
-    documents = Document.find_all_by(final_filing.id, CONTINUATION_OUT_DOCUMENT_TYPE)
+    documents = Document.find_all_by(final_filing.id, DocumentType.CONTINUATION_OUT.value)
     assert len(documents) == len(uploaded_documents)
     for document in documents:
         file = next(x for x in uploaded_documents if x.get('fileKey') == document.file_key)
@@ -158,5 +157,5 @@ def tests_filer_continuation_out_no_uploaded_documents(app, session):
 
     # Check outcome
     final_filing = Filing.find_by_id(continuation_out_filing.id)
-    assert Document.find_all_by(final_filing.id, CONTINUATION_OUT_DOCUMENT_TYPE) == []
+    assert Document.find_all_by(final_filing.id, DocumentType.CONTINUATION_OUT.value) == []
     assert 'uploadedDocuments' not in filing_meta.continuation_out
