@@ -17,10 +17,39 @@ from datetime import datetime
 
 from colin_api.exceptions import BusinessNotFoundException, PartiesNotFoundException
 from colin_api.models import Business, Party, ShareObject
+from colin_api.models.shares import Share, ShareClass
 from tests.unit import LEAR_ADDRESS, build_business, build_director, bypass_auth
+import pytest
 
 
 SNAPSHOT_URL = '/api/v1/businesses/BC0870226/snapshot'
+
+
+def build_share_structure_variant(class_name, currency='CAD', other_currency=None, series_name=None):
+    """Return a current ShareObject with the subject class name / currency."""
+    share_class = ShareClass()
+    share_class.share_id = 0
+    share_class.share_name = class_name
+    share_class.currency_type = currency
+    share_class.other_currency = other_currency
+    share_class.has_max_shares = 'N'  # COLIN semantics: 'N' means has a maximum
+    share_class.has_par_value = 'Y'
+    share_class.has_special_rights = 'Y'
+    share_class.par_value_amt = 1.5
+    share_class.max_number_shares = 10000
+    share_class.series = []
+    if series_name:
+        series = Share()
+        series.share_id = 1
+        series.share_name = series_name
+        series.has_max_shares = 'Y'
+        series.has_special_rights = 'N'
+        series.max_number_shares = None
+        share_class.series = [series]
+    share_struct = ShareObject()
+    share_struct.end_event_id = None
+    share_struct.share_classes = [share_class]
+    return share_struct
 
 
 def test_get_snapshot(client, mocker, authorized, mock_db, mock_lookups):  # pylint: disable=unused-argument
@@ -64,18 +93,18 @@ def test_get_snapshot(client, mocker, authorized, mock_db, mock_lookups):  # pyl
         },
         'shareClasses': [{
             'id': 0,
-            'name': 'CLASS A',
+            'name': 'CLASS A Shares',
             'priority': 0,
             'hasMaximumShares': True,
             'maxNumberOfShares': 10000,
             'hasParValue': True,
             'parValue': 1.5,
-            'currency': 'OTH',
+            'currency': 'OTHER',
             'currencyAdditional': 'BITCOIN',
             'hasRightsOrRestrictions': True,
             'series': [{
                 'id': 1,
-                'name': 'SERIES 1',
+                'name': 'SERIES 1 Shares',
                 'priority': 1,
                 'hasMaximumShares': False,
                 'maxNumberOfShares': None,
@@ -150,6 +179,46 @@ def test_get_snapshot_without_share_structure(client, mocker, authorized, mock_d
 
     assert rv.status_code == 200
     assert rv.json['shareClasses'] == []
+
+
+@pytest.mark.parametrize('colin_name, expected_name', [
+    ('CLASS A COMMON SHARES', 'CLASS A COMMON Shares'),  # all-caps legacy suffix replaced
+    ('preferred shares', 'preferred Shares'),  # lowercase suffix replaced (tombstone migration parity)
+    ('Class A Shares', 'Class A Shares'),  # already normalized - unchanged
+    ('CLASS B', 'CLASS B Shares'),  # no suffix - appended
+])
+def test_get_snapshot_normalizes_share_names(client, mocker, authorized, mock_db, mock_lookups,
+                                             colin_name, expected_name):  # pylint: disable=unused-argument
+    """Assert class and series names get the ' Shares' suffix legal-api requires."""
+    mocker.patch.object(ShareObject, 'get_all', return_value=[
+        build_share_structure_variant(colin_name, series_name='SERIES 1')])
+
+    rv = client.get(SNAPSHOT_URL)
+
+    assert rv.status_code == 200
+    assert rv.json['shareClasses'][0]['name'] == expected_name
+    assert rv.json['shareClasses'][0]['series'][0]['name'] == 'SERIES 1 Shares'
+
+
+@pytest.mark.parametrize('currency, other_currency, expected, expected_additional', [
+    ('CAD', None, 'CAD', None),  # real code passes through
+    ('OTH', 'CAD', 'CAD', None),  # tombstone migration parity fold
+    ('OTH', ' usd ', 'USD', None),  # any valid ISO 4217 code is promoted
+    ('OTH', 'BITCOIN', 'OTHER', 'BITCOIN'),  # non-ISO free text stays flagged
+    ('OTH', None, 'OTHER', None),
+])
+def test_get_snapshot_normalizes_currency(client, mocker, authorized, mock_db, mock_lookups,
+                                          currency, other_currency, expected,
+                                          expected_additional):  # pylint: disable=unused-argument
+    """Assert COLIN's OTH currency is folded to an ISO code or OTHER."""
+    mocker.patch.object(ShareObject, 'get_all', return_value=[
+        build_share_structure_variant('Class A Shares', currency=currency, other_currency=other_currency)])
+
+    rv = client.get(SNAPSHOT_URL)
+
+    assert rv.status_code == 200
+    assert rv.json['shareClasses'][0]['currency'] == expected
+    assert rv.json['shareClasses'][0]['currencyAdditional'] == expected_additional
 
 
 def test_get_snapshot_null_good_standing(client, mocker, authorized, mock_db,
