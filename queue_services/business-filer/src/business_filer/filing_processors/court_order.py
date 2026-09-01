@@ -54,12 +54,12 @@ def process(business: Business, court_order_filing: Filing, filing: dict, filing
         business.documents.append(document)
         file_list.append({
             "fileKey": document.file_key,
-            "fileName": f'Court Order {court_order_data.get("fileNumber")}.pdf'
+            "fileName": f'Court Order {court_order_data.get("fileNumber")}.pdf',
+            "documentType": document.type
         })
     elif files := court_order_data.get("files", []):
         file_list = documents.create_filing_documents(
             files,
-            DocumentType.COURT_ORDER.value,
             business,
             court_order_filing
         )

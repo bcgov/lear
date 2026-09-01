@@ -44,7 +44,7 @@ DOCUMENT_PROPERTIES = {
 }
 
 
-def create_document(doc_info: dict, doc_data):
+def create_document(doc_info: dict, doc_data, content_type = None):
     """
     Create a new document record for the doc_data document. Expected doc_info properties:
         documentClass: required
@@ -66,7 +66,7 @@ def create_document(doc_info: dict, doc_data):
     if not doc_class or not doc_type:
         current_app.logger.info("DRS create_document aborted: no document class or no document type.")
         return None
-    headers = _get_request_headers(APP_PDF)
+    headers = _get_request_headers(content_type or APP_PDF)
     url = build_create_doc_url(doc_class, doc_type, doc_info)
     current_app.logger.info(f"DRS create_document url={url}")
     response = requests.post(url=url, headers=headers, timeout=SERVICE_TIMEOUT, data=doc_data)
@@ -164,7 +164,7 @@ def update_document_record(bus_document: Document, update_info: dict):
     return response
 
 
-def add_replace_document(bus_document: Document, doc_data):
+def add_replace_document(bus_document: Document, doc_data, content_type = None):
     """
     Add or replace a document associated with an existing document record identified by the unique DRS identifier.
 
@@ -179,7 +179,7 @@ def add_replace_document(bus_document: Document, doc_data):
     if not drs_id:
         current_app.logger.info("DRS add_replace_document aborted: no document file_key.")
         return None
-    headers = _get_request_headers(APP_PDF)
+    headers = _get_request_headers(content_type or APP_PDF)
     url = PUT_DOCUMENT_PATH.format(
         url=str(current_app.config.get("DOCUMENT_SVC_URL")).replace(DOC_PATH, ""),
         drs_id=drs_id

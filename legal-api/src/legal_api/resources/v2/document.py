@@ -133,7 +133,7 @@ def create_client_document(filing_type, entity_type, document_type):
     """
     try:
         doc_info: dict = build_create_info(filing_type, entity_type, document_type, request.args)
-        response = doc_service.create_document(doc_info, request.get_data())
+        response = doc_service.create_document(doc_info, request.get_data(), content_type=request.content_type)
         response_json = doc_service.get_content(response)
         if response.ok:
             file_key = doc_info.get("documentClass") + "-" + response_json.get("documentServiceId")
@@ -245,7 +245,7 @@ def replace_client_document(document_key):
     try:
         if is_draft_filing(document_key):
             bus_doc: Document = Document(file_key=document_key)
-            response = doc_service.add_replace_document(bus_doc, request.get_data())
+            response = doc_service.add_replace_document(bus_doc, request.get_data(), content_type=request.content_type)
             if response.ok:
                 return jsonify({"message": f"Document {document_key} replaced successfully."}), HTTPStatus.OK
             api_error = doc_service.get_content(response)

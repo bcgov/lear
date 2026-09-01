@@ -41,16 +41,6 @@ from business_filer.common.legislation_datetime import LegislationDatetime
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import documents, filings
 
-# DocumentType.CONTINUATION_OUT is added to business-registry-model in this change, but the
-# filer installs that package from bcgov/lear@main, which won't have it until this lands.
-# Use the enum once it's available, otherwise fall back to the literal value (both are
-# "continuation_out"). This can drop to DocumentType.CONTINUATION_OUT.value once the model bumps.
-CONTINUATION_OUT_DOCUMENT_TYPE = (
-    DocumentType.CONTINUATION_OUT.value
-    if getattr(DocumentType, "CONTINUATION_OUT", None)
-    else "continuation_out"
-)
-
 
 def create_uploaded_documents(continuation_out: dict,
                               business: Business,
@@ -59,9 +49,9 @@ def create_uploaded_documents(continuation_out: dict,
     """Create document records for the supporting documents uploaded with the continuation out filing."""
     files = documents.create_filing_documents(
         continuation_out.get("documents", []),
-        CONTINUATION_OUT_DOCUMENT_TYPE,
         business,
-        filing
+        filing,
+        DocumentType.CONTINUATION_OUT.value
     )
 
     if files:

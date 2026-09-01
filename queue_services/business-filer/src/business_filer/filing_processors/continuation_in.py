@@ -75,9 +75,9 @@ def create_authorization_documents(continuation_in: dict,
     authorization_files = continuation_in.get("authorization", {}).get("files", [])
     files = documents.create_filing_documents(
         authorization_files,
-        DocumentType.AUTHORIZATION_FILE.value,
         business,
-        filing
+        filing,
+        DocumentType.AUTHORIZATION_FILE.value
     )
 
     filing_meta.continuation_in = {
