@@ -31,41 +31,25 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
-"""File processing rules and actions for the court order filing."""
-from business_model.models import Business, Document, DocumentType, Filing
-
-from business_filer.filing_meta import FilingMeta
-from business_filer.filing_processors.filing_components import documents, filings
+"""Manages the document records for a filing."""
+from business_model.models import Business, Document, Filing
 
 
-def process(business: Business, court_order_filing: Filing, filing: dict, filing_meta: FilingMeta):
-    """Render the court order filing into the business model objects."""
-    court_order_data = filing["courtOrder"]
-    filings.create_court_order(court_order_filing, court_order_data, filing_meta)
-
+def create_filing_documents(files: list[dict],
+                            document_type: str,
+                            business: Business,
+                            filing: Filing) -> list[dict]:
+    """Create a document record for each uploaded file and return the fileKey/fileName meta list."""
     file_list = []
-    if file_key := court_order_data.get("fileKey"):
-        # This if can be removed once court order filings start using files
+    for file in files:
         document = Document()
-        document.type = DocumentType.COURT_ORDER.value
-        document.file_key = file_key
-        document.business_id = business.id
-        document.filing_id = court_order_filing.id
+        document.type = document_type
+        document.file_key = file.get("fileKey")
+        document.file_name = file.get("fileName")
+        document.filing_id = filing.id
         business.documents.append(document)
         file_list.append({
             "fileKey": document.file_key,
-            "fileName": f'Court Order {court_order_data.get("fileNumber")}.pdf'
+            "fileName": document.file_name
         })
-    elif files := court_order_data.get("files", []):
-        file_list = documents.create_filing_documents(
-            files,
-            DocumentType.COURT_ORDER.value,
-            business,
-            court_order_filing
-        )
-
-    if file_list:
-        filing_meta.court_order = {
-            **filing_meta.court_order,
-            "files": file_list
-        }
+    return file_list
