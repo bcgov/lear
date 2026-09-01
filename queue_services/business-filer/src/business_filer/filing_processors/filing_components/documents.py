@@ -36,20 +36,21 @@ from business_model.models import Business, Document, Filing
 
 
 def create_filing_documents(files: list[dict],
-                            document_type: str,
                             business: Business,
-                            filing: Filing) -> list[dict]:
+                            filing: Filing,
+                            document_type: str | None = None) -> list[dict]:
     """Create a document record for each uploaded file and return the fileKey/fileName meta list."""
     file_list = []
     for file in files:
         document = Document()
-        document.type = document_type
+        document.type = document_type or file.get("documentType")
         document.file_key = file.get("fileKey")
         document.file_name = file.get("fileName")
         document.filing_id = filing.id
         business.documents.append(document)
         file_list.append({
             "fileKey": document.file_key,
-            "fileName": document.file_name
+            "fileName": document.file_name,
+            "documentType": document.type
         })
     return file_list

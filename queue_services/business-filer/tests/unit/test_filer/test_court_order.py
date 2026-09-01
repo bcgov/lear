@@ -71,6 +71,7 @@ def tests_filer_court_order(app, session):
     assert final_filing.meta_data.get('courtOrder')['orderDetails'] == court_order.order_details
     assert final_filing.meta_data.get('courtOrder')['files'][0]['fileKey'] == filing['filing']['courtOrder']['fileKey']
     assert final_filing.meta_data.get('courtOrder')['files'][0]['fileName'] == f'Court Order {court_order.file_number}.pdf'
+    assert final_filing.meta_data.get('courtOrder')['files'][0]['documentType'] == DocumentType.COURT_ORDER.value
 
     court_order_file = final_filing.documents.one_or_none()
     assert court_order_file
@@ -92,11 +93,13 @@ def tests_filer_court_order_multiple_files(app, session):
     filing['filing']['courtOrder']['files'] = [
         {
             "fileKey": file_key_1,
-            "fileName": file_name_1
+            "fileName": file_name_1,
+            "documentType": DocumentType.COURT_ORDER.value
         },
         {
             "fileKey": file_key_2,
-            "fileName": file_name_2
+            "fileName": file_name_2,
+            "documentType": DocumentType.SUPPORTING_DOCUMENT.value
         }
     ]
     del filing['filing']['courtOrder']['fileKey']
@@ -122,7 +125,7 @@ def tests_filer_court_order_multiple_files(app, session):
     court_order_files = final_filing.documents.all()
     assert len(court_order_files) == 2
     for court_order_file in court_order_files:
-        assert court_order_file.type == DocumentType.COURT_ORDER.value
+        assert court_order_file.type in [DocumentType.COURT_ORDER.value, DocumentType.SUPPORTING_DOCUMENT.value]
         assert court_order_file.file_key in [file_key_1, file_key_2]
         assert court_order_file.file_name in [file_name_1, file_name_2]
 
@@ -130,3 +133,4 @@ def tests_filer_court_order_multiple_files(app, session):
     for court_order_file in final_filing.meta_data.get('courtOrder')['files']:
         assert court_order_file['fileKey'] in [file_key_1, file_key_2]
         assert court_order_file['fileName'] in [file_name_1, file_name_2]
+        assert court_order_file['documentType'] in [DocumentType.COURT_ORDER.value, DocumentType.SUPPORTING_DOCUMENT.value]

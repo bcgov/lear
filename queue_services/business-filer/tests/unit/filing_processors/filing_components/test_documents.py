@@ -46,11 +46,11 @@ from tests.unit import create_business, create_filing
 @pytest.mark.parametrize('test_name,files', [
     ('no files', []),
     ('one file', [
-        {'fileKey': 'aaaaaaaa-1111-2222-3333-444444444444', 'fileName': 'document-1.pdf'}
+        {'fileKey': 'aaaaaaaa-1111-2222-3333-444444444444', 'fileName': 'document-1.pdf', 'documentType': DocumentType.COURT_ORDER.value}
     ]),
     ('multiple files', [
-        {'fileKey': 'aaaaaaaa-1111-2222-3333-444444444444', 'fileName': 'document-1.pdf'},
-        {'fileKey': 'bbbbbbbb-5555-6666-7777-888888888888', 'fileName': 'document-2.pdf'}
+        {'fileKey': 'aaaaaaaa-1111-2222-3333-444444444444', 'fileName': 'document-1.pdf', 'documentType': DocumentType.COURT_ORDER.value},
+        {'fileKey': 'bbbbbbbb-5555-6666-7777-888888888888', 'fileName': 'document-2.pdf', 'documentType': DocumentType.COURT_ORDER.value}
     ])
 ])
 def test_create_filing_documents(app, session, test_name, files):
@@ -61,15 +61,15 @@ def test_create_filing_documents(app, session, test_name, files):
     filing = create_filing(token='123', json_filing=json_filing, business_id=business.id)
 
     file_list = documents.create_filing_documents(
-        files, DocumentType.COURT_ORDER.value, business, filing)
+        files, business, filing)
 
     business_documents = business.documents.all()
     assert len(business_documents) == len(files)
     assert file_list == [
-        {'fileKey': file['fileKey'], 'fileName': file['fileName']} for file in files
+        {'fileKey': file['fileKey'], 'fileName': file['fileName'], 'documentType': file['documentType']} for file in files
     ]
     for file in files:
         document = next(x for x in business_documents if x.file_key == file['fileKey'])
-        assert document.type == DocumentType.COURT_ORDER.value
+        assert document.type == file['documentType']
         assert document.file_name == file['fileName']
         assert document.filing_id == filing.id
