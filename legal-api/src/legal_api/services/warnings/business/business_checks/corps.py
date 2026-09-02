@@ -51,15 +51,22 @@ def check_amalgamating_business(business: Business, is_staff: bool = False) -> l
 
     # Check if a matching filing was found and if its effective date is greater than payment completion date
     if filing and filing.effective_date > filing.payment_completion_date:
+        amalgamation_application = filing.filing_json["filing"]["amalgamationApplication"]
+        name_request = amalgamation_application.get("nameRequest", {})
+        # legalName is only present when the resulting business will be named
+        resulting_business_name = name_request.get("legalName")
+ 
         warning = {
             "code": "AMALGAMATING_BUSINESS",
             "message": "This business is part of a future effective amalgamation.",
             "warningType": WarningType.FUTURE_EFFECTIVE_AMALGAMATION,
             "data": {
                 "amalgamationDate": filing.effective_date,
-                "amalgamatingBusinesses": filing.filing_json["filing"]["amalgamationApplication"]["amalgamatingBusinesses"]
+                "amalgamatingBusinesses": amalgamation_application["amalgamatingBusinesses"]
             }
         }
+        if resulting_business_name:
+            warning["data"]["resultingBusinessName"] = resulting_business_name
         if is_staff:
             warning["data"]["filingId"] = filing.id
         result.append(warning)
