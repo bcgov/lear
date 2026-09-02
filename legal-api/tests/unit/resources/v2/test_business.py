@@ -28,7 +28,16 @@ from business_common.utils.datetime import datetime
 from requests import exceptions
 
 from business_model.models import Amalgamation, Batch, Business, Filing, RegistrationBootstrap
-from legal_api.services.authz import ACCOUNT_IDENTITY, PUBLIC_USER, STAFF_ROLE, SYSTEM_ROLE
+from legal_api.services.authz import (
+    ACCOUNT_IDENTITY,
+    COLIN_SVC_ROLE,
+    CONTACT_CENTRE_STAFF_ROLE,
+    MAXIMUS_STAFF_ROLE,
+    PUBLIC_USER,
+    SBC_STAFF_ROLE,
+    STAFF_ROLE,
+    SYSTEM_ROLE,
+)
 from legal_api.services import flags
 from legal_api.services.cache import cache
 from legal_api.services.bootstrap import RegistrationBootstrapService
@@ -241,6 +250,40 @@ def test_get_business_info(app, session, client, jwt, requests_mock, test_name, 
     print('valid schema?', registry_schemas.validate(rv.json, 'business'))
 
     assert registry_schemas.validate(rv.json, 'business')
+
+
+@pytest.mark.parametrize('role,expected_staff', [
+    (STAFF_ROLE, True),
+    (SYSTEM_ROLE, True),
+    (COLIN_SVC_ROLE, True),
+    (SBC_STAFF_ROLE, True),
+    (CONTACT_CENTRE_STAFF_ROLE, True),
+    (MAXIMUS_STAFF_ROLE, True),
+    (PUBLIC_USER, False),
+])
+def test_get_business_info_passes_staff_status_to_warnings(
+    app, session, client, jwt, role, expected_staff, monkeypatch, requests_mock):
+    """Assert that business warnings receive the correct staff status for each role."""
+    identifier = 'BC7654321'
+    factory_business_model(legal_name=f'{identifier} legal name',
+                           identifier=identifier,
+                           founding_date=datetime.fromtimestamp(0, UTC),
+                           last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
+                           last_modified=datetime.fromtimestamp(0, UTC))
+    warning_staff_values = []
+    monkeypatch.setattr(
+        'legal_api.resources.v2.business.business.check_warnings',
+        lambda business, is_staff: warning_staff_values.append(is_staff) or []
+    )
+    if role == PUBLIC_USER:
+        requests_mock.get(f"{app.config['AUTH_SVC_URL']}/entities/{identifier}/authorizations",
+                          json={'roles': ['view']})
+
+    rv = client.get(f'/api/v2/businesses/{identifier}',
+                    headers=create_header(jwt, [role], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert warning_staff_values == [expected_staff]
 
 
 @pytest.mark.parametrize('test_name,role,amalgamated', [
