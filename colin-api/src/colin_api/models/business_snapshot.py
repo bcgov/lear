@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 import pycountry
 from flask import current_app
@@ -33,6 +33,9 @@ class BusinessSnapshot:  # pylint: disable=too-few-public-methods
 
     # snapshot offices are limited to the two the amalgamation flow prepopulates
     OFFICE_TYPES = ('registeredOffice', 'recordsOffice')
+
+    # the share name suffix legal-api requires (common_validations.py)
+    SHARE_NAME_SUFFIX = ' Shares'
 
     @classmethod
     def get_snapshot(cls, orig_identifier: str) -> Dict:
@@ -153,17 +156,19 @@ class BusinessSnapshot:  # pylint: disable=too-few-public-methods
     @classmethod
     def _normalize_share_class(cls, share_class: Dict) -> Dict:
         """Return a share class in the structure of LEAR's /share-classes items."""
+        currency, currency_additional = cls._normalize_currency(
+            share_class['currency'], share_class['currencyAdditional'])
         return {
             'id': share_class['id'],
-            'name': share_class['name'],
+            'name': cls._normalize_share_name(share_class['name']),
             # COLIN never stores a priority - the class id preserves creation order
             'priority': share_class['displayOrder'],
             'hasMaximumShares': share_class['hasMaximumShares'],
             'maxNumberOfShares': cls._to_int(share_class['maxNumberOfShares']),
             'hasParValue': share_class['hasParValue'],
             'parValue': float(share_class['parValue']) if share_class['parValue'] is not None else None,
-            'currency': share_class['currency'],
-            'currencyAdditional': share_class['currencyAdditional'],
+            'currency': currency,
+            'currencyAdditional': currency_additional,
             'hasRightsOrRestrictions': share_class['hasRightsOrRestrictions'],
             'series': [cls._normalize_share_series(series) for series in share_class['series']],
         }
@@ -173,12 +178,36 @@ class BusinessSnapshot:  # pylint: disable=too-few-public-methods
         """Return a share series in the structure of LEAR's series json."""
         return {
             'id': series['id'],
-            'name': series['name'],
+            'name': cls._normalize_share_name(series['name']),
             'priority': series['displayOrder'],
             'hasMaximumShares': series['hasMaximumShares'],
             'maxNumberOfShares': cls._to_int(series['maxNumberOfShares']),
             'hasRightsOrRestrictions': series['hasRightsOrRestrictions'],
         }
+
+    @classmethod
+    def _normalize_share_name(cls, name: Optional[str]) -> Optional[str]:
+        """Append the ' Shares' suffix legal-api requires, dropping any existing any-case suffix."""
+        if not name:
+            return name
+        if name.endswith(cls.SHARE_NAME_SUFFIX):
+            return name
+        stripped = name.rstrip()
+        if stripped.lower().endswith(cls.SHARE_NAME_SUFFIX.lower()):
+            stripped = stripped[:-len(cls.SHARE_NAME_SUFFIX)].rstrip()
+        return f'{stripped}{cls.SHARE_NAME_SUFFIX}'
+
+    @classmethod
+    def _normalize_currency(cls,
+                            currency: Optional[str],
+                            currency_additional: Optional[str]) -> Tuple[Optional[str], Optional[str]]:
+        """Map COLIN's OTH currency the way the tombstone migration does."""
+        if currency != 'OTH':
+            return currency, currency_additional
+        code = (currency_additional or '').strip().upper()
+        if code and pycountry.currencies.get(alpha_3=code):
+            return code, None
+        return 'OTHER', currency_additional
 
     _country_cache: Dict[str, str] = {}
 
