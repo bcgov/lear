@@ -174,7 +174,8 @@ def validate_continuation_in_foreign_jurisdiction(
     legal_type: str,
     foreign_jurisdiction: dict,
     foreign_jurisdiction_path: str,
-    skip_affidavit: bool = False
+    skip_affidavit: bool = False,
+    skip_jurisdiction: bool = False
 ) -> list:
     """Validate continuation in foreign jurisdiction."""
     msg = []
@@ -197,7 +198,10 @@ def validate_continuation_in_foreign_jurisdiction(
             "path": f"{foreign_jurisdiction_path}/legalName"
         })
 
-    if err := validate_foreign_jurisdiction(foreign_jurisdiction, foreign_jurisdiction_path):
+    if (
+            not skip_jurisdiction and
+            (err := validate_foreign_jurisdiction(foreign_jurisdiction, foreign_jurisdiction_path))
+    ):
         msg.extend(err)
 
     # Skip affidavit if skip_affidavit is True (correction)

@@ -371,7 +371,6 @@ def _validate_foreign_businesses(  # noqa: PLR0913
     if is_staff:
         msg.extend(validate_foreign_jurisdiction(amalgamating_business["foreignJurisdiction"],
                                                  f"{amalgamating_business_path}/foreignJurisdiction",
-                                                 is_region_bc_valid=False,
                                                  is_region_for_us_required=False))
 
     msg.extend(_validate_foreign_rules(is_staff,

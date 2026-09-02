@@ -17,15 +17,14 @@ from typing import Final
 
 from flask_babel import _ as babel
 
-from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business
 from legal_api.errors import Error
 from legal_api.services import flags
 from legal_api.services.filings.validations.common_validations import (
     validate_court_order,
     validate_foreign_jurisdiction,
+    validate_out_date,
 )
-from legal_api.services.utils import get_date
 
 
 def validate(business: Business, filing: dict) -> Error | None:
@@ -41,7 +40,7 @@ def validate(business: Business, filing: dict) -> Error | None:
     msg = []
     filing_type = "continuationOut"
 
-    msg.extend(validate_continuation_out_date(filing, f"/filing/{filing_type}/continuationOutDate"))
+    msg.extend(validate_out_date(filing, f"/filing/{filing_type}/continuationOutDate"))
     msg.extend(validate_foreign_jurisdiction(
         filing["filing"][filing_type]["foreignJurisdiction"],
         f"/filing/{filing_type}/foreignJurisdiction"
@@ -54,16 +53,3 @@ def validate(business: Business, filing: dict) -> Error | None:
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
-
-
-def validate_continuation_out_date(filing: dict, continuation_out_date_path: str) -> list:
-    """Validate continuation out date."""
-    msg = []
-    continuation_out_date = get_date(filing, continuation_out_date_path)
-
-    now = LegislationDatetime.now().date()
-    if continuation_out_date > now:
-        msg.append({"error": "Continuation out date must be today or past.",
-                    "path": continuation_out_date_path})
-
-    return msg
