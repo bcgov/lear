@@ -32,7 +32,11 @@ def test_check_business(session, has_amalgamation, expected_warning):
     mock_filing.filing_json = {
         "filing": {
             "amalgamationApplication": {
-                "amalgamatingBusinesses": [{"identifier": "BC7654321"}]
+                "amalgamatingBusinesses": [{"identifier": "BC7654321"}],
+                "nameRequest": {
+                    "legalName": "NAMED AMALG CORP.",
+                    "legalType": "BC"
+                }
             }
         }
     }
@@ -58,8 +62,45 @@ def test_check_business(session, has_amalgamation, expected_warning):
             assert isinstance(warning['data']['amalgamationDate'], datetime)
             assert warning['data']['filingId'] == "filing-id"
             assert warning['data']['amalgamatingBusinesses'] == [{"identifier": "BC7654321"}]
+            assert warning['data']['resultingBusinessName'] == "NAMED AMALG CORP."
         else:
             assert len(result) == 0
+
+
+@pytest.mark.parametrize("name_request, expected_resulting_name", [
+    # named amalgamation result - legalName present
+    ({"legalName": "NAMED AMALG CORP.", "legalType": "BC"}, "NAMED AMALG CORP."),
+    # numbered amalgamation result - no legalName key at all
+    ({"correctNameOption": "correct-aml-numbered", "legalType": "BC"}, None),
+    # no nameRequest present at all
+    ({}, None),
+])
+def test_check_business_amalgamation_resulting_name(session, name_request, expected_resulting_name):
+    """Test that resultingBusinessName reflects whether the amalgamation result is named or numbered."""
+    business = factory_business(identifier="BC1234567")
+
+    mock_filing = Mock()
+    mock_filing.id = "filing-id"
+    mock_filing.effective_date = datetime.now() + timedelta(days=1)
+    mock_filing.payment_completion_date = datetime.now()
+    mock_filing.filing_json = {
+        "filing": {
+            "amalgamationApplication": {
+                "amalgamatingBusinesses": [{"identifier": "BC7654321"}],
+                "nameRequest": name_request
+            }
+        }
+    }
+
+    with patch('business_model.models.business.Business.is_pending_amalgamating_business', return_value=mock_filing):
+        warning = check_business(business, is_staff=True)[0]
+
+    assert warning['data'].get('resultingBusinessName') == expected_resulting_name
+
+    if expected_resulting_name is None:
+        assert 'resultingBusinessName' not in warning['data']
+    else:
+        assert 'resultingBusinessName' in warning['data']
 
 
 def test_check_business_excludes_filing_id_for_non_staff(session):
@@ -72,7 +113,11 @@ def test_check_business_excludes_filing_id_for_non_staff(session):
         filing_json={
             "filing": {
                 "amalgamationApplication": {
-                    "amalgamatingBusinesses": [{"identifier": "BC7654321"}]
+                    "amalgamatingBusinesses": [{"identifier": "BC7654321"}],
+                    "nameRequest": {
+                        "legalName": "NAMED AMALG CORP.",
+                        "legalType": "BC"
+                    }
                 }
             }
         }
@@ -83,5 +128,6 @@ def test_check_business_excludes_filing_id_for_non_staff(session):
 
     assert warning['data'] == {
         "amalgamationDate": mock_filing.effective_date,
-        "amalgamatingBusinesses": [{"identifier": "BC7654321"}]
+        "amalgamatingBusinesses": [{"identifier": "BC7654321"}],
+        "resultingBusinessName": "NAMED AMALG CORP."
     }
