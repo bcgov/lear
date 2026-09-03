@@ -283,7 +283,10 @@ def test_validate_dissolution_parties_address_location_per_address(
         'deliveryAddress': {'addressCountry': country, 'addressRegion': region},
     }]
 
-    result = dissolution._validate_address_location(parties, legal_type)
+    result = []
+    for idx, party in enumerate(parties):
+        for address_type in ['deliveryAddress', 'mailingAddress']:
+            result.extend(dissolution._validate_party_address(party, idx, address_type, legal_type in Business.CORPS))
 
     expected = per_address_errors * 2
     assert [m['error'] for m in result] == expected
@@ -442,13 +445,13 @@ def test_dissolution_court_orders(session, test_status, file_number, effect_of_o
     [
         # Required email cases (missing or None)
         ('FAIL', 'BC', 'voluntary', None, HTTPStatus.BAD_REQUEST,
-         'Custodian email is required for voluntary dissolution.'),
+         'Custodian email is required.'),
         ('FAIL', 'BEN', 'voluntary', None, HTTPStatus.BAD_REQUEST,
-         'Custodian email is required for voluntary dissolution.'),
+         'Custodian email is required.'),
         ('FAIL', 'CC', 'voluntary', None, HTTPStatus.BAD_REQUEST,
-         'Custodian email is required for voluntary dissolution.'),
+         'Custodian email is required.'),
         ('FAIL', 'ULC', 'voluntary', None, HTTPStatus.BAD_REQUEST,
-         'Custodian email is required for voluntary dissolution.'),
+         'Custodian email is required.'),
 
         # Whitespace-only emails
         ('FAIL', 'BC', 'voluntary', ' ', HTTPStatus.BAD_REQUEST,

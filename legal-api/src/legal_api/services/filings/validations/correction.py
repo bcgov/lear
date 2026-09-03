@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Correction filing."""
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from http import HTTPStatus
 from typing import Final
 
@@ -45,6 +45,7 @@ from legal_api.services.filings.validations.continuation_in import (
     validate_continuation_in_expro_business_in_colin,
     validate_continuation_in_foreign_jurisdiction,
 )
+from legal_api.services.filings.validations.dissolution import validate_custodian_email
 from legal_api.services.filings.validations.incorporation_application import (
     validate_coop_parties_mailing_address,
     validate_roles,
@@ -97,21 +98,6 @@ def validate(business: Business, filing: dict) -> Error:
     if not is_comment_only_correction:
         if filing.get("filing", {}).get("correction", {}).get("parties", None):
             msg.extend(validate_parties_addresses(filing, filing_type))
-        if filing.get("filing", {}).get("correction", {}).get("relationships", None):
-            msg.extend(validate_relationships(
-                business,
-                filing,
-                filing_type,
-                [
-                    PartyRole.RoleTypes.DIRECTOR,
-                    PartyRole.RoleTypes.LIQUIDATOR,
-                    PartyRole.RoleTypes.RECEIVER,
-                    PartyRole.RoleTypes.COMPLETING_PARTY
-                ],
-                True,
-                True,
-                [PartyRole.RoleTypes.DIRECTOR, PartyRole.RoleTypes.COMPLETING_PARTY]
-            ))
         if filing.get("filing", {}).get("correction", {}).get("offices", None):
             msg.extend(validate_offices_addresses(filing, filing_type))
 
@@ -145,6 +131,81 @@ def _validate_firms_correction(business: Business, filing, legal_type, msg):
 
 
 def _validate_corps_correction(business: Business, filing_dict, legal_type, msg):
+    if filing_dict.get("filing", {}).get("correction", {}).get("courtOrder", None):
+        msg.extend(court_order_validation(filing_dict))
+    msg.extend(_validate_court_orders_correction(filing_dict, business))
+
+    if relationships := filing_dict.get("filing", {}).get("correction", {}).get("relationships", None):
+        relationships_path = "/filing/correction/relationships"
+        completing_parties = [
+            x for x in relationships
+            if any(
+                role for role in x.get("roles", [])
+                if role["roleType"].lower().replace(" ", "_") == PartyRole.RoleTypes.COMPLETING_PARTY.value
+            )
+        ]
+        correction_type = filing_dict.get("filing").get("correction").get("type", "STAFF")
+        if correction_type == "STAFF":
+            if len(completing_parties) != 0:
+                msg.append({
+                    "error": "Should not provide completing party when correction type is STAFF",
+                    "path": relationships_path
+                })
+        elif len(completing_parties) == 0:
+            msg.append({"error": "Completing party is required.", "path": relationships_path})
+        elif len(completing_parties) > 1:
+            msg.append({"error": "Only one completing party is allowed.", "path": relationships_path})
+
+    if business.state == Business.State.HISTORICAL.value:
+        _validate_corps_correction_historical(business, filing_dict, msg)
+    else:
+        _validate_corps_correction_active(business, filing_dict, legal_type, msg)
+
+
+def _validate_corps_correction_historical(business: Business, filing_dict, msg):
+    filing_type = "correction"
+    msg.extend(_validate_out_correction(filing_dict, filing_type, business))
+    if relationships := filing_dict.get("filing", {}).get("correction", {}).get("relationships", None):
+        custodian_parties = [
+            x for x in relationships
+            if any(
+                role for role in x.get("roles", [])
+                if role["roleType"].lower() == PartyRole.RoleTypes.CUSTODIAN.value
+            )
+        ]
+        relationships_path = "/filing/correction/relationships"
+        if len(custodian_parties) > 1:
+            msg.append({"error": "Only one custodian is allowed.", "path": relationships_path})
+        elif len(custodian_parties) == 1:
+            today = datetime.now(tz=UTC).date()
+            existing_custodian = PartyRole.get_party_roles(business.id, today, PartyRole.RoleTypes.CUSTODIAN.value)
+            if not custodian_parties[0].get("entity", {}).get("identifier") and len(existing_custodian) > 0:
+                msg.append({
+                    "error": "Custodian already exists for this business, cannot create another custodian.",
+                    "path": relationships_path
+                })
+            msg.extend(
+                validate_custodian_email(
+                    custodian_parties[0].get("entity", {}).get("email"),
+                    f"{relationships_path}/entity/email"
+                )
+            )
+
+        msg.extend(validate_relationships(
+            business,
+            filing_dict,
+            filing_type,
+            [
+                PartyRole.RoleTypes.CUSTODIAN,
+                PartyRole.RoleTypes.COMPLETING_PARTY
+            ],
+            True,
+            True,
+            [PartyRole.RoleTypes.CUSTODIAN, PartyRole.RoleTypes.COMPLETING_PARTY]
+        ))
+
+
+def _validate_corps_correction_active(business: Business, filing_dict, legal_type, msg):
     filing_type = "correction"
     if new_legal_type := filing_dict.get("filing", {}).get("correction", {}).get("newLegalType"):
         if business.legal_type == new_legal_type:
@@ -163,6 +224,23 @@ def _validate_corps_correction(business: Business, filing_dict, legal_type, msg)
             msg.extend(err)
         # FUTURE: this should be removed when COLIN sync back is no longer required.
         msg.extend(validate_parties_names(filing_dict, filing_type, legal_type))
+
+    if filing_dict.get("filing", {}).get("correction", {}).get("relationships", None):
+        msg.extend(validate_relationships(
+            business,
+            filing_dict,
+            filing_type,
+            [
+                PartyRole.RoleTypes.DIRECTOR,
+                PartyRole.RoleTypes.LIQUIDATOR,
+                PartyRole.RoleTypes.RECEIVER,
+                PartyRole.RoleTypes.COMPLETING_PARTY
+            ],
+            True,
+            True,
+            [PartyRole.RoleTypes.DIRECTOR, PartyRole.RoleTypes.COMPLETING_PARTY]
+        ))
+
     if filing_dict.get("filing", {}).get("correction", {}).get("shareStructure", None):
         err = validate_share_structure(filing_dict, filing_type, legal_type)
         if err:
@@ -171,13 +249,8 @@ def _validate_corps_correction(business: Business, filing_dict, legal_type, msg)
         msg.extend(validate_share_currency(filing_dict, filing_type, business))
         msg.extend(validate_resolution_date_in_share_structure(filing_dict, filing_type, business))
 
-    if filing_dict.get("filing", {}).get("correction", {}).get("courtOrder", None):
-        msg.extend(court_order_validation(filing_dict))
-
     msg.extend(_validate_continuation_in_correction(filing_dict, filing_type, legal_type, business))
-    msg.extend(_validate_out_correction(filing_dict, filing_type, business))
     msg.extend(_validate_amalgamation_correction(filing_dict, filing_type, business))
-    msg.extend(_validate_court_orders_correction(filing_dict, business))
 
 
 def _validate_court_orders_correction(filing_dict, business: Business):
