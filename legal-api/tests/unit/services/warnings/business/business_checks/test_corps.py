@@ -37,6 +37,10 @@ def test_check_business(session, has_amalgamation, expected_warning):
                     "legalName": "NAMED AMALG CORP.",
                     "legalType": "BC"
                 }
+            },
+            "business": {
+                "identifier": "T987654321",
+                "legalType": "BC"
             }
         }
     }
@@ -63,6 +67,7 @@ def test_check_business(session, has_amalgamation, expected_warning):
             assert warning['data']['filingId'] == "filing-id"
             assert warning['data']['amalgamatingBusinesses'] == [{"identifier": "BC7654321"}]
             assert warning['data']['resultingBusinessName'] == "NAMED AMALG CORP."
+            assert warning['data']['resultingBusinessIdentifier'] == "T987654321"
         else:
             assert len(result) == 0
 
@@ -88,6 +93,10 @@ def test_check_business_amalgamation_resulting_name(session, name_request, expec
             "amalgamationApplication": {
                 "amalgamatingBusinesses": [{"identifier": "BC7654321"}],
                 "nameRequest": name_request
+            },
+            "business": {
+                "identifier": "T987654321",
+                "legalType": "BC"
             }
         }
     }
@@ -104,7 +113,7 @@ def test_check_business_amalgamation_resulting_name(session, name_request, expec
 
 
 def test_check_business_excludes_filing_id_for_non_staff(session):
-    """Test that filing ids are only included for staff users."""
+    """Test that filing ids and the resulting business identifier are only included for staff users."""
     business = factory_business(identifier="BC1234567")
     mock_filing = Mock(
         id="filing-id",
@@ -118,6 +127,10 @@ def test_check_business_excludes_filing_id_for_non_staff(session):
                         "legalName": "NAMED AMALG CORP.",
                         "legalType": "BC"
                     }
+                },
+                "business": {
+                    "identifier": "T987654321",
+                    "legalType": "BC"
                 }
             }
         }
@@ -131,3 +144,5 @@ def test_check_business_excludes_filing_id_for_non_staff(session):
         "amalgamatingBusinesses": [{"identifier": "BC7654321"}],
         "resultingBusinessName": "NAMED AMALG CORP."
     }
+    assert 'filingId' not in warning['data']
+    assert 'resultingBusinessIdentifier' not in warning['data']

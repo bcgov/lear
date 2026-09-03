@@ -69,6 +69,7 @@ def check_amalgamating_business(business: Business, is_staff: bool = False) -> l
             warning["data"]["resultingBusinessName"] = resulting_business_name
         if is_staff:
             warning["data"]["filingId"] = filing.id
+            warning["data"]["resultingBusinessIdentifier"] = filing.filing_json["filing"]["business"]["identifier"]
         result.append(warning)
 
     return result
