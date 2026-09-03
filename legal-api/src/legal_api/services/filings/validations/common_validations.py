@@ -36,7 +36,7 @@ from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, colin, doc_service, flags, namex
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.request_context import get_request_context
-from legal_api.services.utils import get_str
+from legal_api.services.utils import get_date, get_str
 from legal_api.utils.auth import jwt
 
 NO_POSTAL_CODE_COUNTRY_CODES = {
@@ -1769,3 +1769,16 @@ def check_document_email_changes(
         return check_completing_party_permission(msg, filing_type)
 
     return None
+
+def validate_out_date(filing: dict, date_path: str) -> list:
+    """Validate out date."""
+    msg = []
+    out_date = get_date(filing, date_path)
+    label = date_path.split("/")[-2].replace("Out", "").capitalize()
+
+    now = LegislationDatetime.now().date()
+    if out_date > now:
+        msg.append({"error": f"{label} out date must be today or past.",
+                    "path": date_path})
+
+    return msg

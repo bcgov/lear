@@ -20,17 +20,19 @@ from dateutil.relativedelta import relativedelta
 from flask.globals import request_ctx
 from flask_babel import _
 
-from business_model.models import Business, CourtOrder, Filing, PartyRole
+from business_model.models import Business, CourtOrder, Filing, Jurisdiction, PartyRole
+from business_model.models.types.filings import FilingTypes
 from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
 from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, SYSTEM_ROLE, NaicsService
 from legal_api.services.filings.validations.alteration import validate_type_change
-from legal_api.services.filings.validations.amalgamation_out import validate_amalgamation_out_date
 from legal_api.services.filings.validations.common_validations import (
+    is_same_str,
     validate_court_order,
     validate_foreign_jurisdiction,
     validate_name_request,
     validate_offices_addresses,
+    validate_out_date,
     validate_parties_addresses,
     validate_parties_names,
     validate_pdf,
@@ -43,7 +45,6 @@ from legal_api.services.filings.validations.continuation_in import (
     validate_continuation_in_expro_business_in_colin,
     validate_continuation_in_foreign_jurisdiction,
 )
-from legal_api.services.filings.validations.continuation_out import validate_continuation_out_date
 from legal_api.services.filings.validations.incorporation_application import (
     validate_coop_parties_mailing_address,
     validate_roles,
@@ -173,8 +174,8 @@ def _validate_corps_correction(business: Business, filing_dict, legal_type, msg)
     if filing_dict.get("filing", {}).get("correction", {}).get("courtOrder", None):
         msg.extend(court_order_validation(filing_dict))
 
-    msg.extend(_validate_continuation_in_correction(filing_dict, filing_type, legal_type))
-    msg.extend(_validate_out_correction(filing_dict, filing_type))
+    msg.extend(_validate_continuation_in_correction(filing_dict, filing_type, legal_type, business))
+    msg.extend(_validate_out_correction(filing_dict, filing_type, business))
     msg.extend(_validate_amalgamation_correction(filing_dict, filing_type, business))
     msg.extend(_validate_court_orders_correction(filing_dict, business))
 
@@ -208,7 +209,9 @@ def _validate_court_orders_correction(filing_dict, business: Business):
             if next((o for o in court_orders_db if o["filingId"] == corrected_filing_id), None):
                 msg.append({"error": _("Only one court order can be added per filing."), "path": path})
 
-            is_file_or_details_required = (filing_dict["filing"]["correction"]["correctedFilingType"] == "courtOrder")
+            is_file_or_details_required = (
+                filing_dict["filing"]["correction"]["correctedFilingType"] == FilingTypes.COURTORDER
+            )
             new_court_orders.append(order)
         else:
             msg.append({"error": _("Filing Id does not match corrected filing Id."), "path": path})
@@ -245,25 +248,35 @@ def _validate_amalgamation_correction(filing_dict, filing_type, business: Busine
             msg.append({"error": _("Can only correct foreign businesses."), "path": path})
             continue
 
-        msg.extend(
-            validate_foreign_jurisdiction(
-                ting_json["foreignJurisdiction"],
-                f"{path}/foreignJurisdiction",
-                is_region_bc_valid=True,
-                is_region_for_us_required=False
+        # Skip to allow unmodified invalid migrated data
+        if (
+            not is_same_str(ting.foreign_jurisdiction, ting_json["foreignJurisdiction"]["country"]) or
+            not is_same_str(ting.foreign_jurisdiction_region, ting_json["foreignJurisdiction"].get("region"))
+        ):
+            msg.extend(
+                validate_foreign_jurisdiction(
+                    ting_json["foreignJurisdiction"],
+                    f"{path}/foreignJurisdiction",
+                    is_region_for_us_required=False
+                )
             )
-        )
     return msg
 
 
-def _validate_continuation_in_correction(filing_dict, filing_type, legal_type):
+def _validate_continuation_in_correction(filing_dict, filing_type, legal_type, business: Business):
     msg = []
     if continuation_in := filing_dict["filing"][filing_type].get("continuationIn"):
+        jurisdiction = Jurisdiction.get_continuation_in_jurisdiction(business.id)
+        skip_jurisdiction = (  # Skip to allow unmodified invalid migrated data
+            is_same_str(jurisdiction.country, continuation_in.get("country")) and
+            is_same_str(jurisdiction.region, continuation_in.get("region"))
+        )
         msg.extend(validate_continuation_in_foreign_jurisdiction(
             legal_type,
             continuation_in,
             f"/filing/{filing_type}/continuationIn",
-            skip_affidavit=True
+            skip_affidavit=True,
+            skip_jurisdiction=skip_jurisdiction
         ))
         msg.extend(validate_continuation_in_expro_business_in_colin(
             continuation_in.get("expro"),
@@ -273,14 +286,21 @@ def _validate_continuation_in_correction(filing_dict, filing_type, legal_type):
     return msg
 
 
-def _validate_out_correction(filing_dict, filing_type):
+def _validate_out_correction(filing_dict, filing_type, business):
     msg = []
-    if continuation_out := filing_dict["filing"][filing_type].get("continuationOut"):
-        msg.extend(validate_continuation_out_date(filing_dict, f"/filing/{filing_type}/continuationOut/date"))
-        msg.extend(validate_foreign_jurisdiction(continuation_out, f"/filing/{filing_type}/continuationOut"))
-    elif amalgamation_out := filing_dict["filing"][filing_type].get("amalgamationOut"):
-        msg.extend(validate_amalgamation_out_date(filing_dict, f"/filing/{filing_type}/amalgamationOut/date"))
-        msg.extend(validate_foreign_jurisdiction(amalgamation_out, f"/filing/{filing_type}/amalgamationOut"))
+    corrected_filing_type = filing_dict["filing"]["correction"]["correctedFilingType"]
+    if (
+        corrected_filing_type in [FilingTypes.CONTINUATIONOUT, FilingTypes.AMALGAMATIONOUT]
+        and (out := filing_dict["filing"][filing_type].get(corrected_filing_type))
+    ):
+        if (  # Skip to allow unmodified invalid migrated data
+            not is_same_str(business.jurisdiction, out.get("country")) or
+            not is_same_str(business.foreign_jurisdiction_region, out.get("region"))
+        ):
+            msg.extend(validate_foreign_jurisdiction(out, f"/filing/{filing_type}/{corrected_filing_type}"))
+
+        msg.extend(validate_out_date(filing_dict, f"/filing/{filing_type}/{corrected_filing_type}/date"))
+
     return msg
 
 
