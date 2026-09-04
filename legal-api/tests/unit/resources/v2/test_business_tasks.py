@@ -116,6 +116,38 @@ def test_get_tasks_sentinel_founding_date_skips_ar(session, client, jwt):
     assert len(ar_tasks) == 0
 
 
+@pytest.mark.parametrize('test_name, legal_type', [
+    ('railways', Business.LegalTypes.RAILWAYS.value),
+    ('library', Business.LegalTypes.LIBRARY.value),
+    ('cemetery', Business.LegalTypes.CEMETARY.value),
+    ('tramways', Business.LegalTypes.TRAMWAYS.value),
+    ('pension_funded_society', Business.LegalTypes.PENS_FUND_SOC.value),
+    ('society_branch', Business.LegalTypes.SOCIETY_BRANCH.value),
+])
+def test_get_tasks_legacy_migrated_types_no_ar(session, client, jwt, test_name, legal_type):
+    """Assert legacy/mainframe-migrated legal types never get AR todos, even with a real old founding date.
+
+    These legal types don't support annualReport filing (see ANNUAL_REPORT_LEGAL_TYPES in authz.py), so
+    filing is greyed out in the UI regardless. Businesses founded decades ago (e.g. 1940) should not
+    generate a huge backlog of AR todos that can never actually be filed.
+    """
+    identifier = 'BC1234567'
+    factory_business(
+        identifier,
+        founding_date=datetime(1940, 1, 1, tzinfo=UTC),
+        entity_type=legal_type,
+        state=Business.State.ACTIVE,
+    )
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
+    assert rv.status_code == HTTPStatus.OK
+    ar_tasks = [
+        t for t in rv.json.get('tasks')
+        if t.get('task', {}).get('todo', {}).get('header', {}).get('name') == 'annualReport'
+    ]
+    assert len(ar_tasks) == 0
+
+
 def test_get_tasks_next_year(session, client, jwt):
     """Assert that one todo item is returned in the calendar year following incorporation."""
     identifier = 'CP7654321'

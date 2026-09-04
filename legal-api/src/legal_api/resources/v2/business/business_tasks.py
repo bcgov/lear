@@ -97,7 +97,19 @@ def construct_task_list(business: Business):  # noqa: PLR0915
 
         - Corporations must file one AR per year, on or after the anniversary of the founding date
     """
-    entity_types_no_ar = ["SP", "GP"]
+    # Legal types that never get AR todos. SP/GP don't file annual reports at all. The rest are
+    # legacy/mainframe migrated legal types where annualReport filing is disabled/greyed out in the
+    # UI - some of these were founded decades ago (for example,1940s), so without this exclusion they'd
+    # generate a large backlog of AR todos that can never actually be filed.
+    entity_types_no_ar = [
+        "SP", "GP",
+        "RLY",  # Railways
+        "LIB",  # Public Library Association
+        "CEM",  # Cemetery
+        "TMY",  # Tramways
+        "PFS",  # Pension Funded Society
+        "SB",  # Society Branch
+    ]
     tasks = []
     order = 1
 
@@ -151,8 +163,8 @@ def construct_task_list(business: Business):  # noqa: PLR0915
         tasks.append(task)
         order += 1
 
-    # Skip AR todos when founding date is the COLIN year 0001 (for legacy data like railways). Without this,
-    # a sentinel founding_date of 0001-01-01 generates ~2000 AR todos and a multi-MB /tasks payload.
+    # Also skip AR todos when founding date is the COLIN year-1 sentinel/unknown - without this, a
+    # sentinel founding_date of 0001-01-01 generates ~2000 AR todos and a multi-MB /tasks payload.
     unknown_founding_date = (
         not business.founding_date or business.founding_date.year <= 1
     )
