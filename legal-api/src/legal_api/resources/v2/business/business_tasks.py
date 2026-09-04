@@ -98,11 +98,9 @@ def construct_task_list(business: Business):  # noqa: PLR0915
         - Corporations must file one AR per year, on or after the anniversary of the founding date
     """
     # Legal types that never get AR todos. SP/GP don't file annual reports at all. The rest are
-    # legacy/mainframe-migrated legal types where annualReport filing is disabled/greyed out in the
-    # UI - some of these were founded decades ago (e.g. 1940s), so without this exclusion they'd
+    # legacy/mainframe migrated legal types where annualReport filing is disabled/greyed out in the
+    # UI - some of these were founded decades ago (for example,1940s), so without this exclusion they'd
     # generate a large backlog of AR todos that can never actually be filed.
-    # NOTE: there may be other legacy/hidden legal types not yet in this list that also can't file
-    # ARs - add them here as they're identified.
     entity_types_no_ar = [
         "SP", "GP",
         "RLY",  # Railways
