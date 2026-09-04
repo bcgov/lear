@@ -57,8 +57,9 @@ def test_valid_correction(session, app, jwt, test_name, legal_type, identifier, 
     f = copy.deepcopy(correction_filing)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
-    f['filing']['correction']['type'] = "CLIENT"
+    f['filing']['correction']['type'] = "STAFF"
     if test_name == 'COD':
+        f['filing']['correction']['type'] = "CLIENT"
         f['filing']['correction']['relationships'].append({
             'entity': {
                 'givenName': 'Phillip Tandy',
@@ -168,7 +169,7 @@ def test_correction__invalid_director_dates(session, app, jwt):
     f = copy.deepcopy(CORRECTION_COD)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
-    f['filing']['correction']['type'] = "CLIENT"
+    f['filing']['correction']['type'] = "STAFF"
     
     # Set appointment date after cessation date
     f['filing']['correction']['relationships'][0]['roles'][0]['appointmentDate'] = '2025-02-01'
@@ -217,7 +218,7 @@ def test_validate_relationship_date(session, app, jwt, date_label, test_name, of
     f = copy.deepcopy(CORRECTION_COD)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
-    f['filing']['correction']['type'] = "CLIENT"
+    f['filing']['correction']['type'] = "STAFF"
 
 
     # Set appointment date after cessation date

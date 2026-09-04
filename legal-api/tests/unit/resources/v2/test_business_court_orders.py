@@ -27,43 +27,8 @@ from tests.unit.models import factory_business, factory_completed_filing
 from tests.unit.services.utils import create_header
 
 
-def test_get_business_court_orders(app, session, client, jwt, requests_mock):
-    """Assert that business court orders are returned."""
-    identifier = 'CP1234567'
-    business = factory_business(identifier)
-    filing_dict = copy.deepcopy(FILING_TEMPLATE)
-    filing_dict['filing']['header']['name'] = 'courtOrder'
-    filing = factory_completed_filing(business, filing_dict)
-
-    court_order = CourtOrder(
-        file_number='123456',
-        order_date='2021-01-31T00:00:00+00:00',
-        effect_of_order='planOfArrangement',
-        business_id=business.id,
-        filing_id=filing.id
-    )
-    court_order.save()
-
-    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
-
-    rv = client.get(f'/api/v2/businesses/{identifier}/court-orders',
-                    headers=create_header(jwt, [STAFF_ROLE], identifier)
-                    )
-
-    assert rv.status_code == HTTPStatus.OK
-    assert 'courtOrders' in rv.json
-    assert len(rv.json['courtOrders']) == 1
-    assert rv.json['courtOrders'][0]['fileNumber'] == '123456'
-
-
-def test_get_business_court_order_by_id(app, session, client, jwt, requests_mock):
-    """Assert that a specific business court order is returned."""
-    identifier = 'CP1234567'
-    business = factory_business(identifier)
-    filing_dict = copy.deepcopy(FILING_TEMPLATE)
-    filing_dict['filing']['header']['name'] = 'courtOrder'
-    filing = factory_completed_filing(business, filing_dict)
-
+base_url = 'https://LEGAL_API_BASE_URL'
+def create_court_order_and_documents(business, filing):
     court_order = CourtOrder(
         file_number='123456',
         order_date='2021-01-31T00:00:00+00:00',
@@ -94,6 +59,57 @@ def test_get_business_court_order_by_id(app, session, client, jwt, requests_mock
     )
     document.save()
 
+    files = [
+        {
+            'fileName': file_name,
+            'fileKey': file_key,
+            'documentType': DocumentType.COURT_ORDER.value,
+            'url': f'{base_url}/api/v2/businesses/{business.identifier}/filings/{filing.id}/documents/static/{file_key}'
+        },
+        {
+            'fileName': file_name_2,
+            'fileKey': file_key_2,
+            'documentType': DocumentType.SUPPORTING_DOCUMENT.value,
+            'url': f'{base_url}/api/v2/businesses/{business.identifier}/filings/{filing.id}/documents/static/{file_key_2}'
+        }
+    ]
+
+    return court_order, files
+
+
+def test_get_business_court_orders(app, session, client, jwt, requests_mock):
+    """Assert that business court orders are returned."""
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+    filing_dict = copy.deepcopy(FILING_TEMPLATE)
+    filing_dict['filing']['header']['name'] = 'courtOrder'
+    filing = factory_completed_filing(business, filing_dict)
+
+    court_order, files = create_court_order_and_documents(business, filing)
+
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/court-orders',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    )
+
+    assert rv.status_code == HTTPStatus.OK
+    assert 'courtOrders' in rv.json
+    assert len(rv.json['courtOrders']) == 1
+    assert rv.json['courtOrders'][0]['fileNumber'] == '123456'
+    assert rv.json['courtOrders'][0]['files'] == files
+
+
+def test_get_business_court_order_by_id(app, session, client, jwt, requests_mock):
+    """Assert that a specific business court order is returned."""
+    identifier = 'CP1234567'
+    business = factory_business(identifier)
+    filing_dict = copy.deepcopy(FILING_TEMPLATE)
+    filing_dict['filing']['header']['name'] = 'courtOrder'
+    filing = factory_completed_filing(business, filing_dict)
+
+    court_order, files = create_court_order_and_documents(business, filing)
+
     requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
 
     rv = client.get(f'/api/v2/businesses/{identifier}/court-orders/{court_order.id}',
@@ -103,18 +119,7 @@ def test_get_business_court_order_by_id(app, session, client, jwt, requests_mock
     assert rv.status_code == HTTPStatus.OK
     assert 'courtOrder' in rv.json
     assert rv.json['courtOrder']['fileNumber'] == '123456'
-    assert 'files' in rv.json['courtOrder']
-    assert len(rv.json['courtOrder']['files']) == 2
-    assert rv.json['courtOrder']['files'][0]['fileName'] == file_name
-    assert rv.json['courtOrder']['files'][0]['fileKey'] == file_key
-    assert rv.json['courtOrder']['files'][0]['documentType'] == DocumentType.COURT_ORDER.value
-    assert rv.json['courtOrder']['files'][0]['url'].endswith(
-        f'api/v2/businesses/{identifier}/filings/{filing.id}/documents/static/{file_key}')
-    assert rv.json['courtOrder']['files'][1]['fileName'] == file_name_2
-    assert rv.json['courtOrder']['files'][1]['fileKey'] == file_key_2
-    assert rv.json['courtOrder']['files'][1]['documentType'] == DocumentType.SUPPORTING_DOCUMENT.value
-    assert rv.json['courtOrder']['files'][1]['url'].endswith(
-        f'api/v2/businesses/{identifier}/filings/{filing.id}/documents/static/{file_key_2}')
+    assert rv.json['courtOrder']['files'] == files
 
 
 def test_get_business_court_orders_not_found(app, session, client, jwt, requests_mock):

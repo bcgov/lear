@@ -23,7 +23,7 @@ from unittest.mock import patch
 
 import pytest
 
-from business_model.models import AmalgamatingBusiness, Amalgamation, Business, CourtOrder, Resolution
+from business_model.models import AmalgamatingBusiness, Amalgamation, Business, CourtOrder, PartyRole, Resolution
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_common.utils.datetime import datetime as dt, timedelta
 from legal_api.services import NameXService
@@ -41,7 +41,13 @@ from registry_schemas.example_data import (
 )
 
 from tests.unit import MockResponse
-from tests.unit.models import factory_business, factory_completed_filing, factory_jurisdiction
+from tests.unit.models import (
+    factory_address,
+    factory_business,
+    factory_completed_filing,
+    factory_jurisdiction,
+    factory_party_role
+)
 from tests.unit.services.filings.validations import lists_are_equal
 from tests.unit.services.utils import jwt_request_context
 
@@ -900,6 +906,8 @@ def test_validate_continuation_out_date(session, app, jwt, filing_type, test_nam
     """Assert validate continuation_out_date."""
     identifier = 'BC1234567'
     business = factory_business(identifier, entity_type='BC')
+    business.state = Business.State.HISTORICAL.value
+    business.save()
     continuation_out_filing = copy.deepcopy(FILING_HEADER)
     continuation_out_filing['filing'][filing_type] = copy.deepcopy(CONTINUATION_OUT if filing_type == 'continuationOut' else AMALGAMATION_OUT)
     continuation_out_filing['filing']['header']['name'] = filing_type
@@ -950,6 +958,8 @@ def test_validate_continuation_out_foreign_jurisdiction(session, app, jwt, filin
     """Assert validate continuation_out foreign jurisdiction."""
     identifier = 'BC1234567'
     business = factory_business(identifier, entity_type='BC')
+    business.state = Business.State.HISTORICAL.value
+    business.save()
     continuation_out_filing = copy.deepcopy(FILING_HEADER)
     continuation_out_filing['filing'][filing_type] = copy.deepcopy(CONTINUATION_OUT if filing_type == 'continuationOut' else AMALGAMATION_OUT)
     continuation_out_filing['filing']['header']['name'] = filing_type
@@ -1006,6 +1016,7 @@ def test_validate_correction_out_existing_foreign_jurisdiction(mocker, app, sess
     identifier = 'BC1234567'
     business = factory_business(identifier, entity_type='BC')
     business.jurisdiction = 'UNKNOWN'
+    business.state = Business.State.HISTORICAL.value
     business.save()
     continuation_out_filing = copy.deepcopy(FILING_HEADER)
     continuation_out_filing['filing'][filing_type] = copy.deepcopy(CONTINUATION_OUT if filing_type == 'continuationOut' else AMALGAMATION_OUT)
@@ -1467,3 +1478,133 @@ def test_validate_invalid_court_orders(app, jwt, session, test_name, error_msg):
         err = validate(business, filing)
     assert err
     assert err.msg[0]['error'] == error_msg
+
+
+@pytest.mark.parametrize('test_name, err_msg', [
+    ("test_completing_party_staff", "Should not provide completing party when correction type is STAFF"),
+    ("test_multiple_completing_parties", 'Only one completing party is allowed.'),
+    ("test_no_completing_parties", 'Completing party is required.'),
+    ("test_multiple_custodians", "Only one custodian is allowed."),
+    ("test_existing_custodian", "Custodian already exists for this business, cannot create another custodian.")
+])
+def test_validate_correction_relationships_roles(session, app, jwt, test_name, err_msg):
+    """Test valid comment only IA validation."""
+    # setup
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    business.state = Business.State.HISTORICAL
+    business.save()
+
+    if test_name == "test_existing_custodian":
+        custodian = factory_party_role(
+            delivery_address=factory_address('delivery street', 'delivery'),
+            mailing_address=factory_address('mailing street', 'mailing'),
+            appointment_date='2026-01-01',
+            cessation_date=None,
+            officer={
+                'firstName': 'first',
+                'lastName': 'last',
+                'middleInitial': 'mid',
+                'partyType': 'person',
+                'organizationName': ''
+            },
+            role_type=PartyRole.RoleTypes.CUSTODIAN
+        )
+
+        custodian.business_id = business.id
+        session.add(custodian)
+        session.commit()
+
+    corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    filing['filing']['business']['legalType'] = business.legal_type
+    del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['parties']
+
+    if test_name == "test_completing_party_staff":
+        filing['filing']['correction']['type'] = 'STAFF'
+    filing['filing']['correction']['relationships'] = []
+    if test_name != "test_no_completing_parties":
+        filing['filing']['correction']['relationships'].append({
+            'entity': {
+                'givenName': 'Joe',
+                'familyName': 'Swanson',
+            },
+            'mailingAddress': {
+                'streetAddress': 'mailing_address - address line one',
+                'streetAddressAdditional': '',
+                'addressCity': 'mailing_address city',
+                'addressCountry': 'CA',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC'
+            },
+            'deliveryAddress': {
+                'streetAddress': 'delivery_address - address line one',
+                'streetAddressAdditional': '',
+                'addressCity': 'delivery_address city',
+                'addressCountry': 'CA',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC'
+            },
+            'roles': [
+                {
+                    'roleType': 'Completing Party',
+                    'appointmentDate': '2018-01-01'
+
+                }
+            ]
+        })
+
+        if test_name == "test_multiple_completing_parties":
+            filing['filing']['correction']['relationships'].append(filing['filing']['correction']['relationships'][0])
+
+    if "custodian" in test_name or test_name == "test_no_completing_parties":
+        custodian_role = {
+            'entity': {
+                'givenName': 'first',
+                'familyName': 'last',
+                'email': 'test@test.com'
+            },
+            'mailingAddress': {
+                'streetAddress': 'mailing_address - address line one',
+                'streetAddressAdditional': '',
+                'addressCity': 'mailing_address city',
+                'addressCountry': 'CA',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC'
+            },
+            'deliveryAddress': {
+                'streetAddress': 'delivery_address - address line one',
+                'streetAddressAdditional': '',
+                'addressCity': 'delivery_address city',
+                'addressCountry': 'CA',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC'
+            },
+            'roles': [
+                {
+                    'roleType': 'Custodian',
+                    'appointmentDate': '2018-01-01'
+                }
+            ]
+        }
+        if test_name == "test_multiple_custodians":
+            filing['filing']['correction']['relationships'].append(custodian_role)
+        # elif test_name == "test_existing_custodian":
+        #     custodian_role["entity"]["identifier"] = str(custodian.party.id)
+        filing['filing']['correction']['relationships'].append(custodian_role)
+
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        if err := validate(business, filing):
+            print(err.msg)
+
+    if not err_msg:
+        assert None is err
+    else:
+        assert err
+        assert HTTPStatus.BAD_REQUEST == err.code
+        assert err.msg[0]['error'] == err_msg
