@@ -215,7 +215,20 @@ def _validate_corps_correction_active(business: Business, filing_dict, legal_typ
         else:
             msg.extend(validate_type_change(filing_dict, business, "/filing/correction/newLegalType"))
     if filing_dict.get("filing", {}).get("correction", {}).get("nameRequest", {}).get("nrNumber", None):
-        msg.extend(validate_name_request(filing_dict, legal_type, filing_type))
+        msg.extend(validate_name_request(filing_dict, new_legal_type or legal_type, filing_type))
+    else:
+        valid_names = [business.legal_name]
+        if (new_legal_type and
+                (new_numbered_name := Business.generate_numbered_legal_name(new_legal_type, business.identifier))):
+            # if existing legal_name is a numbered name and if type has changed
+            # then the legal name get updated according to the new legal type
+            valid_names.append(new_numbered_name)
+
+        nr_legal_name_path = f"/filing/{filing_type}/nameRequest/legalName"
+        new_legal_name = get_str(filing_dict, nr_legal_name_path)
+        if new_legal_name and new_legal_name not in valid_names:
+            msg.append({"error": _("Unexpected legal name."), "path": nr_legal_name_path})
+
     if filing_dict.get("filing", {}).get("correction", {}).get("offices", None):
         msg.extend(validate_corp_offices(filing_dict, legal_type, filing_type))
     if filing_dict.get("filing", {}).get("correction", {}).get("parties", None):
