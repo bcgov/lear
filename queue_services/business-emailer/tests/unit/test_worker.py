@@ -296,7 +296,7 @@ def test_process_ar_reminder_email(app, session):
                 )
 
                 call_args = mock_send_email.call_args
-                assert call_args[0][0]['content']['subject'] == 'test business 2021 Annual Report Reminder'
+                assert call_args[0][0]['content']['subject'] == 'test business - Annual Report Reminder'
                 assert call_args[0][0]['recipients'] == CONTACT_POINT
                 assert call_args[0][0]['content']['body']
                 assert 'Dye & Durham' not in call_args[0][0]['content']['body']

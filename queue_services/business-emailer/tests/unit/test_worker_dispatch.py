@@ -35,7 +35,6 @@ from business_emailer.email_processors import (
     nr_notification,
 )
 from business_emailer.resources import business_emailer as worker
-from business_emailer.services import flags
 
 
 STUB_EMAIL = {
@@ -163,25 +162,14 @@ def test_mras_dispatch(app, session, mocker, mock_send_email, etype):
     mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
 
 
-def test_ar_reminder_dispatch_with_flag_on(app, session, mocker, mock_send_email):
-    mocker.patch.object(flags, "is_on", return_value=True)
+def test_ar_reminder_dispatch(app, session, mocker, mock_send_email):
     mock_process = mocker.patch.object(ar_reminder_notification, "process", return_value=STUB_EMAIL)
     email = {"type": "annualReport", "option": "reminder"}
 
     worker.process_email(_ce({"email": email}))
 
-    mock_process.assert_called_once_with(email, TOKEN, True)
+    mock_process.assert_called_once_with(email, TOKEN)
     mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
-def test_ar_reminder_dispatch_with_flag_off(app, session, mocker, mock_send_email):
-    mocker.patch.object(flags, "is_on", return_value=False)
-    mock_process = mocker.patch.object(ar_reminder_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "annualReport", "option": "reminder"}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN, False)
 
 
 def test_agm_location_change_completed_dispatches(app, session, mocker, mock_send_email):
