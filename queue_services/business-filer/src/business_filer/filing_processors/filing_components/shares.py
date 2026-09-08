@@ -34,8 +34,9 @@
 """Manages the share structure for a business."""
 from __future__ import annotations
 
-from business_model.models import Business, Resolution, ShareClass, ShareSeries
 from datetime import date
+
+from business_model.models import Business, Resolution, ShareClass, ShareSeries
 
 
 def update_resolution_dates(business: Business, share_structure: dict) -> None:
