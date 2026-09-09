@@ -34,69 +34,67 @@
 """Manages the share structure for a business."""
 from __future__ import annotations
 
+from datetime import date
+
 from business_model.models import Business, Resolution, ShareClass, ShareSeries
-from dateutil.parser import parse
 
 
-def update_resolution_dates(business: Business, share_structure: dict) -> list | None:
+def update_resolution_dates(business: Business, share_structure: dict) -> None:
     """Update the business resolution dates from a share structure."""
     if not business or not share_structure:
         # if nothing is passed in, we don't care and it's not an error
-        return None
+        return
 
-    err = []
+    if "resolutionDates" in share_structure:
+        resolution_dates = share_structure.get("resolutionDates", [])
+        # This will fail to remove resolutions if the resolutionDates list is empty
+        # TODO: Update alteration and move to new correction to use new format, then update this code
+        # Ticket: https://app.zenhub.com/workspaces/colin-egress-team-6904d552be2bb0000fa13ad6/issues/gh/bcgov/entity/34841
+        if len(resolution_dates) > 0 and isinstance(resolution_dates[0], dict):
+            for current_resolution in business.resolutions.all():
+                if not next((x for x in resolution_dates if x.get("id") == current_resolution.id), None):
+                    business.resolutions.remove(current_resolution)
 
-    if resolution_dates := share_structure.get("resolutionDates"):
-        for resolution_dt in resolution_dates:
-            try:
-                d = Resolution(
-                    resolution_date=parse(resolution_dt).date(),
+            for resolution_date in resolution_dates:
+                if (
+                    (resolution_id := resolution_date.get("id")) and
+                    (resolution := business.resolutions.filter_by(id=resolution_id).one_or_none())
+                ):
+                    resolution.resolution_date = date.fromisoformat(resolution_date["date"])
+                    business.resolutions.append(resolution)
+                else:
+                    resolution = Resolution(
+                        resolution_date=date.fromisoformat(resolution_date["date"]),
+                        resolution_type=Resolution.ResolutionType.SPECIAL.value
+                    )
+                    business.resolutions.append(resolution)
+        else:
+            # Kept for backward compatibility (existing alteration and correction filings)
+            for resolution_dt in resolution_dates:
+                resolution = Resolution(
+                    resolution_date=date.fromisoformat(resolution_dt),
                     resolution_type=Resolution.ResolutionType.SPECIAL.value
                 )
-                business.resolutions.append(d)
-            except (ValueError, OverflowError):
-                err.append(
-                    {"error_code": "FILER_INVALID_RESOLUTION_DATE",
-                     "error_message": f"Filer: invalid resolution date:'{resolution_dt}'"}
-                )
+                business.resolutions.append(resolution)
 
-    return err
 
-def update_share_structure(business: Business, share_structure: dict) -> list | None:
+def update_share_structure(business: Business, share_structure: dict) -> None:
     """Manage the share structure for a business.
 
     Assumption: The structure has already been validated, upon submission.
 
     Other errors are recorded and will be managed out of band.
     """
-    err = []
-
-    err = update_resolution_dates(business, share_structure)
+    update_resolution_dates(business, share_structure)
 
     if share_classes := share_structure.get("shareClasses"):
-        try:
-            delete_existing_shares(business)
-        except:
-            err.append(
-                {"error_code": "FILER_UNABLE_TO_DELETE_SHARES",
-                 "error_message": f"Filer: unable to delete shares for :'{business.identifier}'"}
-            )
-            # we're FUBAR, do not load the new shares
-            return err
+        delete_existing_shares(business)
+        for share_class_info in share_classes:
+            share_class = create_share_class(share_class_info)
+            business.share_classes.append(share_class)
 
-        try:
-            for share_class_info in share_classes:
-                share_class = create_share_class(share_class_info)
-                business.share_classes.append(share_class)
-        except KeyError:
-            err.append(
-                {"error_code": "FILER_UNABLE_TO_SAVE_SHARES",
-                 "error_message": f"Filer: unable to save new shares for :'{business.identifier}'"}
-            )
 
-    return err
-
-def update_share_structure_correction(business: Business, share_structure: dict) -> list | None:
+def update_share_structure_correction(business: Business, share_structure: dict) -> None:
     """Manage the share structure for a business.
 
     Assumption: The structure has already been validated, upon submission.
@@ -105,9 +103,9 @@ def update_share_structure_correction(business: Business, share_structure: dict)
     """
     if not business or not share_structure:
         # if nothing is passed in, we don't care and it's not an error
-        return None
+        return
 
-    err = update_resolution_dates(business, share_structure)
+    update_resolution_dates(business, share_structure)
 
     if share_classes := share_structure.get("shareClasses"):
         # Entries in json and not in db
@@ -116,17 +114,9 @@ def update_share_structure_correction(business: Business, share_structure: dict)
         # Update existing ones in both db and json, append the ones only in json into exclusion entires
         update_business_share_class(share_classes, business, exclusion_entries)
 
-        try:
-            for share_class_info in exclusion_entries:
-                share_class = create_share_class(share_class_info)
-                business.share_classes.append(share_class)
-        except KeyError:
-            err.append(
-                {"error_code": "FILER_UNABLE_TO_SAVE_SHARES",
-                 "error_message": f"Filer: unable to save new shares for :'{business.identifier}'"}
-            )
-
-    return err
+        for share_class_info in exclusion_entries:
+            share_class = create_share_class(share_class_info)
+            business.share_classes.append(share_class)
 
 
 def delete_existing_shares(business: Business):

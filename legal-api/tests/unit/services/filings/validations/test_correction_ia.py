@@ -296,6 +296,7 @@ def test_correction_share_class_series_validation(session, app, jwt, legal_type,
     filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
     filing['filing']['business']['legalType'] = legal_type
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
 
     if legal_type == 'CC':
         director = copy.deepcopy(filing['filing']['correction']['parties'][0])
@@ -367,6 +368,7 @@ def test_correction_resolution_date_old(session, app, jwt, test_name, has_rights
     filing['filing']['header']['identifier'] = identifier
     filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
 
     # Share structure setup
     filing['filing']['correction']['shareStructure'] = copy.deepcopy(
@@ -447,6 +449,7 @@ def test_correction_resolution_date(session, app, jwt, test_name, has_rights_or_
     filing['filing']['header']['identifier'] = identifier
     filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
 
     # Share structure setup
     filing['filing']['correction']['shareStructure'] = copy.deepcopy(
@@ -673,6 +676,7 @@ def test_validate_correction_continuation_in_incorporation_date(mocker, app, ses
     }
     filing['filing']['business']['legalType'] = 'C'
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
     factory_jurisdiction(
         business_id=business.id,
         filing_id=corrected_filing.id,
@@ -774,6 +778,7 @@ def test_validate_continuation_in_field_lengths(mocker, app, session, jwt,
     }
     filing['filing']['business']['legalType'] = 'C'
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
 
     factory_jurisdiction(
         business_id=business.id,
@@ -822,6 +827,7 @@ def test_validate_continuation_in_expro_founding_date_match(mocker, app, session
     }
     filing['filing']['business']['legalType'] = 'C'
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
     factory_jurisdiction(
         business_id=business.id,
         filing_id=corrected_filing.id,
@@ -872,6 +878,7 @@ def test_validate_correction_continuation_in_existing_foreign_jurisdiction(mocke
     }
     filing['filing']['business']['legalType'] = 'C'
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
     factory_jurisdiction(
         business_id=business.id,
         filing_id=corrected_filing.id,
@@ -1065,7 +1072,7 @@ def test_validate_correction_amalgamation_ting_not_found(mocker, app, session, j
     filing['filing']['correction']['amalgamation'] = data
     filing['filing']['business']['legalType'] = 'BC'
     del filing['filing']['correction']['commentOnly']
-
+    del filing['filing']['correction']['nameRequest']
 
     with jwt_request_context(app, jwt, [BASIC_USER]):
         err = validate(business, filing)
@@ -1110,6 +1117,7 @@ def test_validate_correction_amalgamation_foreign_jurisdiction(mocker, app, sess
     filing['filing']['correction']['amalgamation'] = data
     filing['filing']['business']['legalType'] = 'BC'
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
 
     with jwt_request_context(app, jwt, [BASIC_USER]):
         err = validate(business, filing)
@@ -1149,6 +1157,7 @@ def test_validate_correction_amalgamation_existing_foreign_jurisdiction(mocker, 
     filing['filing']['correction']['amalgamation'] = data
     filing['filing']['business']['legalType'] = 'BC'
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
 
     with jwt_request_context(app, jwt, [BASIC_USER]):
         err = validate(business, filing)
@@ -1181,7 +1190,7 @@ def test_validate_correction_amalgamation_ting_invalid(mocker, app, session, jwt
     filing['filing']['correction']['amalgamation'] = data
     filing['filing']['business']['legalType'] = 'BC'
     del filing['filing']['correction']['commentOnly']
-
+    del filing['filing']['correction']['nameRequest']
 
     with jwt_request_context(app, jwt, [BASIC_USER]):
         err = validate(business, filing)
@@ -1224,6 +1233,7 @@ def test_validate_correction_amalgamation_colin_ting(mocker, app, session, jwt):
     filing['filing']['correction']['amalgamation'] = data
     filing['filing']['business']['legalType'] = 'BC'
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
 
     with jwt_request_context(app, jwt, [BASIC_USER]):
         err = validate(business, filing)

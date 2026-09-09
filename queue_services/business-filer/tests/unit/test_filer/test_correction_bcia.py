@@ -616,7 +616,7 @@ def tests_filer_director_name_and_address_change(app, session, mocker, test_name
         assert deleted_role.cessation_date is not None
 
 
-
+@pytest.mark.parametrize('value_type', ['string', 'object'])
 @pytest.mark.parametrize(
     'test_name, legal_type',
     [
@@ -642,29 +642,39 @@ def tests_filer_director_name_and_address_change(app, session, mocker, test_name
         ('ulc_delete_all_resolution_dates', 'ULC'),
     ]
 )
-def tests_filer_resolution_dates_change(app, session, mocker, test_name, legal_type):
+def tests_filer_resolution_dates_change(app, session, mocker, test_name, legal_type, value_type):
     """Assert the worker processes the court order correctly."""
     identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_entity(identifier, legal_type, 'Test Entity')
     create_share_class(business, include_resolution_date=True)
     business_id = business.id
 
-    resolution_dates_json1 = BC_CORRECTION['filing']['correction']['shareStructure']['resolutionDates'][0]
-    resolution_dates_json2 = BC_CORRECTION['filing']['correction']['shareStructure']['resolutionDates'][1]
-
     filing = copy.deepcopy(BC_CORRECTION)
+    resolution_dates_json1 = filing['filing']['correction']['shareStructure']['resolutionDates'][0]
+    resolution_dates_json2 = filing['filing']['correction']['shareStructure']['resolutionDates'][1]
+    if value_type == 'object':
+        filing['filing']['correction']['shareStructure']['resolutionDates'][0] = {'date': resolution_dates_json1}
+        filing['filing']['correction']['shareStructure']['resolutionDates'][1] = {'date': resolution_dates_json2}
+
 
     corrected_filing = factory_completed_filing(business, BC_CORRECTION_APPLICATION)
     filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
     filing['filing']['correction']['contactPoint'] = CONTACT_POINT
 
-    existing_resolution_date = business.resolutions[0].resolution_date.strftime('%Y-%m-%d')
-    filing['filing']['correction']['shareStructure']['resolutionDates'].insert(0, existing_resolution_date)
+    existing_resolution = business.resolutions[0]
+    existing_resolution_date = existing_resolution.resolution_date.strftime('%Y-%m-%d')
+    if value_type == 'string':
+        filing['filing']['correction']['shareStructure']['resolutionDates'].insert(0, existing_resolution_date)
+    else:
+        filing['filing']['correction']['shareStructure']['resolutionDates'].insert(0, {'date': existing_resolution_date, 'id': existing_resolution.id})
 
     if 'add_resolution_dates' in test_name:
         new_resolution_dates = '2022-09-01'
-        filing['filing']['correction']['shareStructure']['resolutionDates'].append(new_resolution_dates)
+        if value_type == 'string':
+            filing['filing']['correction']['shareStructure']['resolutionDates'].append(new_resolution_dates)
+        else:
+            filing['filing']['correction']['shareStructure']['resolutionDates'].append({'date': new_resolution_dates})
     elif 'delete_resolution_dates' in test_name:
         del filing['filing']['correction']['shareStructure']['resolutionDates'][0]
     elif 'delete_all_resolution_dates' in test_name:
@@ -676,11 +686,17 @@ def tests_filer_resolution_dates_change(app, session, mocker, test_name, legal_t
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
     if 'update_existing_resolution_dates' in test_name or 'update_with_new_resolution_dates' in test_name:
-        updated_resolution_dates = '2022-09-01'
+        updated_resolution_date = '2022-09-01'
         if 'update_existing_resolution_dates' in test_name:
-            filing['filing']['correction']['shareStructure']['resolutionDates'][0] = updated_resolution_dates
+            if value_type == 'string':
+                filing['filing']['correction']['shareStructure']['resolutionDates'][0] = updated_resolution_date
+            else:
+                filing['filing']['correction']['shareStructure']['resolutionDates'][0] = {'date': updated_resolution_date, 'id': existing_resolution.id}
         else:
-            filing['filing']['correction']['shareStructure']['resolutionDates'] = [updated_resolution_dates]
+            if value_type == 'string':
+                filing['filing']['correction']['shareStructure']['resolutionDates'] = [updated_resolution_date]
+            else:
+                filing['filing']['correction']['shareStructure']['resolutionDates'] = [{'date': updated_resolution_date}]
         payment_id = str(random.SystemRandom().getrandbits(0x58))
         filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
@@ -712,24 +728,36 @@ def tests_filer_resolution_dates_change(app, session, mocker, test_name, legal_t
 
     elif 'update_existing_resolution_dates' in test_name:
         assert parse(resolution_dates_json1).date() in resolution_dates
-        assert parse(updated_resolution_dates).date() in resolution_dates
-        # existing date should NOT be removed in correction
-        assert parse(existing_resolution_date).date() in resolution_dates
+        assert parse(updated_resolution_date).date() in resolution_dates
+        if value_type == 'string':
+            # existing date should NOT be removed in correction
+            assert parse(existing_resolution_date).date() in resolution_dates
+        else:
+            assert parse(existing_resolution_date).date() not in resolution_dates
 
     elif 'update_with_new_resolution_dates' in test_name:
-        assert parse(updated_resolution_dates).date() in resolution_dates
-        # history preserved
-        assert parse(existing_resolution_date).date() in resolution_dates
+        assert parse(updated_resolution_date).date() in resolution_dates
+        if value_type == 'string':
+            # history preserved
+            assert parse(existing_resolution_date).date() in resolution_dates
+        else:
+            assert parse(existing_resolution_date).date() not in resolution_dates
 
     elif 'delete_resolution_dates' in test_name:
-        # corrections should not delete historical resolution dates
-        assert parse(existing_resolution_date).date() in resolution_dates
+        if value_type == 'string':
+            # existing date should NOT be removed in correction
+            assert parse(existing_resolution_date).date() in resolution_dates
+        else:
+            assert parse(existing_resolution_date).date() not in resolution_dates
         assert parse(resolution_dates_json1).date() in resolution_dates
         assert parse(resolution_dates_json2).date() in resolution_dates
 
     elif 'delete_all_resolution_dates' in test_name:
-        # empty list should not wipe history
-        assert parse(existing_resolution_date).date() in resolution_dates
+        if value_type == 'string':
+            # empty list should not wipe history
+            assert parse(existing_resolution_date).date() in resolution_dates
+        # else: # Uncomment when we update the code
+        #     assert parse(existing_resolution_date).date() not in resolution_dates
 
 
 
@@ -932,3 +960,45 @@ def test_comment_only_correction(app, session, mocker, test_name):
     filing_comments = final_filing.comments.all()
     assert len(filing_comments) == 1
     assert filing_comments[0].comment == filing['filing']['correction']['comment']
+
+
+@pytest.mark.parametrize(
+    'legal_type, new_legal_type',
+    [
+        (Business.LegalTypes.COMP.value, Business.LegalTypes.BCOMP.value),
+        (Business.LegalTypes.BCOMP.value, Business.LegalTypes.COMP.value)
+    ]
+)
+def test_new_legal_type(app, session, mocker, legal_type, new_legal_type):
+    """Assert that the business legal type is correctly set during correction."""
+    identifier = f'BC{random.randint(1000000, 9999999)}'
+    business = create_entity(identifier, legal_type, 'Test Entity')
+
+    filing = copy.deepcopy(BC_CORRECTION)
+
+    corrected_filing = factory_completed_filing(business, BC_CORRECTION_APPLICATION)
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    filing['filing']['correction']['contactPoint'] = CONTACT_POINT
+    del filing['filing']['correction']['nameRequest']
+    filing['filing']['correction']['newLegalType'] = new_legal_type
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
+
+    filing_msg = FilingMessage(filing_identifier=filing_id)
+
+    # mock out the email sender and event publishing
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
+    mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
+                 return_value=None)
+    mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
+
+    # Test
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        process_filing(filing_msg)
+
+    # Check outcome
+    assert business.legal_type == new_legal_type

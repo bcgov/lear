@@ -35,7 +35,8 @@
 import random
 
 import pytest
-from business_model.models import Business
+from datetime import date
+from business_model.models import Business, Resolution
 from sql_versioning import version_class
 
 from business_filer.filing_processors.filing_components import shares
@@ -47,11 +48,13 @@ def clean_business():
     pass
 
 @pytest.mark.parametrize('test_name,resolution_dates,expected_error', [
-    ('valid resolution_dates', [], None),
-    ('valid resolution_dates', ['2020-05-23'], None),
-    ('valid resolution_dates', ['2020-05-23', '2020-06-01'], None),
-    ('invalid resolution_dates', ['2020-05-23', 'error'],
-     [{'error_code': 'FILER_INVALID_RESOLUTION_DATE', 'error_message': "Filer: invalid resolution date:'error'"}])
+    ('valid_resolution_dates', [], None),
+    ('valid_resolution_dates_string', ['2020-05-23'], None),
+    ('valid_multiple_resolution_dates_string', ['2020-05-23', '2020-06-01'], None),
+    ('invalid_resolution_dates_string', ['2020-05-23', 'error'], "Invalid isoformat string: 'error'"),
+    ('valid_resolution_dates_obj', [{'date':'2020-05-23'}], None),
+    ('valid_multiple_resolution_dates_obj', [{'date':'2020-05-23'},{'date':'2020-06-01'}], None),
+    ('invalid_resolution_dates_obj', [{'date':'error'}], "Invalid isoformat string: 'error'")
 ])
 def test_manage_share_structure__resolution_dates(
         app, session,
@@ -63,18 +66,34 @@ def test_manage_share_structure__resolution_dates(
     identifier = f'BC{random.randint(1000000, 9999999)}'
     business = Business(identifier=identifier)
     business.save()
-    err = shares.update_share_structure(business, new_data['shareStructure'])
-    business.save()
+    if test_name == "valid_multiple_resolution_dates":
+        resolution = Resolution(
+            resolution_date=date.fromisoformat('2023-01-01'),
+            resolution_type=Resolution.ResolutionType.SPECIAL.value
+        )
+        business.resolutions.append(resolution)
+        business.save()
+        resolution_dates[0]['id'] = resolution.id
+    try:
+        shares.update_share_structure(business, new_data['shareStructure'])
+        business.save()
+        if 'id' in resolution_dates[0]:
+            del resolution_dates[0]['id']
+    except Exception as ex:
+        err = ex
 
-    check_business = Business.find_by_internal_id(business.id)
-    check_resolution = check_business.resolutions.all()
-
-    if err:
-        assert err == expected_error
+    if expected_error:
+        assert str(err) == expected_error
     else:
+        check_business = Business.find_by_internal_id(business.id)
+        check_resolution = check_business.resolutions.all()
         assert len(check_resolution) == len(resolution_dates)
-        assert set(resolution_dates) == \
-            set([x.resolution_date.isoformat() for x in check_resolution])
+        if test_name.endswith('_obj'):
+            assert set([d['date'] for d in resolution_dates]) == \
+                set([x.resolution_date.isoformat() for x in check_resolution])
+        else:
+            assert set(resolution_dates) == \
+                set([x.resolution_date.isoformat() for x in check_resolution])
 
 
 SINGLE_SHARE_CLASS = {
@@ -110,7 +129,7 @@ def test_manage_share_structure__share_classes(
     """Assert that the corp share classes gets set."""
     business = Business()
     business.save()
-    err = shares.update_share_structure(business, share_structure['shareStructure'])
+    shares.update_share_structure(business, share_structure['shareStructure'])
     business.save()
 
     check_business = Business.find_by_internal_id(business.id)
@@ -122,7 +141,6 @@ def test_manage_share_structure__share_classes(
 
     stripped_dict = strip_keys_from_dict(check_share_structure, ['id'])
     assert stripped_dict == share_structure
-    assert not err
 
 
 def test_manage_share_structure__create_persists_currency_additional(app, session):
@@ -144,10 +162,9 @@ def test_manage_share_structure__create_persists_currency_additional(app, sessio
     business = Business()
     business.save()
 
-    err = shares.update_share_structure(business, share_structure)
+    shares.update_share_structure(business, share_structure)
     business.save()
 
-    assert not err
     check_business = Business.find_by_internal_id(business.id)
     persisted = check_business.share_classes.all()
     assert len(persisted) == 1
@@ -193,10 +210,9 @@ def test_manage_share_structure_correction__update_clears_currency_additional(ap
         }]
     }
 
-    err = shares.update_share_structure_correction(business, share_structure)
+    shares.update_share_structure_correction(business, share_structure)
     business.save()
 
-    assert not err
     updated = ShareClass.find_by_share_class_id(existing_id)
     assert updated.currency == "CAD"
     assert updated.currency_additional is None
@@ -240,10 +256,9 @@ def test_manage_share_structure_correction__update_preserves_currency_additional
         }]
     }
 
-    err = shares.update_share_structure_correction(business, share_structure)
+    shares.update_share_structure_correction(business, share_structure)
     business.save()
 
-    assert not err
     updated = ShareClass.find_by_share_class_id(existing_id)
     assert updated.name == "Class A Renamed"
     assert updated.currency == "OTHER"
