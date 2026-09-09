@@ -314,7 +314,9 @@ def process(email_info: dict, token: str) -> dict | None:
 
     # assign subject
     subject = get_subject(is_future_effective_paid, business_name, legal_type, filing_name, filing_name_short)
-    if filing_type in ["consentAmalgamationOut", "consentContinuationOut"]:
+    if filing_type == "agmLocationChange":
+        subject = f"{business_name} - {filing_name} approved"
+    elif filing_type in ["consentAmalgamationOut", "consentContinuationOut"]:
         subject = f"{business_name} - {filing_name_short} Granted"
     elif filing_type == "changeOfReceivers":
         subject = f"{business_name} - Confirmation of Receiver Change"

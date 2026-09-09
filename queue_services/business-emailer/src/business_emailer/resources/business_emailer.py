@@ -44,7 +44,6 @@ from business_account import AccountService
 from business_emailer.email_processors import (
     affiliation_notification,
     agm_extension_notification,
-    agm_location_change_notification,
     amalgamation_out_notification,
     ar_reminder_notification,
     bn_notification,
@@ -219,9 +218,6 @@ def process_email(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, t
             send_email(email, token)
         elif etype == "annualReport" and option == "reminder":
             email = ar_reminder_notification.process(email_msg["email"], token)
-            send_email(email, token)
-        elif etype == "agmLocationChange" and option == Filing.Status.COMPLETED.value:
-            email = agm_location_change_notification.process(email_msg["email"], token)
             send_email(email, token)
         elif etype == "agmExtension" and option == Filing.Status.COMPLETED.value:
             email = agm_extension_notification.process(email_msg["email"], token)
