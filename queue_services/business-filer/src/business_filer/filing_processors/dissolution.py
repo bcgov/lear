@@ -40,7 +40,8 @@ from business_model.models import BatchProcessing, Business, Document, DocumentT
 from datedelta import datedelta
 from flask import current_app
 
-from business_filer.common.datetime import datetime, timezone
+from datetime import timezone
+from business_common.utils import datetime
 from business_filer.common.filing import DissolutionTypes
 from business_filer.common.legislation_datetime import LegislationDatetime
 from business_filer.exceptions import QueueException
