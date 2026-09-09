@@ -185,7 +185,7 @@ def get_unprocessed_corps_query(flow_name, config, batch_size, *, include_accoun
            AND cp.environment = '{environment}'
         WHERE 1=1
         {where_clause}
-            and c.corp_num = 'BC1435838' -- state changes a lot
+            and c.corp_num = 'BC0000621' -- state changes a lot
         --    and cs.state_type_cd = 'ACT'
         AND c.corp_type_cd IN {corp_type_filter}
         AND cp.corp_num IS NULL
