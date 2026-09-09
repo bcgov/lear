@@ -14,9 +14,9 @@
 """File processing rules and actions for the continuation in of a business."""
 import copy
 
+from business_common.utils import LegislationDatetime
 from business_model.models import Business, Document, DocumentType, Filing, Jurisdiction
 
-from business_common.utils import LegislationDatetime
 from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import aliases, business_info, documents, filings, shares

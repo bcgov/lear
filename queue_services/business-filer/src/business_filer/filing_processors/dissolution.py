@@ -36,14 +36,12 @@ from contextlib import suppress
 from datetime import UTC
 
 import dpath
+from business_common.utils import LegislationDatetime, datetime
 from business_model.models import BatchProcessing, Business, Document, DocumentType, Filing, db
 from datedelta import datedelta
 from flask import current_app
 
-from datetime import timezone
-from business_common.utils import datetime
 from business_filer.common.filing import DissolutionTypes
-from business_common.utils import LegislationDatetime
 from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import filings
@@ -111,7 +109,7 @@ def process(business: Business, filing: dict, filing_rec: Filing, filing_meta: F
         for batch_processing in batch_processings:
             if batch_processing.status == BatchProcessing.BatchProcessingStatus.QUEUED:
                 batch_processing.status = BatchProcessing.BatchProcessingStatus.COMPLETED
-                batch_processing.last_modified = datetime.now(timezone.utc)
+                batch_processing.last_modified = datetime.now(UTC)
                 batch_processing.save()
 
 

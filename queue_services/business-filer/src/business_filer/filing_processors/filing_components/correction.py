@@ -37,9 +37,9 @@ import datetime
 from contextlib import suppress
 
 import dpath
+from business_common.utils import LegislationDatetime
 from business_model.models import Address, Business, Filing, Party, PartyRole
 
-from business_common.utils import LegislationDatetime
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import (
     aliases,
