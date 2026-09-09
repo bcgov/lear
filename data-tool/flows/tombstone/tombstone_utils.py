@@ -899,6 +899,18 @@ def get_business_update_value(key: str, effective_date: str, trigger_date: str, 
     return value
 
 
+def update_court_order(meta_data: dict, filing_data: dict) -> None:
+    court_order_num = filing_data.get('f_court_order_num')
+    if not court_order_num:
+        return
+
+    meta_data['court_order'] = meta_data.get('court_order', {})
+    meta_data['court_order']['fileNumber'] = court_order_num
+
+    if effect_of_order := filing_data.get('f_arrangement_ind'):
+        meta_data['court_order']['effectOfOrder'] = effect_of_order
+
+
 def build_filing_json_meta_data(raw_filing_type: str,
                                 filing_type: str,
                                 filing_subtype: str,
@@ -1047,6 +1059,9 @@ def build_filing_json_meta_data(raw_filing_type: str,
             **meta_data,
             'withdrawnDate': withdrawn_ts.isoformat()
         }
+
+    # populate court order info in meta_data if available
+    update_court_order(meta_data, filing_data)
 
     # TODO: populate meta_data for correction to display correct filing name
 
