@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Legislation Date time utilities."""
-from datetime import UTC, date, timedelta
+from datetime import date, timedelta
 
 import datedelta
 import pytz
@@ -153,4 +153,4 @@ class LegislationDatetime:
     def is_future(date_string: str) -> bool:
         """Return the boolean for whether the date string is in the future."""
         effective_date = datetime.fromisoformat(date_string)
-        return effective_date > datetime.now(UTC).replace(tzinfo=UTC)
+        return effective_date > datetime.utcnow()
