@@ -370,7 +370,7 @@ def format_resolutions_data(data: dict, config=None) -> list[dict]:
     return formatted_resolutions
 
 
-def format_court_order_data(data: dict, event_id: Decimal) -> dict:
+def format_court_order_data(data: dict, event_id: Decimal) -> Optional[dict]:
     court_order_data = data['court_order']
 
     matched_court_order = [
@@ -379,7 +379,7 @@ def format_court_order_data(data: dict, event_id: Decimal) -> dict:
 
     if not matched_court_order:
         return None
-    
+
     formatted_court_order = copy.deepcopy(COURT_ORDER)
     formatted_court_order['file_number'] = matched_court_order[0]['f_court_order_num']
     formatted_court_order['effect_of_order'] = matched_court_order[0]['f_arrangement_ind']

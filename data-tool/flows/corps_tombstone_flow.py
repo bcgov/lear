@@ -286,6 +286,12 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
             jurisdiction_id = load_data(conn, 'jurisdictions', jurisdiction)
             versioning_mapper['jurisdictions_version'].append(jurisdiction_id)
 
+        if court_order:= data['court_order']:
+            court_order['business_id'] = business_id
+            court_order['filing_id'] = filing_id
+            court_order_id = load_data(conn, 'court_orders', court_order)
+            versioning_mapper['court_orders_version'].append(court_order_id)
+
         # load amalgamation snapshot linked to the current filing
         if amalgamation_data := data['amalgamations']:
             load_amalgamation_snapshot(conn, amalgamation_data, business_id, filing_id, versioning_mapper)
@@ -737,5 +743,5 @@ if __name__ == "__main__":
     #     name="tombstone-deployment",
     #     tags=["tombstone-migration"],
     #     work_pool_name="tombstone-pool",
-    #     interval=timedelta(seconds=40)  # Run every x seconds
+    #     interval=timedelta(seconds=50)  # Run every x seconds
     # )
