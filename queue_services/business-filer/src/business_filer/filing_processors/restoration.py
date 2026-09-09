@@ -40,7 +40,7 @@ from business_model.models import Business, Filing, PartyRole
 
 from datetime import timezone
 from business_common.utils import datetime
-from business_filer.common.legislation_datetime import LegislationDatetime
+from business_common.utils import LegislationDatetime
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import business_info, filings
 from business_filer.filing_processors.filing_components.aliases import update_aliases
