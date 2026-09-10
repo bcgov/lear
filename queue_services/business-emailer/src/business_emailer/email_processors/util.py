@@ -31,6 +31,7 @@ FILING_TITLE = {
     "alteration": "Alteration",
     "amalgamationApplication": "Amalgamation Application",
     "annualReport": "Annual Report",
+    "agmLocationChange": "AGM Location Change",
     "changeOfDirectors": "Director Change",
     "changeOfAddress": "Address Change",
     "changeOfRegistration": "Change of Registration",
@@ -119,6 +120,10 @@ FILING_ATTACHMENTS = {
         "alteration": {
             "attachments": ["Alteration","Notice of Articles","Certificate of Name Change","Receipt"],
             "extraPdfTypes": ["noticeOfArticles","certificateOfNameChange"],
+        },
+        "agmLocationChange": {
+            "attachments": ["Letter of AGM Location Change Approval", "Receipt"],
+            "extraPdfTypes": ["letterOfAgmLocationChange"],
         },
         "amalgamationApplication-horizontal": {
             "attachments": ["Amalgamation Application Short-form (Horizontal)","Notice of Articles","Certificate of Amalgamation","Receipt"],
