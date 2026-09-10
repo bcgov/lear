@@ -33,17 +33,25 @@ from tests.unit import create_business, create_future_effective_filing, prep_not
 
 
 @pytest.mark.parametrize(
-        'status, legal_name, legal_type, withdrawn_filing_type, withdrawn_filing_json, is_temp', [
-            ('COMPLETED', 'test business', 'BC', 'incorporationApplication', INCORPORATION, True),
-            ('COMPLETED', '1234567 B.C. INC.', 'BEN', 'continuationIn', CONTINUATION_IN, True),
-            ('COMPLETED', 'test business', 'CBEN', 'amalgamationApplication', AMALGAMATION_APPLICATION, True),
-            ('COMPLETED', 'test business', 'BC', 'changeOfAddress', CHANGE_OF_ADDRESS, False),
-            ('COMPLETED', '1234567 B.C. INC.', 'BEN', 'alteration', ALTERATION_FILING_TEMPLATE, False),
-            ('COMPLETED', '1234567 B.C. INC.', 'CBEN', 'dissolution', DISSOLUTION, False)
+        'status, legal_name, legal_type, withdrawn_filing_type, withdrawn_filing_json, is_temp, tax_id, '
+        'withdrawn_filing_name', [
+            ('COMPLETED', 'test business', 'BC', 'incorporationApplication', INCORPORATION, True, None,
+             'Incorporation Application'),
+            ('COMPLETED', '1234567 B.C. INC.', 'BEN', 'continuationIn', CONTINUATION_IN, True, None,
+             'Continuation Application'),
+            ('COMPLETED', 'test business', 'CBEN', 'amalgamationApplication', AMALGAMATION_APPLICATION, True, None,
+             'Amalgamation Application'),
+            ('COMPLETED', 'test business', 'BC', 'changeOfAddress', CHANGE_OF_ADDRESS, False, None,
+             'Address Change'),
+            ('COMPLETED', '1234567 B.C. INC.', 'BEN', 'alteration', ALTERATION_FILING_TEMPLATE, False, '123456789BC0001',
+             'Alteration'),
+            ('COMPLETED', '1234567 B.C. INC.', 'CBEN', 'dissolution', DISSOLUTION, False, '123456789',
+             'Voluntary Dissolution Application')
         ]
 )
-def test_notice_of_withdrawal_notification(
-        app, session, status, legal_name, legal_type, withdrawn_filing_type, withdrawn_filing_json, is_temp):
+def test_notice_of_withdrawal_notification(  # noqa: PLR0913
+        app, session, status, legal_name, legal_type, withdrawn_filing_type, withdrawn_filing_json, is_temp, tax_id,
+        withdrawn_filing_name):
     """Assert that the notice of withdrawal email processor works as expected."""
     business = None
     if is_temp:
@@ -51,6 +59,8 @@ def test_notice_of_withdrawal_notification(
     else:
         identifier = 'BC1234567'
         business = create_business(identifier, legal_type, legal_name)
+        business.tax_id = tax_id
+        business.save()
 
     business_id = business.id if business else None
     # setup withdrawn filing (FE filing) for NoW
@@ -59,8 +69,13 @@ def test_notice_of_withdrawal_notification(
     now_filing = prep_notice_of_withdraw_filing(identifier, '1', legal_type, legal_name, business_id, fe_filing)
     token = 'token'
 
+    pdfs = [
+        {'fileName': 'Notice of Withdrawal.pdf', 'fileBytes': '', 'fileUrl': '', 'attachOrder': '1'},
+        {'fileName': 'Receipt.pdf', 'fileBytes': '', 'fileUrl': '', 'attachOrder': '2'}
+    ]
+
     # test NoW email processor
-    with patch.object(notice_of_withdrawal_notification, '_get_pdfs', return_value=[]) as mock_get_pdfs:
+    with patch.object(notice_of_withdrawal_notification, '_get_pdfs', return_value=pdfs) as mock_get_pdfs:
         with patch.object(notice_of_withdrawal_notification, 'get_recipient_from_auth',
                           return_value='recipient@email.com'):
             email = notice_of_withdrawal_notification.process(
@@ -69,8 +84,32 @@ def test_notice_of_withdrawal_notification(
 
             assert email['content']['subject'] == f'{legal_name} - Notice of Withdrawal filed Successfully'
             assert 'recipient@email.com' in email['recipients']
-            assert email['content']['body']
-            assert email['content']['attachments'] == []
+            assert email['content']['attachments'] == pdfs
+
+            body = email['content']['body']
+            assert f'# Your {withdrawn_filing_name} has been successfully withdrawn' in body
+            assert f'**Business Name:** {legal_name}' in body
+            if is_temp:
+                # new business filings show the withdrawn filing id and no incorporation/business number
+                assert f'**Filing Number:** {fe_filing.id}' in body
+                assert '**Incorporation Number:**' not in body
+                assert '**Business Number:**' not in body
+            else:
+                assert '**Filing Number:**' not in body
+                assert f'**Incorporation Number:** {identifier}' in body
+                if tax_id and len(tax_id) > 9:
+                    assert '**Business Number:** 123456789 BC0001' in body
+                else:
+                    assert '**Business Number:**' not in body
+            assert '**Withdrawal Date and Time:**' in body
+            assert f'**Withdrawn Record:** {withdrawn_filing_name}' in body
+            assert '## Attachments' in body
+            assert '- Notice of Withdrawal' in body
+            assert '- Receipt' in body
+            assert f'({app.config.get("DASHBOARD_URL")}{identifier})' in body
+            assert '## Business Registry' not in body
+            assert '**Business Registry**' in body
+            assert '.md]]' not in body
             assert mock_get_pdfs.call_args[0][0] == token
             assert mock_get_pdfs.call_args[0][1]['identifier'] == identifier
             assert mock_get_pdfs.call_args[0][1]['legalName'] == legal_name
