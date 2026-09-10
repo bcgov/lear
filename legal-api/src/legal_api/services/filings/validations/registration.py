@@ -171,18 +171,19 @@ def validate_party(filing: dict, legal_type: str, filing_type="registration") ->
 def validate_completing_party_name(filing: dict, filing_type="registration") -> list:
     """Validate the completing party name matches the submitting user's name.
 
-    Clients cannot edit the completing party (it is pre-populated from their login),
-    so the submitted name must match their user record; registry and SBC staff enter it
-    manually from a paper form and API gateway users have their own workflow, so those
-    are skipped.
+    BC Services Card clients cannot edit the completing party (it is pre-populated from
+    their verified login), so the submitted name must match their user record. Registry and
+    SBC staff enter it manually from a paper form, API gateway users have their own workflow
+    and other login sources (e.g. BCeID) carry an editable display name rather than a verified
+    legal name, so those are skipped.
     """
-    api_login_source = "API_GW"  # jwt loginSource of an API gateway user
+    bcsc_login_source = "BCSC"  # jwt loginSource of a BC Services Card user
     msg = []
     current_user = getattr(request_ctx, "current_user", None) if has_request_context() else None
     if (not current_user
             or jwt.validate_roles(current_user, [STAFF_ROLE])
             or jwt.validate_roles(current_user, [SBC_STAFF_ROLE])
-            or current_user.get("loginSource") == api_login_source):
+            or current_user.get("loginSource") != bcsc_login_source):
         return msg
 
     officer = None
@@ -201,6 +202,8 @@ def validate_completing_party_name(filing: dict, filing_type="registration") -> 
     user_name = " ".join(" ".join(
         filter(None, [user.firstname, user.middlename, user.lastname])
     ).split())
+    if not user_name:
+        return msg  # nothing on record to compare against
     filing_name = " ".join(" ".join(
         filter(None, [officer.get("firstName"), officer.get("middleName"), officer.get("lastName")])
     ).split())
