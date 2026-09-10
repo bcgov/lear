@@ -38,10 +38,10 @@ from datetime import UTC
 import dpath
 from business_common.utils import LegislationDatetime, datetime
 from business_model.models import BatchProcessing, Business, Document, DocumentType, Filing, db
+from business_model.models.types.filings import DissolutionSubTypes as DissolutionTypes
 from datedelta import datedelta
 from flask import current_app
 
-from business_model.models.types.filings import DissolutionSubTypes as DissolutionTypes
 from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import filings

@@ -4,9 +4,9 @@ from datetime import UTC, datetime
 
 # if TYPE_CHECKING:
 from business_model.models import Business, Document, Filing
+from business_model.models.types.filings import FilingTypes
 from flask import Flask
 
-from business_model.models.types.filings import FilingTypes
 from business_filer.exceptions import PublishException
 from business_filer.services import Flags, gcp_queue
 from gcp_queue import SimpleCloudEvent, to_queue_message
