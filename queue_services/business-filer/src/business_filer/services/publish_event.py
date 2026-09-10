@@ -110,6 +110,40 @@ class PublishEvent:
             raise PublishException(err) from err
 
     @staticmethod
+    def publish_drs_update_message_court_orders(app: Flask, business: Business, filing: Filing):
+        """Publish a drs update record message for each DRS document uploaded with the filing.
+
+        Updates the document record(s) with filing/business information once a filing completes,
+        so the document shows up correctly in the ledger and is searchable in the DRS UI.
+        """
+        if not (court_orders := filing.meta_data.get("courtOrders")):
+            return
+
+        try:
+            subject = app.config.get("DOC_UPDATE_REC_TOPIC")
+            for court_order in court_orders:
+                if not (files := court_order.get("files")):
+                    continue
+
+                for file in files:
+                    if not PublishEvent._is_drs_document(file.get("fileKey")):
+                        continue
+                    data = {
+                        "accountId": "business-api",
+                        "fileKey": file.get("fileKey"),
+                        "businessIdentifier": business.identifier if business else None,
+                        "filingDate": filing.completion_date.isoformat() if filing.completion_date else None,
+                        "filingId": court_order.get("filingId")
+                    }
+                    data = {k: v for k, v in data.items() if v is not None}
+
+                    ce = PublishEvent._create_cloud_event(app, business, filing, subject, data)
+                    gcp_queue.publish(subject, to_queue_message(ce))
+
+        except Exception as err:  # pylint: disable=broad-except;
+            raise PublishException(err) from err
+
+    @staticmethod
     def _is_drs_document(file_key: str) -> bool:
         """Return True if the file_key is a DRS key."""
         return bool(file_key) and bool(_DRS_KEY_PATTERN.match(file_key))

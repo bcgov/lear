@@ -603,7 +603,7 @@ class Filing:  # pylint: disable=too-many-public-methods
         )
         if (
             not static_invisible and
-            (static_docs := FilingMeta.get_static_documents(filing.storage, f"{base_url}{doc_url}/static"))
+            (static_docs := FilingMeta.get_static_documents(business, filing.storage, f"{base_url}{doc_url}/static"))
         ):
             documents["documents"]["staticDocuments"] = static_docs
 

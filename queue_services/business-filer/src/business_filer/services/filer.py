@@ -347,4 +347,13 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
                 current_app.logger.warning(err.with_traceback(None))
                 current_app.logger.warning(f"Failed to create DRS Record for {filing_submission.id}.")
 
+        if filing_type == FilingTypes.CORRECTION:
+            try:
+                # Update DRS record for court orders
+                PublishEvent.publish_drs_update_message_court_orders(current_app, business, filing_submission)
+            except Exception as err:
+                # log error for ops, but don't prevent filing from completing
+                current_app.logger.warning(err.with_traceback(None))
+                current_app.logger.warning(f"Failed to update DRS Record for court orders in {filing_submission.id}.")
+
         PublishEvent.publish_event(current_app, business, filing_submission)
