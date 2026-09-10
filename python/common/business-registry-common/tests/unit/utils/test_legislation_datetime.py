@@ -41,7 +41,9 @@ def test_now_methods(app):
         assert LegislationDatetime.now().tzinfo is not None
         assert isinstance(LegislationDatetime.datenow(), date)
         midnight = LegislationDatetime.tomorrow_midnight()
-        assert midnight.hour == 0 and midnight.minute == 0 and midnight.second == 0
+        assert midnight.hour == 0
+        assert midnight.minute == 0
+        assert midnight.second == 0
         assert LegislationDatetime.tomorrow_one_minute_after_midnight().minute == 1
 
 
