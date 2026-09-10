@@ -19,8 +19,10 @@ class FilingTypes(BaseEnum):
     CEASERECEIVER = 'ceaseReceiver'
     CHANGEOFADDRESS = 'changeOfAddress'
     CHANGEOFDIRECTORS = 'changeOfDirectors'
+    CHANGEOFLIQUIDATORS = 'changeOfLiquidators'
     CHANGEOFNAME = 'changeOfName'
     CHANGEOFOFFICERS = 'changeOfOfficers'
+    CHANGEOFRECEIVERS = 'changeOfReceivers'
     CHANGEOFREGISTRATION = 'changeOfRegistration'
     CONSENTAMALGAMATIONOUT = 'consentAmalgamationOut'
     CONSENTCONTINUATIONOUT = 'consentContinuationOut'
@@ -53,9 +55,11 @@ class FilingSubTypes(BaseEnum):
 class DissolutionSubTypes(FilingSubTypes):
     """Enum for Dissolution Types."""
 
-    VOLUNTARY = 'voluntary'
     ADMINISTRATIVE = 'administrative'
+    COURT_ORDERED_LIQUIDATION = 'courtOrderedLiquidation'
     INVOLUNTARY = 'involuntary'
+    VOLUNTARY = 'voluntary'
+    VOLUNTARY_LIQUIDATION = 'voluntaryLiquidation'
 
 class RestorationSubTypes(FilingSubTypes):
     """Enum for Restoration Types."""
