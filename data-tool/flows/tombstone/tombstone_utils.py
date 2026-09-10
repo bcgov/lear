@@ -904,11 +904,11 @@ def update_court_order(meta_data: dict, filing_data: dict) -> None:
     if not court_order_num:
         return
 
-    meta_data['court_order'] = meta_data.get('court_order', {})
-    meta_data['court_order']['fileNumber'] = court_order_num
+    meta_data['courtOrder'] = meta_data.get('courtOrder', {})
+    meta_data['courtOrder']['fileNumber'] = court_order_num
 
     if effect_of_order := filing_data.get('arrangement_ind'):
-        meta_data['court_order']['effectOfOrder'] = effect_of_order
+        meta_data['courtOrder']['effectOfOrder'] = effect_of_order
 
 
 def build_filing_json_meta_data(raw_filing_type: str,
