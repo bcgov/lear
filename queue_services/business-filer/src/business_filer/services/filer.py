@@ -39,7 +39,7 @@ from business_model.models import Business, Filing, db
 from business_model.models.db import VersioningProxy
 from flask import current_app
 
-from business_filer.common.filing import FilingTypes
+from business_model.models.types.filings import FilingTypes
 from business_filer.common.filing_message import FilingMessage
 from business_filer.exceptions import DefaultError, QueueException
 from business_filer.filing_meta import FilingMeta, json_serial

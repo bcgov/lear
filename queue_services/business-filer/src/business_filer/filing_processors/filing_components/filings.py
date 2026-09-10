@@ -38,7 +38,7 @@ from business_common.utils import datetime
 from business_model.models import Business, CourtOrder, Filing
 from flask_babel import _ as babel
 
-from business_filer.common.filing import FilingTypes
+from business_model.models.types.filings import FilingTypes
 from business_filer.filing_meta import FilingMeta
 
 
