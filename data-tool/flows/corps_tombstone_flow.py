@@ -743,5 +743,5 @@ if __name__ == "__main__":
     #     name="tombstone-deployment",
     #     tags=["tombstone-migration"],
     #     work_pool_name="tombstone-pool",
-    #     interval=timedelta(seconds=50)  # Run every x seconds
+    #     interval=timedelta(seconds=40)  # Run every x seconds
     # )
