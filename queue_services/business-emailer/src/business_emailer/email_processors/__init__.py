@@ -320,7 +320,7 @@ def get_pdfs(  # noqa: PLR0913
     """Get the pdfs for the filing output."""
     pdfs = []
     attach_order = 1
-    filings_with_unimplemented_outputs = ["amalgamationOut", "consentAmalgamationOut", "continuationOut"]
+    filings_with_unimplemented_outputs = ["agmLocationChange", "amalgamationOut", "consentAmalgamationOut", "continuationOut"]
     receipt_only_sub_filings = [
         ("changeOfLiquidators", "liquidationReport"),
         ("changeOfReceivers", "appointReceiver"),
@@ -334,7 +334,8 @@ def get_pdfs(  # noqa: PLR0913
         attach_order = _add_filing_document_pdf(pdfs, attach_order, filing.filing_type, token, business, filing, filing_attachment_name, regenerate=regenerate)
     # add extra documents
     for pdf_type in extra_pdf_type_list:
-        attach_order = _add_filing_document_pdf(pdfs, attach_order, pdf_type, token, business, filing, regenerate=regenerate)
+        attachment_name = filing_attachment_name if filing.filing_type in filings_with_unimplemented_outputs else None
+        attach_order = _add_filing_document_pdf(pdfs, attach_order, pdf_type, token, business, filing, attachment_name, regenerate=regenerate)
     # add receipt
     attach_order = _add_filing_document_pdf(pdfs, attach_order, "receipt", token, business, filing, regenerate=regenerate)
     return pdfs

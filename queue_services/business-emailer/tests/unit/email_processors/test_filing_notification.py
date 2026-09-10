@@ -343,6 +343,7 @@ def test_business_number_rendering(app, session, mock_pdfs, filing_type, legal_t
     ('PAID', 'changeOfAddress', None, None, None, 'BC1234567'),
     ('PAID', 'alteration', None, None, None, 'BC1234567'),
     ('COMPLETED', 'annualReport', None, None, None, 'BC1234567'),
+    ('COMPLETED', 'agmLocationChange', None, None, None, 'BC1234567'),
     ('COMPLETED', 'changeOfAddress', None, None, None, 'BC1234567'),
     ('COMPLETED', 'changeOfDirectors', None, None, None, 'BC1234567'),
     ('COMPLETED', 'alteration', None, None, None, 'BC1234567'),
@@ -405,7 +406,9 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
     assert mock_recipients.call_args[0][1] == filing.filing_json
     assert mock_recipients.call_args[0][2] == token
 
-    if filing_type == 'dissolution':
+    if filing_type == 'agmLocationChange':
+        assert email['content']['subject'] == f'{LEGAL_NAME} - AGM Location Change approved'
+    elif filing_type == 'dissolution':
         # dissolution also notifies the business contact email from auth
         assert 'auth@email.com' in email['recipients']
         # party emails are pulled by get_recipients with the dissolution filing type
@@ -438,6 +441,10 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
     ]),
     ('annualReport', None, None, 'COMPLETED', False, False, [
         {'fileName': '2018 Annual Report.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ]),
+    ('agmLocationChange', None, None, 'COMPLETED', False, False, [
+        {'fileName': 'Letter of AGM Location Change Approval.pdf', 'content': 'pdf_content_agm', 'order': '1'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
     ]),
     ('changeOfAddress', None, None, 'PAID', False, False, [
@@ -564,6 +571,7 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
     'alteration - COMPLETED no name change',
     'alteration - COMPLETED name change included',
     'annualReport',
+    'agmLocationChange',
     'changeOfAddress - PAID',
     'changeOfAddress - COMPLETED',
     'changeOfDirectors',
@@ -625,6 +633,7 @@ def test_maintenance_filing_attachments(session, config, mock_recipients, mock_u
             'certificateOfDissolution': b'pdf_content_cod',
             'affidavit': b'pdf_content_affidavit',
             'letterOfConsent': b'pdf_content_loc',
+            'letterOfAgmLocationChange': b'pdf_content_agm',
         }, receipt=b'pdf_content_receipt')
         output = process_filing(filing, filing_type, status)
 
@@ -673,6 +682,14 @@ def test_maintenance_filing_attachments(session, config, mock_recipients, mock_u
         'COMPLETED',
         'You have successfully completed your 2018 annual report with the BC Business Registry',
         'test business - Successful Annual Report',
+        []
+    ),
+    (
+        'agmLocationChange',
+        None,
+        'COMPLETED',
+        'Your AGM location change has been approved by the BC Business Registry',
+        'test business - AGM Location Change approved',
         []
     ),
     (

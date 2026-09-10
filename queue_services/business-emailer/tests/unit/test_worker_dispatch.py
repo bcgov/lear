@@ -23,7 +23,6 @@ from business_model.models import Filing
 from business_emailer.email_processors import (
     affiliation_notification,
     agm_extension_notification,
-    agm_location_change_notification,
     amalgamation_out_notification,
     ar_reminder_notification,
     bn_notification,
@@ -35,7 +34,6 @@ from business_emailer.email_processors import (
     nr_notification,
 )
 from business_emailer.resources import business_emailer as worker
-from business_emailer.services import flags
 
 
 STUB_EMAIL = {
@@ -163,46 +161,15 @@ def test_mras_dispatch(app, session, mocker, mock_send_email, etype):
     mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
 
 
-def test_ar_reminder_dispatch_with_flag_on(app, session, mocker, mock_send_email):
-    mocker.patch.object(flags, "is_on", return_value=True)
+def test_ar_reminder_dispatch(app, session, mocker, mock_send_email):
     mock_process = mocker.patch.object(ar_reminder_notification, "process", return_value=STUB_EMAIL)
     email = {"type": "annualReport", "option": "reminder"}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN, True)
-    mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
-def test_ar_reminder_dispatch_with_flag_off(app, session, mocker, mock_send_email):
-    mocker.patch.object(flags, "is_on", return_value=False)
-    mock_process = mocker.patch.object(ar_reminder_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "annualReport", "option": "reminder"}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN, False)
-
-
-def test_agm_location_change_completed_dispatches(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(agm_location_change_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "agmLocationChange", "option": COMPLETED}
 
     worker.process_email(_ce({"email": email}))
 
     mock_process.assert_called_once_with(email, TOKEN)
     mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
 
-
-def test_agm_location_change_non_completed_is_skipped(app, session, mocker, mock_send_email):
-    """Option != COMPLETED falls through to the `else` log-and-skip branch."""
-    mock_process = mocker.patch.object(agm_location_change_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "agmLocationChange", "option": "PAID"}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_not_called()
-    mock_send_email.assert_not_called()
 
 
 def test_agm_extension_completed_dispatches(app, session, mocker, mock_send_email):
@@ -250,6 +217,7 @@ def test_notice_of_withdrawal_completed_dispatches(app, session, mocker, mock_se
 # --------------------------------------------------------------------------- #
 
 @pytest.mark.parametrize('filing_type', [
+    "agmLocationChange",
     "alteration",
     "amalgamationApplication",
     "annualReport",
