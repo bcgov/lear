@@ -40,7 +40,7 @@ from business_model.models import Business, Filing
 from business_model.models.registration_bootstrap import RegistrationBootstrap
 from flask import current_app
 
-from business_filer.common.services.account_service import AccountService
+from business_account import AccountService
 from business_filer.exceptions import QueueException
 from business_filer.services.utils import get_str
 
