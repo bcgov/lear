@@ -13,17 +13,28 @@
 # limitations under the License.
 """The Unit Tests for the Incorporation email processor."""
 import base64
+import copy
 
 import pytest
 import requests_mock
 from business_model.models import Business
 
 from business_emailer.email_processors import filing_notification
+from registry_schemas.example_data import (
+    ALTERATION_FILING_TEMPLATE,
+    AMALGAMATION_APPLICATION,
+    CHANGE_OF_ADDRESS,
+    CONTINUATION_IN,
+    DISSOLUTION,
+    INCORPORATION,
+)
+
 from tests.unit import (CONTACT_POINT, LEGAL_NAME, PARTY_EMAIL_1, PARTY_EMAIL_2,
+                        create_business, create_future_effective_filing,
                         prep_bootstrap_filing, prep_change_of_registration_filing, prep_correction_filing,
-                        prep_incorp_filing, prep_maintenance_filing,
+                        prep_incorp_filing, prep_maintenance_filing, prep_notice_of_withdraw_filing,
                         prep_registration_filing, prep_special_resolution_filing)
-from tests.unit.helpers import make_future_effective, make_non_future_effective
+from tests.unit.helpers import generate_temp_filing, make_future_effective, make_non_future_effective
 
 
 # ---------------------------------------------------------------------------
@@ -88,6 +99,17 @@ def mock_filing_docs(m, config, identifier, filing, doc_contents, receipt=b'rece
             content=receipt,
             status_code=201,
         )
+
+def prep_notice_of_withdrawal(identifier, legal_type, legal_name, withdrawn_filing_type, withdrawn_filing_json,
+                              is_temp, business_id=None):
+    """Return a completed notice of withdrawal filing and the future effective filing it withdraws."""
+    fe_filing = create_future_effective_filing(
+        identifier, legal_type, legal_name, withdrawn_filing_type, withdrawn_filing_json, is_temp, business_id)
+    now_filing = prep_notice_of_withdraw_filing(identifier, '1', legal_type, legal_name, business_id, fe_filing)
+    now_filing._status = 'COMPLETED'
+    now_filing.save()
+    return now_filing, fe_filing
+
 
 
 def firm_parties():
@@ -343,6 +365,7 @@ def test_business_number_rendering(app, session, mock_pdfs, filing_type, legal_t
     ('PAID', 'changeOfAddress', None, None, None, 'BC1234567'),
     ('PAID', 'alteration', None, None, None, 'BC1234567'),
     ('COMPLETED', 'annualReport', None, None, None, 'BC1234567'),
+    ('COMPLETED', 'agmLocationChange', None, None, None, 'BC1234567'),
     ('COMPLETED', 'changeOfAddress', None, None, None, 'BC1234567'),
     ('COMPLETED', 'changeOfDirectors', None, None, None, 'BC1234567'),
     ('COMPLETED', 'alteration', None, None, None, 'BC1234567'),
@@ -405,7 +428,9 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
     assert mock_recipients.call_args[0][1] == filing.filing_json
     assert mock_recipients.call_args[0][2] == token
 
-    if filing_type == 'dissolution':
+    if filing_type == 'agmLocationChange':
+        assert email['content']['subject'] == f'{LEGAL_NAME} - AGM Location Change approved'
+    elif filing_type == 'dissolution':
         # dissolution also notifies the business contact email from auth
         assert 'auth@email.com' in email['recipients']
         # party emails are pulled by get_recipients with the dissolution filing type
@@ -438,6 +463,10 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
     ]),
     ('annualReport', None, None, 'COMPLETED', False, False, [
         {'fileName': '2018 Annual Report.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ]),
+    ('agmLocationChange', None, None, 'COMPLETED', False, False, [
+        {'fileName': 'Letter of AGM Location Change Approval.pdf', 'content': 'pdf_content_agm', 'order': '1'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
     ]),
     ('changeOfAddress', None, None, 'PAID', False, False, [
@@ -564,6 +593,7 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
     'alteration - COMPLETED no name change',
     'alteration - COMPLETED name change included',
     'annualReport',
+    'agmLocationChange',
     'changeOfAddress - PAID',
     'changeOfAddress - COMPLETED',
     'changeOfDirectors',
@@ -625,6 +655,7 @@ def test_maintenance_filing_attachments(session, config, mock_recipients, mock_u
             'certificateOfDissolution': b'pdf_content_cod',
             'affidavit': b'pdf_content_affidavit',
             'letterOfConsent': b'pdf_content_loc',
+            'letterOfAgmLocationChange': b'pdf_content_agm',
         }, receipt=b'pdf_content_receipt')
         output = process_filing(filing, filing_type, status)
 
@@ -673,6 +704,14 @@ def test_maintenance_filing_attachments(session, config, mock_recipients, mock_u
         'COMPLETED',
         'You have successfully completed your 2018 annual report with the BC Business Registry',
         'test business - Successful Annual Report',
+        []
+    ),
+    (
+        'agmLocationChange',
+        None,
+        'COMPLETED',
+        'Your AGM location change has been approved by the BC Business Registry',
+        'test business - AGM Location Change approved',
         []
     ),
     (
@@ -1132,3 +1171,120 @@ def test_dissolution_involuntary_returns_none(app, session):
     result = process_filing(filing, 'dissolution', 'COMPLETED')
 
     assert result is None
+
+
+# ---------------------------------------------------------------------------
+# Notice of withdrawal
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+        'legal_name, legal_type, withdrawn_filing_type, withdrawn_filing_json, is_temp, tax_id, withdrawn_filing_name', [
+            ('test business', 'BC', 'incorporationApplication', INCORPORATION, True, None,
+             'Incorporation Application'),
+            ('1234567 B.C. INC.', 'BEN', 'continuationIn', CONTINUATION_IN, True, None,
+             'Continuation Application'),
+            ('test business', 'CBEN', 'amalgamationApplication', AMALGAMATION_APPLICATION, True, None,
+             'Amalgamation Application'),
+            ('test business', 'BC', 'changeOfAddress', CHANGE_OF_ADDRESS, False, None,
+             'Address Change'),
+            ('1234567 B.C. INC.', 'BEN', 'alteration', ALTERATION_FILING_TEMPLATE, False, '123456789BC0001',
+             'Alteration'),
+            ('1234567 B.C. INC.', 'CBEN', 'dissolution', DISSOLUTION, False, '123456789',
+             'Voluntary Dissolution Application')
+        ]
+)
+def test_notice_of_withdrawal_notification(  # noqa: PLR0913
+        app, session, mock_pdfs, mock_recipients, mock_auth_recipient,
+        legal_name, legal_type, withdrawn_filing_type, withdrawn_filing_json, is_temp, tax_id, withdrawn_filing_name):
+    """Assert the notice of withdrawal email renders the withdrawn filing details."""
+    business = None
+    if is_temp:
+        identifier = generate_temp_filing()
+    else:
+        identifier = 'BC1234567'
+        business = create_business(identifier, legal_type, legal_name)
+        business.tax_id = tax_id
+        business.save()
+    now_filing, fe_filing = prep_notice_of_withdrawal(
+        identifier, legal_type, legal_name, withdrawn_filing_type, withdrawn_filing_json, is_temp,
+        business.id if business else None)
+    pdfs = [
+        {'fileName': 'Notice of Withdrawal.pdf', 'fileBytes': '', 'fileUrl': '', 'attachOrder': '1'},
+        {'fileName': 'Receipt.pdf', 'fileBytes': '', 'fileUrl': '', 'attachOrder': '2'}
+    ]
+    mock_pdfs.return_value = pdfs
+
+    email = process_filing(now_filing, 'noticeOfWithdrawal', 'COMPLETED')
+
+    assert email['content']['subject'] == f'{legal_name} - Successful Notice of Withdrawal'
+    assert email['recipients'] == 'test@test.com'
+    assert email['content']['attachments'] == pdfs
+    # pdfs are fetched for the notice of withdrawal filing against the (temp) business identifier
+    assert mock_pdfs.call_args[0][1]['identifier'] == identifier
+    assert mock_pdfs.call_args[0][2] == now_filing
+    # recipients come from the withdrawn filing for new business filings, otherwise from auth
+    recipients_filing_json, recipients_filing_type = mock_recipients.call_args[0][1], mock_recipients.call_args[0][3]
+    if is_temp:
+        assert recipients_filing_json == fe_filing.filing_json
+        assert recipients_filing_type == withdrawn_filing_type
+    else:
+        assert recipients_filing_json == now_filing.filing_json
+        assert recipients_filing_type is None
+
+    body = email['content']['body']
+    assert f'# Your {withdrawn_filing_name} has been successfully withdrawn' in body
+    assert f'**Business Name:** {legal_name}' in body
+    if is_temp:
+        # new business filings show the withdrawn filing id and no incorporation/business number
+        assert f'**Filing Number:** {fe_filing.id}' in body
+        assert '**Incorporation Number:**' not in body
+        assert '**Business Number:**' not in body
+    else:
+        assert '**Filing Number:**' not in body
+        assert f'**Incorporation Number:** {identifier}' in body
+        if tax_id and len(tax_id) > 9:
+            assert '**Business Number:** 123456789 BC0001' in body
+        else:
+            assert '**Business Number:** Not Available' in body
+    assert '**Withdrawal Date and Time:**' in body
+    assert f'**Withdrawn Record:** {withdrawn_filing_name}' in body
+    assert '## Attachments' in body
+    assert '- Notice of Withdrawal' in body
+    assert '- Receipt' in body
+    assert f'({app.config.get("DASHBOARD_URL")}{identifier})' in body
+    assert '**Business Registry**' in body
+    assert '.md]]' not in body
+
+
+def test_notice_of_withdrawal_numbered_temp_business(app, session, mock_pdfs, mock_recipients):
+    """A withdrawn numbered new business filing falls back to the numbered company description."""
+    identifier = generate_temp_filing()
+    now_filing, fe_filing = prep_notice_of_withdrawal(
+        identifier, 'BEN', 'test business', 'incorporationApplication', INCORPORATION, True)
+    # numbered company: no legalName on the nameRequest
+    filing_json = copy.deepcopy(fe_filing.filing_json)
+    del filing_json['filing']['incorporationApplication']['nameRequest']['legalName']
+    fe_filing._filing_json = filing_json  # bypass the paid-filing lock
+    fe_filing.save()
+
+    email = process_filing(now_filing, 'noticeOfWithdrawal', 'COMPLETED')
+
+    assert email['content']['subject'] == 'Numbered Benefit Company - Successful Notice of Withdrawal'
+    assert '**Business Name:** Numbered Benefit Company' in email['content']['body']
+
+
+def test_notice_of_withdrawal_attachments(session, config, mock_recipients):
+    """noticeOfWithdrawal COMPLETED: Notice of Withdrawal filing PDF + receipt."""
+    identifier = 'BC1234567'
+    business = create_business(identifier, 'BC', 'test business')
+    now_filing, _ = prep_notice_of_withdrawal(
+        identifier, 'BC', 'test business', 'changeOfAddress', CHANGE_OF_ADDRESS, False, business.id)
+    with requests_mock.Mocker() as m:
+        mock_filing_docs(m, config, identifier, now_filing,
+                         {'noticeOfWithdrawal': b'pdf_content_1'}, receipt=b'pdf_content_2')
+        output = process_filing(now_filing, 'noticeOfWithdrawal', 'COMPLETED')
+
+    attachments = output['content']['attachments']
+    assert len(attachments) == 2
+    assert_attachment(attachments[0], 'Notice of Withdrawal.pdf', 'pdf_content_1', '1')
+    assert_attachment(attachments[1], 'Receipt.pdf', 'pdf_content_2', '2')

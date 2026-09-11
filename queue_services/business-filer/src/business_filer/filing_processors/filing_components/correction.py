@@ -37,9 +37,9 @@ import datetime
 from contextlib import suppress
 
 import dpath
+from business_common.utils import LegislationDatetime
 from business_model.models import Address, Business, Filing, Party, PartyRole
 
-from business_filer.common.legislation_datetime import LegislationDatetime
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import (
     aliases,
@@ -74,15 +74,28 @@ def correct_business_data(business: Business,  # noqa: PLR0915
                           correction_filing: dict,
                           filing_meta: FilingMeta):
     """Render the correction filing onto the business model objects."""
+    to_legal_type = None
+    with suppress(IndexError, KeyError, TypeError):
+        to_legal_type = dpath.get(correction_filing, "/correction/newLegalType")
+        if to_legal_type and business.legal_type != to_legal_type:
+            filing_meta.correction = {
+                **filing_meta.correction,
+                "fromLegalType": business.legal_type,
+                "toLegalType": to_legal_type
+            }
+            business_info.set_corp_type(business, {"legalType": to_legal_type})
+
     # Update business legalName if present
     with suppress(IndexError, KeyError, TypeError):
         name_request_json = dpath.get(correction_filing, "/correction/nameRequest")
         from_legal_name = business.legal_name
-        business_info.set_legal_name(business.identifier, business, name_request_json)
+        business_info.set_legal_name(business.identifier, business, name_request_json, to_legal_type)
         if from_legal_name != business.legal_name:
-            filing_meta.correction = {**filing_meta.correction,
-                                      "fromLegalName": from_legal_name,
-                                         "toLegalName": business.legal_name}
+            filing_meta.correction = {
+                **filing_meta.correction,
+                "fromLegalName": from_legal_name,
+                "toLegalName": business.legal_name
+            }
 
     # Update cooperativeAssociationType if present
     with suppress(IndexError, KeyError, TypeError):
@@ -90,9 +103,11 @@ def correct_business_data(business: Business,  # noqa: PLR0915
         from_association_type = business.association_type
         if coop_association_type:
             business_info.set_association_type(business, coop_association_type)
-            filing_meta.correction = {**filing_meta.correction,
-                                      "fromCooperativeAssociationType": from_association_type,
-                                         "toCooperativeAssociationType": business.association_type}
+            filing_meta.correction = {
+                **filing_meta.correction,
+                "fromCooperativeAssociationType": from_association_type,
+                "toCooperativeAssociationType": business.association_type
+            }
 
     # Update Nature of Business
     if naics := correction_filing.get("correction", {}).get("business", {}).get("naics"):
@@ -102,8 +117,9 @@ def correct_business_data(business: Business,  # noqa: PLR0915
             filing_meta.correction = {
                 **filing_meta.correction,
                 "fromNaicsCode": business.naics_code,
-                   "toNaicsCode": to_naics_code,
-                   "naicsDescription": to_naics_description}
+                "toNaicsCode": to_naics_code,
+                "naicsDescription": to_naics_description
+            }
             business_info.update_naics_info(business, naics)
 
     # update name translations, if any
@@ -138,6 +154,11 @@ def correct_business_data(business: Business,  # noqa: PLR0915
         update_relationship_addresses(relationships, business)
         update_relationship_entity_info(relationships, business)
         _set_lear_only(correction_filing, correction_filing_rec, relationships, business)
+
+    # update court orders, if any is present
+    with suppress(IndexError, KeyError, TypeError):
+        court_orders_json = dpath.get(correction_filing, "/correction/courtOrders")
+        filings.update_court_orders(business, court_orders_json, filing_meta)
 
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
