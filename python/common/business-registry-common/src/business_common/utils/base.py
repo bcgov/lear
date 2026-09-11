@@ -32,7 +32,7 @@ class BaseEnum(str, Enum, metaclass=BaseMeta):
     """Replace autoname from Enum class."""
 
     @classmethod
-    def get_enum_by_value(cls, value: str):
+    def get_enum_by_value(cls, value: str) -> str | None:
         """Return the enum by value."""
         for enum_value in cls:
             if enum_value.value == value:

@@ -37,9 +37,9 @@ import json
 
 from business_model.models import Business, Filing, db
 from business_model.models.db import VersioningProxy
+from business_model.models.types.filings import FilingTypes
 from flask import current_app
 
-from business_filer.common.filing import FilingTypes
 from business_filer.common.filing_message import FilingMessage
 from business_filer.exceptions import DefaultError, QueueException
 from business_filer.filing_meta import FilingMeta, json_serial
@@ -346,5 +346,14 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
                 # log error for ops, but don't prevent filing from completing
                 current_app.logger.warning(err.with_traceback(None))
                 current_app.logger.warning(f"Failed to create DRS Record for {filing_submission.id}.")
+
+        if filing_type == FilingTypes.CORRECTION:
+            try:
+                # Update DRS record for court orders
+                PublishEvent.publish_drs_update_message_court_orders(current_app, business, filing_submission)
+            except Exception as err:
+                # log error for ops, but don't prevent filing from completing
+                current_app.logger.warning(err.with_traceback(None))
+                current_app.logger.warning(f"Failed to update DRS Record for court orders in {filing_submission.id}.")
 
         PublishEvent.publish_event(current_app, business, filing_submission)

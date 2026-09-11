@@ -32,6 +32,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """The Unit Tests for the Correction filing."""
+import uuid
 import copy
 import random
 from datetime import datetime, timezone
@@ -40,9 +41,10 @@ from unittest.mock import patch
 from dateutil.parser import parse
 
 import pytest
-from business_model.models import Address, Alias, Business, Filing, PartyRole
+from business_model.models import Address, Alias, Business, CourtOrder, Document, DocumentType, Filing, PartyRole
 from registry_schemas.example_data import (
     COURT_ORDER,
+    COURT_ORDER_FILING_TEMPLATE,
     REGISTRATION,
 )
 
@@ -514,6 +516,261 @@ def tests_filer_correction_court_order(app, session, mocker, test_name, legal_ty
     assert final_filing.meta_data.get('courtOrder')['effectOfOrder'] == effect_of_order
 
 
+@pytest.mark.parametrize('test_name', [
+    ('no_change'),
+    ('add_new_court_order'),
+    ('edit_court_order'),
+    ('remove_existing_court_order')
+])
+def tests_filer_correction_court_orders(app, session, mocker, test_name):
+    """Assert the worker process process the court orders correctly."""
+    identifier = f'BC{random.randint(1000000, 9999999)}'
+    business = create_entity(identifier, 'BC', 'Test Entity')
+
+    filing = {
+        'filing': {
+            'header': {
+                'name': 'correction',
+                'date': '2025-01-01',
+                'certifiedBy': 'system'
+            },
+            'business': {
+                'identifier': 'BC1234567',
+                'legalType': 'BC'
+            },
+            'correction': {
+                'details': 'Test correction',
+                'correctedFilingType': 'incorporationApplication',
+                'comment': 'Correction for Incorporation Application filed on 2025-01-01 by system',
+                'contactPoint': CONTACT_POINT
+            }
+        }
+    }
+
+    corrected_filing = factory_completed_filing(business, BC_CORRECTION_APPLICATION)
+    court_order_filing = factory_completed_filing(business, copy.deepcopy(COURT_ORDER_FILING_TEMPLATE))
+
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    file_number: Final = '#1234-5678/90'
+    new_file_number: Final = '#2222-2222/22'
+    effect_of_order: Final = 'hasPlan'
+    order_details='Court order details'
+
+    court_order_json = {
+        "filingId": court_order_filing.id,
+        "fileNumber": file_number,
+        "effectOfOrder": effect_of_order,
+        "orderDetails": order_details
+    }
+
+    if test_name != 'add_new_court_order':
+        court_order = CourtOrder(
+            filing_id=court_order_filing.id,
+            business_id=business.id,
+            file_number=file_number,
+            effect_of_order=effect_of_order,
+            order_details=order_details
+        )
+        court_order.save()
+
+    if test_name == 'edit_court_order':
+        court_order_json["fileNumber"] = new_file_number
+
+    if test_name in ['no_change', 'edit_court_order']:
+        court_order_json["id"] = court_order.id
+
+    if test_name == 'remove_existing_court_order':
+        filing['filing']['correction']['courtOrders'] = []
+    else:
+        filing['filing']['correction']['courtOrders'] = [court_order_json]
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
+
+    filing_msg = FilingMessage(filing_identifier=filing_id)
+
+    # mock out the email sender and event publishing
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
+    mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
+                 return_value=None)
+    mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
+
+    # Test
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        process_filing(filing_msg)
+
+    # Check outcome
+    court_order_obj = court_order_filing.court_orders[0]
+    final_filing = Filing.find_by_id(filing_id)
+    if test_name == 'remove_existing_court_order':
+        assert not final_filing.meta_data.get('courtOrders')
+    elif test_name == 'no_change':
+        assert not final_filing.meta_data.get('courtOrders')
+        assert file_number == court_order_obj.file_number
+        assert effect_of_order == court_order_obj.effect_of_order
+    elif test_name == 'edit_court_order':
+        assert new_file_number == court_order_obj.file_number
+        assert effect_of_order == court_order_obj.effect_of_order
+        assert new_file_number == final_filing.meta_data.get('courtOrders')[0]['fileNumber']
+    else:
+        assert file_number == court_order_obj.file_number
+        assert effect_of_order == court_order_obj.effect_of_order
+
+        court_order_meta = final_filing.meta_data.get('courtOrders')[0]
+        assert court_order_meta['fileNumber'] == file_number
+        assert court_order_meta['effectOfOrder'] == effect_of_order
+        assert court_order_meta['orderDetails'] == order_details
+
+
+
+@pytest.mark.parametrize('test_name', [
+    ('no_change'),
+    ('add_new_court_order'),
+    ('replace_existing_court_order')
+])
+def tests_filer_correction_court_order_documents(app, session, mocker, test_name):
+    """Assert the worker process process the court orders correctly."""
+    identifier = f'BC{random.randint(1000000, 9999999)}'
+    business = create_entity(identifier, 'BC', 'Test Entity')
+
+    filing = {
+        'filing': {
+            'header': {
+                'name': 'correction',
+                'date': '2025-01-01',
+                'certifiedBy': 'system'
+            },
+            'business': {
+                'identifier': 'BC1234567',
+                'legalType': 'BC'
+            },
+            'correction': {
+                'details': 'Test correction',
+                'correctedFilingType': 'incorporationApplication',
+                'comment': 'Correction for Incorporation Application filed on 2025-01-01 by system',
+                'contactPoint': CONTACT_POINT
+            }
+        }
+    }
+
+    corrected_filing = factory_completed_filing(business, BC_CORRECTION_APPLICATION)
+    court_order_filing = factory_completed_filing(business, copy.deepcopy(COURT_ORDER_FILING_TEMPLATE))
+
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    file_number: Final = '#1234-5678/90'
+    new_file_number: Final = '#2222-2222/22'
+    effect_of_order: Final = 'hasPlan'
+    order_details='Court order details'
+
+    court_order = CourtOrder(
+        filing_id=court_order_filing.id,
+        business_id=business.id,
+        file_number=file_number,
+        effect_of_order=effect_of_order,
+        order_details=order_details
+    )
+    court_order.save()
+
+    court_order_json = {
+        "filingId": court_order_filing.id,
+        "fileNumber": file_number,
+        "effectOfOrder": effect_of_order,
+        "orderDetails": order_details,
+        "id": court_order.id
+    }
+    file_key_1 = f"{uuid.uuid4()}.pdf"
+    file_key_2 = f"{uuid.uuid4()}.pdf"
+    file_key_3 = f"{uuid.uuid4()}.pdf"
+    file_name_1 = f'Court Order {file_number}_01.pdf'
+    file_name_2 = f'Court Order {file_number}_02.pdf'
+    file_name_3 = f'Court Order {file_number}_03.pdf'
+    file_1 = {
+        "fileKey": file_key_1,
+        "fileName": file_name_1,
+        "documentType": DocumentType.COURT_ORDER.value
+    }
+    file_2 = {
+        "fileKey": file_key_2,
+        "fileName": file_name_2,
+        "documentType": DocumentType.SUPPORTING_DOCUMENT.value
+    }
+    file_3 = {
+        "fileKey": file_key_3,
+        "fileName": file_name_3,
+        "documentType": DocumentType.COURT_ORDER.value
+    }
+
+    document = Document()
+    document.type = file_1.get("documentType")
+    document.file_key = file_1.get("fileKey")
+    document.file_name = file_1.get("fileName")
+    document.filing_id = court_order_filing.id
+    document.business_id = business.id
+    document.save()
+
+    if test_name == 'add_new_court_order':
+        court_order_json['files'] = [file_1, file_2]
+    elif test_name == 'replace_existing_court_order':
+        court_order_json['files'] = [file_3]
+    else:
+        court_order_json['files'] = [file_1]
+
+    filing['filing']['correction']['courtOrders'] = [court_order_json]
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
+
+    filing_msg = FilingMessage(filing_identifier=filing_id)
+
+    # mock out the email sender and event publishing
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
+    mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
+                 return_value=None)
+    mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
+
+    # Test
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        process_filing(filing_msg)
+
+    # Check outcome
+    documents = court_order_filing.documents.all()
+    final_filing = Filing.find_by_id(filing_id)
+    if test_name == 'no_change':
+        assert not final_filing.meta_data.get('courtOrders')
+        assert len(documents) == 1
+        assert documents[0].file_key == file_key_1
+        assert documents[0].file_name == file_name_1
+        assert documents[0].type == DocumentType.COURT_ORDER.value
+    elif test_name == 'add_new_court_order':
+        assert len(documents) == 2
+        assert documents[0].file_key == file_key_1
+        assert documents[0].file_name == file_name_1
+        assert documents[0].type == DocumentType.COURT_ORDER.value
+        assert documents[1].file_key == file_key_2
+        assert documents[1].file_name == file_name_2
+        assert documents[1].type == DocumentType.SUPPORTING_DOCUMENT.value
+
+        court_order_meta = final_filing.meta_data.get('courtOrders')[0]
+        assert court_order_meta['files'][0]['fileKey'] == file_key_2
+        assert court_order_meta['files'][0]['fileName'] == file_name_2
+        assert court_order_meta['files'][0]['documentType'] == DocumentType.SUPPORTING_DOCUMENT.value
+    else:
+        assert len(documents) == 1
+        assert documents[0].file_key == file_key_3
+        assert documents[0].file_name == file_name_3
+        assert documents[0].type == DocumentType.COURT_ORDER.value
+
+        court_order_meta = final_filing.meta_data.get('courtOrders')[0]
+        assert court_order_meta['files'][0]['fileKey'] == file_key_3
+        assert court_order_meta['files'][0]['fileName'] == file_name_3
+        assert court_order_meta['files'][0]['documentType'] == DocumentType.COURT_ORDER.value
+
 
 @pytest.mark.parametrize(
     'test_name, legal_type',
@@ -616,7 +873,7 @@ def tests_filer_director_name_and_address_change(app, session, mocker, test_name
         assert deleted_role.cessation_date is not None
 
 
-
+@pytest.mark.parametrize('value_type', ['string', 'object'])
 @pytest.mark.parametrize(
     'test_name, legal_type',
     [
@@ -642,29 +899,39 @@ def tests_filer_director_name_and_address_change(app, session, mocker, test_name
         ('ulc_delete_all_resolution_dates', 'ULC'),
     ]
 )
-def tests_filer_resolution_dates_change(app, session, mocker, test_name, legal_type):
+def tests_filer_resolution_dates_change(app, session, mocker, test_name, legal_type, value_type):
     """Assert the worker processes the court order correctly."""
     identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_entity(identifier, legal_type, 'Test Entity')
     create_share_class(business, include_resolution_date=True)
     business_id = business.id
 
-    resolution_dates_json1 = BC_CORRECTION['filing']['correction']['shareStructure']['resolutionDates'][0]
-    resolution_dates_json2 = BC_CORRECTION['filing']['correction']['shareStructure']['resolutionDates'][1]
-
     filing = copy.deepcopy(BC_CORRECTION)
+    resolution_dates_json1 = filing['filing']['correction']['shareStructure']['resolutionDates'][0]
+    resolution_dates_json2 = filing['filing']['correction']['shareStructure']['resolutionDates'][1]
+    if value_type == 'object':
+        filing['filing']['correction']['shareStructure']['resolutionDates'][0] = {'date': resolution_dates_json1}
+        filing['filing']['correction']['shareStructure']['resolutionDates'][1] = {'date': resolution_dates_json2}
+
 
     corrected_filing = factory_completed_filing(business, BC_CORRECTION_APPLICATION)
     filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
 
     filing['filing']['correction']['contactPoint'] = CONTACT_POINT
 
-    existing_resolution_date = business.resolutions[0].resolution_date.strftime('%Y-%m-%d')
-    filing['filing']['correction']['shareStructure']['resolutionDates'].insert(0, existing_resolution_date)
+    existing_resolution = business.resolutions[0]
+    existing_resolution_date = existing_resolution.resolution_date.strftime('%Y-%m-%d')
+    if value_type == 'string':
+        filing['filing']['correction']['shareStructure']['resolutionDates'].insert(0, existing_resolution_date)
+    else:
+        filing['filing']['correction']['shareStructure']['resolutionDates'].insert(0, {'date': existing_resolution_date, 'id': existing_resolution.id})
 
     if 'add_resolution_dates' in test_name:
         new_resolution_dates = '2022-09-01'
-        filing['filing']['correction']['shareStructure']['resolutionDates'].append(new_resolution_dates)
+        if value_type == 'string':
+            filing['filing']['correction']['shareStructure']['resolutionDates'].append(new_resolution_dates)
+        else:
+            filing['filing']['correction']['shareStructure']['resolutionDates'].append({'date': new_resolution_dates})
     elif 'delete_resolution_dates' in test_name:
         del filing['filing']['correction']['shareStructure']['resolutionDates'][0]
     elif 'delete_all_resolution_dates' in test_name:
@@ -676,11 +943,17 @@ def tests_filer_resolution_dates_change(app, session, mocker, test_name, legal_t
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
     if 'update_existing_resolution_dates' in test_name or 'update_with_new_resolution_dates' in test_name:
-        updated_resolution_dates = '2022-09-01'
+        updated_resolution_date = '2022-09-01'
         if 'update_existing_resolution_dates' in test_name:
-            filing['filing']['correction']['shareStructure']['resolutionDates'][0] = updated_resolution_dates
+            if value_type == 'string':
+                filing['filing']['correction']['shareStructure']['resolutionDates'][0] = updated_resolution_date
+            else:
+                filing['filing']['correction']['shareStructure']['resolutionDates'][0] = {'date': updated_resolution_date, 'id': existing_resolution.id}
         else:
-            filing['filing']['correction']['shareStructure']['resolutionDates'] = [updated_resolution_dates]
+            if value_type == 'string':
+                filing['filing']['correction']['shareStructure']['resolutionDates'] = [updated_resolution_date]
+            else:
+                filing['filing']['correction']['shareStructure']['resolutionDates'] = [{'date': updated_resolution_date}]
         payment_id = str(random.SystemRandom().getrandbits(0x58))
         filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
 
@@ -712,24 +985,36 @@ def tests_filer_resolution_dates_change(app, session, mocker, test_name, legal_t
 
     elif 'update_existing_resolution_dates' in test_name:
         assert parse(resolution_dates_json1).date() in resolution_dates
-        assert parse(updated_resolution_dates).date() in resolution_dates
-        # existing date should NOT be removed in correction
-        assert parse(existing_resolution_date).date() in resolution_dates
+        assert parse(updated_resolution_date).date() in resolution_dates
+        if value_type == 'string':
+            # existing date should NOT be removed in correction
+            assert parse(existing_resolution_date).date() in resolution_dates
+        else:
+            assert parse(existing_resolution_date).date() not in resolution_dates
 
     elif 'update_with_new_resolution_dates' in test_name:
-        assert parse(updated_resolution_dates).date() in resolution_dates
-        # history preserved
-        assert parse(existing_resolution_date).date() in resolution_dates
+        assert parse(updated_resolution_date).date() in resolution_dates
+        if value_type == 'string':
+            # history preserved
+            assert parse(existing_resolution_date).date() in resolution_dates
+        else:
+            assert parse(existing_resolution_date).date() not in resolution_dates
 
     elif 'delete_resolution_dates' in test_name:
-        # corrections should not delete historical resolution dates
-        assert parse(existing_resolution_date).date() in resolution_dates
+        if value_type == 'string':
+            # existing date should NOT be removed in correction
+            assert parse(existing_resolution_date).date() in resolution_dates
+        else:
+            assert parse(existing_resolution_date).date() not in resolution_dates
         assert parse(resolution_dates_json1).date() in resolution_dates
         assert parse(resolution_dates_json2).date() in resolution_dates
 
     elif 'delete_all_resolution_dates' in test_name:
-        # empty list should not wipe history
-        assert parse(existing_resolution_date).date() in resolution_dates
+        if value_type == 'string':
+            # empty list should not wipe history
+            assert parse(existing_resolution_date).date() in resolution_dates
+        # else: # Uncomment when we update the code
+        #     assert parse(existing_resolution_date).date() not in resolution_dates
 
 
 
@@ -932,3 +1217,45 @@ def test_comment_only_correction(app, session, mocker, test_name):
     filing_comments = final_filing.comments.all()
     assert len(filing_comments) == 1
     assert filing_comments[0].comment == filing['filing']['correction']['comment']
+
+
+@pytest.mark.parametrize(
+    'legal_type, new_legal_type',
+    [
+        (Business.LegalTypes.COMP.value, Business.LegalTypes.BCOMP.value),
+        (Business.LegalTypes.BCOMP.value, Business.LegalTypes.COMP.value)
+    ]
+)
+def test_new_legal_type(app, session, mocker, legal_type, new_legal_type):
+    """Assert that the business legal type is correctly set during correction."""
+    identifier = f'BC{random.randint(1000000, 9999999)}'
+    business = create_entity(identifier, legal_type, 'Test Entity')
+
+    filing = copy.deepcopy(BC_CORRECTION)
+
+    corrected_filing = factory_completed_filing(business, BC_CORRECTION_APPLICATION)
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    filing['filing']['correction']['contactPoint'] = CONTACT_POINT
+    del filing['filing']['correction']['nameRequest']
+    filing['filing']['correction']['newLegalType'] = new_legal_type
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
+
+    filing_msg = FilingMessage(filing_identifier=filing_id)
+
+    # mock out the email sender and event publishing
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
+    mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
+                 return_value=None)
+    mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
+
+    # Test
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        process_filing(filing_msg)
+
+    # Check outcome
+    assert business.legal_type == new_legal_type

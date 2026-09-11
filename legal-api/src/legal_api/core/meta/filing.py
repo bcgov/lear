@@ -18,6 +18,8 @@ from contextlib import suppress
 from enum import Enum, auto
 from typing import Final
 
+from flask import current_app, url_for
+
 from business_model.models import Business, DocumentType
 from business_model.models import Filing as FilingStorage
 from legal_api.services import VersionedBusinessDetailsService as VersionService
@@ -1070,7 +1072,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         return outputs
 
     @staticmethod
-    def get_static_documents(filing, url_prefix):
+    def get_static_documents(business, filing, url_prefix):
         """Get static documents."""
         outputs = []
         if filing.filing_type == "continuationIn":
@@ -1078,7 +1080,10 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         elif filing.filing_type == "continuationOut":
             FilingMeta._get_continuation_out_static_documents(filing, url_prefix, outputs)
         elif filing.filing_type == "courtOrder":
-            FilingMeta._get_court_order_static_documents(filing, url_prefix, outputs)
+            court_order = filing.meta_data.get("courtOrder", {})
+            FilingMeta._get_court_order_static_documents(court_order, url_prefix, outputs)
+        elif filing.filing_type == "correction":
+            FilingMeta._get_correction_static_documents(business, filing, outputs)
         return outputs
 
     @staticmethod
@@ -1108,8 +1113,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 })
 
     @staticmethod
-    def _get_court_order_static_documents(filing, url_prefix, outputs):
-        court_order = filing.meta_data.get("courtOrder", {})
+    def _get_court_order_static_documents(court_order, url_prefix, outputs):
         if files := court_order.get("files"):
             for file in files:
                 file_key = file.get("fileKey")
@@ -1123,6 +1127,18 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                     "url": f"{url_prefix}/{file_key}",
                     "documentType": document_type
                 })
+
+    @staticmethod
+    def _get_correction_static_documents(business, filing, outputs):
+        base_url = current_app.config.get("BUSINESS_API_GW_URL")
+        court_orders = filing.meta_data.get("courtOrders", [])
+        for court_order in court_orders:
+            doc_url = url_for("API2.get_documents",
+                                identifier=business.identifier,
+                                filing_id=court_order.get("filingId"),
+                                legal_filing_name=None)
+            url_prefix = f"{base_url}{doc_url}/static"
+            FilingMeta._get_court_order_static_documents(court_order, url_prefix, outputs)
 
     @staticmethod
     def get_display_name(legal_type: str, filing_type: str, filing_sub_type: str | None = None) -> str:

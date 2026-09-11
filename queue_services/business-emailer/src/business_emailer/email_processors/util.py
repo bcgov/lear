@@ -31,6 +31,7 @@ FILING_TITLE = {
     "alteration": "Alteration",
     "amalgamationApplication": "Amalgamation Application",
     "annualReport": "Annual Report",
+    "agmLocationChange": "AGM Location Change",
     "changeOfDirectors": "Director Change",
     "changeOfAddress": "Address Change",
     "changeOfRegistration": "Change of Registration",
@@ -43,6 +44,7 @@ FILING_TITLE = {
         "voluntary": "Voluntary Dissolution Application"
     },
     "incorporationApplication": "Incorporation Application",
+    "noticeOfWithdrawal": "Notice of Withdrawal",
     "registration": "Registration",
     "specialResolution": "Special Resolution",
     "restoration": "Restoration",
@@ -119,6 +121,10 @@ FILING_ATTACHMENTS = {
         "alteration": {
             "attachments": ["Alteration","Notice of Articles","Certificate of Name Change","Receipt"],
             "extraPdfTypes": ["noticeOfArticles","certificateOfNameChange"],
+        },
+        "agmLocationChange": {
+            "attachments": ["Letter of AGM Location Change Approval", "Receipt"],
+            "extraPdfTypes": ["letterOfAgmLocationChange"],
         },
         "amalgamationApplication-horizontal": {
             "attachments": ["Amalgamation Application Short-form (Horizontal)","Notice of Articles","Certificate of Amalgamation","Receipt"],
@@ -203,6 +209,10 @@ FILING_ATTACHMENTS = {
         "incorporationApplication": {
             "attachments": ["Incorporation Application","Notice of Articles","Certificate of Incorporation","Receipt"],
             "extraPdfTypes": ["noticeOfArticles","certificateOfIncorporation"],
+        },
+        "noticeOfWithdrawal": {
+            "attachments": ["Notice of Withdrawal", "Receipt"],
+            "extraPdfTypes": [],
         },
         "restoration-fullRestoration": {
             "attachments": ["Full Restoration Application","Notice of Articles","Certificate of Restoration","Receipt"],

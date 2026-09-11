@@ -34,10 +34,10 @@
 """File processing rules and actions for the change of address."""
 from datetime import UTC
 
+from business_common.utils import datetime
 from business_model.models import BatchProcessing, Business
 from datedelta import datedelta
 
-from business_filer.common.datetime import datetime
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import create_address, update_address
 
