@@ -102,7 +102,7 @@ class InspectAuthSettings:
     invite_expiry_days: int = 7
     invite_expiry_cutoff: datetime | None = None
     invite_criteria: InviteCriteria | None = None
-
+    file_cnt_last_2yrs: int | None = None
     @property
     def run_verify(self) -> bool:
         """Return False so shared Auth batches only read Auth state."""
@@ -187,6 +187,15 @@ def validate_inspect_config(config: Any) -> InspectAuthSettings:
         raise ValueError("AUTH_REPORT_BATCH_SIZE must be greater than 0")
 
     inspect_filter = parse_inspect_filter(getattr(config, "INSPECT_AUTH_FILTER", None), "INSPECT_AUTH_FILTER")
+    file_cnt_raw = blank_to_none(getattr(config, "INSPECT_AUTH_FILE_CNT_LAST_2YRS", None))
+    file_cnt_last_2yrs = None
+    if file_cnt_raw is not None:
+        try:
+            file_cnt_last_2yrs = int(file_cnt_raw)
+        except (TypeError, ValueError) as exc:
+            raise ValueError("INSPECT_AUTH_FILE_CNT_LAST_2YRS must be a non-negative integer") from exc
+        if file_cnt_last_2yrs < 0:
+            raise ValueError("INSPECT_AUTH_FILE_CNT_LAST_2YRS must be a non-negative integer")
     invite_expiry_days = parse_invite_expiry_days(
         getattr(config, "INSPECT_AUTH_INVITE_EXPIRY_DAYS", None)
     )
@@ -266,6 +275,7 @@ def validate_inspect_config(config: Any) -> InspectAuthSettings:
         invite_expiry_days=invite_expiry_days,
         invite_expiry_cutoff=invite_expiry_cutoff,
         invite_criteria=invite_criteria,
+        file_cnt_last_2yrs=file_cnt_last_2yrs,
     )
 
 

@@ -245,6 +245,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     # inspect Auth flow. HAS_CONTACT / ENTITY_WITHOUT_CONTACT mean usable contact email,
     # not merely any raw contact row.
     INSPECT_AUTH_FILTER = (os.getenv('INSPECT_AUTH_FILTER') or 'ALL').strip() or 'ALL'
+    INSPECT_AUTH_FILE_CNT_LAST_2YRS = os.getenv('INSPECT_AUTH_FILE_CNT_LAST_2YRS')
     # Invitation settings stay raw here and are validated only by inspect-auth.
     # INSPECT_AUTH_INVITE_CRITERIA is an AND-composed clause list such as
     # count>=3, all_expired, age[1]>=90, newest_age>30. Positions are chronological
