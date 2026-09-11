@@ -45,10 +45,27 @@ def update_resolution_dates(business: Business, share_structure: dict) -> None:
         # if nothing is passed in, we don't care and it's not an error
         return
 
+    resolution_dates = share_structure.get("resolutionDates", [])
+    for resolution_date in resolution_dates:
+        # Kept for backward compatibility with existing alteration filings
+        resolution_dt = resolution_date["date"] if isinstance(resolution_date, dict) else resolution_date
+        resolution = Resolution(
+            resolution_date=date.fromisoformat(resolution_dt),
+            resolution_type=Resolution.ResolutionType.SPECIAL.value
+        )
+        business.resolutions.append(resolution)
+
+
+def update_resolution_dates_correction(business: Business, share_structure: dict) -> None:
+    """Update the business resolution dates from a share structure."""
+    if not business or not share_structure:
+        # if nothing is passed in, we don't care and it's not an error
+        return
+
     if "resolutionDates" in share_structure:
         resolution_dates = share_structure.get("resolutionDates", [])
         # This will fail to remove resolutions if the resolutionDates list is empty
-        # TODO: Update alteration and move to new correction to use new format, then update this code
+        # TODO: Update existing correction to use new format, then remove isinstance check below
         # Ticket: https://app.zenhub.com/workspaces/colin-egress-team-6904d552be2bb0000fa13ad6/issues/gh/bcgov/entity/34841
         if len(resolution_dates) > 0 and isinstance(resolution_dates[0], dict):
             for current_resolution in business.resolutions.all():
@@ -69,7 +86,7 @@ def update_resolution_dates(business: Business, share_structure: dict) -> None:
                     )
                     business.resolutions.append(resolution)
         else:
-            # Kept for backward compatibility (existing alteration and correction filings)
+            # Kept for backward compatibility (existing correction filings)
             for resolution_dt in resolution_dates:
                 resolution = Resolution(
                     resolution_date=date.fromisoformat(resolution_dt),
@@ -78,14 +95,15 @@ def update_resolution_dates(business: Business, share_structure: dict) -> None:
                 business.resolutions.append(resolution)
 
 
-def update_share_structure(business: Business, share_structure: dict) -> None:
+def update_share_structure(business: Business, share_structure: dict, has_resolution_dates: bool = False) -> None:
     """Manage the share structure for a business.
 
     Assumption: The structure has already been validated, upon submission.
 
     Other errors are recorded and will be managed out of band.
     """
-    update_resolution_dates(business, share_structure)
+    if has_resolution_dates:
+        update_resolution_dates(business, share_structure)
 
     if share_classes := share_structure.get("shareClasses"):
         delete_existing_shares(business)
@@ -105,7 +123,7 @@ def update_share_structure_correction(business: Business, share_structure: dict)
         # if nothing is passed in, we don't care and it's not an error
         return
 
-    update_resolution_dates(business, share_structure)
+    update_resolution_dates_correction(business, share_structure)
 
     if share_classes := share_structure.get("shareClasses"):
         # Entries in json and not in db
