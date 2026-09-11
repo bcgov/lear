@@ -155,6 +155,11 @@ def correct_business_data(business: Business,  # noqa: PLR0915
         update_relationship_entity_info(relationships, business)
         _set_lear_only(correction_filing, correction_filing_rec, relationships, business)
 
+    # update court orders, if any is present
+    with suppress(IndexError, KeyError, TypeError):
+        court_orders_json = dpath.get(correction_filing, "/correction/courtOrders")
+        filings.update_court_orders(business, court_orders_json, filing_meta)
+
     # update court order, if any is present
     with suppress(IndexError, KeyError, TypeError):
         court_order_json = dpath.get(correction_filing, "/correction/courtOrder")

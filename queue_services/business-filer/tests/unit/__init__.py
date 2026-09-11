@@ -612,6 +612,7 @@ def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME, p
         filing.business_id = business.id
         filing.filing_date = filing_date
         filing.filing_json = data_dict
+        filing._filing_type = data_dict.get('filing', {}).get('header', {}).get('name', '')
         filing.save()
 
         transaction_id = VersioningProxy.get_transaction_id(db.session())
