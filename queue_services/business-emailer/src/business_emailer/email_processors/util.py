@@ -44,6 +44,7 @@ FILING_TITLE = {
         "voluntary": "Voluntary Dissolution Application"
     },
     "incorporationApplication": "Incorporation Application",
+    "noticeOfWithdrawal": "Notice of Withdrawal",
     "registration": "Registration",
     "specialResolution": "Special Resolution",
     "restoration": "Restoration",
@@ -208,6 +209,10 @@ FILING_ATTACHMENTS = {
         "incorporationApplication": {
             "attachments": ["Incorporation Application","Notice of Articles","Certificate of Incorporation","Receipt"],
             "extraPdfTypes": ["noticeOfArticles","certificateOfIncorporation"],
+        },
+        "noticeOfWithdrawal": {
+            "attachments": ["Notice of Withdrawal", "Receipt"],
+            "extraPdfTypes": [],
         },
         "restoration-fullRestoration": {
             "attachments": ["Full Restoration Application","Notice of Articles","Certificate of Restoration","Receipt"],
