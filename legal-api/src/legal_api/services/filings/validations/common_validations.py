@@ -587,21 +587,28 @@ def _validate_court_order_documents(court_order_path, court_order):
     if file_key:
         msg.extend(validate_pdf(file_key, f"{court_order_path}/fileKey"))
     elif files:
-        court_order_document_count = 0
-        files_path = f"{court_order_path}/files"
-        for file_index, file in enumerate(files):
-            if file.get("documentType") == DocumentType.COURT_ORDER.value:
-                court_order_document_count += 1
+        msg.extend(_validate_court_order_documents_list(f"{court_order_path}/files", files, existing_file_keys))
 
-            if file.get("fileKey") in existing_file_keys:
-                continue  # don't validate existing file keys
+    return msg
 
-            msg.extend(validate_pdf(file.get("fileKey"), f"{files_path}/{file_index}/fileKey"))
 
-        if court_order_document_count == 0: # if only supporting documents and no court order documents were found
-            msg.append({"error": _("At least one Court Order document is required."), "path": files_path})
-        elif court_order_document_count > 1:
-            msg.append({"error": _("Only one Court Order document is allowed."), "path": files_path})
+def _validate_court_order_documents_list(files_path, files, existing_file_keys):
+    """Validate the court order documents list."""
+    msg = []
+    court_order_document_count = 0
+    for file_index, file in enumerate(files):
+        if file.get("documentType") == DocumentType.COURT_ORDER.value:
+            court_order_document_count += 1
+
+        if file.get("fileKey") in existing_file_keys:
+            continue  # don't validate existing file keys
+
+        msg.extend(validate_pdf(file.get("fileKey"), f"{files_path}/{file_index}/fileKey"))
+
+    if court_order_document_count == 0: # if only supporting documents and no court order documents were found
+        msg.append({"error": _("At least one Court Order document is required."), "path": files_path})
+    elif court_order_document_count > 1:
+        msg.append({"error": _("Only one Court Order document is allowed."), "path": files_path})
 
     return msg
 
