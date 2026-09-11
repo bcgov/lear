@@ -13,6 +13,7 @@
 # limitations under the License.
 """Test Correction IA validations."""
 
+import uuid
 import copy
 import datedelta
 import pycountry
@@ -23,7 +24,16 @@ from unittest.mock import patch
 
 import pytest
 
-from business_model.models import AmalgamatingBusiness, Amalgamation, Business, CourtOrder, PartyRole, Resolution
+from business_model.models import (
+    AmalgamatingBusiness,
+    Amalgamation,
+    Business,
+    CourtOrder,
+    Document,
+    DocumentType,
+    PartyRole,
+    Resolution
+)
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_common.utils.datetime import datetime as dt, timedelta
 from legal_api.services import NameXService
@@ -933,6 +943,7 @@ def test_validate_continuation_out_date(session, app, jwt, filing_type, test_nam
         'date': '2023-06-19'
     }
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
 
     if test_name == 'FAIL_IN_FUTURE':
         filing['filing']['correction'][filing_type]['date'] = \
@@ -984,7 +995,7 @@ def test_validate_continuation_out_foreign_jurisdiction(session, app, jwt, filin
         'date': '2023-06-19'
     }
     del filing['filing']['correction']['commentOnly']
-
+    del filing['filing']['correction']['nameRequest']
 
     if test_name == 'FAIL_NO_COUNTRY':
         del filing['filing']['correction'][filing_type]['country']
@@ -1042,6 +1053,7 @@ def test_validate_correction_out_existing_foreign_jurisdiction(mocker, app, sess
         'date': '2023-06-19'
     }
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
 
     with jwt_request_context(app, jwt, [BASIC_USER]):
         err = validate(business, filing)
@@ -1336,6 +1348,7 @@ def test_validate_invalid_court_order(app, jwt, session, invalid_court_order, er
     filing['filing']['header']['identifier'] = identifier
     filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
     filing['filing']['correction']['courtOrder'] = invalid_court_order
 
     with jwt_request_context(app, jwt, [BASIC_USER]):
@@ -1381,6 +1394,7 @@ def test_validate_invalid_court_orders_new(app, jwt, session, invalid_court_orde
     filing['filing']['header']['identifier'] = identifier
     filing['filing']['correction']['correctedFilingId'] = ia_filing.id
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
     invalid_court_order["filingId"] = ia_filing.id
 
     filing['filing']['correction']['courtOrders'] = [invalid_court_order]
@@ -1426,6 +1440,7 @@ def test_validate_invalid_court_orders_old(app, jwt, session, invalid_court_orde
     filing['filing']['header']['identifier'] = identifier
     filing['filing']['correction']['correctedFilingId'] = ia_filing.id
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
     invalid_court_order["filingId"] = ia_filing.id
     invalid_court_order["id"] = court_order.id
 
@@ -1460,6 +1475,7 @@ def test_validate_invalid_court_orders(app, jwt, session, test_name, error_msg):
     filing['filing']['header']['identifier'] = identifier
     filing['filing']['correction']['correctedFilingId'] = ia_filing.id
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
     if test_name == "court_order_not_found":
         invalid_court_order["filingId"] = ia_filing.id
         invalid_court_order["id"] = 99999999
@@ -1488,6 +1504,103 @@ def test_validate_invalid_court_orders(app, jwt, session, test_name, error_msg):
         err = validate(business, filing)
     assert err
     assert err.msg[0]['error'] == error_msg
+
+
+@pytest.mark.parametrize('test_name', [
+    ('no_change'),
+    ('add_new_court_order'),
+    ('replace_existing_court_order')
+])
+def test_validate_correction_court_order_documents(app, session, jwt, mocker, test_name):
+    """Assert the worker process process the court orders correctly."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+
+    ia_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+    court_order_filing = factory_completed_filing(business, COURT_ORDER_FILING_TEMPLATE)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = ia_filing.id
+    del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
+
+    file_number = '#1234-5678/90'
+    new_file_number = '#2222-2222/22'
+    effect_of_order = 'planOfArrangement'
+    order_details = 'Court order details'
+
+    court_order = CourtOrder(
+        filing_id=court_order_filing.id,
+        business_id=business.id,
+        file_number=file_number,
+        effect_of_order=effect_of_order,
+        order_details=order_details
+    )
+    court_order.save()
+
+    court_order_json = {
+        "filingId": court_order_filing.id,
+        "fileNumber": file_number,
+        "effectOfOrder": effect_of_order,
+        "orderDetails": order_details,
+        "id": court_order.id
+    }
+    file_key_1 = f"{uuid.uuid4()}.pdf"
+    file_key_2 = f"{uuid.uuid4()}.pdf"
+    file_key_3 = f"{uuid.uuid4()}.pdf"
+    file_name_1 = f'Court Order {file_number}_01.pdf'
+    file_name_2 = f'Court Order {file_number}_02.pdf'
+    file_name_3 = f'Court Order {file_number}_03.pdf'
+    file_1 = {
+        "fileKey": file_key_1,
+        "fileName": file_name_1,
+        "documentType": DocumentType.COURT_ORDER.value
+    }
+    file_2 = {
+        "fileKey": file_key_2,
+        "fileName": file_name_2,
+        "documentType": DocumentType.SUPPORTING_DOCUMENT.value
+    }
+    file_3 = {
+        "fileKey": file_key_3,
+        "fileName": file_name_3,
+        "documentType": DocumentType.COURT_ORDER.value
+    }
+
+    document = Document()
+    document.type = file_1.get("documentType")
+    document.file_key = file_1.get("fileKey")
+    document.file_name = file_1.get("fileName")
+    document.filing_id = court_order_filing.id
+    document.business_id = business.id
+    document.save()
+
+    if test_name == 'add_new_court_order':
+        court_order_json['files'] = [file_1, file_2]
+    elif test_name == 'replace_existing_court_order':
+        court_order_json['files'] = [file_3]
+    else:
+        court_order_json['files'] = [file_1]
+
+    filing['filing']['correction']['courtOrders'] = [court_order_json]
+
+    
+    mock_validate_pdf = mocker.patch('legal_api.services.filings.validations.common_validations.validate_pdf', return_value=[])
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+    assert not err
+
+    if test_name == 'add_new_court_order':
+        assert len(mock_validate_pdf.call_args_list) == 1
+        assert mock_validate_pdf.call_args_list[0].args[0] == file_key_2
+    elif test_name == 'replace_existing_court_order':
+        assert len(mock_validate_pdf.call_args_list) == 1
+        assert mock_validate_pdf.call_args_list[0].args[0] == file_key_3
+    else:
+        assert len(mock_validate_pdf.call_args_list) == 0
+
 
 
 @pytest.mark.parametrize('test_name, err_msg', [
@@ -1533,6 +1646,7 @@ def test_validate_correction_relationships_roles(session, app, jwt, test_name, e
     filing['filing']['business']['legalType'] = business.legal_type
     del filing['filing']['correction']['commentOnly']
     del filing['filing']['correction']['parties']
+    del filing['filing']['correction']['nameRequest']
 
     if test_name == "test_completing_party_staff":
         filing['filing']['correction']['type'] = 'STAFF'

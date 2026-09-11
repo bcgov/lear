@@ -576,23 +576,39 @@ def _validate_court_order_documents(court_order_path, court_order):
     file_key = court_order.get("fileKey")
     files = court_order.get("files", [])
 
+    existing_file_keys = []
+    if filing_id := court_order.get("filingId"):  # used for correction filings
+        filing = Filing.find_by_id(filing_id)
+        existing_file_keys = [document.file_key for document in filing.documents.all()]
+
     if not court_order.get("orderDetails") and not file_key and not files:
         msg.append({"error": _("Court Order is required (in orderDetails/fileKey/files)."), "path": court_order_path})
 
     if file_key:
         msg.extend(validate_pdf(file_key, f"{court_order_path}/fileKey"))
     elif files:
-        court_order_document_count = 0
-        files_path = f"{court_order_path}/files"
-        for file_index, file in enumerate(files):
-            if file.get("documentType") == DocumentType.COURT_ORDER.value:
-                court_order_document_count += 1
-            msg.extend(validate_pdf(file.get("fileKey"), f"{files_path}/{file_index}/fileKey"))
+        msg.extend(_validate_court_order_documents_list(f"{court_order_path}/files", files, existing_file_keys))
 
-        if court_order_document_count == 0: # if only supporting documents and no court order documents were found
-            msg.append({"error": _("At least one Court Order document is required."), "path": files_path})
-        elif court_order_document_count > 1:
-            msg.append({"error": _("Only one Court Order document is allowed."), "path": files_path})
+    return msg
+
+
+def _validate_court_order_documents_list(files_path, files, existing_file_keys):
+    """Validate the court order documents list."""
+    msg = []
+    court_order_document_count = 0
+    for file_index, file in enumerate(files):
+        if file.get("documentType") == DocumentType.COURT_ORDER.value:
+            court_order_document_count += 1
+
+        if file.get("fileKey") in existing_file_keys:
+            continue  # don't validate existing file keys
+
+        msg.extend(validate_pdf(file.get("fileKey"), f"{files_path}/{file_index}/fileKey"))
+
+    if court_order_document_count == 0: # if only supporting documents and no court order documents were found
+        msg.append({"error": _("At least one Court Order document is required."), "path": files_path})
+    elif court_order_document_count > 1:
+        msg.append({"error": _("Only one Court Order document is allowed."), "path": files_path})
 
     return msg
 
