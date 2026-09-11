@@ -173,6 +173,14 @@ JURISDICTION = {
     'expro_legal_name': None,
 }
 
+COURT_ORDER = {
+    'business_id': None,
+    'file_number': None,
+    'order_date': None,  # date
+    'effect_of_order': None,
+    'order_details': None,
+}
+
 
 # ======== filing ========
 FILING_JSON = {

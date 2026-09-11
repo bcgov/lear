@@ -8,7 +8,8 @@ from typing import Final, Optional
 import pandas as pd
 import pytz
 from sqlalchemy import Connection, bindparam, text
-from tombstone.tombstone_base_data import (ALIAS, AMALGAMATION, FILING,
+from tombstone.tombstone_base_data import (ALIAS, AMALGAMATION,
+                                           COURT_ORDER, FILING,
                                            FILING_JSON, IN_DISSOLUTION,
                                            JURISDICTION, OFFICE, OFFICES_HELD,
                                            PARTY, PARTY_ROLE, RESOLUTION,
@@ -369,6 +370,24 @@ def format_resolutions_data(data: dict, config=None) -> list[dict]:
     return formatted_resolutions
 
 
+def format_court_order_data(data: dict, event_id: Decimal) -> Optional[dict]:
+    court_order_data = data['court_order']
+
+    matched_court_order = [
+        item for item in court_order_data if item.get('e_event_id') == event_id
+    ]
+
+    if not matched_court_order:
+        return None
+
+    formatted_court_order = copy.deepcopy(COURT_ORDER)
+    formatted_court_order['file_number'] = matched_court_order[0]['f_court_order_num']
+    formatted_court_order['effect_of_order'] = matched_court_order[0]['f_arrangement_ind']
+    formatted_court_order['order_date'] = None  # Note: order_date is not available in the current data, so set it to None
+    formatted_court_order['order_details'] = matched_court_order[0]['lt_notation']
+
+    return formatted_court_order
+
 def format_jurisdictions_data(data: dict, event_id: Decimal) -> dict:
     jurisdictions_data = data['jurisdictions']
 
@@ -463,6 +482,7 @@ def format_filings_data(data: dict, config=None) -> dict:
         jurisdiction = None
         amalgamation = None
         consent_continuation_out = None
+        court_order = None
 
         user_id = get_username(x)
 
@@ -520,6 +540,8 @@ def format_filings_data(data: dict, config=None) -> dict:
 
         comments = format_filing_comments_data(data, x['e_event_id'])
 
+        court_order = format_court_order_data(data, x['e_event_id'])
+
         colin_event_ids = {'colin_event_id': x['e_event_id']}
         filing = {
             'filings': filing_body,
@@ -527,7 +549,8 @@ def format_filings_data(data: dict, config=None) -> dict:
             'amalgamations': amalgamation,
             'comments': comments,
             'colin_event_ids': colin_event_ids,
-            'consent_continuation_out': consent_continuation_out
+            'consent_continuation_out': consent_continuation_out,
+            'court_order': court_order
         }
 
         formatted_filings.append(filing)
@@ -876,6 +899,31 @@ def get_business_update_value(key: str, effective_date: str, trigger_date: str, 
     return value
 
 
+def update_court_order(meta_data: dict, data: dict, filing_data: dict) -> None:
+    court_order_data = data['court_order']
+
+    matched_court_order = [
+        item for item in court_order_data if item.get('e_event_id') == filing_data['e_event_id']
+    ]
+
+    if not matched_court_order:
+        return None
+
+    court_order_num = matched_court_order[0]['f_court_order_num']
+
+    if not court_order_num:
+        return
+
+    meta_data['courtOrder'] = meta_data.get('courtOrder', {})
+    meta_data['courtOrder']['fileNumber'] = court_order_num
+
+    if effect_of_order := matched_court_order[0]['f_arrangement_ind']:
+        meta_data['courtOrder']['effectOfOrder'] = effect_of_order
+
+    if order_details := matched_court_order[0]['lt_notation']:
+        meta_data['courtOrder']['orderDetails'] = order_details
+
+
 def build_filing_json_meta_data(raw_filing_type: str,
                                 filing_type: str,
                                 filing_subtype: str,
@@ -1024,6 +1072,9 @@ def build_filing_json_meta_data(raw_filing_type: str,
             **meta_data,
             'withdrawnDate': withdrawn_ts.isoformat()
         }
+
+    # populate court order info in meta_data if available
+    update_court_order(meta_data, data, filing_data)
 
     # TODO: populate meta_data for correction to display correct filing name
 
