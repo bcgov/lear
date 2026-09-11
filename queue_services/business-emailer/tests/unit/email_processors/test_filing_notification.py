@@ -100,6 +100,17 @@ def mock_filing_docs(m, config, identifier, filing, doc_contents, receipt=b'rece
             status_code=201,
         )
 
+def prep_notice_of_withdrawal(identifier, legal_type, legal_name, withdrawn_filing_type, withdrawn_filing_json,
+                              is_temp, business_id=None):
+    """Return a completed notice of withdrawal filing and the future effective filing it withdraws."""
+    fe_filing = create_future_effective_filing(
+        identifier, legal_type, legal_name, withdrawn_filing_type, withdrawn_filing_json, is_temp, business_id)
+    now_filing = prep_notice_of_withdraw_filing(identifier, '1', legal_type, legal_name, business_id, fe_filing)
+    now_filing._status = 'COMPLETED'
+    now_filing.save()
+    return now_filing, fe_filing
+
+
 
 def firm_parties():
     """Return a fresh single-person FIRM party list."""
@@ -1165,17 +1176,6 @@ def test_dissolution_involuntary_returns_none(app, session):
 # ---------------------------------------------------------------------------
 # Notice of withdrawal
 # ---------------------------------------------------------------------------
-
-def prep_notice_of_withdrawal(identifier, legal_type, legal_name, withdrawn_filing_type, withdrawn_filing_json,
-                              is_temp, business_id=None):
-    """Return a completed notice of withdrawal filing and the future effective filing it withdraws."""
-    fe_filing = create_future_effective_filing(
-        identifier, legal_type, legal_name, withdrawn_filing_type, withdrawn_filing_json, is_temp, business_id)
-    now_filing = prep_notice_of_withdraw_filing(identifier, '1', legal_type, legal_name, business_id, fe_filing)
-    now_filing._status = 'COMPLETED'
-    now_filing.save()
-    return now_filing, fe_filing
-
 
 @pytest.mark.parametrize(
         'legal_name, legal_type, withdrawn_filing_type, withdrawn_filing_json, is_temp, tax_id, withdrawn_filing_name', [
