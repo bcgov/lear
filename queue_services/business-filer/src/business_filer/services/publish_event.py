@@ -116,12 +116,9 @@ class PublishEvent:
         Updates the document record(s) with filing/business information once a filing completes,
         so the document shows up correctly in the ledger and is searchable in the DRS UI.
         """
-        if not (court_orders := filing.meta_data.get("courtOrders")):
-            return
-
         try:
             subject = app.config.get("DOC_UPDATE_REC_TOPIC")
-            for court_order in court_orders:
+            for court_order in filing.meta_data.get("courtOrders", []):
                 if not (files := court_order.get("files")):
                     continue
 

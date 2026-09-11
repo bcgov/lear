@@ -37,7 +37,6 @@ from contextlib import suppress
 from business_common.utils import datetime
 from business_model.models import Business, CourtOrder, Filing
 from business_model.models.types.filings import FilingTypes
-from flask_babel import _ as babel
 
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import documents
@@ -82,38 +81,45 @@ def create_court_order(filing: Filing,
     return court_order_meta
 
 
+def update_court_order(court_order: dict, filing: Filing, court_order_meta: dict) -> bool:
+    """Update a court order."""
+    has_changed = False
+    file_number = court_order.get("fileNumber")
+    effect_of_order = court_order.get("effectOfOrder")
+    order_details = court_order.get("orderDetails")
+
+    court_order_obj = CourtOrder.get_by_id(court_order.get("id"))
+    if not is_same_str(court_order_obj.file_number, file_number):
+        court_order_meta["fileNumber"] = file_number
+        has_changed = True
+    if not is_same_str(court_order_obj.effect_of_order, effect_of_order):
+        court_order_meta["effectOfOrder"] = effect_of_order
+        has_changed = True
+    if not is_same_str(court_order_obj.order_details, order_details):
+        court_order_meta["orderDetails"] = order_details
+        has_changed = True
+
+    if has_changed:
+        court_order_obj.file_number = file_number
+        court_order_obj.effect_of_order = effect_of_order
+        court_order_obj.order_details = order_details
+        filing.court_orders.append(court_order_obj)
+
+    return has_changed
+
+
 def update_court_orders(business: Business,
                         court_orders: list[dict],
                         filing_meta: FilingMeta) -> None:
     """Update court orders."""
-    if not business:
-        return {"error": babel("Business is required before a court order can be created.")}
-
     court_orders_meta = []
     for court_order in court_orders:
         filing = Filing.find_by_id(court_order.get("filingId"))
-        file_number = court_order.get("fileNumber")
-        effect_of_order = court_order.get("effectOfOrder")
-        order_details = court_order.get("orderDetails")
+
         has_changed = False
         court_order_meta = {"filingId": filing.id}
-        if court_order_id := court_order.get("id"):
-            court_order_obj = CourtOrder.get_by_id(court_order_id)
-
-            if not is_same_str(court_order_obj.file_number, file_number):
-                court_order_meta["fileNumber"] = file_number
-                has_changed = True
-            if not is_same_str(court_order_obj.effect_of_order, effect_of_order):
-                court_order_meta["effectOfOrder"] = effect_of_order
-                has_changed = True
-            if not is_same_str(court_order_obj.order_details, order_details):
-                court_order_meta["orderDetails"] = order_details
-                has_changed = True
-
-            court_order_obj.file_number = file_number
-            court_order_obj.effect_of_order = effect_of_order
-            court_order_obj.order_details = order_details
-            filing.court_orders.append(court_order_obj)
+        if court_order.get("id"):
+            has_changed = update_court_order(court_order, filing, court_order_meta)
         else:
             court_order_meta = {
                 **court_order_meta,
