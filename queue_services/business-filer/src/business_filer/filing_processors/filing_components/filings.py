@@ -34,11 +34,11 @@
 """Manages the  names of a Business."""
 from contextlib import suppress
 
+from business_common.utils import datetime
 from business_model.models import Business, CourtOrder, Filing
 from business_model.models.types.filings import FilingTypes
 from flask_babel import _ as babel
 
-from business_filer.common.datetime import datetime
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import documents
 from business_filer.services.utils import is_same_str
