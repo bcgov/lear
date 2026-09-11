@@ -588,6 +588,7 @@ class Filing:  # pylint: disable=too-many-public-methods
             filing.storage.transaction_id and
             (business_rev := VersionedBusinessDetailsService.get_business_revision_obj(filing.storage, business.id))
         ):
+            business_rev.identifier = business.identifier
             business = business_rev
 
         adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]

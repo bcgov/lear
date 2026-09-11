@@ -576,6 +576,11 @@ def _validate_court_order_documents(court_order_path, court_order):
     file_key = court_order.get("fileKey")
     files = court_order.get("files", [])
 
+    existing_file_keys = []
+    if filing_id := court_order.get("filingId"):  # used for correction filings
+        filing = Filing.find_by_id(filing_id)
+        existing_file_keys = [document.file_key for document in filing.documents.all()]
+
     if not court_order.get("orderDetails") and not file_key and not files:
         msg.append({"error": _("Court Order is required (in orderDetails/fileKey/files)."), "path": court_order_path})
 
@@ -587,6 +592,10 @@ def _validate_court_order_documents(court_order_path, court_order):
         for file_index, file in enumerate(files):
             if file.get("documentType") == DocumentType.COURT_ORDER.value:
                 court_order_document_count += 1
+
+            if file.get("fileKey") in existing_file_keys:
+                continue  # don't validate existing file keys
+
             msg.extend(validate_pdf(file.get("fileKey"), f"{files_path}/{file_index}/fileKey"))
 
         if court_order_document_count == 0: # if only supporting documents and no court order documents were found
