@@ -702,9 +702,11 @@ def get_court_order_query(corp_num):
             e.event_id             as e_event_id,
             e.corp_num             as e_corp_num,
             f.arrangement_ind      as f_arrangement_ind,
-            f.court_order_num      as f_court_order_num
+            f.court_order_num      as f_court_order_num,
+            lt.notation            as lt_notation
         from event e
                  left outer join filing f on e.event_id = f.event_id
+                 left outer join ledger_text lt on lt.event_id = f.event_id
         where 1 = 1
             and e.corp_num = '{corp_num}'
             and f.court_order_num is not NULL

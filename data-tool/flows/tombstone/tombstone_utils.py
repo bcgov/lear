@@ -384,7 +384,7 @@ def format_court_order_data(data: dict, event_id: Decimal) -> Optional[dict]:
     formatted_court_order['file_number'] = matched_court_order[0]['f_court_order_num']
     formatted_court_order['effect_of_order'] = matched_court_order[0]['f_arrangement_ind']
     formatted_court_order['order_date'] = None  # Note: order_date is not available in the current data, so set it to None
-    formatted_court_order['order_details'] = None  # Note: order_details is not available in the current data, so set it to None
+    formatted_court_order['order_details'] = matched_court_order[0]['lt_notation']
 
     return formatted_court_order
 
@@ -899,16 +899,29 @@ def get_business_update_value(key: str, effective_date: str, trigger_date: str, 
     return value
 
 
-def update_court_order(meta_data: dict, filing_data: dict) -> None:
-    court_order_num = filing_data.get('court_order_num')
+def update_court_order(meta_data: dict, data: dict, filing_data: dict) -> None:
+    court_order_data = data['court_order']
+
+    matched_court_order = [
+        item for item in court_order_data if item.get('e_event_id') == filing_data['e_event_id']
+    ]
+
+    if not matched_court_order:
+        return None
+
+    court_order_num = matched_court_order[0]['f_court_order_num']
+
     if not court_order_num:
         return
 
     meta_data['courtOrder'] = meta_data.get('courtOrder', {})
     meta_data['courtOrder']['fileNumber'] = court_order_num
 
-    if effect_of_order := filing_data.get('arrangement_ind'):
+    if effect_of_order := matched_court_order[0]['f_arrangement_ind']:
         meta_data['courtOrder']['effectOfOrder'] = effect_of_order
+
+    if order_details := matched_court_order[0]['lt_notation']:
+        meta_data['courtOrder']['orderDetails'] = order_details
 
 
 def build_filing_json_meta_data(raw_filing_type: str,
@@ -1061,7 +1074,7 @@ def build_filing_json_meta_data(raw_filing_type: str,
         }
 
     # populate court order info in meta_data if available
-    update_court_order(meta_data, filing_data)
+    update_court_order(meta_data, data, filing_data)
 
     # TODO: populate meta_data for correction to display correct filing name
 
