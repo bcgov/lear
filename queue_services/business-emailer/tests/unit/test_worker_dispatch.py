@@ -30,7 +30,6 @@ from business_emailer.email_processors import (
     filing_notification,
     mras_notification,
     name_request,
-    notice_of_withdrawal_notification,
     nr_notification,
 )
 from business_emailer.resources import business_emailer as worker
@@ -202,16 +201,6 @@ def test_amalgamation_out_dispatches(app, session, mocker, mock_send_email):
     mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
 
 
-def test_notice_of_withdrawal_completed_dispatches(app, session, mocker, mock_send_email):
-    mock_process = mocker.patch.object(notice_of_withdrawal_notification, "process", return_value=STUB_EMAIL)
-    email = {"type": "noticeOfWithdrawal", "option": COMPLETED}
-
-    worker.process_email(_ce({"email": email}))
-
-    mock_process.assert_called_once_with(email, TOKEN)
-    mock_send_email.assert_called_once_with(STUB_EMAIL, TOKEN)
-
-
 # --------------------------------------------------------------------------- #
 # filing_notification branch                                                #
 # --------------------------------------------------------------------------- #
@@ -232,6 +221,7 @@ def test_notice_of_withdrawal_completed_dispatches(app, session, mocker, mock_se
     "correction",
     "dissolution",
     "incorporationApplication",
+    "noticeOfWithdrawal",
     "registration",
     "restoration",
     "specialResolution",

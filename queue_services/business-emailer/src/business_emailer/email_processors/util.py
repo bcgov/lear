@@ -44,6 +44,7 @@ FILING_TITLE = {
         "voluntary": "Voluntary Dissolution Application"
     },
     "incorporationApplication": "Incorporation Application",
+    "noticeOfWithdrawal": "Notice of Withdrawal",
     "registration": "Registration",
     "specialResolution": "Special Resolution",
     "restoration": "Restoration",

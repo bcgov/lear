@@ -191,6 +191,65 @@ def _get_out_filing_details(filing: Filing) -> dict | None:
         }
 
 
+def _get_temp_business(filing: Filing, filing_data: dict, withdrawn_filing: Filing | None) -> dict | None:
+    """Return the business details for a filing that has no business record yet (new business filings)."""
+    if filing.filing_type in Filing.TempCorpFilingType:
+        # For new business filings, the nameRequest contains relevant business details.
+        # We overwrite the business info from the nameRequest and then set the identifier back to the temp reg id.
+        business = filing_data.get("nameRequest")
+        business["identifier"] = filing.temp_reg
+        return business
+
+    if withdrawn_filing:
+        # For a withdrawn new business filing (IA, Amalgamation, Continuation In), the nameRequest on the
+        # withdrawn filing contains the business details (NR name, or the primary/holding business name).
+        business = withdrawn_filing.filing_json["filing"][withdrawn_filing.filing_type]["nameRequest"]
+        business["identifier"] = withdrawn_filing.temp_reg
+        if not business.get("legalName"):
+            business["legalName"] = Business.BUSINESSES.get(business.get("legalType"), {}).get("numberedDescription")
+        return business
+
+    return None
+
+
+def _get_filing_recipients(
+    status: str, filing: Filing, withdrawn_filing: Filing | None, business_identifier: str, token: str
+) -> str:
+    """Return the recipients for the filing notification."""
+    filing_type = filing.filing_type
+    recipient_filing_type = None
+    recipient_filing_json = filing.filing_json
+    if filing_type in Filing.TempCorpFilingType or filing_type in ["changeOfRegistration", "correction", "dissolution"]:
+        recipient_filing_type = filing_type
+    elif withdrawn_filing and not filing.business_id:
+        # withdrawn new business filing: notify the contacts on the withdrawn filing
+        recipient_filing_type = withdrawn_filing.filing_type
+        recipient_filing_json = withdrawn_filing.filing_json
+
+    recipients = get_recipients(status, recipient_filing_json, token, recipient_filing_type)
+
+    if filing_type == "dissolution" and (business_email := get_recipient_from_auth(business_identifier, token)):
+        # dissolution also notifies the business contact email
+        recipients = f"{recipients}, {business_email}" if recipients else business_email
+
+    if additional_recipients := _get_additional_recipients(filing, token):
+        recipients = f"{recipients}, {additional_recipients}"
+
+    return recipients
+
+
+def _get_withdrawal_details(filing: Filing, withdrawn_filing: Filing | None) -> dict:
+    """Return the template details for a notice of withdrawal filing."""
+    if not withdrawn_filing:
+        return {}
+    withdrawn_filing_name, _ = _get_filing_display_names(withdrawn_filing.filing_type, withdrawn_filing.filing_sub_type)
+    return {
+        # the withdrawn filing id is shown (instead of the incorporation number) for new business filings
+        "filing_id": withdrawn_filing.id if not filing.business_id else None,
+        "withdrawn_filing_name": withdrawn_filing_name
+    }
+
+
 def _get_filing_display_names(filing_type: str, filing_subtype: str | None):
     """Return the filing display names for the given type and subtype."""
     filing_name, filing_name_short = FILING_TITLE.get(filing_type), FILING_TITLE_SHORT.get(filing_type)
@@ -227,12 +286,9 @@ def process(email_info: dict, token: str) -> dict | None:
     filing, business, leg_tmz_filing_date, leg_tmz_effective_date = get_filing_info(email_info["filingId"])
 
     filing_data = filing.json.get("filing", {}).get(filing_type, {})
-    if filing_type in Filing.TempCorpFilingType and not business:
-        # For new business filings, the nameRequest contains relevant business details.
-        # We overwrite the business info from the nameRequest and then set the identifier back to the temp reg id.
-        name_request = filing_data.get("nameRequest")
-        business = name_request
-        business["identifier"] = filing.temp_reg
+    withdrawn_filing = Filing.find_by_id(filing.withdrawn_filing_id) if filing_type == "noticeOfWithdrawal" else None
+    if not business:
+        business = _get_temp_business(filing, filing_data, withdrawn_filing)
 
     legal_type = business.get("legalType")
     filing_name, filing_name_short = _get_filing_display_names(filing_type, filing.filing_sub_type)
@@ -291,23 +347,13 @@ def process(email_info: dict, token: str) -> dict | None:
         show_effective_date=show_effective_date,
         what_happens_next_name=what_happens_next_name,
         # consent/continuation/amalgamation out values
-        **out_filing_details
+        **out_filing_details,
+        # notice of withdrawal values
+        **_get_withdrawal_details(filing, withdrawn_filing)
     )
 
     # get recipients
-    recipient_filing_type = None
-    if filing_type in Filing.TempCorpFilingType or filing_type in ["changeOfRegistration", "correction", "dissolution"]:
-        recipient_filing_type = filing_type
-
-    recipients = get_recipients(status, filing.filing_json, token, recipient_filing_type)
-
-    if filing_type == "dissolution" and (business_email := get_recipient_from_auth(business_identifier, token)):
-        # dissolution also notifies the business contact email
-        recipients = f"{recipients}, {business_email}" if recipients else business_email
-
-    if additional_recipients := _get_additional_recipients(filing, token):
-        recipients = f"{recipients}, {additional_recipients}"
-
+    recipients = _get_filing_recipients(status, filing, withdrawn_filing, business_identifier, token)
     if not recipients:
         current_app.logger.error("No recipients found for filing notification email: %s", email_info)
         return

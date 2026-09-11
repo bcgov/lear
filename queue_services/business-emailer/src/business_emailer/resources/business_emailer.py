@@ -53,7 +53,6 @@ from business_emailer.email_processors import (
     involuntary_dissolution_stage_1_notification,
     mras_notification,
     name_request,
-    notice_of_withdrawal_notification,
     nr_notification,
 )
 from business_emailer.email_processors.util import FILING_TITLE
@@ -231,9 +230,6 @@ def process_email(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, t
         elif etype == "continuationIn" and option in ReviewStatus._member_names_:
             # Special case for review step of continuation in filing. Regular filing notifications are handled by the filing_notification processor.
             email = continuation_authorization_notification.process(email_msg["email"], token)
-            send_email(email, token)
-        elif etype == "noticeOfWithdrawal" and option == Filing.Status.COMPLETED.value:
-            email = notice_of_withdrawal_notification.process(email_msg["email"], token)
             send_email(email, token)
         elif etype in FILING_TITLE:
             if email := filing_notification.process(email_msg["email"], token):
