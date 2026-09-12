@@ -421,12 +421,12 @@ FOUNDING_DATE = NOW - datedelta.YEAR
 
         ('FAILURE_future_date', True, False, [(NOW + datedelta.DAY).date().isoformat()], HTTPStatus.BAD_REQUEST, [
             {'error': 'Resolution date cannot be in the future.',
-             'path': '/filing/alteration/shareStructure/resolutionDates'}
+             'path': '/filing/alteration/shareStructure/resolutionDates/0'}
         ]),
 
         ('FAILURE_before_founding', True, False, [(FOUNDING_DATE - datedelta.DAY).date().isoformat()], HTTPStatus.BAD_REQUEST, [
             {'error': 'Resolution date cannot be before the business founding date.',
-             'path': '/filing/alteration/shareStructure/resolutionDates'}
+             'path': '/filing/alteration/shareStructure/resolutionDates/0'}
         ]),
     ]
 )
