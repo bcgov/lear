@@ -75,7 +75,7 @@ def test_manage_share_structure__resolution_dates(
         business.save()
         resolution_dates[0]['id'] = resolution.id
     try:
-        shares.update_share_structure(business, new_data['shareStructure'])
+        shares.update_share_structure(business, new_data['shareStructure'], True)
         business.save()
         if 'id' in resolution_dates[0]:
             del resolution_dates[0]['id']

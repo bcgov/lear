@@ -37,7 +37,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_names,
     validate_pdf,
     validate_relationships,
-    validate_resolution_date_in_share_structure,
+    validate_resolution_date_in_share_structure_correction,
     validate_share_currency,
     validate_share_structure,
 )
@@ -247,7 +247,7 @@ def _validate_corps_correction_active(business: Business, filing_dict, legal_typ
             msg.extend(err)
 
         msg.extend(validate_share_currency(filing_dict, filing_type, business))
-        msg.extend(validate_resolution_date_in_share_structure(filing_dict, filing_type, business))
+        msg.extend(validate_resolution_date_in_share_structure_correction(filing_dict, filing_type, business))
 
     msg.extend(_validate_continuation_in_correction(filing_dict, filing_type, legal_type, business))
     msg.extend(_validate_amalgamation_correction(filing_dict, filing_type, business))
