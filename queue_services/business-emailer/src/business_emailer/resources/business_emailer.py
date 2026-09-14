@@ -44,10 +44,8 @@ from business_account import AccountService
 from business_emailer.email_processors import (
     affiliation_notification,
     agm_extension_notification,
-    amalgamation_out_notification,
     ar_reminder_notification,
     bn_notification,
-    consent_amalgamation_out_notification,
     continuation_authorization_notification,
     filing_notification,
     involuntary_dissolution_stage_1_notification,
@@ -220,12 +218,6 @@ def process_email(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, t
             send_email(email, token)
         elif etype == "agmExtension" and option == Filing.Status.COMPLETED.value:
             email = agm_extension_notification.process(email_msg["email"], token)
-            send_email(email, token)
-        elif etype == "consentAmalgamationOut":
-            email = consent_amalgamation_out_notification.process(email_msg["email"], token)
-            send_email(email, token)
-        elif etype == "amalgamationOut":
-            email = amalgamation_out_notification.process(email_msg["email"], token)
             send_email(email, token)
         elif etype == "continuationIn" and option in ReviewStatus._member_names_:
             # Special case for review step of continuation in filing. Regular filing notifications are handled by the filing_notification processor.
