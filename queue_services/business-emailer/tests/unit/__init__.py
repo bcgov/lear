@@ -73,12 +73,14 @@ BOOTSTRAP_TYPE_MAPPER = {
 FILING_TYPE_MAPPER = {
     'alteration': ALTERATION,
     'agmLocationChange': AGM_LOCATION_CHANGE,
+    'amalgamationOut': AMALGAMATION_OUT,
     'annualReport': ANNUAL_REPORT['filing']['annualReport'],
     'changeOfAddress': CORP_CHANGE_OF_ADDRESS,
     'changeOfDirectors': CHANGE_OF_DIRECTORS,
     'changeOfLiquidators': CHANGE_OF_LIQUIDATORS,
     'changeOfReceivers': CHANGE_OF_RECEIVERS,
     'changeOfRegistration': CHANGE_OF_REGISTRATION,
+    'consentAmalgamationOut': CONSENT_AMALGAMATION_OUT,
     'consentContinuationOut': CONSENT_CONTINUATION_OUT,
     'continuationOut': CONTINUATION_OUT,
     'dissolution': DISSOLUTION,
@@ -240,83 +242,6 @@ def prep_registration_filing(session, identifier, option, legal_type, legal_name
     return prep_bootstrap_filing(session, 'registration', identifier, legal_type, option, legal_name=legal_name, parties=parties)
 
 
-def prep_consent_amalgamation_out_filing(session, identifier, payment_id, legal_type, legal_name, submitter_role):
-    """Return a new consent amalgamation out filing prepped for email notification."""
-    business = create_business(identifier, legal_type, legal_name)
-    filing_template = copy.deepcopy(FILING_HEADER)
-    filing_template['filing']['header']['name'] = 'consentAmalgamationOut'
-    if submitter_role:
-        filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
-
-    filing_template['filing']['consentAmalgamationOut'] = copy.deepcopy(CONSENT_AMALGAMATION_OUT)
-    filing_template['filing']['business'] = {
-        'identifier': business.identifier,
-        'legalType': legal_type,
-        'legalName': legal_name
-    }
-    test_meta_data = {
-        'consentAmalgamationOut': {
-            'expiry': '2025-10-31T06:59:00+00:00',
-            'region': 'AB',
-            'country': 'CA'
-        }
-    }
-
-    filing = create_filing(
-        token=payment_id,
-        filing_json=filing_template,
-        business_id=business.id,
-        meta_data=test_meta_data)
-    filing.payment_completion_date = filing.filing_date
-
-    user = create_user('test_user')
-    filing.submitter_id = user.id
-    if submitter_role:
-        filing.submitter_roles = submitter_role
-
-    filing.save()
-    return filing
-
-
-def prep_amalgamation_out_filing(session, identifier, payment_id, legal_type, legal_name, submitter_role):
-    """Return a new amalgamation out filing prepped for email notification."""
-    business = create_business(identifier, legal_type, legal_name)
-    filing_template = copy.deepcopy(FILING_HEADER)
-    filing_template['filing']['header']['name'] = 'amalgamationOut'
-    if submitter_role:
-        filing_template['filing']['header']['documentOptionalEmail'] = f'{submitter_role}@email.com'
-
-    filing_template['filing']['amalgamationOut'] = copy.deepcopy(AMALGAMATION_OUT)
-    filing_template['filing']['business'] = {
-        'identifier': business.identifier,
-        'legalType': legal_type,
-        'legalName': legal_name
-    }
-    test_meta_data = {
-        'amalgamationOut': {
-            'amalgamationOutDate': '2025-04-29',
-            'legalName': 'test business',
-            'region': None,
-            'country': 'AL'
-        }
-    }
-
-    filing = create_filing(
-        token=payment_id,
-        filing_json=filing_template,
-        business_id=business.id,
-        meta_data=test_meta_data)
-    filing.payment_completion_date = filing.filing_date
-
-    user = create_user('test_user')
-    filing.submitter_id = user.id
-    if submitter_role:
-        filing.submitter_roles = submitter_role
-
-    filing.save()
-    return filing
-
-
 def prep_change_of_registration_filing(session, identifier, payment_id, legal_type,
                                        legal_name, submitter_role, parties=None):
     """Return a new change of registration filing prepped for email notification."""
@@ -392,12 +317,12 @@ def prep_maintenance_filing(session, identifier, payment_id, status, filing_type
     }
 
     meta_data = None
-    if filing_type == 'consentContinuationOut':
-        meta_data = {'consentContinuationOut': {
+    if filing_type in ['consentAmalgamationOut', 'consentContinuationOut']:
+        meta_data = {filing_type: {
             'expiry': '2025-10-31T06:59:00+00:00', 'region': 'AB', 'country': 'CA'}}
-    elif filing_type == 'continuationOut':
-        meta_data = {'continuationOut': {
-            'continuationOutDate': '2025-04-29', 'legalName': 'new test business',
+    elif filing_type in ['amalgamationOut', 'continuationOut']:
+        meta_data = {filing_type: {
+            f'{filing_type}Date': '2025-04-29', 'legalName': 'new test business',
             'region': 'AB', 'country': 'CA'}}
 
     filing = create_filing(token=payment_id, filing_json=filing_template, business_id=business.id, meta_data=meta_data)
