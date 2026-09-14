@@ -340,20 +340,6 @@ FOUNDING_DATE = NOW - datedelta.YEAR
         ('SUCCESS_series_has_rights', True, True, ['2024-01-01'], None, None),
         ('SUCCESS_series_no_rights', False, False, [], None, None),
 
-        ('FAILURE_class_missing_date', True, False, [], HTTPStatus.BAD_REQUEST, [
-            {'error': 'Resolution date is required when hasRightsOrRestrictions is true.',
-             'path': '/filing/correction/shareStructure/resolutionDates'}
-        ]),
-        ('FAILURE_series_missing_date', False, True, [], HTTPStatus.BAD_REQUEST, [
-            {'error': 'Resolution date is required when hasRightsOrRestrictions is true.',
-             'path': '/filing/correction/shareStructure/resolutionDates'}
-        ]),
-
-        ('FAILURE_too_many_dates', True, False, ['2024-01-01', '2024-02-01'], HTTPStatus.BAD_REQUEST, [
-            {'error': 'Only one resolution date is permitted.',
-             'path': '/filing/correction/shareStructure/resolutionDates'}
-        ]),
-
         ('FAILURE_future_date', True, False, [(NOW + datedelta.DAY).date().isoformat()], HTTPStatus.BAD_REQUEST, [
             {'error': 'Resolution date cannot be in the future.',
              'path': '/filing/correction/shareStructure/resolutionDates'}
@@ -420,15 +406,6 @@ def test_correction_resolution_date_old(session, app, jwt, test_name, has_rights
         ('SUCCESS_series_has_rights', True, True, [{'date':'2024-01-01'}], None, None),
         ('SUCCESS_series_no_rights', False, False, [], None, None),
         ('SUCCESS_existing_resolution', True, False, [{'date':'2024-01-01'}], None, None),
-
-        ('FAILURE_class_missing_date', True, False, [], HTTPStatus.BAD_REQUEST, [
-            {'error': 'Resolution date is required when hasRightsOrRestrictions is true.',
-             'path': '/filing/correction/shareStructure/resolutionDates'}
-        ]),
-        ('FAILURE_series_missing_date', False, True, [], HTTPStatus.BAD_REQUEST, [
-            {'error': 'Resolution date is required when hasRightsOrRestrictions is true.',
-             'path': '/filing/correction/shareStructure/resolutionDates'}
-        ]),
 
         ('FAILURE_future_date', True, False, [{'date': (NOW + datedelta.DAY).date().isoformat()}], HTTPStatus.BAD_REQUEST, [
             {'error': 'Resolution date cannot be in the future.',

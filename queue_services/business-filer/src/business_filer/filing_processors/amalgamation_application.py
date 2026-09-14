@@ -127,7 +127,11 @@ def process(business: Business,  # noqa: PLR0912
         update_parties(business, parties, filing_rec)
 
     if share_structure := amalgamation_filing.get("shareStructure"):
-        shares.update_share_structure(business, share_structure)
+        shares.update_share_structure(
+            business,
+            share_structure,
+            True  # for amalgamation, the primary/holding business must carry forward all resolution dates
+        )
 
     if name_translations := amalgamation_filing.get("nameTranslations"):
         aliases.update_aliases(business, name_translations)
