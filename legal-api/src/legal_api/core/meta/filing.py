@@ -18,8 +18,6 @@ from contextlib import suppress
 from enum import Enum, auto
 from typing import Final
 
-from flask import current_app, url_for
-
 from business_model.models import Business, DocumentType
 from business_model.models import Filing as FilingStorage
 from legal_api.services import VersionedBusinessDetailsService as VersionService
@@ -1072,7 +1070,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         return outputs
 
     @staticmethod
-    def get_static_documents(business, filing, url_prefix):
+    def get_static_documents(filing, url_prefix):
         """Get static documents."""
         outputs = []
         if filing.filing_type == "continuationIn":
@@ -1083,7 +1081,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
             court_order = filing.meta_data.get("courtOrder", {})
             FilingMeta._get_court_order_static_documents(court_order, url_prefix, outputs)
         elif filing.filing_type == "correction":
-            FilingMeta._get_correction_static_documents(business, filing, outputs)
+            FilingMeta._get_correction_static_documents(filing, url_prefix, outputs)
         return outputs
 
     @staticmethod
@@ -1129,15 +1127,9 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 })
 
     @staticmethod
-    def _get_correction_static_documents(business, filing, outputs):
-        base_url = current_app.config.get("BUSINESS_API_GW_URL")
+    def _get_correction_static_documents(filing, url_prefix, outputs):
         court_orders = filing.meta_data.get("courtOrders", [])
         for court_order in court_orders:
-            doc_url = url_for("API2.get_documents",
-                                identifier=business.identifier,
-                                filing_id=court_order.get("filingId"),
-                                legal_filing_name=None)
-            url_prefix = f"{base_url}{doc_url}/static"
             FilingMeta._get_court_order_static_documents(court_order, url_prefix, outputs)
 
     @staticmethod
