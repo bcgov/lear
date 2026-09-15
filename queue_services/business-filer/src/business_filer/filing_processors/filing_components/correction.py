@@ -69,27 +69,39 @@ CEASE_ROLE_MAPPING = {
 }
 
 
-def correct_business_data(business: Business,  # noqa: PLR0915
+def correct_business_data(business: Business,
                           correction_filing_rec: Filing,
                           correction_filing: dict,
                           filing_meta: FilingMeta):
-    """Render the correction filing onto the business model objects."""
-    to_legal_type = None
+    """Update business data on correction."""
+    # update court orders, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        to_legal_type = dpath.get(correction_filing, "/correction/newLegalType")
-        if to_legal_type and business.legal_type != to_legal_type:
-            filing_meta.correction = {
-                **filing_meta.correction,
-                "fromLegalType": business.legal_type,
-                "toLegalType": to_legal_type
-            }
-            business_info.set_corp_type(business, {"legalType": to_legal_type})
+        court_orders_json = dpath.get(correction_filing, "/correction/courtOrders")
+        filings.update_court_orders(business, court_orders_json, filing_meta)
 
+    # update court order, if any is present
+    with suppress(IndexError, KeyError, TypeError):
+        court_order_json = dpath.get(correction_filing, "/correction/courtOrder")
+        filings.create_court_order(correction_filing_rec, court_order_json, filing_meta)
+
+    if business.legal_type == Business.LegalTypes.COOP.value:
+        correct_coop_data(business, correction_filing_rec, correction_filing, filing_meta)
+    elif business.legal_type in Business.CORPS:
+        correct_corp_data(business, correction_filing_rec, correction_filing, filing_meta)
+    elif business.legal_type in (Business.LegalTypes.PARTNERSHIP.value, Business.LegalTypes.SOLE_PROP.value):
+        correct_firm_data(business, correction_filing_rec, correction_filing, filing_meta)
+
+
+def correct_firm_data(business: Business,
+                      correction_filing_rec: Filing,
+                      correction_filing: dict,
+                      filing_meta: FilingMeta):
+    """Correct firm data."""
     # Update business legalName if present
     with suppress(IndexError, KeyError, TypeError):
         name_request_json = dpath.get(correction_filing, "/correction/nameRequest")
         from_legal_name = business.legal_name
-        business_info.set_legal_name(business.identifier, business, name_request_json, to_legal_type)
+        business_info.set_legal_name(business.identifier, business, name_request_json)
         if from_legal_name != business.legal_name:
             filing_meta.correction = {
                 **filing_meta.correction,
@@ -97,17 +109,15 @@ def correct_business_data(business: Business,  # noqa: PLR0915
                 "toLegalName": business.legal_name
             }
 
-    # Update cooperativeAssociationType if present
+    # Update offices if present
     with suppress(IndexError, KeyError, TypeError):
-        coop_association_type = dpath.get(correction_filing, "/correction/cooperativeAssociationType")
-        from_association_type = business.association_type
-        if coop_association_type:
-            business_info.set_association_type(business, coop_association_type)
-            filing_meta.correction = {
-                **filing_meta.correction,
-                "fromCooperativeAssociationType": from_association_type,
-                "toCooperativeAssociationType": business.association_type
-            }
+        offices_structure = dpath.get(correction_filing, "/correction/offices")
+        _update_addresses(offices_structure)
+
+    # Update parties
+    with suppress(IndexError, KeyError, TypeError):
+        party_json = dpath.get(correction_filing, "/correction/parties")
+        update_parties(business, party_json, correction_filing_rec)
 
     # Update Nature of Business
     if naics := correction_filing.get("correction", {}).get("business", {}).get("naics"):
@@ -122,10 +132,29 @@ def correct_business_data(business: Business,  # noqa: PLR0915
             }
             business_info.update_naics_info(business, naics)
 
-    # update name translations, if any
+    # update business start date, if any is present
     with suppress(IndexError, KeyError, TypeError):
-        alias_json = dpath.get(correction_filing, "/correction/nameTranslations")
-        aliases.update_aliases(business, alias_json)
+        business_start_date = dpath.get(correction_filing, "/correction/startDate")
+        if business_start_date:
+            business.start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(business_start_date)
+
+
+def correct_coop_data(business: Business,  # noqa: PLR0915
+                      correction_filing_rec: Filing,
+                      correction_filing: dict,
+                      filing_meta: FilingMeta):
+    """Correct coop data."""
+    # Update business legalName if present
+    with suppress(IndexError, KeyError, TypeError):
+        name_request_json = dpath.get(correction_filing, "/correction/nameRequest")
+        from_legal_name = business.legal_name
+        business_info.set_legal_name(business.identifier, business, name_request_json)
+        if from_legal_name != business.legal_name:
+            filing_meta.correction = {
+                **filing_meta.correction,
+                "fromLegalName": from_legal_name,
+                "toLegalName": business.legal_name
+            }
 
     # Update offices if present
     with suppress(IndexError, KeyError, TypeError):
@@ -137,44 +166,17 @@ def correct_business_data(business: Business,  # noqa: PLR0915
         party_json = dpath.get(correction_filing, "/correction/parties")
         update_parties(business, party_json, correction_filing_rec)
 
-    # Update relationships (newer schema for parties)
+    # Update cooperativeAssociationType if present
     with suppress(IndexError, KeyError, TypeError):
-        relationships = dpath.get(correction_filing, "/correction/relationships")
-        create_relationships(relationships, business, correction_filing_rec)
-        cease_relationships(relationships,
-                            business,
-                            [
-                                PartyRole.RoleTypes.DIRECTOR.value,
-                                PartyRole.RoleTypes.LIQUIDATOR.value,
-                                PartyRole.RoleTypes.RECEIVER.value
-                            ],
-                            filing_meta.application_date)
-
-        update_relationships_appointment_date(relationships, business, [PartyRole.RoleTypes.DIRECTOR.value])
-        update_relationship_addresses(relationships, business)
-        update_relationship_entity_info(relationships, business)
-        _set_lear_only(correction_filing, correction_filing_rec, relationships, business)
-
-    # update court orders, if any is present
-    with suppress(IndexError, KeyError, TypeError):
-        court_orders_json = dpath.get(correction_filing, "/correction/courtOrders")
-        filings.update_court_orders(business, court_orders_json, filing_meta)
-
-    # update court order, if any is present
-    with suppress(IndexError, KeyError, TypeError):
-        court_order_json = dpath.get(correction_filing, "/correction/courtOrder")
-        filings.create_court_order(correction_filing_rec, court_order_json, filing_meta)
-
-    # update business start date, if any is present
-    with suppress(IndexError, KeyError, TypeError):
-        business_start_date = dpath.get(correction_filing, "/correction/startDate")
-        if business_start_date:
-            business.start_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(business_start_date)
-
-    # update share structure and resolutions, if any
-    with suppress(IndexError, KeyError, TypeError):
-        share_structure = dpath.get(correction_filing, "/correction/shareStructure")
-        shares.update_share_structure_correction(business, share_structure)
+        coop_association_type = dpath.get(correction_filing, "/correction/cooperativeAssociationType")
+        from_association_type = business.association_type
+        if coop_association_type:
+            business_info.set_association_type(business, coop_association_type)
+            filing_meta.correction = {
+                **filing_meta.correction,
+                "fromCooperativeAssociationType": from_association_type,
+                "toCooperativeAssociationType": business.association_type
+            }
 
     # update resolution, if any
     with suppress(IndexError, KeyError, TypeError):
@@ -226,6 +228,94 @@ def correct_business_data(business: Business,  # noqa: PLR0915
         if dpath.get(correction_filing, "/correction/rulesInResolution"):
             filing_meta.correction = {**filing_meta.correction,
                                       "rulesInResolution": True}
+
+
+def correct_corp_data(business: Business,
+                      correction_filing_rec: Filing,
+                      correction_filing: dict,
+                      filing_meta: FilingMeta):
+    """Correct corporation data."""
+    to_legal_type = None
+    with suppress(IndexError, KeyError, TypeError):
+        to_legal_type = dpath.get(correction_filing, "/correction/newLegalType")
+        if to_legal_type and business.legal_type != to_legal_type:
+            filing_meta.correction = {
+                **filing_meta.correction,
+                "fromLegalType": business.legal_type,
+                "toLegalType": to_legal_type
+            }
+            business_info.set_corp_type(business, {"legalType": to_legal_type})
+
+    # Update business legalName if present
+    with suppress(IndexError, KeyError, TypeError):
+        name_request_json = dpath.get(correction_filing, "/correction/nameRequest")
+        from_legal_name = business.legal_name
+        business_info.set_legal_name(business.identifier, business, name_request_json, to_legal_type)
+        if from_legal_name != business.legal_name:
+            filing_meta.correction = {
+                **filing_meta.correction,
+                "fromLegalName": from_legal_name,
+                "toLegalName": business.legal_name
+            }
+
+    # update name translations, if any
+    with suppress(IndexError, KeyError, TypeError):
+        alias_json = dpath.get(correction_filing, "/correction/nameTranslations")
+        aliases.update_aliases(business, alias_json)
+
+    # Update offices if present
+    with suppress(IndexError, KeyError, TypeError):
+        offices_structure = dpath.get(correction_filing, "/correction/offices")
+        _update_addresses(offices_structure)
+
+    # Update parties
+    with suppress(IndexError, KeyError, TypeError):
+        party_json = dpath.get(correction_filing, "/correction/parties")
+        update_parties(business, party_json, correction_filing_rec)
+
+    # Update relationships (newer schema for parties)
+    with suppress(IndexError, KeyError, TypeError):
+        relationships = dpath.get(correction_filing, "/correction/relationships")
+        create_relationships(relationships, business, correction_filing_rec)
+        cease_relationships(relationships,
+                            business,
+                            [
+                                PartyRole.RoleTypes.DIRECTOR.value,
+                                PartyRole.RoleTypes.LIQUIDATOR.value,
+                                PartyRole.RoleTypes.RECEIVER.value
+                            ],
+                            filing_meta.application_date)
+
+        update_relationships_appointment_date(relationships, business, [PartyRole.RoleTypes.DIRECTOR.value])
+        update_relationship_addresses(relationships, business)
+        update_relationship_entity_info(relationships, business)
+        _set_lear_only(correction_filing, correction_filing_rec, relationships, business)
+
+    # update share structure and resolutions, if any
+    with suppress(IndexError, KeyError, TypeError):
+        share_structure = dpath.get(correction_filing, "/correction/shareStructure")
+        shares.update_share_structure_correction(business, share_structure)
+
+    with suppress(IndexError, KeyError, TypeError):
+        amalgamation = dpath.get(correction_filing, "/correction/amalgamation")
+        if amalgamation:
+            update_amalgamation(business, amalgamation)
+
+
+def update_amalgamation(business: Business, amalgamation: dict):
+    """Update amalgamation details on correction."""
+    amalgamation_db = business.amalgamation.first()
+    amalgamating_businesses_db = amalgamation_db.amalgamating_businesses.all()
+    amalgamating_businesses = amalgamation.get("amalgamatingBusinesses", [])
+    amalgamation_db.court_approval = bool(amalgamation.get("courtApproval"))
+    for amalgamating_business in amalgamating_businesses:
+        amalgamating_business_db = next((ab for ab in amalgamating_businesses_db
+                                         if ab.id == amalgamating_business.get("id")), None)
+        amalgamating_business_db.foreign_identifier = amalgamating_business.get("identifier")
+        amalgamating_business_db.foreign_name = amalgamating_business.get("legalName")
+        if foreign_jurisdiction := amalgamating_business.get("foreignJurisdiction"):
+            amalgamating_business_db.foreign_jurisdiction = foreign_jurisdiction.get("country").upper()
+            amalgamating_business_db.foreign_jurisdiction_region = (foreign_jurisdiction.get("region") or "").upper()
 
 
 def update_parties(business: Business, parties: list, correction_filing_rec: Filing):
