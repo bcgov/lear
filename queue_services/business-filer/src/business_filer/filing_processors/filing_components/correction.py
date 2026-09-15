@@ -68,6 +68,12 @@ CEASE_ROLE_MAPPING = {
     Business.LegalTypes.SOLE_PROP.value: PartyRole.RoleTypes.PROPRIETOR.value,
 }
 
+CORRECTION_NAME_REQUEST_PATH = "/correction/nameRequest"
+CORRECTION_PARTIES_PATH = "/correction/parties"
+CORRECTION_OFFICES_PATH = "/correction/offices"
+CORRECTION_NAME_TRANSLATIONS_PATH = "/correction/nameTranslations"
+CORRECTION_SHARE_STRUCTURE_PATH = "/correction/shareStructure"
+
 
 def correct_business_data(business: Business,
                           correction_filing_rec: Filing,
@@ -99,7 +105,7 @@ def correct_firm_data(business: Business,
     """Correct firm data."""
     # Update business legalName if present
     with suppress(IndexError, KeyError, TypeError):
-        name_request_json = dpath.get(correction_filing, "/correction/nameRequest")
+        name_request_json = dpath.get(correction_filing, CORRECTION_NAME_REQUEST_PATH)
         from_legal_name = business.legal_name
         business_info.set_legal_name(business.identifier, business, name_request_json)
         if from_legal_name != business.legal_name:
@@ -111,12 +117,12 @@ def correct_firm_data(business: Business,
 
     # Update offices if present
     with suppress(IndexError, KeyError, TypeError):
-        offices_structure = dpath.get(correction_filing, "/correction/offices")
+        offices_structure = dpath.get(correction_filing, CORRECTION_OFFICES_PATH)
         _update_addresses(offices_structure)
 
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
-        party_json = dpath.get(correction_filing, "/correction/parties")
+        party_json = dpath.get(correction_filing, CORRECTION_PARTIES_PATH)
         update_parties(business, party_json, correction_filing_rec)
 
     # Update Nature of Business
@@ -146,7 +152,7 @@ def correct_coop_data(business: Business,  # noqa: PLR0915
     """Correct coop data."""
     # Update business legalName if present
     with suppress(IndexError, KeyError, TypeError):
-        name_request_json = dpath.get(correction_filing, "/correction/nameRequest")
+        name_request_json = dpath.get(correction_filing, CORRECTION_NAME_REQUEST_PATH)
         from_legal_name = business.legal_name
         business_info.set_legal_name(business.identifier, business, name_request_json)
         if from_legal_name != business.legal_name:
@@ -158,12 +164,12 @@ def correct_coop_data(business: Business,  # noqa: PLR0915
 
     # Update offices if present
     with suppress(IndexError, KeyError, TypeError):
-        offices_structure = dpath.get(correction_filing, "/correction/offices")
+        offices_structure = dpath.get(correction_filing, CORRECTION_OFFICES_PATH)
         _update_addresses(offices_structure)
 
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
-        party_json = dpath.get(correction_filing, "/correction/parties")
+        party_json = dpath.get(correction_filing, CORRECTION_PARTIES_PATH)
         update_parties(business, party_json, correction_filing_rec)
 
     # Update cooperativeAssociationType if present
@@ -248,7 +254,7 @@ def correct_corp_data(business: Business,
 
     # Update business legalName if present
     with suppress(IndexError, KeyError, TypeError):
-        name_request_json = dpath.get(correction_filing, "/correction/nameRequest")
+        name_request_json = dpath.get(correction_filing, CORRECTION_NAME_REQUEST_PATH)
         from_legal_name = business.legal_name
         business_info.set_legal_name(business.identifier, business, name_request_json, to_legal_type)
         if from_legal_name != business.legal_name:
@@ -260,17 +266,17 @@ def correct_corp_data(business: Business,
 
     # update name translations, if any
     with suppress(IndexError, KeyError, TypeError):
-        alias_json = dpath.get(correction_filing, "/correction/nameTranslations")
+        alias_json = dpath.get(correction_filing, CORRECTION_NAME_TRANSLATIONS_PATH)
         aliases.update_aliases(business, alias_json)
 
     # Update offices if present
     with suppress(IndexError, KeyError, TypeError):
-        offices_structure = dpath.get(correction_filing, "/correction/offices")
+        offices_structure = dpath.get(correction_filing, CORRECTION_OFFICES_PATH)
         _update_addresses(offices_structure)
 
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
-        party_json = dpath.get(correction_filing, "/correction/parties")
+        party_json = dpath.get(correction_filing, CORRECTION_PARTIES_PATH)
         update_parties(business, party_json, correction_filing_rec)
 
     # Update relationships (newer schema for parties)
@@ -293,7 +299,7 @@ def correct_corp_data(business: Business,
 
     # update share structure and resolutions, if any
     with suppress(IndexError, KeyError, TypeError):
-        share_structure = dpath.get(correction_filing, "/correction/shareStructure")
+        share_structure = dpath.get(correction_filing, CORRECTION_SHARE_STRUCTURE_PATH)
         shares.update_share_structure_correction(business, share_structure)
 
     with suppress(IndexError, KeyError, TypeError):
@@ -425,12 +431,11 @@ def _set_lear_only(correction_filing: dict, filing_rec: Filing, relationships: l
         (
             not any((
                 # below are the only changes the colin api supports for corrections
-                bool(dpath.get(correction_filing, "/correction/nameRequest", default=None)),
-                bool(dpath.get(correction_filing, "/correction/nameTranslations", default=None)),
-                bool(dpath.get(correction_filing, "/correction/offices", default=None)),
-                bool(dpath.get(correction_filing, "/correction/parties", default=None)),
-                bool(dpath.get(correction_filing, "/correction/shareStructure", default=None)),
-                bool(dpath.get(correction_filing, "/correction/resolution", default=None)))
+                bool(dpath.get(correction_filing, CORRECTION_NAME_REQUEST_PATH, default=None)),
+                bool(dpath.get(correction_filing, CORRECTION_NAME_TRANSLATIONS_PATH, default=None)),
+                bool(dpath.get(correction_filing, CORRECTION_OFFICES_PATH, default=None)),
+                bool(dpath.get(correction_filing, CORRECTION_PARTIES_PATH, default=None)),
+                bool(dpath.get(correction_filing, CORRECTION_SHARE_STRUCTURE_PATH, default=None)))
         )) and (
             relationships and
             # colin-api only supports relationships changes to directors
