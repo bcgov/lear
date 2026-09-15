@@ -146,14 +146,12 @@ def _nr_in_pending_filing(nr_number: str, exclude_filing_id: int | None = None) 
     return False
 
 
-
-
 def validate_resolution_date_in_share_structure(filing_json, filing_type, business) -> list[dict]:
     """Validate the resolution date of a share structure.
 
     Rules:
     - If hasRightsOrRestrictions is true in any share class or series, resolution date is required.
-    - Only one resolution date is permitted (alteration and old correction).
+    - Only one resolution date is permitted (alteration).
     - Resolution date cannot be in the future.
     - Resolution date cannot be before the business founding date.
     """
@@ -179,12 +177,47 @@ def validate_resolution_date_in_share_structure(filing_json, filing_type, busine
     if not resolution_dates:
         return msg
 
+    if len(resolution_dates) > 1:
+        msg.append({
+            "error": "Only one resolution date is permitted.",
+            "path": err_path
+        })
+
     if isinstance(resolution_dates[0], str):
-        # Kept for backward compatibility (existing alteration and correction filings)
+        # Kept for backward compatibility (existing alteration)
         msg.extend(_validate_resolution_dates_old_format(resolution_dates, business, err_path))
     else:
-        # Did not include "Only one resolution date is permitted.", not required for correction
-        # If its required for alteration add while updating alteration filing
+        resolution_date = resolution_dates[0]
+        if resolution_date.get("id"):
+            msg.append({
+                "error": "Resolution Id is not allowed when providing the new resolution date.",
+                "path": f"{err_path}/0"
+            })
+        else:
+            msg.extend(_validate_resolution_date(resolution_date["date"], business, f"{err_path}/0"))
+
+    return msg
+
+
+def validate_resolution_date_in_share_structure_correction(filing_json, filing_type, business) -> list[dict]:
+    """Validate the resolution date of a share structure for corrections.
+
+    Rules:
+    - Resolution date cannot be in the future.
+    - Resolution date cannot be before the business founding date.
+    """
+    resolution_dates = filing_json["filing"][filing_type].get("shareStructure", {}).get("resolutionDates", [])
+
+    err_path = f"/filing/{filing_type}/shareStructure/resolutionDates"
+    msg = []
+
+    if not resolution_dates:
+        return msg
+
+    if isinstance(resolution_dates[0], str):
+        # Kept for backward compatibility (existing correction filing)
+        msg.extend(_validate_resolution_dates_old_format(resolution_dates, business, err_path))
+    else:
         existing_ids = {resolution.id for resolution in business.resolutions.all()}
         for idx, resolution_date in enumerate(resolution_dates):
             if (resolution_id := resolution_date.get("id")) and (resolution_id not in existing_ids):
@@ -197,18 +230,14 @@ def validate_resolution_date_in_share_structure(filing_json, filing_type, busine
 
     return msg
 
+
 def _validate_resolution_dates_old_format(resolution_dates, business, err_path):
     msg = []
-    if len(resolution_dates) > 1:
-        msg.append({
-            "error": "Only one resolution date is permitted.",
-            "path": err_path
-        })
-
-    elif len(resolution_dates) == 1:
-        msg.extend(_validate_resolution_date(resolution_dates[0], business, err_path))
+    for idx, resolution_date in enumerate(resolution_dates):
+        msg.extend(_validate_resolution_date(resolution_date, business, f"{err_path}/{idx}"))
 
     return msg
+
 
 def _validate_resolution_date(resolution_date_str: str, business, err_path: str) -> list[dict]:
     resolution_date = date.fromisoformat(resolution_date_str)
@@ -576,23 +605,39 @@ def _validate_court_order_documents(court_order_path, court_order):
     file_key = court_order.get("fileKey")
     files = court_order.get("files", [])
 
+    existing_file_keys = []
+    if filing_id := court_order.get("filingId"):  # used for correction filings
+        filing = Filing.find_by_id(filing_id)
+        existing_file_keys = [document.file_key for document in filing.documents.all()]
+
     if not court_order.get("orderDetails") and not file_key and not files:
         msg.append({"error": _("Court Order is required (in orderDetails/fileKey/files)."), "path": court_order_path})
 
     if file_key:
         msg.extend(validate_pdf(file_key, f"{court_order_path}/fileKey"))
     elif files:
-        court_order_document_count = 0
-        files_path = f"{court_order_path}/files"
-        for file_index, file in enumerate(files):
-            if file.get("documentType") == DocumentType.COURT_ORDER.value:
-                court_order_document_count += 1
-            msg.extend(validate_pdf(file.get("fileKey"), f"{files_path}/{file_index}/fileKey"))
+        msg.extend(_validate_court_order_documents_list(f"{court_order_path}/files", files, existing_file_keys))
 
-        if court_order_document_count == 0: # if only supporting documents and no court order documents were found
-            msg.append({"error": _("At least one Court Order document is required."), "path": files_path})
-        elif court_order_document_count > 1:
-            msg.append({"error": _("Only one Court Order document is allowed."), "path": files_path})
+    return msg
+
+
+def _validate_court_order_documents_list(files_path, files, existing_file_keys):
+    """Validate the court order documents list."""
+    msg = []
+    court_order_document_count = 0
+    for file_index, file in enumerate(files):
+        if file.get("documentType") == DocumentType.COURT_ORDER.value:
+            court_order_document_count += 1
+
+        if file.get("fileKey") in existing_file_keys:
+            continue  # don't validate existing file keys
+
+        msg.extend(validate_pdf(file.get("fileKey"), f"{files_path}/{file_index}/fileKey"))
+
+    if court_order_document_count == 0: # if only supporting documents and no court order documents were found
+        msg.append({"error": _("At least one Court Order document is required."), "path": files_path})
+    elif court_order_document_count > 1:
+        msg.append({"error": _("Only one Court Order document is allowed."), "path": files_path})
 
     return msg
 
@@ -610,7 +655,7 @@ def check_good_standing_permission(business: Business) -> Error | None:
     return PermissionService.check_user_permission(required_permission, message=message)
 
 
-def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = True) -> list | None:
+def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = True) -> list:
     """Validate the PDF file."""
     msg = []
     try:

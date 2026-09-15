@@ -64,9 +64,11 @@ def _get_additional_recipients(filing: Filing, token: str) -> str | None:
     """Get additional recipients for a filing type."""
     submitter_recipient_filings = [
         "alteration",
+        "amalgamationOut",
         "changeOfRegistration",
         "changeOfLiquidators",
         "changeOfReceivers",
+        "consentAmalgamationOut",
         "consentContinuationOut",
         "continuationOut",
         "dissolution",

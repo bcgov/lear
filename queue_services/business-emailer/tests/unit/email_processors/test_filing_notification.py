@@ -381,6 +381,10 @@ def test_business_number_rendering(app, session, mock_pdfs, filing_type, legal_t
     ('COMPLETED', 'restoration', 'limitedRestorationToFull', None, None, 'BC1234567'),
     ('COMPLETED', 'specialResolution', None, None, None, 'CP1234567'),
     ('COMPLETED', 'specialResolution', None, 'staff', None, 'CP1234567'),
+    ('COMPLETED', 'consentAmalgamationOut', None, None, None, 'BC1234567'),
+    ('COMPLETED', 'consentAmalgamationOut', None, 'staff', None, 'BC1234567'),
+    ('COMPLETED', 'amalgamationOut', None, None, None, 'BC1234567'),
+    ('COMPLETED', 'amalgamationOut', None, 'staff', None, 'BC1234567'),
     ('COMPLETED', 'consentContinuationOut', None, None, None, 'BC1234567'),
     ('COMPLETED', 'consentContinuationOut', None, 'staff', None, 'BC1234567'),
     ('COMPLETED', 'continuationOut', None, None, None, 'BC1234567'),
@@ -407,7 +411,8 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
     # test processor
     email = process_filing(filing, filing_type, status)
 
-    if filing_type in ['alteration', 'changeOfLiquidators', 'changeOfReceivers', 'consentContinuationOut', 'continuationOut', 'dissolution']:
+    if filing_type in ['alteration', 'amalgamationOut', 'changeOfLiquidators', 'changeOfReceivers', 'consentAmalgamationOut',
+                       'consentContinuationOut', 'continuationOut', 'dissolution']:
         if submitter_role:
             assert f'{submitter_role}@email.com' in email['recipients']
         else:
@@ -551,6 +556,13 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
         {'fileName': 'Dissolution Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
     ]),
+    ('consentAmalgamationOut', None, None, 'COMPLETED', False, False, [
+        {'fileName': 'Letter of Consent.pdf', 'content': 'pdf_content_loc_ao', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ]),
+    ('amalgamationOut', None, None, 'COMPLETED', False, False, [
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '1'},
+    ]),
     ('consentContinuationOut', None, None, 'COMPLETED', False, False, [
         {'fileName': 'Continue Out Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Letter of Consent.pdf', 'content': 'pdf_content_loc', 'order': '2'},
@@ -609,6 +621,8 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
     'dissolution - voluntary coop',
     'dissolution - voluntary firm',
     'dissolution - administrative suppresses certificate',
+    'consentAmalgamationOut - letter of consent + receipt',
+    'amalgamationOut - receipt only',
     'consentContinuationOut - application + letter of consent + receipt',
     'continuationOut - receipt only',
     'changeOfLiquidators - intentToLiquidate',
@@ -655,6 +669,7 @@ def test_maintenance_filing_attachments(session, config, mock_recipients, mock_u
             'certificateOfDissolution': b'pdf_content_cod',
             'affidavit': b'pdf_content_affidavit',
             'letterOfConsent': b'pdf_content_loc',
+            'letterOfConsentAmalgamationOut': b'pdf_content_loc_ao',
             'letterOfAgmLocationChange': b'pdf_content_agm',
         }, receipt=b'pdf_content_receipt')
         output = process_filing(filing, filing_type, status)
@@ -769,6 +784,34 @@ def test_maintenance_filing_attachments(session, config, mock_recipients, mock_u
         'You have successfully completed your dissolution with the BC Business Registry',
         'test business - Successful Dissolution',
         []
+    ),
+    (
+        'consentAmalgamationOut',
+        None,
+        'COMPLETED',
+        'Your request for consent to amalgamate out of B.C. has been granted for 6 months',
+        'test business - Consent to Amalgamate Out Granted',
+        [
+            '**Effective Until:** October 30, 2025',
+            '**New Jurisdiction:** Alberta, Canada',
+            'granted a 6 month consent to amalgamate',
+            'This consent expires on October 30, 2025',
+            'Once you have completed your amalgamation into the jurisdiction of Alberta, Canada',
+        ],
+    ),
+    (
+        'amalgamationOut',
+        None,
+        'COMPLETED',
+        'You have successfully amalgamated out of B.C.',
+        'test business - Successful Amalgamation Out',
+        [
+            '**New Jurisdiction:** Alberta, Canada',
+            '**Amalgamate Out Effective Date:** April 29, 2025',
+            'made historical in British Columbia as of April 29, 2025',
+            'successfully completed its amalgamation into Alberta, Canada',
+            'under the name NEW TEST BUSINESS',
+        ],
     ),
     (
         'consentContinuationOut',
