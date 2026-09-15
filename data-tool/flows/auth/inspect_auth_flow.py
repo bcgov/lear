@@ -194,8 +194,6 @@ def validate_inspect_config(config: Any) -> InspectAuthSettings:
             file_cnt_last_2yrs = int(file_cnt_raw)
         except (TypeError, ValueError) as exc:
             raise ValueError("INSPECT_AUTH_FILE_CNT_LAST_2YRS must be a non-negative integer") from exc
-        if file_cnt_last_2yrs < 0:
-            raise ValueError("INSPECT_AUTH_FILE_CNT_LAST_2YRS must be a non-negative integer")
     invite_expiry_days = parse_invite_expiry_days(
         getattr(config, "INSPECT_AUTH_INVITE_EXPIRY_DAYS", None)
     )
