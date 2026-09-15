@@ -32,9 +32,11 @@ FILING_TITLE = {
     "amalgamationApplication": "Amalgamation Application",
     "annualReport": "Annual Report",
     "agmLocationChange": "AGM Location Change",
+    "amalgamationOut": "Amalgamation Out",
     "changeOfDirectors": "Director Change",
     "changeOfAddress": "Address Change",
     "changeOfRegistration": "Change of Registration",
+    "consentAmalgamationOut": "Consent to Amalgamate Out",
     "consentContinuationOut": "Consent to Continue Out",
     "continuationIn": "Continuation Application",
     "continuationOut": "Continuation Out",
@@ -126,6 +128,10 @@ FILING_ATTACHMENTS = {
             "attachments": ["Letter of AGM Location Change Approval", "Receipt"],
             "extraPdfTypes": ["letterOfAgmLocationChange"],
         },
+        "amalgamationOut": {
+            "attachments": ["Receipt"],
+            "extraPdfTypes": []
+        },
         "amalgamationApplication-horizontal": {
             "attachments": ["Amalgamation Application Short-form (Horizontal)","Notice of Articles","Certificate of Amalgamation","Receipt"],
             "extraPdfTypes": ["noticeOfArticles","certificateOfAmalgamation"],
@@ -181,6 +187,10 @@ FILING_ATTACHMENTS = {
         "changeOfReceivers-changeAddressReceiver": {
             "attachments": ["Receipt"],
             "extraPdfTypes": [],
+        },
+        "consentAmalgamationOut": {
+            "attachments": ["Letter of Consent", "Receipt"],
+            "extraPdfTypes": ["letterOfConsentAmalgamationOut"]
         },
         "consentContinuationOut": {
             "attachments": ["Continue Out Application", "Letter of Consent", "Receipt"],

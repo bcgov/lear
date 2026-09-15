@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "business-emailer"
-version = "0.1.16"
+version = "0.1.17"
 description = "This module is the service worker for sending emails about entity related events."
 authors = ["Hrvoje Fekete <hrvoje.fekete@mindpoweredtech.com>"]
 license = "BSD-3-Clause"
@@ -193,10 +193,6 @@ docstring-quotes = "double"
 
 [tool.ruff.lint.extend-per-file-ignores]
 "**/__init__.py" = ["F401"] # used for imports
-"src/business_emailer/services/versioned_business_details.py" = [
-    "I001", # ignoring 'unordered' imports
-    "PLR2004" # ignoring magic value comparison in this file
-]
 "src/business_emailer/services/namex.py" = ["I001"]  # ignoring 'unordered' imports
 
 [tool.pytest.ini_options]

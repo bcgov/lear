@@ -588,6 +588,7 @@ class Filing:  # pylint: disable=too-many-public-methods
             filing.storage.transaction_id and
             (business_rev := VersionedBusinessDetailsService.get_business_revision_obj(filing.storage, business.id))
         ):
+            business_rev.identifier = business.identifier
             business = business_rev
 
         adds = [FilingMeta.get_all_outputs(business.legal_type, doc) for doc in legal_filings]
@@ -603,7 +604,7 @@ class Filing:  # pylint: disable=too-many-public-methods
         )
         if (
             not static_invisible and
-            (static_docs := FilingMeta.get_static_documents(business, filing.storage, f"{base_url}{doc_url}/static"))
+            (static_docs := FilingMeta.get_static_documents(filing.storage, f"{base_url}{doc_url}/static"))
         ):
             documents["documents"]["staticDocuments"] = static_docs
 

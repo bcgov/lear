@@ -101,7 +101,7 @@ def process(
     # update share structure and resolutions, if any
     with suppress(IndexError, KeyError, TypeError):
         share_structure = dpath.get(filing, "/alteration/shareStructure")
-        shares.update_share_structure(business, share_structure)
+        shares.update_share_structure(business, share_structure, True)
 
     # update provisionsRemoved, if any
     with suppress(IndexError, KeyError, TypeError):

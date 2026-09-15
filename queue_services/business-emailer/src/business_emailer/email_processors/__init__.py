@@ -190,12 +190,10 @@ def substitute_template_parts(template_code: str, file_type = "html") -> str:
         ]
     else:
         template_parts = [
-            "amalgamation-out-information",
             "business-dashboard-link",
             "business-dashboard-link-alt",
             "business-info",
             "business-information",
-            "consent-letter-information",
             "reg-business-info",
             "cra-notice",
             "nr-footer",
