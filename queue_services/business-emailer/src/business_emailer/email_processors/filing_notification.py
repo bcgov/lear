@@ -240,7 +240,7 @@ def _get_filing_recipients(
     return recipients
 
 
-def _get_withdrawal_details(filing: Filing, withdrawn_filing: Filing | None) -> dict:
+def _get_withdrawal_details(filing: Filing, withdrawn_filing: Filing | None, withdrawal_date_time: str) -> dict:
     """Return the template details for a notice of withdrawal filing."""
     if not withdrawn_filing:
         return {}
@@ -248,7 +248,9 @@ def _get_withdrawal_details(filing: Filing, withdrawn_filing: Filing | None) -> 
     return {
         # the withdrawn filing id is shown (instead of the incorporation number) for new business filings
         "filing_id": withdrawn_filing.id if not filing.business_id else None,
-        "withdrawn_filing_name": withdrawn_filing_name
+        "withdrawn_filing_name": withdrawn_filing_name,
+        # the withdrawal takes effect when the notice of withdrawal filing is processed (its effective date)
+        "withdrawal_date_time": withdrawal_date_time
     }
 
 
@@ -317,6 +319,7 @@ def process(email_info: dict, token: str) -> dict | None:
 
     business_number = _get_business_number_display(business, filing_type, legal_type)
     out_filing_details = _get_out_filing_details(filing) or {}
+    withdrawal_details = _get_withdrawal_details(filing, withdrawn_filing, leg_tmz_effective_date)
 
     # get template and fill in parts
     filled_template = get_filled_template(filing.filing_type, is_future_effective_paid)
@@ -351,7 +354,7 @@ def process(email_info: dict, token: str) -> dict | None:
         # consent/continuation/amalgamation out values
         **out_filing_details,
         # notice of withdrawal values
-        **_get_withdrawal_details(filing, withdrawn_filing)
+        **withdrawal_details
     )
 
     # get recipients
@@ -368,6 +371,8 @@ def process(email_info: dict, token: str) -> dict | None:
         subject = f"{business_name} - {filing_name_short} Granted"
     elif filing_type == "changeOfReceivers":
         subject = f"{business_name} - Confirmation of Receiver Change"
+    elif filing_type == "noticeOfWithdrawal":
+        subject = f"{business_name} - {withdrawal_details.get('withdrawn_filing_name')} Withdrawn"
 
     return {
         "recipients": recipients,
