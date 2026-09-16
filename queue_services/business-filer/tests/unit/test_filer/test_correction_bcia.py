@@ -51,10 +51,12 @@ from business_model.models import (
     Document,
     DocumentType,
     Filing,
+    Jurisdiction,
     PartyRole
 )
 from registry_schemas.example_data import (
     AMALGAMATION_APPLICATION,
+    CONTINUATION_IN_FILING_TEMPLATE,
     COURT_ORDER,
     COURT_ORDER_FILING_TEMPLATE,
     FILING_HEADER,
@@ -67,8 +69,18 @@ from business_filer.common.filing_message import FilingMessage
 from business_filer.common.services import NaicsService
 
 from business_filer.services.filer import process_filing
-from tests.unit import create_alias, create_entity, create_filing, create_office, create_office_address, create_party, \
-    create_party_role, create_share_class, factory_completed_filing
+from tests.unit import (
+    create_alias, 
+    create_entity, 
+    create_filing, 
+    create_office, 
+    create_office_address, 
+    create_party, 
+    create_party_role, 
+    create_share_class, 
+    factory_completed_filing, 
+    factory_jurisdiction
+)
 
 CONTACT_POINT = {
     'email': 'no_one@never.get',
@@ -1274,6 +1286,96 @@ def test_new_legal_type(app, session, mocker, legal_type, new_legal_type):
 
     # Check outcome
     assert business.legal_type == new_legal_type
+
+
+@pytest.mark.parametrize(
+    'is_country_changed, is_region_changed',
+    [
+        (True, True),   # changed both country and region
+        (True, False),  # changed country only
+        (False, True),  # changed region only
+        (False, False)  # changed nothing
+    ]
+)
+def test_continuation_in_correction(app, session, mocker, is_country_changed, is_region_changed):
+    """Assert that the continuation in details are correctly set during correction."""
+    identifier = f'BC{random.randint(1000000, 9999999)}'
+    business = create_entity(identifier, Business.LegalTypes.CONTINUE_IN.value, 'Test Entity')
+
+    filing_json = copy.deepcopy(BC_CORRECTION)
+
+    continuation_in_json = copy.deepcopy(CONTINUATION_IN_FILING_TEMPLATE)
+    corrected_filing = factory_completed_filing(business, continuation_in_json)
+    jurisdiction = factory_jurisdiction(
+        business_id=business.id,
+        filing_id=corrected_filing.id,
+        identifier=continuation_in_json['filing']['continuationIn']['foreignJurisdiction']['identifier'],
+        name=continuation_in_json['filing']['continuationIn']['foreignJurisdiction']['legalName'],
+        country=continuation_in_json['filing']['continuationIn']['foreignJurisdiction']['country'],
+        region=continuation_in_json['filing']['continuationIn']['foreignJurisdiction']['region']
+    )
+    jurisdiction.incorporation_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(
+        continuation_in_json['filing']['continuationIn']['foreignJurisdiction']['incorporationDate'])
+    jurisdiction.expro_identifier = continuation_in_json['filing']['continuationIn']['business']['identifier']
+    jurisdiction.expro_legal_name = continuation_in_json['filing']['continuationIn']['business']['legalName']
+    jurisdiction.save()
+
+    filing_json['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    filing_json['filing']['correction']['contactPoint'] = CONTACT_POINT
+    del filing_json['filing']['correction']['nameRequest']
+    del filing_json['filing']['correction']['parties']
+    del filing_json['filing']['correction']['offices']
+    del filing_json['filing']['correction']['shareStructure']
+    del filing_json['filing']['correction']['business']
+    continuation_in = {
+        'country': 'US' if is_country_changed else 'CA',
+        'region': '' if is_region_changed else 'AB',
+        'legalName': 'Foreign Company',
+        'identifier': 'US1234567',
+        'incorporationDate': '2019-01-01',
+        'expro': {
+            'identifier': 'A0077779',
+            'legalName': 'Test Company Inc.'
+        }
+    }
+    filing_json['filing']['correction']['continuationIn'] = continuation_in
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    filing = create_filing(payment_id, filing_json, business_id=business.id)
+
+    filing_msg = FilingMessage(filing_identifier=filing.id)
+
+    # mock out the email sender and event publishing
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
+    mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
+                 return_value=None)
+    mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
+
+    # Test
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        process_filing(filing_msg)
+
+    # Check outcome
+    jurisdiction = Jurisdiction.get_continuation_in_jurisdiction(business.id)
+    assert jurisdiction.identifier == continuation_in['identifier']
+    assert jurisdiction.legal_name == continuation_in['legalName']
+    assert jurisdiction.incorporation_date == LegislationDatetime.as_utc_timezone_from_legislation_date_str(
+        continuation_in['incorporationDate']
+    )
+    assert jurisdiction.country == continuation_in['country']
+    assert jurisdiction.region == continuation_in['region']
+    assert jurisdiction.expro_identifier == continuation_in['expro']['identifier']
+    assert jurisdiction.expro_legal_name == continuation_in['expro']['legalName']
+    if is_country_changed or is_region_changed:
+        assert filing.meta_data['correction']['continuationIn'] == {
+            'country': continuation_in['country'],
+            'region': continuation_in['region']
+        }
+    else:
+        assert 'continuationIn' not in filing.meta_data['correction']
 
 
 def test_correction_amalgamation(app, session, mocker):
