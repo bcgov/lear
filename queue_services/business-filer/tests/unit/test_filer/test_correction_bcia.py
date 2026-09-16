@@ -41,12 +41,27 @@ from unittest.mock import patch
 from dateutil.parser import parse
 
 import pytest
-from business_model.models import Address, Alias, Business, CourtOrder, Document, DocumentType, Filing, PartyRole
+from business_model.models import (
+    Address,
+    Alias,
+    Amalgamation,
+    AmalgamatingBusiness,
+    Business,
+    CourtOrder,
+    Document,
+    DocumentType,
+    Filing,
+    PartyRole
+)
 from registry_schemas.example_data import (
+    AMALGAMATION_APPLICATION,
     COURT_ORDER,
     COURT_ORDER_FILING_TEMPLATE,
+    FILING_HEADER,
     REGISTRATION,
 )
+
+from business_common.utils.legislation_datetime import LegislationDatetime
 
 from business_filer.common.filing_message import FilingMessage
 from business_filer.common.services import NaicsService
@@ -1259,3 +1274,103 @@ def test_new_legal_type(app, session, mocker, legal_type, new_legal_type):
 
     # Check outcome
     assert business.legal_type == new_legal_type
+
+
+def test_correction_amalgamation(app, session, mocker):
+    """Assert that amalgamation details are correctly set during correction."""
+    identifier = f'BC{random.randint(1000000, 9999999)}'
+    business = create_entity(identifier, 'BEN', 'Test Entity')
+    data, corrected_filing = _create_amalgation_business(business)
+    data['amalgamatingBusinesses'][0]['foreignJurisdiction']['country'] = 'US'
+    data['amalgamatingBusinesses'][0]['foreignJurisdiction']['region'] = ''
+    data['amalgamatingBusinesses'][0]['legalName'] = 'NEW NAME'
+    data['amalgamatingBusinesses'][0]['identifier'] = 'US1234567'
+    data['courtApproval'] = True
+    
+    filing = copy.deepcopy(BC_CORRECTION)
+
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    filing['filing']['correction']['contactPoint'] = CONTACT_POINT
+    del filing['filing']['correction']['nameRequest']
+    del filing['filing']['correction']['parties']
+    del filing['filing']['correction']['offices']
+    del filing['filing']['correction']['shareStructure']
+    del filing['filing']['correction']['business']
+    filing['filing']['correction']['amalgamation'] = data
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
+
+    filing_msg = FilingMessage(filing_identifier=filing_id)
+
+    # mock out the email sender and event publishing
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
+    mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
+                 return_value=None)
+    mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
+
+    # Test
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        process_filing(filing_msg)
+
+    # Check outcome
+    amalgamation = business.amalgamation.first()
+    assert amalgamation.court_approval is True
+    ab = amalgamation.amalgamating_businesses.all()
+    assert ab[1].foreign_name == 'NEW NAME'
+    assert ab[1].foreign_identifier == 'US1234567'
+    assert ab[1].foreign_jurisdiction == 'US'
+    assert ab[1].foreign_jurisdiction_region == ''
+
+
+def _create_amalgation_business(business, jurisdiction=None):
+    if jurisdiction is None:
+        jurisdiction = {'country': 'CA', 'region': 'AB'}
+    amalgamating_identifier = 'BC1234567'
+    amalgamating_business = create_entity(amalgamating_identifier, 'BC', 'test b')
+    filing_type = "amalgamationApplication"
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing'][filing_type] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing_json['filing']['header']['name'] = filing_type
+
+    filing = factory_completed_filing(business, filing_json)
+    amalgamating_business_json = [
+        {
+            'role': 'amalgamating',
+            'foreignJurisdiction': jurisdiction,
+            'legalName': 'HAULER SERVICES',
+            'identifier': 'AB1234567'
+        }
+    ]
+
+    data = {
+        'courtApproval': False,
+        'amalgamatingBusinesses': amalgamating_business_json
+    }
+    amalgamation = Amalgamation(
+        amalgamation_type=Amalgamation.AmalgamationTypes.regular,
+        amalgamation_date=LegislationDatetime.now(),
+        court_approval=False,
+        filing_id=filing.id,
+        business_id=business.id,
+    )
+    amalgamation.amalgamating_businesses.append(AmalgamatingBusiness(
+        role=AmalgamatingBusiness.Role.amalgamating,
+        business_id=amalgamating_business.id
+    ))
+    amalgamation.amalgamating_businesses.append(AmalgamatingBusiness(
+        role=AmalgamatingBusiness.Role.amalgamating,
+        foreign_jurisdiction=amalgamating_business_json[0]['foreignJurisdiction']['country'],
+        foreign_jurisdiction_region=amalgamating_business_json[0]['foreignJurisdiction']['region'],
+        foreign_name=amalgamating_business_json[0]['legalName'],
+        foreign_identifier=amalgamating_business_json[0]['identifier']
+    ))
+    business.amalgamation.append(amalgamation)
+    business.save()
+    for ting in amalgamation.amalgamating_businesses.all():
+        amalgamating_business_json[0]['id'] = ting.id
+    return data, filing
+
