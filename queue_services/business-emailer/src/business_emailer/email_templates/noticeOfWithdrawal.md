@@ -1,4 +1,4 @@
-# Your {{ withdrawn_filing_name }} has been successfully withdrawn
+# Your {{ withdrawn_filing_name | lower }} has been successfully withdrawn
 
 ---
 
@@ -7,7 +7,7 @@
 **Filing Number:** {{ filing_id }}
 {% else -%}
 [[business-tombstone-basic.md]]
-{% endif -%}
+{%- endif -%}
 **Withdrawal Date and Time:** {{ withdrawal_date_time }}
 **Withdrawn Record:** {{ withdrawn_filing_name }}
 

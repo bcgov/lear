@@ -18,6 +18,7 @@ import copy
 import pytest
 import requests_mock
 from business_model.models import Business
+from business_model.utils.legislation_datetime import LegislationDatetime
 
 from business_emailer.email_processors import filing_notification
 from registry_schemas.example_data import (
@@ -1259,7 +1260,7 @@ def test_notice_of_withdrawal_notification(  # noqa: PLR0913
 
     email = process_filing(now_filing, 'noticeOfWithdrawal', 'COMPLETED')
 
-    assert email['content']['subject'] == f'{legal_name} - Successful Notice of Withdrawal'
+    assert email['content']['subject'] == f'{legal_name} - {withdrawn_filing_name} Withdrawn'
     assert email['recipients'] == 'test@test.com'
     assert email['content']['attachments'] == pdfs
     # pdfs are fetched for the notice of withdrawal filing against the (temp) business identifier
@@ -1275,7 +1276,7 @@ def test_notice_of_withdrawal_notification(  # noqa: PLR0913
         assert recipients_filing_type is None
 
     body = email['content']['body']
-    assert f'# Your {withdrawn_filing_name} has been successfully withdrawn' in body
+    assert f'# Your {withdrawn_filing_name.lower()} has been successfully withdrawn' in body
     assert f'**Business Name:** {legal_name}' in body
     if is_temp:
         # new business filings show the withdrawn filing id and no incorporation/business number
@@ -1289,7 +1290,10 @@ def test_notice_of_withdrawal_notification(  # noqa: PLR0913
             assert '**Business Number:** 123456789 BC0001' in body
         else:
             assert '**Business Number:** Not Available' in body
-    assert '**Withdrawal Date and Time:**' in body
+    withdrawal_date_time = LegislationDatetime.format_as_report_string(now_filing.effective_date)
+    assert f'**Withdrawal Date and Time:** {withdrawal_date_time}' in body
+    # the business details and withdrawal details render as one block (no blank line between them)
+    assert '\n\n**Withdrawal Date and Time:**' not in body
     assert f'**Withdrawn Record:** {withdrawn_filing_name}' in body
     assert '## Attachments' in body
     assert '- Notice of Withdrawal' in body
@@ -1312,7 +1316,7 @@ def test_notice_of_withdrawal_numbered_temp_business(app, session, mock_pdfs, mo
 
     email = process_filing(now_filing, 'noticeOfWithdrawal', 'COMPLETED')
 
-    assert email['content']['subject'] == 'Numbered Benefit Company - Successful Notice of Withdrawal'
+    assert email['content']['subject'] == 'Numbered Benefit Company - Incorporation Application Withdrawn'
     assert '**Business Name:** Numbered Benefit Company' in email['content']['body']
 
 
