@@ -310,6 +310,7 @@ def test_process_bn_email(app, session):
     identifier = 'BC1234567'
     filing = prep_incorp_filing(session, identifier, 'bn', 'BC')
     business = Business.find_by_identifier(identifier)
+    business.tax_id = '123456789BC0001'
     # sanity check
     assert filing.id
     assert business.id
@@ -326,7 +327,10 @@ def test_process_bn_email(app, session):
             assert CONTACT_POINT == mock_send_email.call_args[0][0]['recipients']
             assert mock_send_email.call_args[0][0]['content']['subject'] == \
                    f'{business.legal_name} - Business Number Information'
-            assert mock_send_email.call_args[0][0]['content']['body']
+            body = mock_send_email.call_args[0][0]['content']['body']
+            assert '# Business number information' in body
+            assert '**Business Number:** 123456789 BC0001' in body
+            assert f'[BC Business Registry dashboard]({app.config.get("DASHBOARD_URL")}{identifier})' in body
             assert mock_send_email.call_args[0][0]['content']['attachments'] == []
 
 
