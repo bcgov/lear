@@ -15,6 +15,7 @@
 
 Provides all the search and retrieval from the business entity datastore.
 """
+import re
 from datetime import UTC, datetime
 from http import HTTPStatus
 
@@ -38,7 +39,8 @@ from .bp import bp
 def get_comments(identifier, comment_id=None):
     """Return a JSON object with meta information about the Service."""
     # basic checks
-    if identifier.startswith("T"):
+    # Temp bootstrap ids start with "T". Real tramways are TMY + 7 digits (e.g. TMY0000008).
+    if identifier.startswith("T") and not re.fullmatch(r"TMY\d{7}", identifier):
         filing_model = FilingModel.get_temp_reg_filing(identifier)
         business = Business.find_by_internal_id(filing_model.business_id)
     else:
