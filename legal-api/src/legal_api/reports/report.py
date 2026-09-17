@@ -1342,7 +1342,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     parties_to_edit.append(str(party_id))
                     prev_party =\
                         VersionedBusinessDetailsService.get_party_revision(
-                            prev_completed_filing, party_id)
+                            prev_completed_filing, int(party_id))
                     prev_party_json = VersionedBusinessDetailsService.party_revision_json(
                         prev_completed_filing.transaction_id, prev_party, True)
                     if self._has_party_name_change(prev_party_json, party):
