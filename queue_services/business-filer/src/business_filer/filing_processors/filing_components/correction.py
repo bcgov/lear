@@ -38,7 +38,7 @@ from contextlib import suppress
 
 import dpath
 from business_common.utils import LegislationDatetime
-from business_model.models import Address, Business, Filing, Party, PartyRole
+from business_model.models import Address, Business, Filing, Jurisdiction, Party, PartyRole
 
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import (
@@ -60,6 +60,7 @@ from business_filer.filing_processors.filing_components.relationships import (
     update_relationship_entity_info,
     update_relationships_appointment_date,
 )
+from business_filer.services.utils import is_same_str
 
 CEASE_ROLE_MAPPING = {
     **dict.fromkeys(Business.CORPS, PartyRole.RoleTypes.DIRECTOR.value),
@@ -306,6 +307,39 @@ def correct_corp_data(business: Business,
         amalgamation = dpath.get(correction_filing, "/correction/amalgamation")
         if amalgamation:
             update_amalgamation(business, amalgamation)
+
+    with suppress(IndexError, KeyError, TypeError):
+        continuation_in = dpath.get(correction_filing, "/correction/continuationIn")
+        if continuation_in:
+            update_continuation_in(business, continuation_in, filing_meta)
+
+
+def update_continuation_in(business: Business, continuation_in: dict, filing_meta: FilingMeta):
+    """Update continuation in details on correction."""
+    jurisdiction = Jurisdiction.get_continuation_in_jurisdiction(business.id)
+
+    country = continuation_in.get("country")
+    region = continuation_in.get("region")
+
+    if not (
+        is_same_str(country, jurisdiction.country) and
+        is_same_str(region, jurisdiction.region)
+    ):
+        filing_meta.correction["continuationIn"] = {
+            "country": country,
+            "region": region
+        }
+
+    jurisdiction.country = country
+    jurisdiction.region = region
+    jurisdiction.legal_name = continuation_in.get("legalName")
+    jurisdiction.identifier = continuation_in.get("identifier")
+    incorporation_date = continuation_in.get("incorporationDate")
+    jurisdiction.incorporation_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(incorporation_date)
+
+    if expro := continuation_in.get("expro"):
+        jurisdiction.expro_identifier = expro.get("identifier")
+        jurisdiction.expro_legal_name = expro.get("legalName")
 
 
 def update_amalgamation(business: Business, amalgamation: dict):

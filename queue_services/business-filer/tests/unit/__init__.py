@@ -42,7 +42,7 @@ from dateutil.parser import parse
 from freezegun import freeze_time
 from sqlalchemy import exc
 
-from business_model.models import Batch, BatchProcessing, Filing, Resolution, ShareClass, ShareSeries, db
+from business_model.models import Batch, BatchProcessing, Filing, Jurisdiction, Resolution, ShareClass, ShareSeries, db
 from business_model.models.colin_event_id import ColinEventId
 from business_model.models.db import VersioningProxy
 from business_filer.common.datetime import datetime, timezone
@@ -599,6 +599,19 @@ def create_share_class(business,
         business.resolutions.append(resolution)
 
     business.save()
+
+
+def factory_jurisdiction(business_id, filing_id, identifier: str = '', name: str = '', country: str = 'CA', region: str = 'BC'):
+    """Create a jurisdiction entity."""
+    jurisdiction = Jurisdiction()
+    jurisdiction.identifier = identifier
+    jurisdiction.legal_name = name
+    jurisdiction.country = country
+    jurisdiction.region = region
+    jurisdiction.business_id = business_id
+    jurisdiction.filing_id = filing_id
+    jurisdiction.save()
+    return jurisdiction
 
 
 def factory_completed_filing(business, data_dict, filing_date=FROZEN_DATETIME, payment_token=None, colin_id=None):
