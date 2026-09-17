@@ -547,7 +547,7 @@ class BusinessDocument:
             region = None
             if region_code and region_code.upper() != "FEDERAL":
                 region = pycountry.subdivisions.get(code=f"{country_code}-{region_code}")
-            filing_info["jurisdiction"] = f"{region.name}, {country.name}" if region else country.name
+            filing_info["jurisdiction"] = region.name if region else country.name
             filing_info["foreignLegalName"] = filing_meta["continuationOut"]["legalName"]
             continuation_out_date = LegislationDatetime.as_legislation_timezone_from_date_str(
                 filing_meta["continuationOut"]["continuationOutDate"])
@@ -644,7 +644,7 @@ class BusinessDocument:
             region = None
             if region_code and region_code.upper() != "FEDERAL":
                 region = pycountry.subdivisions.get(code=f"{country_code}-{region_code}")
-            filing_info["jurisdiction"] = f"{region.name}, {country.name}" if region else country.name
+            filing_info["jurisdiction"] = region.name if region else country.name
             filing_info["foreignLegalName"] = filing_meta["amalgamationOut"]["legalName"]
             amalgamation_out_date = LegislationDatetime.as_legislation_timezone_from_date_str(
                 filing_meta["amalgamationOut"]["amalgamationOutDate"])
@@ -690,7 +690,7 @@ class BusinessDocument:
                 region = None
                 if region_code and region_code.upper() != "FEDERAL":
                     region = pycountry.subdivisions.get(code=f"{country_code}-{region_code}")
-                location_jurisdiction = f"{region.name}, {country.name}" if region else country.name
+                location_jurisdiction = region.name if region else country.name
 
             # Format incorporation date
             if jurisdiction.incorporation_date:
