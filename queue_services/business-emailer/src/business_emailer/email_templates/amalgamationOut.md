@@ -2,7 +2,7 @@
 
 --- 
 
-[[business-tombstone-out-filing.md]]
+[[business-tombstone.md]]
 
 ---
 
