@@ -241,6 +241,41 @@ def test_get_temp_business_filing(session, client, jwt, legal_type, filing_type,
     assert rv.json['filing'][filing_type] == filing_json
 
 
+def test_get_filings_tramway_uses_ledger_listing(session, client, jwt, mocker):
+    """Assert real tramway numbers use ledger listing, not the temp-reg path."""
+    identifier = 'TMY0000008'
+    factory_business(identifier, entity_type='TMY')
+    mock_ledger = mocker.patch(
+        'legal_api.resources.v2.business.business_filings.business_filings.ListFilingResource.get_ledger_listing',
+        return_value=({'filings': []}, HTTPStatus.OK))
+    mock_single = mocker.patch(
+        'legal_api.resources.v2.business.business_filings.business_filings.ListFilingResource.get_single_filing')
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    mock_ledger.assert_called_once()
+    mock_single.assert_not_called()
+
+
+def test_get_filings_temp_tmy_prefix_uses_single_filing(session, client, jwt, mocker):
+    """Assert temps that start with TMY still use the temp-reg filing path."""
+    identifier = 'TMYHLpcaq7'
+    mock_ledger = mocker.patch(
+        'legal_api.resources.v2.business.business_filings.business_filings.ListFilingResource.get_ledger_listing')
+    mock_single = mocker.patch(
+        'legal_api.resources.v2.business.business_filings.business_filings.ListFilingResource.get_single_filing',
+        return_value=({'filing': {}}, HTTPStatus.OK))
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    mock_single.assert_called_once_with(identifier, None)
+    mock_ledger.assert_not_called()
+
+
 @pytest.mark.parametrize(
     'jwt_role, expected',
     [
