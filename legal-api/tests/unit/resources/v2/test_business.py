@@ -223,15 +223,19 @@ def test_get_temp_business_info(session, client, jwt):
 def test_get_business_info_tramway_vs_temp_tmy_prefix(session, client, jwt, identifier, is_temp_message):
     """Assert TMY+7digits is a real business; other TMY… temps stay temp."""
     if not is_temp_message:
-        factory_business_model(legal_name=f'{identifier} legal name',
-                               identifier=identifier,
-                               founding_date=datetime.fromtimestamp(0, UTC),
-                               last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
-                               last_modified=datetime.fromtimestamp(0, UTC),
-                               fiscal_year_end_date=None,
-                               tax_id=None,
-                               dissolution_date=None,
-                               legal_type='TMY')
+        # TMY identifiers don't pass the standard CP/BC/FM validate_identifier check.
+        # Set _identifier directly, same pattern as bootstrap temp_reg tests.
+        b = factory_business_model(legal_name=f'{identifier} legal name',
+                                   identifier='CP0000001',  # valid placeholder to pass constructor
+                                   founding_date=datetime.fromtimestamp(0, UTC),
+                                   last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
+                                   last_modified=datetime.fromtimestamp(0, UTC),
+                                   fiscal_year_end_date=None,
+                                   tax_id=None,
+                                   dissolution_date=None,
+                                   legal_type='TMY')
+        b._identifier = identifier
+        b.save()
 
     rv = client.get('/api/v2/businesses/' + identifier,
                     headers=create_header(jwt, [STAFF_ROLE], identifier))

@@ -244,7 +244,11 @@ def test_get_temp_business_filing(session, client, jwt, legal_type, filing_type,
 def test_get_filings_tramway_uses_ledger_listing(session, client, jwt, mocker):
     """Assert real tramway numbers use ledger listing, not the temp-reg path."""
     identifier = 'TMY0000008'
-    factory_business(identifier, entity_type='TMY')
+    # TMY identifiers don't pass the standard CP/BC/FM validate_identifier check.
+    # Use a valid placeholder then set _identifier directly.
+    b = factory_business('CP0000003', entity_type='TMY')
+    b._identifier = identifier
+    b.save()
     mock_ledger = mocker.patch(
         'legal_api.resources.v2.business.business_filings.business_filings.ListFilingResource.get_ledger_listing',
         return_value=({'filings': []}, HTTPStatus.OK))
