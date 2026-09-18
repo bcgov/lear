@@ -74,10 +74,10 @@ def test_get_internal_filings(session, client, jwt):
     assert filing4.status == Filing.Status.DRAFT.value
     # error with no colin_event_ids
     assert filing5.status == Filing.Status.PAID.value
-    # completed correction with no colin_event_ids
+    # completed correction with no colin_event_ids (returned so colin-api's 501 blocks the coop's sync)
     assert filing6.status == Filing.Status.COMPLETED.value
 
-    # test endpoint returned filing1 only (completed, no corrections, with no colin id set)
+    # test endpoint returned the completed filings with no colin id set
     rv = client.get('/api/v2/businesses/internal/filings',
                     headers=create_header(jwt, [COLIN_SVC_ROLE]))
     assert rv.status_code == HTTPStatus.OK
@@ -85,6 +85,43 @@ def test_get_internal_filings(session, client, jwt):
     assert len(filings) == 2
     assert filings[0]['filingId'] == filing1.id
     assert filings[1]['filingId'] == filing6.id
+
+
+def test_get_internal_filings_backfills_business_fields(session, client, jwt):
+    """Assert legalType and legalName are backfilled when the filing json predates them."""
+    identifier = 'CP7654322'
+    b = factory_business(identifier)
+    factory_business_mailing_address(b)
+    filing_json = copy.deepcopy(ANNUAL_REPORT)
+    filing_json['filing']['business']['identifier'] = identifier
+    del filing_json['filing']['business']['legalType']
+    del filing_json['filing']['business']['legalName']
+    filing = factory_completed_filing(b, filing_json)
+
+    rv = client.get('/api/v2/businesses/internal/filings',
+                    headers=create_header(jwt, [COLIN_SVC_ROLE]))
+    assert rv.status_code == HTTPStatus.OK
+    filing_json = next(f for f in rv.json.get('filings') if f['filingId'] == filing.id)
+    assert filing_json['filing']['business']['legalType'] == b.legal_type
+    assert filing_json['filing']['business']['legalName'] == b.legal_name
+
+
+def test_get_internal_filings_marks_no_op_correction_lear_only(session, client, jwt):
+    """Assert a correction with no colin relevant changes is marked lear_only and not returned."""
+    identifier = 'BC7654321'
+    b = factory_business(identifier, entity_type=Business.LegalTypes.BCOMP.value)
+    factory_business_mailing_address(b)
+    filing = factory_completed_filing(b, CORRECTION_AR)
+    filing._meta_data = {}
+    filing.save()
+    assert not filing.lear_only
+
+    rv = client.get('/api/v2/businesses/internal/filings',
+                    headers=create_header(jwt, [COLIN_SVC_ROLE]))
+    assert rv.status_code == HTTPStatus.OK
+    assert all(f['filingId'] != filing.id for f in rv.json.get('filings'))
+    filing = Filing.find_by_id(filing.id)
+    assert filing.lear_only
 
 
 def test_patch_internal_filings(session, client, jwt):
