@@ -91,25 +91,33 @@ def update_colin_id(token: dict, filing_id: str, colin_ids: list):
 ADDRESS_KEYS = ("deliveryAddress", "mailingAddress")
 
 
-def clean_none(dictionary: dict | None = None):
-    """Clean the filing json so colin-api receives the shapes it expects.
-
-    - empty address keys are removed entirely (colin-api's checks are presence based)
-    - remaining None scalar values are replaced with empty string
-    - dicts nested in lists (parties, directors, offices, etc.) are cleaned too
-    """
+def _strip_empty_addresses(dictionary: dict):
+    """Remove empty address keys (colin-api's checks are presence based)."""
     for key in ADDRESS_KEYS:
         if key in dictionary and not dictionary[key]:
             del dictionary[key]
-    for value in list(dictionary.values()):
-        if isinstance(value, list):
-            for item in value:
-                if isinstance(item, dict):
-                    clean_none(item)
+
+
+def _clean_none_items(items: list):
+    """Clean the dicts (parties, directors, offices, etc.) in the given list."""
+    for item in items:
+        if isinstance(item, dict):
+            clean_none(item)
+
+
+def clean_none(dictionary: dict | None = None):
+    """Clean the filing json so colin-api receives the shapes it expects.
+
+    - empty address keys are removed entirely
+    - remaining None scalar values are replaced with empty string
+    - nested dicts and lists are cleaned recursively
+    """
+    _strip_empty_addresses(dictionary)
     for key, value in dictionary.items():
-        if value:
-            if isinstance(value, dict):
-                clean_none(value)
+        if isinstance(value, dict):
+            clean_none(value)
+        elif isinstance(value, list):
+            _clean_none_items(value)
         elif value is None:
             dictionary[key] = ""
 
