@@ -2,11 +2,11 @@
 
 --- 
 
-[[business-tombstone-out-filing.md]]
+[[business-tombstone.md]]
 
 ---
 
-[[out-details.md]]
+[[amalgamation-out-details.md]]
 
 ---
 

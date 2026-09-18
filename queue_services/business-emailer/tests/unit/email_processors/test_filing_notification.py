@@ -791,7 +791,7 @@ def test_maintenance_filing_attachments(session, config, mock_recipients, mock_u
         None,
         'COMPLETED',
         'Your request for consent to amalgamate out of B.C. has been granted for 6 months',
-        'test business - Consent to Amalgamate Out Granted',
+        'test business - Consent to Amalgamate Out',
         [
             '**Effective Until:** October 30, 2025',
             '**New Jurisdiction:** Alberta, Canada',
@@ -807,9 +807,9 @@ def test_maintenance_filing_attachments(session, config, mock_recipients, mock_u
         'You have successfully amalgamated out of B.C.',
         'test business - Successful Amalgamation Out',
         [
-            '**New Jurisdiction:** Alberta, Canada',
-            '**Amalgamate Out Effective Date:** April 29, 2025',
-            'made historical in British Columbia as of April 29, 2025',
+            '**Filed Date and Time:**',
+            '## Details',
+            'test business - BC1234567 has been made **historical** in British Columbia as of April 29, 2025',
             'successfully completed its amalgamation into Alberta, Canada',
             'under the name NEW TEST BUSINESS',
         ],

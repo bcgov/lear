@@ -176,6 +176,7 @@ def substitute_template_parts(template_code: str, file_type = "html") -> str:
     """
     if file_type == "md":
         template_parts = [
+            "amalgamation-out-details",
             "attachments",
             "business-number",
             "business-registry-footer",
