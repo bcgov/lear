@@ -15,6 +15,7 @@
 
 import os
 import sys
+from typing import ClassVar
 
 from dotenv import find_dotenv, load_dotenv
 
@@ -28,6 +29,14 @@ class _Config:
 
     JOB_TOTAL_LIMIT = int(os.getenv("JOB_TOTAL_LIMIT", "500"))
     JOB_BATCH_LIMIT = int(os.getenv("JOB_BATCH_LIMIT", "50"))
+
+    # Known data-drift businesses (e.g. missing from COLIN or already existing in COLIN)
+    # whose filings should not be sent for syncing
+    SKIPPED_IDENTIFIERS: ClassVar[list[str]] = [
+        identifier.strip()
+        for identifier in os.getenv("SKIPPED_IDENTIFIERS", "").split(",")
+        if identifier.strip()
+    ]
 
     COLIN_SVC_URL = os.getenv("COLIN_API_URL", "") + os.getenv("COLIN_API_VERSION", "")
     COLIN_SVC_TIMEOUT = int(os.getenv("COLIN_SVC_TIMEOUT", "20"))

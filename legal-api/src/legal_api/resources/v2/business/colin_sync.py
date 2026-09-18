@@ -65,6 +65,13 @@ def get_completed_filings_for_colin():
             try:
                 set_correction_flags(filing_json, filing)
                 inner_filing_json = filing_json["filing"].get(filing.filing_type, {})
+                if not _has_colin_relevant_correction(filing, filing_json):
+                    # nothing to sync - colin-api would reject it with 'No filing created' on every run
+                    current_app.logger.info(
+                        f"correction: filingId={filing.id} has no COLIN relevant changes - marking lear_only")
+                    filing.lear_only = True
+                    filing.save()
+                    continue
                 if inner_filing_json.get("relationships"):
                     # set directors and completing party from the db when filing_json is using relationships schema - ignore other parties
                     # NOTE: in the case where only non director parties were changed then set_correction_flags will not set partyChanged and parties will not be processed by the colin-api
@@ -120,10 +127,25 @@ def _get_initial_filing_json(filing: Filing, business: Business):
             # should never happen unless its a test data created directly in db.
             # found some filing in DEV, adding this check to avoid exception
             filing_json["filing"]["business"] = business.json()
-    elif not filing_json["filing"]["business"].get("legalName"):
-        filing_json["filing"]["business"]["legalName"] = business.legal_name
-    
+    else:
+        # old filings may predate these fields in the business block; without legalType the
+        # update-colin-filings job cannot build the colin-api url and silently skips the filing
+        if not filing_json["filing"]["business"].get("legalName"):
+            filing_json["filing"]["business"]["legalName"] = business.legal_name
+        if not filing_json["filing"]["business"].get("legalType"):
+            filing_json["filing"]["business"]["legalType"] = business.legal_type
+
     return filing_json
+
+
+def _has_colin_relevant_correction(filing: Filing, filing_json: dict) -> bool:
+    """Return whether the correction changes anything the colin-api can create a filing for."""
+    colin_correction_flags = ("nameChanged", "nameTranslationsChanged", "officeChanged",
+                              "partyChanged", "resolutionChanged", "shareChanged", "commentOnly")
+    correction_json = filing_json["filing"].get("correction", {})
+    return ((filing.meta_data or {}).get("commentOnly", False)
+            or filing_json["filing"]["header"].get("correctionBenStatement", False)
+            or any(correction_json.get(flag) for flag in colin_correction_flags))
 
 
 def set_correction_flags(filing_json, filing: Filing):

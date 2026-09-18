@@ -26,6 +26,7 @@ from flask import current_app
 from registry_schemas.utils import get_schema
 
 from colin_api.exceptions import (  # noqa: I001
+    BusinessNotFoundException,  # noqa: I001
     FilingNotFoundException,  # noqa: I001
     GenericException,  # noqa: I001
     InvalidFilingTypeException,  # noqa: I001
@@ -407,6 +408,18 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             Business.TypeCodes.ULC_CONTINUE_IN.value: 'AMALO',
             Business.TypeCodes.CCC_CONTINUE_IN.value: 'AMALO',
         }
+    }
+
+    # CORP_INVOLVED/CONT_OUT/JURISDICTION jurisdiction codes are 2 chars in colin - map the
+    # spelled out region values lear can send to their codes
+    CANADIAN_JURISDICTION_CODES = {
+        'AB': 'AB', 'BC': 'BC', 'MB': 'MB', 'NB': 'NB', 'NL': 'NL', 'NS': 'NS', 'NT': 'NT',
+        'NU': 'NU', 'ON': 'ON', 'PE': 'PE', 'QC': 'QC', 'SK': 'SK', 'YT': 'YT', 'FD': 'FD',
+        'FEDERAL': 'FD', 'ALBERTA': 'AB', 'BRITISH COLUMBIA': 'BC', 'MANITOBA': 'MB',
+        'NEW BRUNSWICK': 'NB', 'NEWFOUNDLAND AND LABRADOR': 'NL', 'NOVA SCOTIA': 'NS',
+        'NORTHWEST TERRITORIES': 'NT', 'NUNAVUT': 'NU', 'ONTARIO': 'ON',
+        'PRINCE EDWARD ISLAND': 'PE', 'QUEBEC': 'QC', 'QUÉBEC': 'QC', 'SASKATCHEWAN': 'SK',
+        'YUKON': 'YT',
     }
 
     FILING_TYPE_TO_CORP_TYPE_CONVERSION = {
@@ -1550,7 +1563,9 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 cls._insert_ledger_text(cursor, filing, agm_location_text)
             elif filing.filing_type == 'agmExtension':
                 year = filing.body.get('year')
-                agm_ext_dt = filing.body.get('expireDateApprovedExt')
+                if not (agm_ext_dt := filing.body.get('expireDateApprovedExt')):
+                    raise GenericException(
+                        f'agmExtension filing for {corp_num} has no expireDateApprovedExt', 400)
                 agm_ext_str = datetime.datetime.fromisoformat(agm_ext_dt).strftime('%B %-d, %Y')
                 agm_extension_text = f'The {year} AGM must be held by {agm_ext_str} at 11:59 pm Pacific time.'
                 cls._insert_ledger_text(cursor, filing, agm_extension_text)
@@ -1739,10 +1754,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         country_code = foreign_jurisdiction.get('country').upper()
         region_code = (foreign_jurisdiction.get('region') or '').upper()
         if country_code == 'CA':
-            if region_code == 'FEDERAL':
-                cont_out.can_jur_typ_cd = 'FD'
-            else:
-                cont_out.can_jur_typ_cd = region_code
+            cont_out.can_jur_typ_cd = cls._get_can_jur_typ_cd(region_code)
         else:
             cont_out.can_jur_typ_cd = 'OT'
             cont_out.othr_juri_desc = \
@@ -1771,10 +1783,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         country_code = foreign_jurisdiction.get('country').upper()
         region_code = (foreign_jurisdiction.get('region') or '').upper()
         if country_code == 'CA':
-            if region_code == 'FEDERAL':
-                jurisdiction.can_jur_typ_cd = 'FD'
-            else:
-                jurisdiction.can_jur_typ_cd = region_code
+            jurisdiction.can_jur_typ_cd = cls._get_can_jur_typ_cd(region_code)
         else:
             jurisdiction.can_jur_typ_cd = 'OT'
             jurisdiction.othr_juris_desc = \
@@ -1788,12 +1797,26 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             # jurisdiction.xpro_typ_cd = 'COR'
             jurisdiction.bc_xpro_num = expro_business.get('identifier')
 
+            # ensure the business exists in colin before writing its corp state (FK on CORPORATION)
+            try:
+                Business.find_by_identifier(jurisdiction.bc_xpro_num, con=cursor.connection)
+            except BusinessNotFoundException as err:
+                raise GenericException(f'Expro business {jurisdiction.bc_xpro_num} not found in COLIN',
+                                       HTTPStatus.NOT_FOUND) from err
+
             Business.update_corp_state(cursor,
                                        filing.event_id,
                                        jurisdiction.bc_xpro_num,
                                        Business.CorpStateTypes.CONTINUE_IN.value)
 
         Jurisdiction.create_jurisdiction(cursor, jurisdiction)
+
+    @classmethod
+    def _get_can_jur_typ_cd(cls, region_code: str) -> str:
+        """Return colin's 2 char code for the given canadian region value."""
+        if can_jur_typ_cd := cls.CANADIAN_JURISDICTION_CODES.get(region_code):
+            return can_jur_typ_cd
+        raise GenericException(f'Unknown Canadian jurisdiction: {region_code}', HTTPStatus.BAD_REQUEST)
 
     @classmethod
     def _process_amalgamating_businesses(cls, cursor, filing):
@@ -1812,10 +1835,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 country_code = foreign_jurisdiction.get('country').upper()
                 region_code = (foreign_jurisdiction.get('region') or '').upper()
                 if country_code == 'CA':
-                    if region_code == 'FEDERAL':
-                        corp_involved.can_jur_typ_cd = 'FD'
-                    else:
-                        corp_involved.can_jur_typ_cd = region_code
+                    corp_involved.can_jur_typ_cd = cls._get_can_jur_typ_cd(region_code)
                 else:
                     corp_involved.can_jur_typ_cd = 'OT'
                     corp_involved.othr_juri_desc = \
@@ -1828,6 +1848,13 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
                 if amalgamating_business['role'] in ['holding', 'primary']:
                     corp_involved.adopted_corp_ind = 'Y'
+
+                # ensure the business exists in colin before writing its corp state (FK on CORPORATION)
+                try:
+                    Business.find_by_identifier(identifier, con=cursor.connection)
+                except BusinessNotFoundException as err:
+                    raise GenericException(f'Amalgamating business {identifier} not found in COLIN',
+                                           HTTPStatus.NOT_FOUND) from err
 
                 Business.update_corp_state(cursor,
                                            filing.event_id,
@@ -1851,10 +1878,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
         country_code = foreign_jurisdiction.get('country').upper()
         region_code = (foreign_jurisdiction.get('region') or '').upper()
         if country_code == 'CA':
-            if region_code == 'FEDERAL':
-                cont_out.can_jur_typ_cd = 'FD'
-            else:
-                cont_out.can_jur_typ_cd = region_code
+            cont_out.can_jur_typ_cd = cls._get_can_jur_typ_cd(region_code)
         else:
             cont_out.can_jur_typ_cd = 'OT'
             cont_out.othr_juri_desc = \
@@ -1947,8 +1971,10 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                             changed_dirs.append(director)
                             found_match = True
                     if not found_match:
+                        current_names = [current_party.officer for current_party in current_parties]
                         raise GenericException(
-                            error=f'Director does not exist in COLIN: {director["officer"]}',
+                            error=(f'Director does not exist in COLIN: {director["officer"]} '
+                                   f'(current COLIN directors: {current_names})'),
                             status_code=HTTPStatus.NOT_FOUND
                         )
 

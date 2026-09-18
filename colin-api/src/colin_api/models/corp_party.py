@@ -23,7 +23,7 @@ from typing import Dict, List, Optional
 
 from flask import current_app
 
-from colin_api.exceptions import PartiesNotFoundException
+from colin_api.exceptions import GenericException, PartiesNotFoundException
 from colin_api.models import Address, Business  # pylint: disable=cyclic-import
 from colin_api.resources.db import DB
 from colin_api.utils import convert_to_json_date, delete_from_table_by_event_ids, stringify_list
@@ -418,7 +418,18 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         )
         try:
             officer = director['officer']
-            if officer.get('organizationName'):
+            if director.get('prev_id'):
+                # already matched to a specific colin party
+                # - end row directly so update can't miss on a name comparison
+                query = query + ' and corp_party_id=:party_id'
+                cursor.execute(
+                    query,
+                    event_id=event_id,
+                    cessation_date=director.get('cessationDate', ''),
+                    corp_num=corp_num,
+                    party_id=director['prev_id']
+                )
+            elif officer.get('organizationName'):
                 query = query + ' and upper(trim(business_nme))=upper(:business_name)'
                 cursor.execute(
                     query,
@@ -457,7 +468,7 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
             raise err
 
     @classmethod
-    # pylint: disable=too-many-locals; one extra
+    # pylint: disable=too-many-locals, too-many-branches; one extra of each
     def create_new_corp_party(cls, cursor, event_id: int, party: Dict, business: Dict):
         """Insert new party into the corp_party table."""
         query = \
@@ -490,12 +501,18 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
         try:
             role_type = party.get('role_type', 'DIR')
 
-            delivery_info = party['deliveryAddress'] if 'deliveryAddress' in party else party['mailingAddress']
+            delivery_info = party.get('deliveryAddress') or party.get('mailingAddress')
+            if not delivery_info:
+                officer = party.get('officer') or {}
+                raise GenericException(
+                    f'No delivery or mailing address for party '
+                    f'{officer.get("firstName", "")} {officer.get("lastName", "")} of {corp_num}',
+                    400)
             # create new address
             delivery_addr_id = Address.create_new_address(cursor=cursor, address_info=delivery_info, corp_num=corp_num)
             mailing_addr_id = delivery_addr_id
 
-            if 'mailingAddress' in party:
+            if party.get('mailingAddress'):
                 mailing_addr_id = Address.create_new_address(
                     cursor=cursor, address_info=party['mailingAddress'], corp_num=corp_num)
             if role_type == 'CPRTY':
@@ -611,23 +628,29 @@ class Party:  # pylint: disable=too-many-instance-attributes; need all these fie
     @classmethod
     def compare_parties(cls, party: Party, officer_json: Dict):
         """Compare corp party with json, return true if their names are equal."""
+        # match off the old name first, falling back to the current name
+        candidate_names = []
         if (officer_json.get('prevFirstName') or
             officer_json.get('prevLastName') or
                 officer_json.get('prevOrganizationName')):
-            first_name = (officer_json.get('prevFirstName') or '')
-            middle_name = (officer_json.get('prevMiddleInitial') or '')
-            last_name = (officer_json.get('prevLastName') or '')
-            org_name = (officer_json.get('prevOrganizationName') or '')
-        else:
-            first_name = (officer_json.get('firstName') or '')
-            middle_name = (officer_json.get('middleInitial') or '')
-            last_name = (officer_json.get('lastName') or '')
-            org_name = (officer_json.get('organizationName') or '')
-        if ((party.officer.get('firstName') or '').strip().upper() == first_name.strip().upper() and
-                (party.officer.get('middleInitial') or '').strip().upper() == middle_name.strip().upper() and
-                (party.officer.get('lastName') or '').strip().upper() == last_name.strip().upper() and
-                (party.officer.get('organizationName') or '').strip().upper() == org_name.strip().upper()):
-            return True
+            candidate_names.append((
+                officer_json.get('prevFirstName') or '',
+                officer_json.get('prevMiddleInitial') or officer_json.get('prevMiddleName') or '',
+                officer_json.get('prevLastName') or '',
+                officer_json.get('prevOrganizationName') or ''
+            ))
+        candidate_names.append((
+            officer_json.get('firstName') or '',
+            officer_json.get('middleInitial') or officer_json.get('middleName') or '',
+            officer_json.get('lastName') or '',
+            officer_json.get('organizationName') or ''
+        ))
+        for first_name, middle_name, last_name, org_name in candidate_names:
+            if ((party.officer.get('firstName') or '').strip().upper() == first_name.strip().upper() and
+                    (party.officer.get('middleInitial') or '').strip().upper() == middle_name.strip().upper() and
+                    (party.officer.get('lastName') or '').strip().upper() == last_name.strip().upper() and
+                    (party.officer.get('organizationName') or '').strip().upper() == org_name.strip().upper()):
+                return True
         return False
 
     @classmethod
