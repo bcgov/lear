@@ -6,7 +6,7 @@
 
 ---
 
-[[amalgamation-out-details.md]]
+[[out-details.md]]
 
 ---
 

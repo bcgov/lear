@@ -5,6 +5,3 @@
 **Effective Until:** {{ consent_expiry_date }}
 {% endif -%}
 **New Jurisdiction:** {{ new_jurisdiction }}
-{% if out_date and filing_type == 'continuationOut' -%}
-**Continue Out Effective Date:** {{ out_date }}
-{% endif %}

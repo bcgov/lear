@@ -1,1 +1,2 @@
-Your business {{ business_name }} - {{ business_identifier }} has been made historical in British Columbia as of {{ out_date }} after having successfully {{ out_action }} into {{ new_jurisdiction }} under the name {{ out_name | upper }}.
+## Details
+{{ business_name }} - {{ business_identifier }} has been made **historical** in British Columbia as of {{ out_date }} after having successfully {{ out_action }} into {{ new_jurisdiction }} under the name {{ out_name | upper }}.
