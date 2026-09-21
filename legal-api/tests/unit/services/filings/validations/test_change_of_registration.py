@@ -351,9 +351,11 @@ def test_change_of_registration_completing_party_name(app, session, jwt, test_na
                 sub='sub', iss='iss', idp_userid='123', login_source=login_source)
     user.save()
 
+    extra_claims = {'firstname': ' '.join(filter(None, [firstname, middlename])), 'lastname': lastname}
+
     with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_response)):
         with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            with jwt_request_context(app, jwt, roles, login_source=login_source):
+            with jwt_request_context(app, jwt, roles, login_source=login_source, extra_claims=extra_claims):
                 err = validate(business, filing)
 
     if expected_error:

@@ -450,8 +450,10 @@ MISMATCH_ERROR = 'Completing party name must match the name of the logged in use
     'test_name, roles, login_source, user_name, token_name, expected_error', [
         ('client_name_matches', [BASIC_USER], 'BCSC', ('Joe', 'P', 'Swanson'), None, None),
         ('client_long_name_matches', [BASIC_USER], 'BCSC',
-         ('Josephakis Vasilliadopolous Constantinople', None, 'Swanson'), None, None),
-        ('client_name_mismatch', [BASIC_USER], 'BCSC', ('Different', None, 'Person'), None, MISMATCH_ERROR),
+         ('Josephakis Vasilliadopolous Constantinople', None, 'Swanson'),
+         ('Josephakis Vasilliadopolous Constantinople', 'Swanson'), None),
+        ('client_name_mismatch', [BASIC_USER], 'BCSC', ('Different', None, 'Person'), ('Different', 'Person'),
+         MISMATCH_ERROR),
         ('client_first_filing_user_created_from_token', [BASIC_USER], 'BCSC', None, ('Joe P', 'Swanson'), None),
         ('client_first_filing_token_name_mismatch', [BASIC_USER], 'BCSC', None, ('Different', 'Person'),
          MISMATCH_ERROR),
