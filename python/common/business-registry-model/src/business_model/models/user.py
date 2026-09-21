@@ -121,13 +121,44 @@ class User(db.Model, Versioned):
         return None
 
     @classmethod
+    def _sync_from_jwt_token(cls, user, token: dict):
+        """Refresh the user record with the values found in the JWT token."""
+        changed = False
+
+        username = token.get(current_app.config.get('JWT_OIDC_USERNAME'), None)
+        if username is not None and username != user.username:
+            user.username = username
+            changed = True
+
+        firstname = token.get(current_app.config.get('JWT_OIDC_FIRSTNAME'), None)
+        lastname = token.get(current_app.config.get('JWT_OIDC_LASTNAME'), None)
+        if firstname is not None and lastname is not None:
+            token_name = ' '.join(f'{firstname} {lastname}'.upper().split())
+            record_name = ' '.join(
+                ' '.join(filter(None, [user.firstname, user.middlename, user.lastname])).upper().split())
+            if token_name != record_name:
+                user.firstname = firstname
+                # Current Token values do not have middlename (middle name is combined into firstname instead)
+                user.middlename = None
+                user.lastname = lastname
+                changed = True
+
+        if changed:
+            current_app.logger.debug(f'Updating user from JWT:{token}; User:{user}')
+            db.session.add(user)
+            db.session.commit()
+
+        return user
+
+    @classmethod
     def get_or_create_user_by_jwt(cls, jwt_oidc_token):
         """Return a valid user for audit tracking purposes."""
         # GET existing or CREATE new user based on the JWT info
         try:
-            user = User.find_by_jwt_token(jwt_oidc_token)
             current_app.logger.debug(f'finding user: {jwt_oidc_token}')
-            if not user:
+            if user := User.find_by_jwt_token(jwt_oidc_token):
+                user = User._sync_from_jwt_token(user, jwt_oidc_token)  # pylint: disable=protected-access
+            else:
                 current_app.logger.debug(f'didnt find user, attempting to create new user:{jwt_oidc_token}')
                 user = User.create_from_jwt_token(jwt_oidc_token)
 
