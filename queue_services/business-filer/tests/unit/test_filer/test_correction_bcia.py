@@ -56,9 +56,12 @@ from business_model.models import (
 )
 from registry_schemas.example_data import (
     AMALGAMATION_APPLICATION,
+    AMALGAMATION_OUT,
     CONTINUATION_IN_FILING_TEMPLATE,
+    CONTINUATION_OUT,
     COURT_ORDER,
     COURT_ORDER_FILING_TEMPLATE,
+    DISSOLUTION,
     FILING_HEADER,
     REGISTRATION,
 )
@@ -1376,6 +1379,180 @@ def test_continuation_in_correction(app, session, mocker, is_country_changed, is
         }
     else:
         assert 'continuationIn' not in filing.meta_data['correction']
+
+
+@pytest.mark.parametrize("is_custodian_changed", [
+    (True),
+    (False)
+])
+def test_custodian_correction(app, session, mocker, is_custodian_changed):
+    """Assert that the custodian details are correctly set during correction."""
+    identifier = f'BC{random.randint(1000000, 9999999)}'
+    business = create_entity(identifier, Business.LegalTypes.COMP.value, 'Test Entity')
+ 
+    filing_json = copy.deepcopy(BC_CORRECTION)
+
+    dissolution_json = copy.deepcopy(FILING_HEADER)
+    dissolution_json['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+    dissolution_json['filing']['header']['name'] = 'dissolution'
+    dissolution_json['filing']['dissolution']['parties'][1]['officer'] = {
+        'firstName': 'Custodian',
+        'lastName': 'Officer',
+        'middleName': '',
+        'email': 'custodian.officer@example.com',
+        'organizationName': '',
+        'partyType': 'person'
+    }
+
+    corrected_filing = factory_completed_filing(business, dissolution_json)
+    custodian = create_party(dissolution_json['filing']['dissolution']['parties'][1])
+    business.party_roles.append(PartyRole(party_id=custodian.id, role=PartyRole.RoleTypes.CUSTODIAN.value))
+    business.state = Business.State.HISTORICAL.value
+    business.save()
+
+    filing_json['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    filing_json['filing']['correction']['contactPoint'] = CONTACT_POINT
+    del filing_json['filing']['correction']['nameRequest']
+    del filing_json['filing']['correction']['offices']
+    del filing_json['filing']['correction']['shareStructure']
+    del filing_json['filing']['correction']['business']
+
+    filing_json['filing']['correction']['relationships'] = dissolution_json['filing']['dissolution']['parties']
+    filing_json['filing']['correction']['relationships'][0]['entity'] = {
+                'givenName': 'Completing',
+                'familyName': 'Party',
+            }
+    filing_json['filing']['correction']['relationships'][1]['entity'] = {
+        'givenName': 'Custodian',
+        'familyName': 'Officer',
+        'email': 'custodian.officer@example.com',
+    }
+
+    if is_custodian_changed:
+        filing_json['filing']['correction']['relationships'][1]['entity'] = {
+            'givenName': 'New Custodian',
+            'familyName': 'Officer',
+            'email': 'new_custodian.officer@example.com'
+        }
+
+    filing_json['filing']['correction']['relationships'][1]['entity']['identifier'] = custodian.id
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    filing = create_filing(payment_id, filing_json, business_id=business.id)
+
+    filing_msg = FilingMessage(filing_identifier=filing.id)
+
+    # mock out the email sender and event publishing
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
+    mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
+                 return_value=None)
+    mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
+
+    # Test
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        process_filing(filing_msg)
+
+    # Check outcome
+    custodian_party_roles = PartyRole.get_party_roles(business.id,
+                                                      role=PartyRole.RoleTypes.CUSTODIAN.value)
+
+    assert len(custodian_party_roles) == 1
+    assert custodian_party_roles[0].party.first_name.upper() == filing_json['filing']['correction']['relationships'][1]['entity']['givenName'].upper()
+    assert custodian_party_roles[0].party.last_name.upper() == filing_json['filing']['correction']['relationships'][1]['entity']['familyName'].upper()
+    assert custodian_party_roles[0].party.email.upper() == filing_json['filing']['correction']['relationships'][1]['entity']['email'].upper()
+
+
+@pytest.mark.parametrize("out_type", ["continuationOut", "amalgamationOut"])
+@pytest.mark.parametrize(
+    'is_country_changed, is_region_changed, is_legal_name_changed, is_out_date_changed', 
+    [
+        (True, True, True, True),
+        (True, False, False, False),
+        (False, True, False, False),
+        (False, False, True, False),
+        (False, False, False, True),
+        (False, False, False, False),
+    ]
+)
+def test_out_correction(app, session, mocker, out_type, is_country_changed, is_region_changed, is_legal_name_changed, is_out_date_changed):
+    """Assert that the out details are correctly set during correction."""
+    identifier = f'BC{random.randint(1000000, 9999999)}'
+    business = create_entity(identifier, Business.LegalTypes.COMP.value, 'Test Entity')
+
+    filing_json = copy.deepcopy(BC_CORRECTION)
+
+    out_json = copy.deepcopy(FILING_HEADER)
+    out_json['filing'][out_type] = copy.deepcopy(CONTINUATION_OUT if out_type == 'continuationOut' else AMALGAMATION_OUT)
+    out_json['filing']['header']['name'] = out_type
+
+    business.jurisdiction = out_json['filing'][out_type]['foreignJurisdiction']['country']
+    business.foreign_jurisdiction_region = out_json['filing'][out_type]['foreignJurisdiction']['region']
+    business.foreign_legal_name = out_json['filing'][out_type]['legalName']
+    if out_type == "continuationOut":
+        business.continuation_out_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(
+            out_json['filing'][out_type][f'{out_type}Date']
+        )
+    else:
+        business.amalgamation_out_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(
+            out_json['filing'][out_type][f'{out_type}Date']
+        )
+
+    business.state = Business.State.HISTORICAL.value
+    business.save()
+    corrected_filing = factory_completed_filing(business, out_json)
+
+    filing_json['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    filing_json['filing']['correction']['contactPoint'] = CONTACT_POINT
+    del filing_json['filing']['correction']['nameRequest']
+    del filing_json['filing']['correction']['parties']
+    del filing_json['filing']['correction']['offices']
+    del filing_json['filing']['correction']['shareStructure']
+    del filing_json['filing']['correction']['business']
+    out_data = {
+        'country': 'US' if is_country_changed else out_json['filing'][out_type]['foreignJurisdiction']['country'],
+        'region': None if is_region_changed else out_json['filing'][out_type]['foreignJurisdiction']['region'],
+        'legalName': 'Foreign Company' if is_legal_name_changed else out_json['filing'][out_type]['legalName'],
+        'date': '2019-01-01' if is_out_date_changed else out_json['filing'][out_type][f'{out_type}Date']
+    }
+    filing_json['filing']['correction'][out_type] = out_data
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    filing = create_filing(payment_id, filing_json, business_id=business.id)
+
+    filing_msg = FilingMessage(filing_identifier=filing.id)
+
+    # mock out the email sender and event publishing
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
+    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
+    mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
+    mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
+                 return_value=None)
+    mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
+
+    # Test
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        process_filing(filing_msg)
+
+    # Check outcome
+    assert business.foreign_legal_name == out_data['legalName']
+    assert business.jurisdiction == out_data['country']
+    assert business.foreign_jurisdiction_region == out_data['region']
+    if out_type == "continuationOut":
+        assert business.continuation_out_date == LegislationDatetime.as_utc_timezone_from_legislation_date_str(
+            out_data['date']
+        )
+    else:
+        assert business.amalgamation_out_date == LegislationDatetime.as_utc_timezone_from_legislation_date_str(
+            out_data['date']
+        )
+
+    if is_country_changed or is_region_changed or is_legal_name_changed or is_out_date_changed:
+        assert filing.meta_data['correction'][out_type] == out_data
+    else:
+        assert out_type not in filing.meta_data['correction']
 
 
 def test_correction_amalgamation(app, session, mocker):
