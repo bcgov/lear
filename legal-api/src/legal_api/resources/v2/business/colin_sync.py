@@ -89,8 +89,9 @@ def get_completed_filings_for_colin():
                 current_app.logger.error(f"dissolution: filingId={filing.id}, missing batch processing info")
                 # to skip this filing and block subsequent filing from syncing in update-colin-filings
                 filing_json["filing"]["header"]["name"] = None
-        elif (filing.filing_type == "dissolution" and filing.filing_sub_type == "voluntary"):
-            mailing = business.mailing_address.one_or_none()
+        elif (filing.filing_type == "dissolution"
+              and filing.filing_sub_type == "voluntary"
+              and (mailing := business.mailing_address.one_or_none())):
             filing_json["filing"]["dissolution"]["mailingAddress"] = mailing.json
         filings.append(filing_json)
     return jsonify({"filings": filings}), HTTPStatus.OK

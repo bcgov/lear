@@ -450,8 +450,10 @@ MISMATCH_ERROR = 'Completing party name must match the name of the logged in use
     'test_name, roles, login_source, user_name, token_name, expected_error', [
         ('client_name_matches', [BASIC_USER], 'BCSC', ('Joe', 'P', 'Swanson'), None, None),
         ('client_long_name_matches', [BASIC_USER], 'BCSC',
-         ('Josephakis Vasilliadopolous Constantinople', None, 'Swanson'), None, None),
-        ('client_name_mismatch', [BASIC_USER], 'BCSC', ('Different', None, 'Person'), None, MISMATCH_ERROR),
+         ('Josephakis Vasilliadopolous Constantinople', None, 'Swanson'),
+         ('Josephakis Vasilliadopolous Constantinople', 'Swanson'), None),
+        ('client_name_mismatch', [BASIC_USER], 'BCSC', ('Different', None, 'Person'), ('Different', 'Person'),
+         MISMATCH_ERROR),
         ('client_first_filing_user_created_from_token', [BASIC_USER], 'BCSC', None, ('Joe P', 'Swanson'), None),
         ('client_first_filing_token_name_mismatch', [BASIC_USER], 'BCSC', None, ('Different', 'Person'),
          MISMATCH_ERROR),
@@ -497,3 +499,39 @@ def test_validate_completing_party_name(app, session, jwt, test_name, roles, log
         assert any(msg['error'] == expected_error for msg in err.msg)
     else:
         assert err is None or all(msg['error'] != MISMATCH_ERROR for msg in err.msg)
+
+
+def test_validate_completing_party_name_syncs_stale_user_record(app, session, jwt):
+    """Assert a stale User row is refreshed from the JWT before the completing party name is compared.
+
+    Regression test: the User row used to be populated once from the first login's JWT and never
+    refreshed, so a name change at the IDP (eg. BCSC) left the stored name stale. The filing's
+    completing party is pre-populated from the *current* login, so comparing it against the stale
+    row incorrectly rejected the filing.
+    """
+    filing = copy.deepcopy(GP_REGISTRATION)
+    filing['filing']['registration']['parties'][0]['officer']['firstName'] = 'JOE'
+    filing['filing']['registration']['parties'][0]['officer']['middleName'] = ''
+    filing['filing']['registration']['parties'][0]['officer']['lastName'] = 'SWANSON'
+
+    # stale row from an earlier login, before the user's name changed at the IDP
+    user = User(username='cp-test-user', firstname='JOE P', lastname='SWANSON',
+                sub='sub', iss='iss', idp_userid='123', login_source='BCSC')
+    user.save()
+
+    # current login: the IDP now reports the user's updated name
+    extra_claims = {'firstname': 'JOE', 'lastname': 'SWANSON'}
+
+    naics_response = {
+        'code': REGISTRATION['business']['naics']['naicsCode'],
+        'classTitle': REGISTRATION['business']['naics']['naicsDescription']
+    }
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response('GP')):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            with jwt_request_context(app, jwt, [BASIC_USER], login_source='BCSC', extra_claims=extra_claims):
+                err = validate(None, filing)
+
+    assert err is None or all(msg['error'] != MISMATCH_ERROR for msg in err.msg)
+
+    synced_user = User.query.filter_by(idp_userid='123').one_or_none()
+    assert synced_user.firstname == 'JOE'
