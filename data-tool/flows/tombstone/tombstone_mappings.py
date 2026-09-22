@@ -49,6 +49,9 @@ class EventFilings(str, Enum):
     # CONVOTHER Annual Report
     CONVOTHER_OTANN = 'CONVOTHER_OTANN'
 
+    # Change of Name
+    FILE_OTNCN = 'FILE_OTNCN'
+
     # Change of Address
     FILE_APTRA = 'FILE_APTRA'
     FILE_NOERA = 'FILE_NOERA'
@@ -269,6 +272,9 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_AM_DO: 'changeOfAddress',
     EventFilings.FILE_AM_RR: 'changeOfAddress',
 
+    # FILE_OTNCN
+    EventFilings.FILE_OTNCN: 'changeOfName',
+    
     # CONVOTHER Change of Address
     EventFilings.CONVOTHER_OTADD: 'changeOfAddress',
 
@@ -443,6 +449,9 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_OTADD: 'Notice of Change of Address',
     EventFilings.FILE_AM_DO: 'Amendment - Dissolved Office',
     EventFilings.FILE_AM_RR: 'Amendment - Registered and Records Offices',
+
+    # CONVOTHER Change of Name
+    EventFilings.FILE_OTNCN: 'Change of Name of a Cobrs Entity',
 
     # CONVOTHER Change of Address
     EventFilings.CONVOTHER_OTADD: 'Notice of Change of Address',
