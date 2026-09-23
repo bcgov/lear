@@ -537,7 +537,7 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_NOLDS: 'Notice of Location of Dissolved Company\'s Records',
     EventFilings.FILE_NOCRM: 'Notice of Change of Address of Receiver or Receiver Manager',
     EventFilings.FILE_NOTRA: 'Notice of Transfer of Records',
-    EventFilings.FILE_LQSIN: 'Statement of Intent to Liquidate',
+    # EventFilings.FILE_LQSIN: 'Statement of Intent to Liquidate',
     # LQSCO: 'Stay of Liquidation - Court Ordered'
     # LQDIS: 'Discontinuance of Liquidation - Court Ordered'
     # LQCON: 'Continuance of Liquidation - Court Ordered'
