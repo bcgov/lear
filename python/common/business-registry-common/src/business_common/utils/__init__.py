@@ -16,3 +16,9 @@
 from .base import BaseEnum, BaseMeta
 from .datetime import datetime
 from .legislation_datetime import LegislationDatetime
+from .relationship_director import (
+    cod_directors,
+    is_change_free,
+    map_relationship_actions,
+    relationship_to_director,
+)
