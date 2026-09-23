@@ -93,6 +93,7 @@ def set_amalgamation_details(app, jwt, session, monkeypatch,
         Filing, 'get_conversion_filings_by_conv_types',
         lambda business_id, types: []
     )
+    monkeypatch.setattr(Filing, 'get_most_recent_filing', lambda biz_id: fake_filing)
     # Patch Amalgamation.get_revision to return our fake amalgamation.
     monkeypatch.setattr(Amalgamation, 'get_revision', lambda txn_id, biz_id: fake_amalgamation)
     # Patch AmalgamatingBusiness.get_revision to return the provided list.

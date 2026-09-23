@@ -584,10 +584,15 @@ class BusinessDocument:
                     "jurisdiction": "N/A"
                 })
             else:
-                amalgamation = Amalgamation.get_revision(amalgamation_application.transaction_id,
-                                                         amalgamation_application.business_id)
-                amalgamating_businesses = AmalgamatingBusiness.get_revision(amalgamation_application.transaction_id,
-                                                                            amalgamation.id)
+                if amalgamation := self._business.amalgamation.first():
+                    amalgamating_businesses = amalgamation.amalgamating_businesses.all()
+                else:
+                    # fallback: if an amalgamation was dissolved through an admin dissolution
+                    # (then the amalgamation record exist only in version table)
+                    recent_filing = Filing.get_most_recent_filing(self._business.id)
+                    amalgamation = Amalgamation.get_revision(recent_filing.transaction_id, self._business.id)
+                    amalgamating_businesses = AmalgamatingBusiness.get_revision(recent_filing.transaction_id,
+                                                                                amalgamation.id)
                 amalgamated_businesses = [
                     self._amalgamating_business_data(amalgamation_application, amalgamating_business)
                     for amalgamating_business in amalgamating_businesses

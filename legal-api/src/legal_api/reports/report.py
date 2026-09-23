@@ -27,6 +27,7 @@ from flask import current_app, jsonify
 from business_common.utils.datetime import datetime
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import (
+    AmalgamatingBusiness,
     Business,
     ConsentContinuationOut,
     CorpType,
@@ -994,14 +995,28 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _set_amalgamating_businesses(self, filing):
         ting_businesses = []
         # Determine the source filing for amalgamating businesses
-        if correction := filing.get("correction"):
-            original_filing = Filing.find_by_id(correction.get("correctedFilingId"))
-            amalgamating_businesses = (
-                original_filing.filing_json["filing"]
-                .get("amalgamationApplication", {})
-                .get("amalgamatingBusinesses", [])
-                if original_filing else []
+        if filing.get("correction"):
+            amalgamation = self._business.amalgamation.first()
+            amalgamating_businesses_revision = AmalgamatingBusiness.get_revision(
+                self._filing.transaction_id, amalgamation.id
             )
+            amalgamating_businesses = []
+            for ting_business in amalgamating_businesses_revision:
+                ting = {}
+                if ting_business.foreign_jurisdiction:
+                    ting["foreignJurisdiction"] = {
+                        "country": ting_business.foreign_jurisdiction,
+                        "region": ting_business.foreign_jurisdiction_region
+                    }
+                    ting["legalName"] = ting_business.foreign_name
+                    ting["identifier"] = ting_business.foreign_identifier
+                elif ting_business.colin_identifier:
+                    ting["identifier"] = ting_business.colin_identifier
+                else:
+                    _ting = Business.find_by_internal_id(ting_business.business_id)
+                    ting["identifier"] = _ting.identifier
+
+                amalgamating_businesses.append(ting)
         else:
             amalgamating_businesses = filing.get("amalgamationApplication", {}).get("amalgamatingBusinesses", [])
 

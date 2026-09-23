@@ -163,1445 +163,176 @@ MOCK_NOTICE_OF_WITHDRAWAL['hasTakenEffect'] = False
 MOCK_NOTICE_OF_WITHDRAWAL['partOfPoa'] = False
 
 
-@pytest.mark.parametrize('test_name, identifier, entity_type, filing_name_1, legal_filing_1, filing_name_2, legal_filing_2, status, expected_msg, expected_http_code, payment_completion_date', [
-    ('special_res_paper', 'CP7654321', Business.LegalTypes.COOP.value,
-     'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAPER_ONLY, {}, HTTPStatus.NOT_FOUND, None
-     ),
-    ('special_res_pending', 'CP7654321', Business.LegalTypes.COOP.value,
-     'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PENDING, {}, HTTPStatus.NOT_FOUND, None
-     ),
-    ('special_res_paid', 'CP7654321', Business.LegalTypes.COOP.value,
-     'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.PAID,
-     {'documents': {
-         'legalFilings': [
-             {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
-         ],
-         'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-     }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('special_res_completed', 'CP7654321', Business.LegalTypes.COOP.value,
-     'specialResolution', SPECIAL_RESOLUTION, None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
-         'legalFilings': [
-             {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'},
-         ],
-         'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-                    'specialResolutionApplication': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolutionApplication',
-     }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('special_res_rules_memorandum_included_completed', 'CP7654321', Business.LegalTypes.COOP.value,
-     'specialResolution', SPECIAL_RESOLUTION, 'alteration', ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION, Filing.Status.COMPLETED,
-     {'documents': {
-         'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
-         'legalFilings': [
-             {'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'}
-         ],
-         'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-                    'specialResolutionApplication': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolutionApplication',
-     }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('special_res_correction', 'CP7654321', Business.LegalTypes.COOP.value,
-     'correction', CORRECTION_CP_SPECIAL_RESOLUTION, None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'certificateOfNameCorrection': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificateOfNameCorrection',
-         'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
-         'legalFilings': [
-             {'correction': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/correction'},
-         ],
-         'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-         'specialResolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'
-     }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('cp_ia_completed', 'CP7654321', Business.LegalTypes.COOP.value,
-     'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-                    'certificateOfIncorporation': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificateOfIncorporation',
-                    'certifiedMemorandum': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedMemorandum',
-                    'certifiedRules': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certifiedRules',
-                    'legalFilings': [
-                        {'incorporationApplication': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/incorporationApplication'},
-                    ]
-     }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'certificateOfIncorporation': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfIncorporation',
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
-     {'documents': {'certificateOfIncorporation': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfIncorporation',
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {'incorporationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, None
-     ),
-    ('ben_correction_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'correction', CORRECTION_INCORPORATION['filing']['correction'], None, None, Filing.Status.COMPLETED,
-     {'documents': {
-        'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-        'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-        'legalFilings': [
-            {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'}
+def make_expected_documents(identifier, expected_docs=None, expected_legal_filings=None):
+    """Build expected documents response dict for test assertions."""
+    if expected_docs is None and expected_legal_filings is None:
+        return {}
+    docs = {}
+    for doc in (expected_docs or []):
+        docs[doc] = f"{base_url}/api/v2/businesses/{identifier}/filings/1/documents/{doc}"
+    if expected_legal_filings is not None:
+        docs["legalFilings"] = [
+            {lf: f"{base_url}/api/v2/businesses/{identifier}/filings/1/documents/{lf}"}
+            for lf in expected_legal_filings
         ]
-        }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('bc_correction_completed', 'BC7654321', Business.LegalTypes.COMP.value,
-     'correction', CORRECTION_INCORPORATION['filing']['correction'], None, None, Filing.Status.COMPLETED,
-     {'documents': {
-        'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-        'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-        'legalFilings': [
-            {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'}
-        ]
-        }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ccc_correction_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value,
-     'correction', CORRECTION_INCORPORATION['filing']['correction'], None, None, Filing.Status.COMPLETED,
-     {'documents': {
-        'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-        'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-        'legalFilings': [
-            {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'}
-        ]
-        }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ulc_correction_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
-     'correction', CORRECTION_INCORPORATION['filing']['correction'], None, None, Filing.Status.COMPLETED,
-     {'documents': {
-        'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-        'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-        'legalFilings': [
-            {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'}
-        ]
-        }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_correction_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'correction', CORRECTION_INCORPORATION['filing']['correction'], None, None, Filing.Status.COMPLETED,
-     {'documents': {
-        'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-        'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-        'legalFilings': [
-            {'correction': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/correction'}
-        ]
-        }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_alteration_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'alteration', ALTERATION_WITHOUT_NR, None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-         'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {'alteration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/alteration'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('bc_alteration_completed', 'BC7654321', Business.LegalTypes.COMP.value,
-     'alteration', ALTERATION_WITHOUT_NR, None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-         'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {'alteration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/alteration'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('cc_alteration_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value,
-     'alteration', ALTERATION_WITHOUT_NR, None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-         'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {'alteration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/alteration'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ulc_alteration_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
-     'alteration', ALTERATION_WITHOUT_NR, None, None, Filing.Status.COMPLETED,
-     {'documents': {
-        'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-        'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {'alteration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/alteration'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_alteration_with_nr_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'alteration', ALTERATION, None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-         'certificateOfNameChange': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfNameChange',
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {'alteration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/alteration'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_changeOfDirector', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'changeOfDirectors', CHANGE_OF_DIRECTORS, None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-         'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {'changeOfDirectors': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/changeOfDirectors'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('bc_changeOfDirector', 'BC7654321', Business.LegalTypes.COMP.value,
-     'changeOfDirectors', CHANGE_OF_DIRECTORS, None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-         'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {
-                            'changeOfDirectors': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/changeOfDirectors'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('cc_changeOfDirector', 'BC7654321', Business.LegalTypes.BC_CCC.value,
-     'changeOfDirectors', CHANGE_OF_DIRECTORS, None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-         'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {
-                            'changeOfDirectors': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/changeOfDirectors'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ulc_changeOfDirector', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
-     'changeOfDirectors', CHANGE_OF_DIRECTORS, None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-         'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {
-                            'changeOfDirectors': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/changeOfDirectors'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('cp_correction_ar', 'CP7654321', Business.LegalTypes.COOP.value,
-     'correction', CORRECTION_AR, None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-         'legalFilings': [
-         {'correction': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/correction'},
-     ]
-     }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('cp_changeOfDirector', 'CP7654321', Business.LegalTypes.COOP.value,
-     'changeOfDirectors', CHANGE_OF_DIRECTORS, None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-         'legalFilings': [
-             {'changeOfDirectors': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/changeOfDirectors'},
-         ]
-     }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('cp_dissolution_completed', 'CP7654321', Business.LegalTypes.COOP.value,
-     'dissolution', DISSOLUTION, 'specialResolution', SPECIAL_RESOLUTION, Filing.Status.COMPLETED,
-     {
-         'documents': {
-             'affidavit':
-             f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/affidavit',
-             'certificateOfDissolution':
-             f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/certificateOfDissolution',
-             'legalFilings': [
-                 {'dissolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/dissolution'},
-                 {'specialResolution':
-                     f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/specialResolution'}
-             ],
-             'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-         },
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('cp_dissolution_paid', 'CP7654321', Business.LegalTypes.COOP.value,
-     'dissolution', DISSOLUTION, None, None, Filing.Status.PAID,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-             'legalFilings': [
-                 {'dissolution': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/dissolution'},
-             ]
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_dissolution_completed', 'BC7654321', 'BEN',
-     'dissolution', DISSOLUTION, None, None, Filing.Status.COMPLETED,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-             'certificateOfDissolution':
-             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfDissolution',
-                 'legalFilings': [
-                     {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
-                 ]
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_dissolution_paid', 'BC7654321', 'BEN',
-     'dissolution', DISSOLUTION, None, None, Filing.Status.PAID,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-             'legalFilings': [
-                 {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
-             ]
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('bc_dissolution_completed', 'BC7654321', 'BC',
-     'dissolution', DISSOLUTION, None, None, Filing.Status.COMPLETED,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-             'certificateOfDissolution':
-             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfDissolution',
-                 'legalFilings': [
-                     {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
-                 ]
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('cc_dissolution_completed', 'BC7654321', 'CC',
-     'dissolution', DISSOLUTION, None, None, Filing.Status.COMPLETED,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-             'certificateOfDissolution':
-             f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfDissolution',
-                 'legalFilings': [
-                     {'dissolution': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/dissolution'},
-                 ]
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('bc_delay_dissolution_completed', 'BC7654321', 'BC',
-     'dissolution', DELAY_DISSOLUTION, None, None, Filing.Status.COMPLETED,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('bc_delay_dissolution_paid', 'BC7654321', 'BC',
-     'dissolution', DELAY_DISSOLUTION, None, None, Filing.Status.PAID,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('sp_registration_paid', 'FM7654321', 'SP',
-     'registration', REGISTRATION, None, None, Filing.Status.PAID,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt'
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('sp_registration_completed', 'FM7654321', 'SP',
-     'registration', REGISTRATION, None, None, Filing.Status.COMPLETED,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt',
-             'legalFilings': [
-                 {'registration': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/registration'},
-             ]
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('gp_registration_paid', 'FM7654321', 'GP',
-     'registration', REGISTRATION, None, None, Filing.Status.PAID,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt'
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('gp_registration_completed', 'FM7654321', 'GP',
-     'registration', REGISTRATION, None, None, Filing.Status.COMPLETED,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt',
-             'legalFilings': [
-                 {'registration': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/registration'},
-             ]
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('sp_change_of_registration_paid', 'FM7654321', 'SP',
-     'changeOfRegistration', CHANGE_OF_REGISTRATION, None, None, Filing.Status.PAID,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt',
-             'legalFilings': [
-                 {'changeOfRegistration':
-                  f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/changeOfRegistration'},
-             ]
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('sp_change_of_registration_completed', 'FM7654321', 'SP',
-     'changeOfRegistration', CHANGE_OF_REGISTRATION, None, None, Filing.Status.COMPLETED,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt',
-             'amendedRegistrationStatement':
-                 f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/amendedRegistrationStatement',
-             'legalFilings': [
-                 {'changeOfRegistration':
-                  f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/changeOfRegistration'},
-             ]
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('gp_change_of_registration_paid', 'FM7654321', 'GP',
-     'changeOfRegistration', CHANGE_OF_REGISTRATION, None, None, Filing.Status.PAID,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt',
-             'legalFilings': [
-                 {'changeOfRegistration':
-                  f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/changeOfRegistration'},
-             ]
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('gp_change_of_registration_completed', 'FM7654321', 'GP',
-     'changeOfRegistration', CHANGE_OF_REGISTRATION, None, None, Filing.Status.COMPLETED,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt',
-             'amendedRegistrationStatement':
-                 f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/amendedRegistrationStatement',
-             'legalFilings': [
-                 {'changeOfRegistration':
-                  f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/changeOfRegistration'},
-             ]
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('sp_ia_completed', 'FM7654321', Business.LegalTypes.SOLE_PROP.value,
-     'conversion', FIRMS_CONVERSION, None, None, Filing.Status.COMPLETED,
-     {'documents': {}},
-     HTTPStatus.OK, None
-     ),
-    ('gp_ia_completed', 'FM7654321', Business.LegalTypes.PARTNERSHIP.value,
-     'conversion', FIRMS_CONVERSION, None, None, Filing.Status.COMPLETED,
-     {'documents': {}},
-     HTTPStatus.OK, None
-     ),
-    ('bc_change_of_liquidators_intent_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'changeOfLiquidators', CHANGE_OF_LIQUIDATORS , None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-         'legalFilings': [
-            {
-                'changeOfLiquidators': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/1/documents/changeOfLiquidators',
-            }
-        ]
-     }},
-     HTTPStatus.OK, '2020-10-01'
-    ),
-    ('bc_change_of_liquidators_intent_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'changeOfLiquidators', CHANGE_OF_LIQUIDATORS , None, None, Filing.Status.PAID,
-     {'documents': {
-        'receipt': 'https://LEGAL_API_BASE_URL/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-     }},
-     HTTPStatus.OK, '2020-10-01'
-    ),
-    (
-        'bc_change_of_liquidators_appoint_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'appointLiquidator'}, None, None, Filing.Status.COMPLETED,
-        {
-            'documents': {
-                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                'legalFilings': [{'changeOfLiquidators': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/changeOfLiquidators'}]
-            }
-        },
-        HTTPStatus.OK, '2020-10-01'
-    ),
-    (
-        'bc_change_of_liquidators_appoint_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
-        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'appointLiquidator'}, None, None, Filing.Status.PAID,
-        {
-            'documents': {
-                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-            }
-        },
-        HTTPStatus.OK, '2020-10-01'
-    ),
-    (
-        'bc_change_of_liquidators_cease_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'ceaseLiquidator'}, None, None, Filing.Status.COMPLETED,
-        {
-            'documents': {
-                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                'legalFilings': [{'changeOfLiquidators': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/changeOfLiquidators'}]
-            }
-        },
-        HTTPStatus.OK, '2020-10-01'
-    ),
-    (
-        'bc_change_of_liquidators_cease_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
-        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'ceaseLiquidator'}, None, None, Filing.Status.PAID,
-        {
-            'documents': {
-                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-            }
-        },
-        HTTPStatus.OK, '2020-10-01'
-    ),
-    (
-        'bc_change_of_liquidators_change_address_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'changeAddressLiquidator'}, None, None, Filing.Status.COMPLETED,
-        {
-            'documents': {
-                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                'legalFilings': [{'changeOfLiquidators': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/changeOfLiquidators'}]
-            }
-        },
-        HTTPStatus.OK, '2020-10-01'
-    ),
-    (
-        'bc_change_of_liquidators_change_address_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
-        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'changeAddressLiquidator'}, None, None, Filing.Status.PAID,
-        {
-            'documents': {
-                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-            }
-        },
-        HTTPStatus.OK, '2020-10-01'
-    ),
-    (
-        'bc_change_of_liquidators_liquidation_report_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'liquidationReport'}, None, None, Filing.Status.COMPLETED,
-        {
-            'documents': {
-                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-            }
-        },
-        HTTPStatus.OK, '2020-10-01'
-    ),
-    (
-        'bc_change_of_liquidators_liquidation_report_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
-        'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'liquidationReport'}, None, None, Filing.Status.PAID,
-        {
-            'documents': {
-                'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-            }
-        },
-        HTTPStatus.OK, '2020-10-01'
-    ),
-     ('bc_change_of_officers_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'changeOfOfficers', CHANGE_OF_OFFICERS , None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-     }},
-     HTTPStatus.OK, '2017-10-01'
-     ),
-     ('bc_change_of_officers_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'changeOfOfficers', CHANGE_OF_OFFICERS , None, None, Filing.Status.PAID,
-     {'documents': {}},
-     HTTPStatus.OK, None
-     ),
-    ('bc_change_of_receivers_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'changeOfReceivers', CHANGE_OF_RECEIVERS , None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-     }},
-     HTTPStatus.OK, '2020-10-01'
-     ),
-    ('bc_change_of_receivers_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'changeOfReceivers', CHANGE_OF_RECEIVERS , None, None, Filing.Status.PAID,
-     {'documents': {}},
-     HTTPStatus.OK, None
-     ),
-    ('sp_dissolution_completed', 'FM7654321', 'SP',
-     'dissolution', DISSOLUTION, None, None, Filing.Status.COMPLETED,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt',
-             'legalFilings': [
-                 {'dissolution': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/dissolution'},
-             ]
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('sp_dissolution_paid', 'FM7654321', 'SP',
-     'dissolution', DISSOLUTION, None, None, Filing.Status.PAID,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt'
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('gp_dissolution_completed', 'FM7654321', 'GP',
-     'dissolution', DISSOLUTION, None, None, Filing.Status.COMPLETED,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt',
-             'legalFilings': [
-                 {'dissolution': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/dissolution'},
-             ]
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('gp_dissolution_paid', 'FM7654321', 'GP',
-     'dissolution', DISSOLUTION, None, None, Filing.Status.PAID,
-     {
-         'documents': {
-             'receipt': f'{base_url}/api/v2/businesses/FM7654321/filings/1/documents/receipt'
-         }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ulc_ia_paid', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
-     'incorporationApplication', INCORPORATION, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'incorporationApplication':
-                         f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ulc_ia_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
-     'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'certificateOfIncorporation': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfIncorporation',
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {'incorporationApplication':
-                         f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('cc_ia_paid', 'BC7654321', Business.LegalTypes.BC_CCC.value,
-     'incorporationApplication', INCORPORATION, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'incorporationApplication':
-                         f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('cc_ia_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value,
-     'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'certificateOfIncorporation': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfIncorporation',
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {'incorporationApplication':
-                         f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('bc_ia_paid', 'BC7654321', Business.LegalTypes.COMP.value,
-     'incorporationApplication', INCORPORATION, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'incorporationApplication':
-                         f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('bc_ia_completed', 'BC7654321', Business.LegalTypes.COMP.value,
-     'incorporationApplication', INCORPORATION, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'certificateOfIncorporation': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfIncorporation',
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {'incorporationApplication':
-                         f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('bc_ia_completed', 'BC7654321', Business.LegalTypes.COMP.value,
-     'incorporationApplication', INCORPORATION, None, None, Filing.Status.WITHDRAWN,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'incorporationApplication':
-                         f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/incorporationApplication'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('bc_annual_report_completed', 'BC7654321', Business.LegalTypes.COMP.value,
-     'annualReport', ANNUAL_REPORT, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'annualReport':
-                         f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/annualReport'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ccc_annual_report_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value,
-     'annualReport', ANNUAL_REPORT, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'annualReport':
-                         f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/annualReport'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ulc_annual_report_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
-     'annualReport', ANNUAL_REPORT, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'annualReport':
-                         f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/annualReport'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('cp_annual_report_completed', 'CP7654321', Business.LegalTypes.COOP.value,
-     'annualReport', ANNUAL_REPORT, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'annualReport':
-                         f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/annualReport'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_annual_report_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'annualReport', ANNUAL_REPORT, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'annualReport':
-                         f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/annualReport'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
+    return {"documents": docs}
 
-    ('bc_annual_report_paid', 'BC7654321', Business.LegalTypes.COMP.value,
-     'annualReport', ANNUAL_REPORT, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'annualReport':
-                         f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/annualReport'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ccc_annual_report_paid', 'BC7654321', Business.LegalTypes.BC_CCC.value,
-     'annualReport', ANNUAL_REPORT, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'annualReport':
-                         f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/annualReport'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ulc_annual_report_paid', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
-     'annualReport', ANNUAL_REPORT, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'annualReport':
-                         f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/annualReport'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('cp_annual_report_paid', 'CP7654321', Business.LegalTypes.COOP.value,
-     'annualReport', ANNUAL_REPORT, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'annualReport':
-                         f'{base_url}/api/v2/businesses/CP7654321/filings/1/documents/annualReport'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_annual_report_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'annualReport', ANNUAL_REPORT, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'annualReport':
-                         f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/annualReport'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_agmExtension_completed', 'BC7654321',
-     Business.LegalTypes.BCOMP.value, 'agmExtension', AGM_EXTENSION,
-     None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'letterOfAgmExtension': f'{base_url}/api/v2/businesses/BC7654321/filings/documents/letterOfAgmExtension',
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-     }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_agmLocationChange_paid', 'BC7654321',
-     Business.LegalTypes.BCOMP.value, 'agmExtension', AGM_EXTENSION,
-     None, None, Filing.Status.PAID,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-     }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_agmLocationChange_completed', 'BC7654321',
-     Business.LegalTypes.BCOMP.value, 'agmLocationChange', AGM_LOCATION_CHANGE,
-     None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'letterOfAgmLocationChange': f'{base_url}/api/v2/businesses/BC7654321/filings/documents/letterOfAgmLocationChange',
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-     }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_agmLocationChange_paid', 'BC7654321',
-     Business.LegalTypes.BCOMP.value, 'agmLocationChange', AGM_LOCATION_CHANGE,
-     None, None, Filing.Status.PAID,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-     }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_consentContinuationOut_completed', 'BC7654321',
-     Business.LegalTypes.BCOMP.value, 'consentContinuationOut', CONSENT_CONTINUATION_OUT,
-     None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'legalFilings': [
-             {'consentContinuationOut':
-              f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/consentContinuationOut'},
-         ],
-         'letterOfConsent': f'{base_url}/api/v2/businesses/BC7654321/filings/documents/letterOfConsent',
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-     }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_consentContinuationOut_paid', 'BC7654321',
-     Business.LegalTypes.BCOMP.value, 'consentContinuationOut', CONSENT_CONTINUATION_OUT,
-     None, None, Filing.Status.PAID,
-     {'documents': {
-         'legalFilings': [
-             {'consentContinuationOut':
-              f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/consentContinuationOut'},
-         ],
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-     }
-     },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_amalgamation_completed', 'BC7654321',
-     Business.LegalTypes.BCOMP.value, 'amalgamationApplication', AMALGAMATION_APPLICATION,
-     None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'certificateOfAmalgamation': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfAmalgamation',
-         'legalFilings': [
-             {
-                 'amalgamationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/amalgamationApplication'
-             }
-         ],
-         'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-     }
-     },
-        HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_amalgamation_paid', 'BC7654321',
-     Business.LegalTypes.BCOMP.value, 'amalgamationApplication', AMALGAMATION_APPLICATION,
-     None, None, Filing.Status.PAID,
-     {'documents': {
-         'legalFilings': [
-             {
-                 'amalgamationApplication': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/amalgamationApplication'
-             }
-         ],
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-     }
-     },
-        HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_changeOfAddress', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'changeOfAddress', CHANGE_OF_ADDRESS, None, None, Filing.Status.COMPLETED,
-     {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {'changeOfAddress': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/changeOfAddress'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, None
-     ),
-    ('bc_changeOfAddress', 'BC7654321', Business.LegalTypes.COMP.value,
-     'changeOfAddress', CHANGE_OF_ADDRESS, None, None, Filing.Status.COMPLETED,
-     {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {
-                            'changeOfAddress': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/changeOfAddress'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, None
-     ),
-    ('cc_changeOfAddress', 'BC7654321', Business.LegalTypes.BC_CCC.value,
-     'changeOfAddress', CHANGE_OF_ADDRESS, None, None, Filing.Status.COMPLETED,
-     {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {
-                            'changeOfAddress': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/changeOfAddress'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, None
-     ),
-    ('ulc_changeOfAddress', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
-     'changeOfAddress', CHANGE_OF_ADDRESS, None, None, Filing.Status.COMPLETED,
-     {'documents': {'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {
-                            'changeOfAddress': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/changeOfAddress'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, None
-     ),
-    ('bc_restoration_completed', 'BC7654321', Business.LegalTypes.COMP.value,
-     'restoration', RESTORATION, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'certificateOfRestoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfRestoration',
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {
-                            'restoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/restoration'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('bc_restoration_paid', 'BC7654321', Business.LegalTypes.COMP.value,
-     'restoration', RESTORATION, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {
-                            'restoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/restoration'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_restoration_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'restoration', RESTORATION, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'certificateOfRestoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfRestoration',
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {
-                            'restoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/restoration'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ben_restoration_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'restoration', RESTORATION, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {
-                            'restoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/restoration'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ulc_restoration_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
-     'restoration', RESTORATION, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'certificateOfRestoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfRestoration',
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {
-                            'restoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/restoration'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('ulc_restoration_paid', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
-     'restoration', RESTORATION, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {
-                            'restoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/restoration'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('cc_restoration_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value,
-     'restoration', RESTORATION, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'certificateOfRestoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/certificateOfRestoration',
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {
-                            'restoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/restoration'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
-    ('cc_restoration_paid', 'BC7654321', Business.LegalTypes.BC_CCC.value,
-     'restoration', RESTORATION, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {
-                            'restoration': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/restoration'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
 
-    ('bc_continuationOut_complete', 'BC7654321', Business.LegalTypes.COMP.value,
-     'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-     }
-     },
-     HTTPStatus.OK, '2017-10-1'
-     ),
-    ('ulc_continuationOut_complete', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
-     'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-     }
-     },
-     HTTPStatus.OK, '2017-10-1'
-     ),
-    ('cc_continuationOut_complete', 'BC7654321', Business.LegalTypes.BC_CCC.value,
-     'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-     }
-     },
-     HTTPStatus.OK, '2017-10-1'
-     ),
-    ('ben_continuationOut_complete', 'BC7654321', Business.LegalTypes.BCOMP.value, 'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.COMPLETED,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-     }
-     },
-     HTTPStatus.OK, '2017-10-1'
-     ),
-    ('bc_continuationOut_paid', 'BC7654321', Business.LegalTypes.COMP.value,
-     'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.PAID,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-     }
-     },
-     HTTPStatus.OK, '2017-10-1'
-     ),
-    ('ulc_continuationOut_paid', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
-     'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.PAID,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-     }
-     },
-     HTTPStatus.OK, '2017-10-1'
-     ),
-    ('cc_continuationOut_paid', 'BC7654321', Business.LegalTypes.BC_CCC.value,
-     'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.PAID,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-     }
-     },
-     HTTPStatus.OK, '2017-10-1'
-     ),
-    ('ben_continuationOut_paid', 'BC7654321', Business.LegalTypes.BCOMP.value, 'continuationOut', CONTINUATION_OUT, None, None, Filing.Status.PAID,
-     {'documents': {
-         'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'
-     }
-     },
-     HTTPStatus.OK, '2017-10-1'
-     ),
-    ('cben_cont_in_completed', 'C7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value,
-     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
-                    'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/certificateOfContinuation',
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/continuationIn'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2024-06-06'
-     ),
-    ('cben_cont_in_completed', 'C7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value,
-     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
-     {'documents': {'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/certificateOfContinuation',
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/continuationIn'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, None
-     ),
-    ('c_cont_in_completed', 'C7654322', Business.LegalTypes.CONTINUE_IN.value,
-     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/receipt',
-                    'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/certificateOfContinuation',
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/continuationIn'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2024-06-06'
-     ),
-    ('c_cont_in_completed', 'C7654322', Business.LegalTypes.CONTINUE_IN.value,
-     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
-     {'documents': {'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/certificateOfContinuation',
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654322/filings/1/documents/continuationIn'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, None
-     ),
-    ('cul_cont_in_completed', 'C7654323', Business.LegalTypes.ULC_CONTINUE_IN.value,
-     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/receipt',
-                    'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/certificateOfContinuation',
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/continuationIn'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2024-06-06'
-     ),
-    ('cul_cont_in_completed', 'C7654323', Business.LegalTypes.ULC_CONTINUE_IN.value,
-     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
-     {'documents': {'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/certificateOfContinuation',
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654323/filings/1/documents/continuationIn'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, None
-     ),
-    ('ccc_cont_in_completed', 'C7654324', Business.LegalTypes.CCC_CONTINUE_IN.value,
-     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/receipt',
-                    'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/certificateOfContinuation',
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/continuationIn'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2024-06-06'
-     ),
-    ('ccc_cont_in_completed', 'C7654324', Business.LegalTypes.CCC_CONTINUE_IN.value,
-     'continuationIn', CONTINUATION_IN, None, None, Filing.Status.COMPLETED,
-     {'documents': {'certificateOfContinuation': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/certificateOfContinuation',
-                    'noticeOfArticles': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/noticeOfArticles',
-                    'legalFilings': [
-                        {'continuationIn': f'{base_url}/api/v2/businesses/C7654324/filings/1/documents/continuationIn'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, None
-     ),
-    ('bc_notice_of_withdrawal_completed', 'BC7654321', Business.LegalTypes.COMP.value,
-     'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2024-09-25'
-     ),
-    ('ben_notice_of_withdrawal_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2024-09-25'
-     ),
-    ('cc_notice_of_withdrawal_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value,
-     'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2024-09-25'
-     ),
-    ('ulc_notice_of_withdrawal_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
-     'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2024-09-25'
-     ),
-    ('c_notice_of_withdrawal_completed', 'C7654321', Business.LegalTypes.CONTINUE_IN.value,
-     'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2024-09-25'
-     ),
-    ('ccc_notice_of_withdrawal_completed', 'C7654321', Business.LegalTypes.CCC_CONTINUE_IN.value,
-     'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2024-09-25'
-     ),
-    ('cben_notice_of_withdrawal_completed', 'C7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value,
-     'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2024-09-25'
-     ),
-    ('cul_notice_of_withdrawal_completed', 'C7654321', Business.LegalTypes.ULC_CONTINUE_IN.value,
-     'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2024-09-25'
-     ),
-    ('bc_notice_of_withdrawal_paid', 'BC7654321', Business.LegalTypes.COMP.value,
-     'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2024-09-26'
-     ),
-    ('ben_notice_of_withdrawal_paid', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2024-09-26'
-     ),
-    ('cc_notice_of_withdrawal_paid', 'BC7654321', Business.LegalTypes.BC_CCC.value,
-     'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2024-09-26'
-     ),
-    ('ulc_notice_of_withdrawal_paid', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value,
-     'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/noticeOfWithdrawal'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2024-09-26'
-     ),
-    ('c_notice_of_withdrawal_paid', 'C7654321', Business.LegalTypes.CONTINUE_IN.value,
-     'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2024-09-26'
-     ),
-    ('ccc_notice_of_withdrawal_paid', 'C7654321', Business.LegalTypes.CCC_CONTINUE_IN.value,
-     'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2024-09-26'
-     ),
-    ('cben_notice_of_withdrawal_paid', 'C7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value,
-     'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2024-09-26'
-     ),
-    ('cul_notice_of_withdrawal_paid', 'C7654321', Business.LegalTypes.ULC_CONTINUE_IN.value,
-     'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, None, None, Filing.Status.PAID,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/receipt',
-                    'legalFilings': [
-                        {'noticeOfWithdrawal': f'{base_url}/api/v2/businesses/C7654321/filings/1/documents/noticeOfWithdrawal'},
-                    ]
-                    }
-      },
-     HTTPStatus.OK, '2024-09-26'
-     ),
-     ('ben_court_order_completed', 'BC7654321', Business.LegalTypes.BCOMP.value,
-     'courtOrder', COURT_ORDER, None, None, Filing.Status.COMPLETED,
-     {'documents': {'receipt': f'{base_url}/api/v2/businesses/BC7654321/filings/1/documents/receipt'}
-      },
-     HTTPStatus.OK, '2017-10-01'
-     ),
+@pytest.mark.parametrize('test_name, identifier, entity_type, filing_name, legal_filing, status, expected_docs, expected_legal_filings, additional_filing, expected_http_code, payment_completion_date', [
+    ('special_res_paper', 'CP7654321', Business.LegalTypes.COOP.value, 'specialResolution', SPECIAL_RESOLUTION, Filing.Status.PAPER_ONLY, None, None, None, HTTPStatus.NOT_FOUND, None),
+    ('special_res_pending', 'CP7654321', Business.LegalTypes.COOP.value, 'specialResolution', SPECIAL_RESOLUTION, Filing.Status.PENDING, None, None, None, HTTPStatus.NOT_FOUND, None),
+    ('special_res_paid', 'CP7654321', Business.LegalTypes.COOP.value, 'specialResolution', SPECIAL_RESOLUTION, Filing.Status.PAID, ['receipt'], ['specialResolution'], None, HTTPStatus.OK, '2017-10-01'),
+    ('special_res_completed', 'CP7654321', Business.LegalTypes.COOP.value, 'specialResolution', SPECIAL_RESOLUTION, Filing.Status.COMPLETED, ['certifiedRules', 'receipt', 'specialResolutionApplication'], ['specialResolution'], None, HTTPStatus.OK, '2017-10-01'),
+    ('special_res_rules_memorandum_included_completed', 'CP7654321', Business.LegalTypes.COOP.value, 'specialResolution', SPECIAL_RESOLUTION, Filing.Status.COMPLETED, ['certifiedRules', 'receipt', 'specialResolutionApplication'], ['specialResolution'], ('alteration', ALTERATION_MEMORANDUM_RULES_IN_RESOLUTION), HTTPStatus.OK, '2017-10-01'),
+    ('special_res_correction', 'CP7654321', Business.LegalTypes.COOP.value, 'correction', CORRECTION_CP_SPECIAL_RESOLUTION, Filing.Status.COMPLETED, ['certificateOfNameCorrection', 'certifiedRules', 'receipt', 'specialResolution'], ['correction'], None, HTTPStatus.OK, '2017-10-01'),
+    ('cp_ia_completed', 'CP7654321', Business.LegalTypes.COOP.value, 'incorporationApplication', INCORPORATION, Filing.Status.COMPLETED, ['receipt', 'certificateOfIncorporation', 'certifiedMemorandum', 'certifiedRules'], ['incorporationApplication'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'incorporationApplication', INCORPORATION, Filing.Status.COMPLETED, ['receipt', 'certificateOfIncorporation', 'noticeOfArticles'], ['incorporationApplication'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'incorporationApplication', INCORPORATION, Filing.Status.COMPLETED, ['certificateOfIncorporation', 'noticeOfArticles'], ['incorporationApplication'], None, HTTPStatus.OK, None),
+    ('ben_correction_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'correction', CORRECTION_INCORPORATION['filing']['correction'], Filing.Status.COMPLETED, ['receipt', 'noticeOfArticles'], ['correction'], None, HTTPStatus.OK, '2017-10-01'),
+    ('bc_correction_completed', 'BC7654321', Business.LegalTypes.COMP.value, 'correction', CORRECTION_INCORPORATION['filing']['correction'], Filing.Status.COMPLETED, ['receipt', 'noticeOfArticles'], ['correction'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ccc_correction_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value, 'correction', CORRECTION_INCORPORATION['filing']['correction'], Filing.Status.COMPLETED, ['receipt', 'noticeOfArticles'], ['correction'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ulc_correction_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value, 'correction', CORRECTION_INCORPORATION['filing']['correction'], Filing.Status.COMPLETED, ['receipt', 'noticeOfArticles'], ['correction'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_correction_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'correction', CORRECTION_INCORPORATION['filing']['correction'], Filing.Status.COMPLETED, ['receipt', 'noticeOfArticles'], ['correction'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_alteration_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'alteration', ALTERATION_WITHOUT_NR, Filing.Status.COMPLETED, ['receipt', 'noticeOfArticles'], ['alteration'], None, HTTPStatus.OK, '2017-10-01'),
+    ('bc_alteration_completed', 'BC7654321', Business.LegalTypes.COMP.value, 'alteration', ALTERATION_WITHOUT_NR, Filing.Status.COMPLETED, ['receipt', 'noticeOfArticles'], ['alteration'], None, HTTPStatus.OK, '2017-10-01'),
+    ('cc_alteration_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value, 'alteration', ALTERATION_WITHOUT_NR, Filing.Status.COMPLETED, ['receipt', 'noticeOfArticles'], ['alteration'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ulc_alteration_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value, 'alteration', ALTERATION_WITHOUT_NR, Filing.Status.COMPLETED, ['receipt', 'noticeOfArticles'], ['alteration'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_alteration_with_nr_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'alteration', ALTERATION, Filing.Status.COMPLETED, ['receipt', 'certificateOfNameChange', 'noticeOfArticles'], ['alteration'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_changeOfDirector', 'BC7654321', Business.LegalTypes.BCOMP.value, 'changeOfDirectors', CHANGE_OF_DIRECTORS, Filing.Status.COMPLETED, ['receipt', 'noticeOfArticles'], ['changeOfDirectors'], None, HTTPStatus.OK, '2017-10-01'),
+    ('bc_changeOfDirector', 'BC7654321', Business.LegalTypes.COMP.value, 'changeOfDirectors', CHANGE_OF_DIRECTORS, Filing.Status.COMPLETED, ['receipt', 'noticeOfArticles'], ['changeOfDirectors'], None, HTTPStatus.OK, '2017-10-01'),
+    ('cc_changeOfDirector', 'BC7654321', Business.LegalTypes.BC_CCC.value, 'changeOfDirectors', CHANGE_OF_DIRECTORS, Filing.Status.COMPLETED, ['receipt', 'noticeOfArticles'], ['changeOfDirectors'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ulc_changeOfDirector', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value, 'changeOfDirectors', CHANGE_OF_DIRECTORS, Filing.Status.COMPLETED, ['receipt', 'noticeOfArticles'], ['changeOfDirectors'], None, HTTPStatus.OK, '2017-10-01'),
+    ('cp_correction_ar', 'CP7654321', Business.LegalTypes.COOP.value, 'correction', CORRECTION_AR, Filing.Status.COMPLETED, ['receipt'], ['correction'], None, HTTPStatus.OK, '2017-10-01'),
+    ('cp_changeOfDirector', 'CP7654321', Business.LegalTypes.COOP.value, 'changeOfDirectors', CHANGE_OF_DIRECTORS, Filing.Status.COMPLETED, ['receipt'], ['changeOfDirectors'], None, HTTPStatus.OK, '2017-10-01'),
+    ('cp_dissolution_completed', 'CP7654321', Business.LegalTypes.COOP.value, 'dissolution', DISSOLUTION, Filing.Status.COMPLETED, ['affidavit', 'certificateOfDissolution', 'receipt'], ['dissolution', 'specialResolution'], ('specialResolution', SPECIAL_RESOLUTION), HTTPStatus.OK, '2017-10-01'),
+    ('cp_dissolution_paid', 'CP7654321', Business.LegalTypes.COOP.value, 'dissolution', DISSOLUTION, Filing.Status.PAID, ['receipt'], ['dissolution'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_dissolution_completed', 'BC7654321', 'BEN', 'dissolution', DISSOLUTION, Filing.Status.COMPLETED, ['receipt', 'certificateOfDissolution'], ['dissolution'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_dissolution_paid', 'BC7654321', 'BEN', 'dissolution', DISSOLUTION, Filing.Status.PAID, ['receipt'], ['dissolution'], None, HTTPStatus.OK, '2017-10-01'),
+    ('bc_dissolution_completed', 'BC7654321', 'BC', 'dissolution', DISSOLUTION, Filing.Status.COMPLETED, ['receipt', 'certificateOfDissolution'], ['dissolution'], None, HTTPStatus.OK, '2017-10-01'),
+    ('cc_dissolution_completed', 'BC7654321', 'CC', 'dissolution', DISSOLUTION, Filing.Status.COMPLETED, ['receipt', 'certificateOfDissolution'], ['dissolution'], None, HTTPStatus.OK, '2017-10-01'),
+    ('bc_delay_dissolution_completed', 'BC7654321', 'BC', 'dissolution', DELAY_DISSOLUTION, Filing.Status.COMPLETED, ['receipt'], None, None, HTTPStatus.OK, '2017-10-01'),
+    ('bc_delay_dissolution_paid', 'BC7654321', 'BC', 'dissolution', DELAY_DISSOLUTION, Filing.Status.PAID, ['receipt'], None, None, HTTPStatus.OK, '2017-10-01'),
+    ('sp_registration_paid', 'FM7654321', 'SP', 'registration', REGISTRATION, Filing.Status.PAID, ['receipt'], None, None, HTTPStatus.OK, '2017-10-01'),
+    ('sp_registration_completed', 'FM7654321', 'SP', 'registration', REGISTRATION, Filing.Status.COMPLETED, ['receipt'], ['registration'], None, HTTPStatus.OK, '2017-10-01'),
+    ('gp_registration_paid', 'FM7654321', 'GP', 'registration', REGISTRATION, Filing.Status.PAID, ['receipt'], None, None, HTTPStatus.OK, '2017-10-01'),
+    ('gp_registration_completed', 'FM7654321', 'GP', 'registration', REGISTRATION, Filing.Status.COMPLETED, ['receipt'], ['registration'], None, HTTPStatus.OK, '2017-10-01'),
+    ('sp_change_of_registration_paid', 'FM7654321', 'SP', 'changeOfRegistration', CHANGE_OF_REGISTRATION, Filing.Status.PAID, ['receipt'], ['changeOfRegistration'], None, HTTPStatus.OK, '2017-10-01'),
+    ('sp_change_of_registration_completed', 'FM7654321', 'SP', 'changeOfRegistration', CHANGE_OF_REGISTRATION, Filing.Status.COMPLETED, ['receipt', 'amendedRegistrationStatement'], ['changeOfRegistration'], None, HTTPStatus.OK, '2017-10-01'),
+    ('gp_change_of_registration_paid', 'FM7654321', 'GP', 'changeOfRegistration', CHANGE_OF_REGISTRATION, Filing.Status.PAID, ['receipt'], ['changeOfRegistration'], None, HTTPStatus.OK, '2017-10-01'),
+    ('gp_change_of_registration_completed', 'FM7654321', 'GP', 'changeOfRegistration', CHANGE_OF_REGISTRATION, Filing.Status.COMPLETED, ['receipt', 'amendedRegistrationStatement'], ['changeOfRegistration'], None, HTTPStatus.OK, '2017-10-01'),
+    ('sp_ia_completed', 'FM7654321', Business.LegalTypes.SOLE_PROP.value, 'conversion', FIRMS_CONVERSION, Filing.Status.COMPLETED, [], None, None, HTTPStatus.OK, None),
+    ('gp_ia_completed', 'FM7654321', Business.LegalTypes.PARTNERSHIP.value, 'conversion', FIRMS_CONVERSION, Filing.Status.COMPLETED, [], None, None, HTTPStatus.OK, None),
+    ('bc_change_of_liquidators_intent_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'changeOfLiquidators', CHANGE_OF_LIQUIDATORS, Filing.Status.COMPLETED, ['receipt'], ['changeOfLiquidators'], None, HTTPStatus.OK, '2020-10-01'),
+    ('bc_change_of_liquidators_intent_paid', 'BC7654321', Business.LegalTypes.BCOMP.value, 'changeOfLiquidators', CHANGE_OF_LIQUIDATORS, Filing.Status.PAID, ['receipt'], None, None, HTTPStatus.OK, '2020-10-01'),
+    ('bc_change_of_liquidators_appoint_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'appointLiquidator'}, Filing.Status.COMPLETED, ['receipt'], ['changeOfLiquidators'], None, HTTPStatus.OK, '2020-10-01'),
+    ('bc_change_of_liquidators_appoint_paid', 'BC7654321', Business.LegalTypes.BCOMP.value, 'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'appointLiquidator'}, Filing.Status.PAID, ['receipt'], None, None, HTTPStatus.OK, '2020-10-01'),
+    ('bc_change_of_liquidators_cease_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'ceaseLiquidator'}, Filing.Status.COMPLETED, ['receipt'], ['changeOfLiquidators'], None, HTTPStatus.OK, '2020-10-01'),
+    ('bc_change_of_liquidators_cease_paid', 'BC7654321', Business.LegalTypes.BCOMP.value, 'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'ceaseLiquidator'}, Filing.Status.PAID, ['receipt'], None, None, HTTPStatus.OK, '2020-10-01'),
+    ('bc_change_of_liquidators_change_address_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'changeAddressLiquidator'}, Filing.Status.COMPLETED, ['receipt'], ['changeOfLiquidators'], None, HTTPStatus.OK, '2020-10-01'),
+    ('bc_change_of_liquidators_change_address_paid', 'BC7654321', Business.LegalTypes.BCOMP.value, 'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'changeAddressLiquidator'}, Filing.Status.PAID, ['receipt'], None, None, HTTPStatus.OK, '2020-10-01'),
+    ('bc_change_of_liquidators_liquidation_report_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'liquidationReport'}, Filing.Status.COMPLETED, ['receipt'], None, None, HTTPStatus.OK, '2020-10-01'),
+    ('bc_change_of_liquidators_liquidation_report_paid', 'BC7654321', Business.LegalTypes.BCOMP.value, 'changeOfLiquidators', {**CHANGE_OF_LIQUIDATORS, 'type': 'liquidationReport'}, Filing.Status.PAID, ['receipt'], None, None, HTTPStatus.OK, '2020-10-01'),
+    ('bc_change_of_officers_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'changeOfOfficers', CHANGE_OF_OFFICERS, Filing.Status.COMPLETED, ['receipt'], None, None, HTTPStatus.OK, '2017-10-01'),
+    ('bc_change_of_officers_paid', 'BC7654321', Business.LegalTypes.BCOMP.value, 'changeOfOfficers', CHANGE_OF_OFFICERS, Filing.Status.PAID, [], None, None, HTTPStatus.OK, None),
+    ('bc_change_of_receivers_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'changeOfReceivers', CHANGE_OF_RECEIVERS, Filing.Status.COMPLETED, ['receipt'], None, None, HTTPStatus.OK, '2020-10-01'),
+    ('bc_change_of_receivers_paid', 'BC7654321', Business.LegalTypes.BCOMP.value, 'changeOfReceivers', CHANGE_OF_RECEIVERS, Filing.Status.PAID, [], None, None, HTTPStatus.OK, None),
+    ('sp_dissolution_completed', 'FM7654321', 'SP', 'dissolution', DISSOLUTION, Filing.Status.COMPLETED, ['receipt'], ['dissolution'], None, HTTPStatus.OK, '2017-10-01'),
+    ('sp_dissolution_paid', 'FM7654321', 'SP', 'dissolution', DISSOLUTION, Filing.Status.PAID, ['receipt'], None, None, HTTPStatus.OK, '2017-10-01'),
+    ('gp_dissolution_completed', 'FM7654321', 'GP', 'dissolution', DISSOLUTION, Filing.Status.COMPLETED, ['receipt'], ['dissolution'], None, HTTPStatus.OK, '2017-10-01'),
+    ('gp_dissolution_paid', 'FM7654321', 'GP', 'dissolution', DISSOLUTION, Filing.Status.PAID, ['receipt'], None, None, HTTPStatus.OK, '2017-10-01'),
+    ('ulc_ia_paid', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value, 'incorporationApplication', INCORPORATION, Filing.Status.PAID, ['receipt'], ['incorporationApplication'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ulc_ia_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value, 'incorporationApplication', INCORPORATION, Filing.Status.COMPLETED, ['receipt', 'certificateOfIncorporation', 'noticeOfArticles'], ['incorporationApplication'], None, HTTPStatus.OK, '2017-10-01'),
+    ('cc_ia_paid', 'BC7654321', Business.LegalTypes.BC_CCC.value, 'incorporationApplication', INCORPORATION, Filing.Status.PAID, ['receipt'], ['incorporationApplication'], None, HTTPStatus.OK, '2017-10-01'),
+    ('cc_ia_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value, 'incorporationApplication', INCORPORATION, Filing.Status.COMPLETED, ['receipt', 'certificateOfIncorporation', 'noticeOfArticles'], ['incorporationApplication'], None, HTTPStatus.OK, '2017-10-01'),
+    ('bc_ia_paid', 'BC7654321', Business.LegalTypes.COMP.value, 'incorporationApplication', INCORPORATION, Filing.Status.PAID, ['receipt'], ['incorporationApplication'], None, HTTPStatus.OK, '2017-10-01'),
+    ('bc_ia_completed', 'BC7654321', Business.LegalTypes.COMP.value, 'incorporationApplication', INCORPORATION, Filing.Status.COMPLETED, ['receipt', 'certificateOfIncorporation', 'noticeOfArticles'], ['incorporationApplication'], None, HTTPStatus.OK, '2017-10-01'),
+    ('bc_ia_completed', 'BC7654321', Business.LegalTypes.COMP.value, 'incorporationApplication', INCORPORATION, Filing.Status.WITHDRAWN, ['receipt'], ['incorporationApplication'], None, HTTPStatus.OK, '2017-10-01'),
+    ('bc_annual_report_completed', 'BC7654321', Business.LegalTypes.COMP.value, 'annualReport', ANNUAL_REPORT, Filing.Status.COMPLETED, ['receipt'], ['annualReport'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ccc_annual_report_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value, 'annualReport', ANNUAL_REPORT, Filing.Status.COMPLETED, ['receipt'], ['annualReport'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ulc_annual_report_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value, 'annualReport', ANNUAL_REPORT, Filing.Status.COMPLETED, ['receipt'], ['annualReport'], None, HTTPStatus.OK, '2017-10-01'),
+    ('cp_annual_report_completed', 'CP7654321', Business.LegalTypes.COOP.value, 'annualReport', ANNUAL_REPORT, Filing.Status.COMPLETED, ['receipt'], ['annualReport'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_annual_report_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'annualReport', ANNUAL_REPORT, Filing.Status.COMPLETED, ['receipt'], ['annualReport'], None, HTTPStatus.OK, '2017-10-01'),
+    ('bc_annual_report_paid', 'BC7654321', Business.LegalTypes.COMP.value, 'annualReport', ANNUAL_REPORT, Filing.Status.PAID, ['receipt'], ['annualReport'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ccc_annual_report_paid', 'BC7654321', Business.LegalTypes.BC_CCC.value, 'annualReport', ANNUAL_REPORT, Filing.Status.PAID, ['receipt'], ['annualReport'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ulc_annual_report_paid', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value, 'annualReport', ANNUAL_REPORT, Filing.Status.PAID, ['receipt'], ['annualReport'], None, HTTPStatus.OK, '2017-10-01'),
+    ('cp_annual_report_paid', 'CP7654321', Business.LegalTypes.COOP.value, 'annualReport', ANNUAL_REPORT, Filing.Status.PAID, ['receipt'], ['annualReport'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_annual_report_paid', 'BC7654321', Business.LegalTypes.BCOMP.value, 'annualReport', ANNUAL_REPORT, Filing.Status.PAID, ['receipt'], ['annualReport'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_agmExtension_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'agmExtension', AGM_EXTENSION, Filing.Status.COMPLETED, ['letterOfAgmExtension', 'receipt'], None, None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_agmLocationChange_paid', 'BC7654321', Business.LegalTypes.BCOMP.value, 'agmExtension', AGM_EXTENSION, Filing.Status.PAID, ['receipt'], None, None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_agmLocationChange_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'agmLocationChange', AGM_LOCATION_CHANGE, Filing.Status.COMPLETED, ['letterOfAgmLocationChange', 'receipt'], None, None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_agmLocationChange_paid', 'BC7654321', Business.LegalTypes.BCOMP.value, 'agmLocationChange', AGM_LOCATION_CHANGE, Filing.Status.PAID, ['receipt'], None, None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_consentContinuationOut_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'consentContinuationOut', CONSENT_CONTINUATION_OUT, Filing.Status.COMPLETED, ['letterOfConsent', 'receipt'], ['consentContinuationOut'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_consentContinuationOut_paid', 'BC7654321', Business.LegalTypes.BCOMP.value, 'consentContinuationOut', CONSENT_CONTINUATION_OUT, Filing.Status.PAID, ['receipt'], ['consentContinuationOut'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_amalgamation_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'amalgamationApplication', AMALGAMATION_APPLICATION, Filing.Status.COMPLETED, ['certificateOfAmalgamation', 'noticeOfArticles', 'receipt'], ['amalgamationApplication'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_amalgamation_paid', 'BC7654321', Business.LegalTypes.BCOMP.value, 'amalgamationApplication', AMALGAMATION_APPLICATION, Filing.Status.PAID, ['receipt'], ['amalgamationApplication'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_changeOfAddress', 'BC7654321', Business.LegalTypes.BCOMP.value, 'changeOfAddress', CHANGE_OF_ADDRESS, Filing.Status.COMPLETED, ['noticeOfArticles'], ['changeOfAddress'], None, HTTPStatus.OK, None),
+    ('bc_changeOfAddress', 'BC7654321', Business.LegalTypes.COMP.value, 'changeOfAddress', CHANGE_OF_ADDRESS, Filing.Status.COMPLETED, ['noticeOfArticles'], ['changeOfAddress'], None, HTTPStatus.OK, None),
+    ('cc_changeOfAddress', 'BC7654321', Business.LegalTypes.BC_CCC.value, 'changeOfAddress', CHANGE_OF_ADDRESS, Filing.Status.COMPLETED, ['noticeOfArticles'], ['changeOfAddress'], None, HTTPStatus.OK, None),
+    ('ulc_changeOfAddress', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value, 'changeOfAddress', CHANGE_OF_ADDRESS, Filing.Status.COMPLETED, ['noticeOfArticles'], ['changeOfAddress'], None, HTTPStatus.OK, None),
+    ('bc_restoration_completed', 'BC7654321', Business.LegalTypes.COMP.value, 'restoration', RESTORATION, Filing.Status.COMPLETED, ['receipt', 'certificateOfRestoration', 'noticeOfArticles'], ['restoration'], None, HTTPStatus.OK, '2017-10-01'),
+    ('bc_restoration_paid', 'BC7654321', Business.LegalTypes.COMP.value, 'restoration', RESTORATION, Filing.Status.PAID, ['receipt'], ['restoration'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_restoration_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'restoration', RESTORATION, Filing.Status.COMPLETED, ['receipt', 'certificateOfRestoration', 'noticeOfArticles'], ['restoration'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_restoration_paid', 'BC7654321', Business.LegalTypes.BCOMP.value, 'restoration', RESTORATION, Filing.Status.PAID, ['receipt'], ['restoration'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ulc_restoration_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value, 'restoration', RESTORATION, Filing.Status.COMPLETED, ['receipt', 'certificateOfRestoration', 'noticeOfArticles'], ['restoration'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ulc_restoration_paid', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value, 'restoration', RESTORATION, Filing.Status.PAID, ['receipt'], ['restoration'], None, HTTPStatus.OK, '2017-10-01'),
+    ('cc_restoration_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value, 'restoration', RESTORATION, Filing.Status.COMPLETED, ['receipt', 'certificateOfRestoration', 'noticeOfArticles'], ['restoration'], None, HTTPStatus.OK, '2017-10-01'),
+    ('cc_restoration_paid', 'BC7654321', Business.LegalTypes.BC_CCC.value, 'restoration', RESTORATION, Filing.Status.PAID, ['receipt'], ['restoration'], None, HTTPStatus.OK, '2017-10-01'),
+    ('bc_continuationOut_complete', 'BC7654321', Business.LegalTypes.COMP.value, 'continuationOut', CONTINUATION_OUT, Filing.Status.COMPLETED, ['receipt'], None, None, HTTPStatus.OK, '2017-10-1'),
+    ('ulc_continuationOut_complete', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value, 'continuationOut', CONTINUATION_OUT, Filing.Status.COMPLETED, ['receipt'], None, None, HTTPStatus.OK, '2017-10-1'),
+    ('cc_continuationOut_complete', 'BC7654321', Business.LegalTypes.BC_CCC.value, 'continuationOut', CONTINUATION_OUT, Filing.Status.COMPLETED, ['receipt'], None, None, HTTPStatus.OK, '2017-10-1'),
+    ('ben_continuationOut_complete', 'BC7654321', Business.LegalTypes.BCOMP.value, 'continuationOut', CONTINUATION_OUT, Filing.Status.COMPLETED, ['receipt'], None, None, HTTPStatus.OK, '2017-10-1'),
+    ('bc_continuationOut_paid', 'BC7654321', Business.LegalTypes.COMP.value, 'continuationOut', CONTINUATION_OUT, Filing.Status.PAID, ['receipt'], None, None, HTTPStatus.OK, '2017-10-1'),
+    ('ulc_continuationOut_paid', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value, 'continuationOut', CONTINUATION_OUT, Filing.Status.PAID, ['receipt'], None, None, HTTPStatus.OK, '2017-10-1'),
+    ('cc_continuationOut_paid', 'BC7654321', Business.LegalTypes.BC_CCC.value, 'continuationOut', CONTINUATION_OUT, Filing.Status.PAID, ['receipt'], None, None, HTTPStatus.OK, '2017-10-1'),
+    ('ben_continuationOut_paid', 'BC7654321', Business.LegalTypes.BCOMP.value, 'continuationOut', CONTINUATION_OUT, Filing.Status.PAID, ['receipt'], None, None, HTTPStatus.OK, '2017-10-1'),
+    ('cben_cont_in_completed', 'C7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'continuationIn', CONTINUATION_IN, Filing.Status.COMPLETED, ['receipt', 'certificateOfContinuation', 'noticeOfArticles'], ['continuationIn'], None, HTTPStatus.OK, '2024-06-06'),
+    ('cben_cont_in_completed', 'C7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'continuationIn', CONTINUATION_IN, Filing.Status.COMPLETED, ['certificateOfContinuation', 'noticeOfArticles'], ['continuationIn'], None, HTTPStatus.OK, None),
+    ('c_cont_in_completed', 'C7654322', Business.LegalTypes.CONTINUE_IN.value, 'continuationIn', CONTINUATION_IN, Filing.Status.COMPLETED, ['receipt', 'certificateOfContinuation', 'noticeOfArticles'], ['continuationIn'], None, HTTPStatus.OK, '2024-06-06'),
+    ('c_cont_in_completed', 'C7654322', Business.LegalTypes.CONTINUE_IN.value, 'continuationIn', CONTINUATION_IN, Filing.Status.COMPLETED, ['certificateOfContinuation', 'noticeOfArticles'], ['continuationIn'], None, HTTPStatus.OK, None),
+    ('cul_cont_in_completed', 'C7654323', Business.LegalTypes.ULC_CONTINUE_IN.value, 'continuationIn', CONTINUATION_IN, Filing.Status.COMPLETED, ['receipt', 'certificateOfContinuation', 'noticeOfArticles'], ['continuationIn'], None, HTTPStatus.OK, '2024-06-06'),
+    ('cul_cont_in_completed', 'C7654323', Business.LegalTypes.ULC_CONTINUE_IN.value, 'continuationIn', CONTINUATION_IN, Filing.Status.COMPLETED, ['certificateOfContinuation', 'noticeOfArticles'], ['continuationIn'], None, HTTPStatus.OK, None),
+    ('ccc_cont_in_completed', 'C7654324', Business.LegalTypes.CCC_CONTINUE_IN.value, 'continuationIn', CONTINUATION_IN, Filing.Status.COMPLETED, ['receipt', 'certificateOfContinuation', 'noticeOfArticles'], ['continuationIn'], None, HTTPStatus.OK, '2024-06-06'),
+    ('ccc_cont_in_completed', 'C7654324', Business.LegalTypes.CCC_CONTINUE_IN.value, 'continuationIn', CONTINUATION_IN, Filing.Status.COMPLETED, ['certificateOfContinuation', 'noticeOfArticles'], ['continuationIn'], None, HTTPStatus.OK, None),
+    ('bc_notice_of_withdrawal_completed', 'BC7654321', Business.LegalTypes.COMP.value, 'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, Filing.Status.COMPLETED, ['receipt'], ['noticeOfWithdrawal'], None, HTTPStatus.OK, '2024-09-25'),
+    ('ben_notice_of_withdrawal_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, Filing.Status.COMPLETED, ['receipt'], ['noticeOfWithdrawal'], None, HTTPStatus.OK, '2024-09-25'),
+    ('cc_notice_of_withdrawal_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value, 'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, Filing.Status.COMPLETED, ['receipt'], ['noticeOfWithdrawal'], None, HTTPStatus.OK, '2024-09-25'),
+    ('ulc_notice_of_withdrawal_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value, 'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, Filing.Status.COMPLETED, ['receipt'], ['noticeOfWithdrawal'], None, HTTPStatus.OK, '2024-09-25'),
+    ('c_notice_of_withdrawal_completed', 'C7654321', Business.LegalTypes.CONTINUE_IN.value, 'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, Filing.Status.COMPLETED, ['receipt'], ['noticeOfWithdrawal'], None, HTTPStatus.OK, '2024-09-25'),
+    ('ccc_notice_of_withdrawal_completed', 'C7654321', Business.LegalTypes.CCC_CONTINUE_IN.value, 'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, Filing.Status.COMPLETED, ['receipt'], ['noticeOfWithdrawal'], None, HTTPStatus.OK, '2024-09-25'),
+    ('cben_notice_of_withdrawal_completed', 'C7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, Filing.Status.COMPLETED, ['receipt'], ['noticeOfWithdrawal'], None, HTTPStatus.OK, '2024-09-25'),
+    ('cul_notice_of_withdrawal_completed', 'C7654321', Business.LegalTypes.ULC_CONTINUE_IN.value, 'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, Filing.Status.COMPLETED, ['receipt'], ['noticeOfWithdrawal'], None, HTTPStatus.OK, '2024-09-25'),
+    ('bc_notice_of_withdrawal_paid', 'BC7654321', Business.LegalTypes.COMP.value, 'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, Filing.Status.PAID, ['receipt'], ['noticeOfWithdrawal'], None, HTTPStatus.OK, '2024-09-26'),
+    ('ben_notice_of_withdrawal_paid', 'BC7654321', Business.LegalTypes.BCOMP.value, 'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, Filing.Status.PAID, ['receipt'], ['noticeOfWithdrawal'], None, HTTPStatus.OK, '2024-09-26'),
+    ('cc_notice_of_withdrawal_paid', 'BC7654321', Business.LegalTypes.BC_CCC.value, 'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, Filing.Status.PAID, ['receipt'], ['noticeOfWithdrawal'], None, HTTPStatus.OK, '2024-09-26'),
+    ('ulc_notice_of_withdrawal_paid', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value, 'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, Filing.Status.PAID, ['receipt'], ['noticeOfWithdrawal'], None, HTTPStatus.OK, '2024-09-26'),
+    ('c_notice_of_withdrawal_paid', 'C7654321', Business.LegalTypes.CONTINUE_IN.value, 'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, Filing.Status.PAID, ['receipt'], ['noticeOfWithdrawal'], None, HTTPStatus.OK, '2024-09-26'),
+    ('ccc_notice_of_withdrawal_paid', 'C7654321', Business.LegalTypes.CCC_CONTINUE_IN.value, 'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, Filing.Status.PAID, ['receipt'], ['noticeOfWithdrawal'], None, HTTPStatus.OK, '2024-09-26'),
+    ('cben_notice_of_withdrawal_paid', 'C7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, Filing.Status.PAID, ['receipt'], ['noticeOfWithdrawal'], None, HTTPStatus.OK, '2024-09-26'),
+    ('cul_notice_of_withdrawal_paid', 'C7654321', Business.LegalTypes.ULC_CONTINUE_IN.value, 'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, Filing.Status.PAID, ['receipt'], ['noticeOfWithdrawal'], None, HTTPStatus.OK, '2024-09-26'),
+    ('ben_court_order_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'courtOrder', COURT_ORDER, Filing.Status.COMPLETED, ['receipt'], None, None, HTTPStatus.OK, '2017-10-01'),
 ])
 def test_document_list_for_various_filing_states(app, session, mocker, client, jwt, monkeypatch, mock_drs_service,
                                                  test_name,
                                                  identifier,
                                                  entity_type,
-                                                 filing_name_1, legal_filing_1,
-                                                 filing_name_2, legal_filing_2,
-                                                 status, expected_msg, expected_http_code,
+                                                 filing_name, legal_filing,
+                                                 status, expected_docs, expected_legal_filings,
+                                                 additional_filing,
+                                                 expected_http_code,
                                                  payment_completion_date):
     """Test document list based on filing states."""
-    # Setup
-    # identifier = 'CP7654321'
     business = factory_business(identifier, entity_type=entity_type)
 
     filing_json = copy.deepcopy(FILING_HEADER)
-    filing_json['filing']['header']['name'] = filing_name_1
+    filing_json['filing']['header']['name'] = filing_name
     filing_json['filing']['business']['legalType'] = entity_type
-    if filing_name_1 == 'incorporationApplication':
-        legal_filing_1['nameRequest']['legalType'] = entity_type
-    filing_json['filing'][filing_name_1] = legal_filing_1
+    if filing_name == 'incorporationApplication':
+        legal_filing['nameRequest']['legalType'] = entity_type
+    filing_json['filing'][filing_name] = legal_filing
 
-    if legal_filing_2:
-        filing_json['filing'][filing_name_2] = legal_filing_2
+    if additional_filing:
+        add_name, add_filing = additional_filing
+        filing_json['filing'][add_name] = add_filing
 
     filing_date = datetime.now(UTC)
     filing = factory_filing(business, filing_json, filing_date=filing_date)
@@ -1610,14 +341,16 @@ def test_document_list_for_various_filing_states(app, session, mocker, client, j
     filing._payment_completion_date = payment_completion_date
     filing.save()
 
+    expected_msg = make_expected_documents(identifier, expected_docs, expected_legal_filings)
+
     if status == 'COMPLETED':
         lf = [list(x.keys()) for x in filing.legal_filings()]
         legal_filings = [item for sublist in lf for item in sublist]
         meta_data = {'legalFilings': legal_filings}
-        filing._meta_data = filer_action(filing_name_1, filing_json, meta_data, business)
+        filing._meta_data = filer_action(filing_name, filing_json, meta_data, business)
         filing.save()
 
-        if filing_name_1 == 'continuationIn':
+        if filing_name == 'continuationIn':
             affidavit_file_key = meta_data['continuationIn']['affidavitFileKey']
             expected_msg['documents']['staticDocuments'] = [
                 {
@@ -1631,7 +364,7 @@ def test_document_list_for_various_filing_states(app, session, mocker, client, j
                     'name': file.get('fileName'),
                     'url': f'{base_url}/api/v2/businesses/{identifier}/filings/1/documents/static/{file_key}'
                 })
-        elif filing_name_1 == 'courtOrder':
+        elif filing_name == 'courtOrder':
             for file in meta_data['courtOrder']['files']:
                 file_key = file.get('fileKey')
                 expected_msg['documents']['staticDocuments'] = [{
@@ -1640,9 +373,8 @@ def test_document_list_for_various_filing_states(app, session, mocker, client, j
                     'documentType': 'court_order'
                 }]
 
-
     account_id: str = '1'
-    headers=create_header(jwt, [STAFF_ROLE], identifier, account_id=account_id)
+    headers = create_header(jwt, [STAFF_ROLE], identifier, account_id=account_id)
     # test
     with app.test_request_context():
         monkeypatch.setattr('flask.request.headers.get', mock_auth(headers))
@@ -1655,11 +387,12 @@ def test_document_list_for_various_filing_states(app, session, mocker, client, j
             m.reset_mock()
 
     # remove the filing ID
-    rv_data = json.loads(re.sub("/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
-    expected = json.loads(re.sub("/\d+/", "/", json.dumps(expected_msg)))
+    rv_data = json.loads(re.sub(r"/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
+    expected = json.loads(re.sub(r"/\d+/", "/", json.dumps(expected_msg)))
 
     assert rv.status_code == expected_http_code
     assert rv_data == expected
+
 
 
 def filer_action(filing_name, filing_json, meta_data, business):
@@ -1956,8 +689,8 @@ def test_temp_document_list_for_various_filing_states(app, mocker, session, clie
             m.reset_mock()
 
     # remove the filing ID
-    rv_data = json.loads(re.sub("/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
-    expected = json.loads(re.sub("/\d+/", "/", json.dumps(expected_msg)))
+    rv_data = json.loads(re.sub(r"/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
+    expected = json.loads(re.sub(r"/\d+/", "/", json.dumps(expected_msg)))
 
     assert rv.status_code == expected_http_code
     assert rv_data == expected
@@ -2181,8 +914,8 @@ def test_temp_document_list_for_now(app, mocker, session, client, jwt, monkeypat
             m.reset_mock()
 
     # remove the filing ID
-    rv_data = json.loads(re.sub("/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
-    expected = json.loads(re.sub("/\d+/", "/", json.dumps(expected_msg)))
+    rv_data = json.loads(re.sub(r"/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
+    expected = json.loads(re.sub(r"/\d+/", "/", json.dumps(expected_msg)))
 
     assert rv.status_code == expected_http_code
     assert rv_data == expected
@@ -2195,8 +928,8 @@ def test_temp_document_list_for_now(app, mocker, session, client, jwt, monkeypat
                     headers=create_header(jwt, [STAFF_ROLE], temp_identifier))
 
     # remove the filing ID
-    rv_data = json.loads(re.sub("/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
-    expected = json.loads(re.sub("/\d+/", "/", json.dumps(expected_msg)))
+    rv_data = json.loads(re.sub(r"/\d+/", "/", rv.data.decode("utf-8")).replace("\n", ""))
+    expected = json.loads(re.sub(r"/\d+/", "/", json.dumps(expected_msg)))
 
     assert rv.status_code == expected_http_code
     assert rv_data == expected
