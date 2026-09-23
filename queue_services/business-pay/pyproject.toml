@@ -1,6 +1,6 @@
 [project]
 name = "business-pay"
-version = "1.0.1"
+version = "1.0.2"
 description = "Business Registry Pay Service"
 authors = [{name = "thor",email = "thor@wolpert.ca"}]
 license = {text = "BSD-3-Clause"}
