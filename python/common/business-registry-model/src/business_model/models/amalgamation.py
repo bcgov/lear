@@ -24,7 +24,7 @@ from sqlalchemy import or_
 
 from business_model.utils.base import BaseEnum
 
-from .db import VersioningProxy, db
+from .db import OPERATION_TYPE_DELETE, VersioningProxy, db
 
 
 class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-attributes
@@ -109,7 +109,7 @@ class Amalgamation(db.Model, Versioned):  # pylint: disable=too-many-instance-at
         amalgamation_version = VersioningProxy.version_class(db.session(), Amalgamation)
         amalgamation = db.session.query(amalgamation_version) \
             .filter(amalgamation_version.transaction_id <= transaction_id) \
-            .filter(amalgamation_version.operation_type == 0) \
+            .filter(amalgamation_version.operation_type != OPERATION_TYPE_DELETE) \
             .filter(amalgamation_version.business_id == business_id) \
             .filter(or_(amalgamation_version.end_transaction_id == None,
                         amalgamation_version.end_transaction_id > transaction_id)) \

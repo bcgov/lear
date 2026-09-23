@@ -15,11 +15,15 @@
 
 These will get initialized by the application using the models
 """
+from typing import Final
+
 from flask_sqlalchemy import SQLAlchemy
 from flask_sqlalchemy.session import Session
 from sql_versioning import TransactionManager, enable_versioning
 from sql_versioning import version_class as _new_version_class
 from sqlalchemy import event, func, orm
+
+OPERATION_TYPE_DELETE: Final = 2
 
 # by convention in the Flask community these are lower case,
 # whereas pylint wants them upper case
