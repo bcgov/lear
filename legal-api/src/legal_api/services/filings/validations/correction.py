@@ -21,7 +21,7 @@ from flask.globals import request_ctx
 from flask_babel import _
 
 from business_model.models import Business, CourtOrder, Filing, Jurisdiction, PartyRole
-from business_model.models.types.filings import FilingTypes
+from business_model.models.types.filings import DissolutionSubTypes, FilingTypes
 from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
 from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, SYSTEM_ROLE, NaicsService
@@ -174,7 +174,19 @@ def _validate_corps_correction_historical(business: Business, filing_dict, msg):
             )
         ]
         relationships_path = "/filing/correction/relationships"
-        if len(custodian_parties) > 1:
+        corrected_filing = Filing.find_by_id(filing_dict["filing"]["correction"]["correctedFilingId"])
+        if (
+            len(custodian_parties) > 0 and
+            not (
+                corrected_filing.filing_type == FilingTypes.DISSOLUTION and
+                corrected_filing.filing_sub_type == DissolutionSubTypes.VOLUNTARY
+            )
+        ):
+            msg.append({
+                "error": "Custodian is only allowed in voluntary dissolution filings.",
+                "path": relationships_path
+            })
+        elif len(custodian_parties) > 1:
             msg.append({"error": "Only one custodian is allowed.", "path": relationships_path})
         elif len(custodian_parties) == 1:
             today = datetime.now(tz=UTC).date()

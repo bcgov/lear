@@ -91,6 +91,12 @@ def correct_business_data(business: Business,
         court_order_json = dpath.get(correction_filing, "/correction/courtOrder")
         filings.create_court_order(correction_filing_rec, court_order_json, filing_meta)
 
+    if business.state == Business.State.HISTORICAL.value:
+        if business.legal_type in Business.CORPS:
+            correct_corp_data_historical(business, correction_filing_rec, correction_filing, filing_meta)
+
+        return
+
     if business.legal_type == Business.LegalTypes.COOP.value:
         correct_coop_data(business, correction_filing_rec, correction_filing, filing_meta)
     elif business.legal_type in Business.CORPS:
@@ -235,6 +241,65 @@ def correct_coop_data(business: Business,  # noqa: PLR0915
         if dpath.get(correction_filing, "/correction/rulesInResolution"):
             filing_meta.correction = {**filing_meta.correction,
                                       "rulesInResolution": True}
+
+
+def correct_corp_data_historical(business: Business,
+                                 correction_filing_rec: Filing,
+                                 correction_filing: dict,
+                                 filing_meta: FilingMeta):
+    """Correct historical corporation data."""
+    # Update relationships (newer schema for parties)
+    with suppress(IndexError, KeyError, TypeError):
+        relationships = dpath.get(correction_filing, "/correction/relationships")
+        create_relationships(relationships, business, correction_filing_rec)  # completing party
+
+        # custodian
+        update_relationship_addresses(relationships, business)
+        update_relationship_entity_info(relationships, business)
+
+    with suppress(IndexError, KeyError, TypeError):
+        continuation_out = dpath.get(correction_filing, "/correction/continuationOut")
+        if continuation_out:
+            update_out("continuationOut", business, continuation_out, filing_meta)
+
+    with suppress(IndexError, KeyError, TypeError):
+        amalgamation_out = dpath.get(correction_filing, "/correction/amalgamationOut")
+        if amalgamation_out:
+            update_out("amalgamationOut", business, amalgamation_out, filing_meta)
+
+
+def update_out(out_type: str, business: Business, out: dict, filing_meta: FilingMeta):
+    """Update continuation out or amalgamation out."""
+    out_date_str = out.get("date")
+    country = out.get("country").upper()
+    region = out.get("region").upper() if out.get("region") else None
+    legal_name = out.get("legalName")
+    out_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(out_date_str)
+    existing_out_date = (
+        business.continuation_out_date if out_type == "continuationOut" else business.amalgamation_out_date
+    )
+
+    if not (
+        is_same_str(country, business.jurisdiction) and
+        is_same_str(region, business.foreign_jurisdiction_region) and
+        is_same_str(legal_name, business.foreign_legal_name) and
+        out_date == existing_out_date
+    ):
+        filing_meta.correction[out_type] = {
+            "country": country,
+            "region": region,
+            "legalName": legal_name,
+            "date": out_date_str
+        }
+
+    if out_type == "continuationOut":
+        business.continuation_out_date = out_date
+    elif out_type == "amalgamationOut":
+        business.amalgamation_out_date = out_date
+
+    business.jurisdiction = country
+    business.foreign_legal_name = legal_name
+    business.foreign_jurisdiction_region = region
 
 
 def correct_corp_data(business: Business,

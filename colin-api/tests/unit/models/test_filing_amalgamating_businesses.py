@@ -14,6 +14,9 @@
 """Tests for Filing._process_amalgamating_businesses entry classification."""
 from unittest.mock import MagicMock
 
+import pytest
+
+from colin_api.exceptions import BusinessNotFoundException, GenericException
 from colin_api.models import Business
 from colin_api.models.corp_involved import CorpInvolved
 from colin_api.models.filing import Filing
@@ -23,6 +26,7 @@ def _process(mocker, amalgamating_businesses):
     """Run _process_amalgamating_businesses over the entries; return (corp_involved rows, state updates)."""
     created = []
     mocker.patch.object(CorpInvolved, 'create_corp_involved', side_effect=lambda _cursor, obj: created.append(obj))
+    mocker.patch.object(Business, 'find_by_identifier')
     update_corp_state = mocker.patch.object(Business, 'update_corp_state')
 
     filing = Filing()
@@ -70,6 +74,24 @@ def test_holding_entry_marks_adopted(mocker):
     ])
 
     assert created[0].adopted_corp_ind == 'Y'
+
+
+def test_identifier_entry_missing_in_colin(mocker):
+    """Assert a clear 404 is raised when an amalgamating business does not exist in colin."""
+    mocker.patch.object(CorpInvolved, 'create_corp_involved')
+    update_corp_state = mocker.patch.object(Business, 'update_corp_state')
+    mocker.patch.object(Business, 'find_by_identifier',
+                        side_effect=BusinessNotFoundException(identifier='0870226'))
+
+    filing = Filing()
+    filing.event_id = 1234567
+    filing.body = {'amalgamatingBusinesses': [{'role': 'amalgamating', 'identifier': 'BC0870226'}]}
+    with pytest.raises(GenericException) as excinfo:
+        Filing._process_amalgamating_businesses(MagicMock(), filing)  # pylint: disable=protected-access
+
+    assert excinfo.value.status_code == 404
+    assert excinfo.value.error == 'Amalgamating business 0870226 not found in COLIN'
+    update_corp_state.assert_not_called()
 
 
 def test_foreign_entry(mocker):

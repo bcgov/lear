@@ -368,7 +368,7 @@ def process(email_info: dict, token: str) -> dict | None:
     if filing_type == "agmLocationChange":
         subject = f"{business_name} - {filing_name} approved"
     elif filing_type in ["consentAmalgamationOut", "consentContinuationOut"]:
-        subject = f"{business_name} - {filing_name_short} Granted"
+        subject = f"{business_name} - {filing_name_short}"
     elif filing_type == "changeOfReceivers":
         subject = f"{business_name} - Confirmation of Receiver Change"
     elif filing_type == "noticeOfWithdrawal":

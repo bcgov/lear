@@ -15,6 +15,7 @@
 
 Provides all the search and retrieval from the business entity datastore.
 """
+import re
 from contextlib import suppress
 from http import HTTPStatus
 
@@ -63,7 +64,8 @@ def get_businesses(identifier: str):
         # - (i.e. business/person search updates)
         return get_businesses_public(identifier, True)
 
-    if identifier.startswith("T"):
+    # Temp bootstrap ids start with "T". Real tramways are TMY + 7 digits (e.g. TMY0000008).
+    if identifier.startswith("T") and not re.fullmatch(r"TMY\d{7}", identifier):
         return {"message": babel("No information on temp registrations.")}, 200
 
     business = Business.find_by_identifier(identifier)
@@ -135,7 +137,7 @@ def get_businesses(identifier: str):
 @jwt.requires_auth
 def get_businesses_public(identifier: str, slim = False):
     """Return a JSON object with public meta information about the business."""
-    if identifier.startswith("T"):
+    if identifier.startswith("T") and not re.fullmatch(r"TMY\d{7}", identifier):
         return {"message": babel("No information on temp registrations.")}, 200
 
     business = Business.find_by_identifier(identifier)

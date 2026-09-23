@@ -46,6 +46,7 @@ from registry_schemas.example_data import (
     CONTINUATION_IN_FILING_TEMPLATE,
     CONTINUATION_OUT,
     COURT_ORDER_FILING_TEMPLATE,
+    DISSOLUTION,
     FILING_HEADER,
     INCORPORATION_FILING_TEMPLATE
 )
@@ -1585,7 +1586,9 @@ def test_validate_correction_court_order_documents(app, session, jwt, mocker, te
     ("test_multiple_completing_parties", 'Only one completing party is allowed.'),
     ("test_no_completing_parties", 'Completing party is required.'),
     ("test_multiple_custodians", "Only one custodian is allowed."),
-    ("test_existing_custodian", "Custodian already exists for this business, cannot create another custodian.")
+    ("test_existing_custodian", "Custodian already exists for this business, cannot create another custodian."),
+    ("test_custodian_not_voluntary_dissolution", "Custodian is only allowed in voluntary dissolution filings."),
+    ("test_custodian_not_dissolution", "Custodian is only allowed in voluntary dissolution filings.")
 ])
 def test_validate_correction_relationships_roles(session, app, jwt, test_name, err_msg):
     """Test valid comment only IA validation."""
@@ -1615,11 +1618,26 @@ def test_validate_correction_relationships_roles(session, app, jwt, test_name, e
         session.add(custodian)
         session.commit()
 
-    corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+    corrected_filing_json = INCORPORATION_APPLICATION
+    corrected_filing_type = 'incorporationApplication'
+    corrected_filing_sub_type = None
+
+    if "custodian" in test_name and test_name != "test_custodian_not_dissolution":
+        corrected_filing_type = 'dissolution'
+        corrected_filing_json = copy.deepcopy(FILING_HEADER)
+        corrected_filing_json['filing'][corrected_filing_type] = copy.deepcopy(DISSOLUTION)
+        corrected_filing_json['filing']['header']['name'] = corrected_filing_type
+        if test_name == "test_custodian_not_voluntary_dissolution":
+            corrected_filing_sub_type = 'administrative'
+        else:
+            corrected_filing_sub_type = 'voluntary'
+
+    corrected_filing = factory_completed_filing(business, corrected_filing_json, filing_type=corrected_filing_type, filing_sub_type=corrected_filing_sub_type)
 
     filing = copy.deepcopy(CORRECTION)
     filing['filing']['header']['identifier'] = identifier
     filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    filing['filing']['correction']['correctedFilingType'] = corrected_filing_type
     filing['filing']['business']['legalType'] = business.legal_type
     del filing['filing']['correction']['commentOnly']
     del filing['filing']['correction']['parties']
