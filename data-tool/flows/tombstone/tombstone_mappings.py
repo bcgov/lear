@@ -363,11 +363,11 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     # TODO: Liquidation - unsupported
     EventFilings.FILE_ADCOL: 'courtOrderedLiquidation',
     EventFilings.FILE_ADVLQ: 'voluntaryLiquidation',
-    EventFilings.FILE_NOAPL: 'appointLiquidator',
+    EventFilings.FILE_NOAPL: ['changeOfLiquidators', 'appointLiquidator'],
     EventFilings.FILE_NOARM: ['changeOfReceivers', 'appointReceiver'],
-    EventFilings.FILE_NOCAL: 'changeLiquidatorAddress',
+    EventFilings.FILE_NOCAL: ['changeOfLiquidators', 'changeLiquidatorAddress'],
     EventFilings.FILE_NOCDS: 'changeRespectingDCR',
-    EventFilings.FILE_NOCEL: 'ceaseLiquidator',
+    EventFilings.FILE_NOCEL: ['changeOfLiquidators', 'ceaseLiquidator'],
     EventFilings.FILE_NOCER: ['changeOfReceivers', 'ceaseReceiver'],
     EventFilings.FILE_NOLDS: 'locationDCR',
     EventFilings.FILE_NOCRM: ['changeOfReceivers', 'changeReceiverAddress'],
@@ -537,7 +537,7 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_NOLDS: 'Notice of Location of Dissolved Company\'s Records',
     EventFilings.FILE_NOCRM: 'Notice of Change of Address of Receiver or Receiver Manager',
     EventFilings.FILE_NOTRA: 'Notice of Transfer of Records',
-    # LQSIN: 'Statement of Intent to Liquidate'
+    # EventFilings.FILE_LQSIN: 'Statement of Intent to Liquidate',
     # LQSCO: 'Stay of Liquidation - Court Ordered'
     # LQDIS: 'Discontinuance of Liquidation - Court Ordered'
     # LQCON: 'Continuance of Liquidation - Court Ordered'
