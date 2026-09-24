@@ -371,7 +371,7 @@ def correct_corp_data(business: Business,
     with suppress(IndexError, KeyError, TypeError):
         amalgamation = dpath.get(correction_filing, "/correction/amalgamation")
         if amalgamation:
-            update_amalgamation(business, amalgamation)
+            update_amalgamation(business, amalgamation, filing_meta)
 
     with suppress(IndexError, KeyError, TypeError):
         continuation_in = dpath.get(correction_filing, "/correction/continuationIn")
@@ -407,20 +407,47 @@ def update_continuation_in(business: Business, continuation_in: dict, filing_met
         jurisdiction.expro_legal_name = expro.get("legalName")
 
 
-def update_amalgamation(business: Business, amalgamation: dict):
+def update_amalgamation(business: Business, amalgamation: dict, filing_meta: FilingMeta):
     """Update amalgamation details on correction."""
     amalgamation_db = business.amalgamation.first()
     amalgamating_businesses_db = amalgamation_db.amalgamating_businesses.all()
     amalgamating_businesses = amalgamation.get("amalgamatingBusinesses", [])
-    amalgamation_db.court_approval = bool(amalgamation.get("courtApproval"))
+    amalgamation_meta = {}
+
+    if amalgamation_db.court_approval != bool(amalgamation.get("courtApproval")):
+        amalgamation_db.court_approval = bool(amalgamation.get("courtApproval"))
+        amalgamation_meta["courtApproval"] = amalgamation.get("courtApproval")
+
+    amalgamating_businesses_corrected = False
     for amalgamating_business in amalgamating_businesses:
         amalgamating_business_db = next((ab for ab in amalgamating_businesses_db
                                          if ab.id == amalgamating_business.get("id")), None)
-        amalgamating_business_db.foreign_identifier = amalgamating_business.get("identifier")
-        amalgamating_business_db.foreign_name = amalgamating_business.get("legalName")
+        foreign_identifier = amalgamating_business.get("identifier")
+        foreign_name = amalgamating_business.get("legalName")
+        if (
+            not is_same_str(amalgamating_business_db.foreign_identifier, foreign_identifier) or
+            not is_same_str(amalgamating_business_db.foreign_name, foreign_name)
+        ):
+            amalgamating_businesses_corrected = True
+            amalgamating_business_db.foreign_identifier = foreign_identifier
+            amalgamating_business_db.foreign_name = foreign_name
+
         if foreign_jurisdiction := amalgamating_business.get("foreignJurisdiction"):
-            amalgamating_business_db.foreign_jurisdiction = foreign_jurisdiction.get("country").upper()
-            amalgamating_business_db.foreign_jurisdiction_region = (foreign_jurisdiction.get("region") or "").upper()
+            country = foreign_jurisdiction.get("country").upper()
+            region = (foreign_jurisdiction.get("region") or "").upper()
+            if (
+                not is_same_str(amalgamating_business_db.foreign_jurisdiction, country) or
+                not is_same_str(amalgamating_business_db.foreign_jurisdiction_region, region)
+            ):
+                amalgamating_businesses_corrected = True
+                amalgamating_business_db.foreign_jurisdiction = country
+                amalgamating_business_db.foreign_jurisdiction_region = region
+
+    if amalgamating_businesses_corrected:
+        amalgamation_meta["amalgamatingBusinessesCorrected"] = amalgamating_businesses_corrected
+
+    if amalgamation_meta:
+        filing_meta.correction["amalgamation"] = amalgamation_meta
 
 
 def update_parties(business: Business, parties: list, correction_filing_rec: Filing):

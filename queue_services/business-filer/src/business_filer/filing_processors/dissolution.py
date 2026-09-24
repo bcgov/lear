@@ -73,6 +73,18 @@ def process(business: Business, filing: dict, filing_rec: Filing, filing_meta: F
     business.dissolution_date = dissolution_date
 
     if dissolution_type == DissolutionTypes.ADMINISTRATIVE and (amalgamation := business.amalgamation.one_or_none()):
+        # If an amalgamation is dissolved through an administrative dissolution,
+        # its record will exist only in the version table.
+
+        # Rationale: A court order can admin dissolve an amalgamation and restore each of the amalgamating businesses
+        # (staff do that through putbackon filing). Because there is no dedicated filing for this scenario,
+        # the business chose to handle it through the generic admin dissolution filing.
+
+        # Known limitation: This is a generic admin dissolution flow. If an admin dissolution is filed for a
+        # different reason, this logic may still remove the amalgamation record, which is not ideal.
+        # The business accepted this risk when the implementation was introduced.
+
+        # Suggestion: Introduce a field in admin dissolution filing to specify if the amalgamation should be removed.
         for amalgamating_business in amalgamation.amalgamating_businesses.all():
             db.session.delete(amalgamating_business)
         db.session.delete(amalgamation)

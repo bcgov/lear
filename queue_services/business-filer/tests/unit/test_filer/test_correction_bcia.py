@@ -1604,6 +1604,12 @@ def test_correction_amalgamation(app, session, mocker):
     assert ab[1].foreign_jurisdiction == 'US'
     assert ab[1].foreign_jurisdiction_region == ''
 
+    final_filing = Filing.find_by_id(filing_id)
+    correction = final_filing.meta_data.get('correction', {})
+    assert correction['amalgamation'] == {
+        'courtApproval': True,
+        'amalgamatingBusinessesCorrected': True
+    }
 
 def _create_amalgation_business(business, jurisdiction=None):
     if jurisdiction is None:

@@ -20,6 +20,7 @@ from typing import Final
 
 from business_model.models import Business, DocumentType
 from business_model.models import Filing as FilingStorage
+from business_model.models.types.filings import FilingTypes
 from legal_api.services import VersionedBusinessDetailsService as VersionService
 
 
@@ -1023,11 +1024,15 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 not correction.get("correctionBenStatement")  # BEN correction statement require NOA
             ):
                 outputs.remove("noticeOfArticles")
-            if correction.get("toLegalName"):
-                corrected_filing_type = filing.meta_data.get("correction", {}).get("correctedFilingType")
-                if corrected_filing_type == "amalgamationApplication":
+            corrected_filing_type = filing.meta_data.get("correction", {}).get("correctedFilingType")
+            if corrected_filing_type == FilingTypes.AMALGAMATIONAPPLICATION:
+                if (
+                    correction.get("toLegalName") or
+                    correction.get("amalgamation", {}).get("amalgamatingBusinessesCorrected")
+                ):
                     outputs.add("certificateOfAmalgamation")
-                elif corrected_filing_type == "continuationIn":
+            elif correction.get("toLegalName"):
+                if corrected_filing_type == "continuationIn":
                     outputs.add("certificateOfContinuation")
                 elif (
                     corrected_filing_type == "incorporationApplication" and
