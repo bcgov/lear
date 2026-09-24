@@ -709,6 +709,8 @@ WITH allowed_event_file_codes(code) AS (
     ('FILE_AM_RM'),
     ('FILE_AM_SS'),
     ('ADCORP_NULL'),
+    ('ADMIN_NULL'),
+    ('SYSDF_NULL'),
     -- Skipped events/filing types
     ('FILE_COGS1'),
     ('FILE_CHGJU'),
