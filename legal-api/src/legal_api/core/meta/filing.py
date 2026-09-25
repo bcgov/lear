@@ -1024,6 +1024,7 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 not correction.get("correctionBenStatement")  # BEN correction statement require NOA
             ):
                 outputs.remove("noticeOfArticles")
+
             corrected_filing_type = filing.meta_data.get("correction", {}).get("correctedFilingType")
             if corrected_filing_type == FilingTypes.AMALGAMATIONAPPLICATION:
                 if (
@@ -1031,16 +1032,20 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                     correction.get("amalgamation", {}).get("amalgamatingBusinessesCorrected")
                 ):
                     outputs.add("certificateOfAmalgamation")
-            elif correction.get("toLegalName"):
-                if corrected_filing_type == "continuationIn":
-                    outputs.add("certificateOfContinuation")
-                elif (
-                    corrected_filing_type == "incorporationApplication" and
-                    business.legal_type != Business.LegalTypes.COOP.value
+            elif corrected_filing_type == FilingTypes.CONTINUATIONIN:
+                if (
+                    correction.get("toLegalName") or
+                    correction.get("continuationIn")
                 ):
-                    outputs.add("certificateOfIncorporation")
-                elif business.legal_type == Business.LegalTypes.COOP.value:
+                    outputs.add("certificateOfContinuation")
+            elif (
+                corrected_filing_type == FilingTypes.INCORPORATIONAPPLICATION and
+                correction.get("toLegalName")
+            ):
+                if business.legal_type == Business.LegalTypes.COOP.value:
                     outputs.add("certificateOfNameCorrection")
+                else:
+                    outputs.add("certificateOfIncorporation")
 
             if correction.get("uploadNewRules"):
                 outputs.add("certifiedRules")

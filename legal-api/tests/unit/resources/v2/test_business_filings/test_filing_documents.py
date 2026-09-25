@@ -69,7 +69,7 @@ DELAY_DISSOLUTION = {
     'dissolutionType': 'delay',
     'delayType': 'default'
 }
-
+CORRECTION_CP_SPECIAL_RESOLUTION['correctedFilingType'] = 'incorporationApplication'
 
 def mock_auth(headers: dict):
     """Return a stub for flask.request.headers.get."""
@@ -189,6 +189,8 @@ def make_expected_documents(identifier, expected_docs=None, expected_legal_filin
     ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'incorporationApplication', INCORPORATION, Filing.Status.COMPLETED, ['receipt', 'certificateOfIncorporation', 'noticeOfArticles'], ['incorporationApplication'], None, HTTPStatus.OK, '2017-10-01'),
     ('ben_ia_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'incorporationApplication', INCORPORATION, Filing.Status.COMPLETED, ['certificateOfIncorporation', 'noticeOfArticles'], ['incorporationApplication'], None, HTTPStatus.OK, None),
     ('ben_correction_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'correction', CORRECTION_INCORPORATION['filing']['correction'], Filing.Status.COMPLETED, ['receipt', 'noticeOfArticles'], ['correction'], None, HTTPStatus.OK, '2017-10-01'),
+    ('cbc_correction_completed', 'BC7654321', Business.LegalTypes.COMP.value, 'correction', CORRECTION_INCORPORATION['filing']['correction'], Filing.Status.COMPLETED, ['receipt', 'noticeOfArticles', 'certificateOfContinuation'], ['correction'], None, HTTPStatus.OK, '2017-10-01'),
+    ('bc_amal_correction_completed', 'BC7654321', Business.LegalTypes.COMP.value, 'correction', CORRECTION_INCORPORATION['filing']['correction'], Filing.Status.COMPLETED, ['receipt', 'noticeOfArticles', 'certificateOfAmalgamation'], ['correction'], None, HTTPStatus.OK, '2017-10-01'),
     ('bc_correction_completed', 'BC7654321', Business.LegalTypes.COMP.value, 'correction', CORRECTION_INCORPORATION['filing']['correction'], Filing.Status.COMPLETED, ['receipt', 'noticeOfArticles'], ['correction'], None, HTTPStatus.OK, '2017-10-01'),
     ('ccc_correction_completed', 'BC7654321', Business.LegalTypes.BC_CCC.value, 'correction', CORRECTION_INCORPORATION['filing']['correction'], Filing.Status.COMPLETED, ['receipt', 'noticeOfArticles'], ['correction'], None, HTTPStatus.OK, '2017-10-01'),
     ('ulc_correction_completed', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value, 'correction', CORRECTION_INCORPORATION['filing']['correction'], Filing.Status.COMPLETED, ['receipt', 'noticeOfArticles'], ['correction'], None, HTTPStatus.OK, '2017-10-01'),
@@ -346,7 +348,7 @@ def test_document_list_for_various_filing_states(app, session, mocker, client, j
         lf = [list(x.keys()) for x in filing.legal_filings()]
         legal_filings = [item for sublist in lf for item in sublist]
         meta_data = {'legalFilings': legal_filings}
-        filing._meta_data = filer_action(filing_name, filing_json, meta_data, business)
+        filing._meta_data = filer_action(filing_name, filing_json, meta_data, business, expected_docs)
         filing.save()
 
         if filing_name == 'continuationIn':
@@ -394,7 +396,7 @@ def test_document_list_for_various_filing_states(app, session, mocker, client, j
 
 
 
-def filer_action(filing_name, filing_json, meta_data, business):
+def filer_action(filing_name, filing_json, meta_data, business, expected_docs):
     """Helper function for test_document_list_for_various_filing_states."""
     if filing_name == 'alteration' and \
             (legal_name := filing_json['filing']['alteration'].get('nameRequest', {}).get('legalName')):
@@ -434,20 +436,36 @@ def filer_action(filing_name, filing_json, meta_data, business):
             }
         ]
 
-    if filing_name == 'correction' and business.legal_type == 'CP':
-        meta_data['correction'] = {}
-        if (legal_name := filing_json['filing']['correction'].get('nameRequest', {}).get('legalName')):
-            meta_data['correction']['fromLegalName'] = business.legal_name
-            meta_data['correction']['toLegalName'] = legal_name
+    if filing_name == 'correction':
+        meta_data['correction'] = {
+            "correctedFilingId": filing_json["filing"]["correction"].get("correctedFilingId"),
+            "correctedFilingType": filing_json["filing"]["correction"].get("correctedFilingType")
+        }
+        if 'certificateOfAmalgamation' in expected_docs:
+            meta_data['correction']['correctedFilingType'] = 'amalgamationApplication'
+            meta_data['correction']['amalgamation'] = {
+                "amalgamatingBusinessesCorrected": True
+            }
+        elif 'certificateOfContinuation' in expected_docs:
+            meta_data['correction']['correctedFilingType'] = 'continuationIn'
+            meta_data['correction']['continuationIn'] = {
+                'country': 'CA',
+                'region': 'AB'
+            }
 
-        if filing_json['filing']['correction'].get('rulesFileKey'):
-            meta_data['correction']['uploadNewRules'] = True
+        if business.legal_type == 'CP':
+            if (legal_name := filing_json['filing']['correction'].get('nameRequest', {}).get('legalName')):
+                meta_data['correction']['fromLegalName'] = business.legal_name
+                meta_data['correction']['toLegalName'] = legal_name
 
-        if filing_json['filing']['correction'].get('memorandumFileKey'):
-            meta_data['correction']['uploadNewMemorandum'] = True
+            if filing_json['filing']['correction'].get('rulesFileKey'):
+                meta_data['correction']['uploadNewRules'] = True
 
-        if filing_json['filing']['correction'].get('resolution'):
-            meta_data['correction']['hasResolution'] = True
+            if filing_json['filing']['correction'].get('memorandumFileKey'):
+                meta_data['correction']['uploadNewMemorandum'] = True
+
+            if filing_json['filing']['correction'].get('resolution'):
+                meta_data['correction']['hasResolution'] = True
 
     if filing_name == 'specialResolution' and business.legal_type == 'CP':
         meta_data['alteration'] = {}
