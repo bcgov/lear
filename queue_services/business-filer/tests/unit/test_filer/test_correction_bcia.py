@@ -1334,9 +1334,9 @@ def test_continuation_in_correction(app, session, mocker, is_country_changed, is
     continuation_in = {
         'country': 'US' if is_country_changed else 'CA',
         'region': '' if is_region_changed else 'AB',
-        'legalName': 'Foreign Company',
-        'identifier': 'US1234567',
-        'incorporationDate': '2019-01-01',
+        'legalName': continuation_in_json['filing']['continuationIn']['foreignJurisdiction']['legalName'],
+        'identifier': continuation_in_json['filing']['continuationIn']['foreignJurisdiction']['identifier'],
+        'incorporationDate': continuation_in_json['filing']['continuationIn']['foreignJurisdiction']['incorporationDate'],
         'expro': {
             'identifier': 'A0077779',
             'legalName': 'Test Company Inc.'
@@ -1375,7 +1375,8 @@ def test_continuation_in_correction(app, session, mocker, is_country_changed, is
     if is_country_changed or is_region_changed:
         assert filing.meta_data['correction']['continuationIn'] == {
             'country': continuation_in['country'],
-            'region': continuation_in['region']
+            'region': continuation_in['region'],
+            'legalName': continuation_in['legalName']
         }
     else:
         assert 'continuationIn' not in filing.meta_data['correction']
