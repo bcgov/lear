@@ -35,6 +35,7 @@
 import copy
 from datetime import UTC, datetime
 
+from business_common.utils.relationship_director import relationship_to_director
 from business_model.models import Business, Filing, PartyRole
 from flask import current_app
 
@@ -59,7 +60,7 @@ def _update_director_using_name(director: dict, business_id: int):
                         director["officer"].get("lastName"))
     if not director_name:
         current_app.logger.error("Could not resolve director name from json %s.", director)
-        raise QueueException
+        raise QueueException(f"Could not resolve director name from json {director}.")
 
     for current_director in PartyRole.get_parties_by_role(business_id, PartyRole.RoleTypes.DIRECTOR.value):
         current_director_name = ((current_director.party.first_name or "") +
@@ -74,7 +75,7 @@ def _update_director_using_party_id(director: dict, business_id: int):
     party_id = director["officer"].get("id")
     if not party_id:
         current_app.logger.error("Could not resolve party id from json %s.", director)
-        raise QueueException
+        raise QueueException(f"Could not resolve party id from json {director}.")
 
     matched = False
     for current_director in PartyRole.get_parties_by_role(business_id, PartyRole.RoleTypes.DIRECTOR.value):
@@ -86,12 +87,15 @@ def _update_director_using_party_id(director: dict, business_id: int):
     if not matched:
         current_app.logger.error("Could not find active director with party id %s for business %s.",
                                 party_id, business_id)
-        raise QueueException
+        raise QueueException(f"Could not find active director with party id {party_id} for business {business_id}.")
 
 def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  # noqa: PLR0912 
     """Render the change_of_directors onto the business model objects."""
     filing_json = copy.deepcopy(filing_rec.filing_json)
-    if not (directors := filing_json["filing"]["changeOfDirectors"].get("directors")):
+    cod = filing_json["filing"]["changeOfDirectors"]
+    if relationships := cod.get("relationships"):
+        directors = [relationship_to_director(relationship) for relationship in relationships]
+    elif not (directors := cod.get("directors")):
         return
 
     business.last_cod_date = filing_meta.application_date
@@ -133,7 +137,8 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):  #
         if "appointed" in director["actions"]:
             new_directors.append(director)
 
-        elif any([action != "appointed" for action in director["actions"]]):  # noqa: C419
+        # relationships items with no actions are unspecific edits; legacy items with no actions are no-ops
+        elif director["actions"] or relationships:
             if filing_rec.colin_event_ids:
                 # Colin path: retain name-based matching for now.
                 _update_director_using_name(director=director, business_id=business.id)
