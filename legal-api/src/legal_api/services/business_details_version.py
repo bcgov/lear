@@ -26,6 +26,7 @@ from business_model.models import (
     Alias,
     Business,
     Filing,
+    Jurisdiction,
     Office,
     Party,
     PartyRole,
@@ -407,6 +408,30 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             name_translation_json = VersionedBusinessDetailsService.name_translations_json(name_translation)
             name_translations_arr.append(name_translation_json)
         return name_translations_arr
+
+    @staticmethod
+    def get_jurisdiction_revision(transaction_id, business_id) -> dict:
+        """Get jurisdiction for business up to the given transaction id."""
+        jurisdiction_version = VersioningProxy.version_class(db.session(), Jurisdiction)
+        jurisdiction = db.session.query(jurisdiction_version) \
+            .filter(jurisdiction_version.transaction_id <= transaction_id) \
+            .filter(jurisdiction_version.operation_type != OPERATION_TYPE_DELETE) \
+            .filter(jurisdiction_version.business_id == business_id) \
+            .filter(or_(jurisdiction_version.end_transaction_id == None,
+                        jurisdiction_version.end_transaction_id > transaction_id)) \
+            .order_by(jurisdiction_version.transaction_id).first()
+        jurisdiction_json = VersionedBusinessDetailsService.get_jurisdiction_json(jurisdiction)
+        return jurisdiction_json
+
+    @staticmethod
+    def get_jurisdiction_json(jurisdiction) -> dict:
+        """Return a JSON representation of the jurisdiction."""
+        return {
+            "country": jurisdiction.country,
+            "region": jurisdiction.region,
+            "legalName": jurisdiction.legal_name,
+            "identifier": jurisdiction.identifier
+        }
 
     @staticmethod
     def get_resolution_dates_revision(transaction_id, business_id) -> dict:

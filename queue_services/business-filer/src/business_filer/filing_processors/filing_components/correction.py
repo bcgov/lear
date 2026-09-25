@@ -385,19 +385,22 @@ def update_continuation_in(business: Business, continuation_in: dict, filing_met
 
     country = continuation_in.get("country")
     region = continuation_in.get("region")
+    legal_name = continuation_in.get("legalName")
 
     if not (
         is_same_str(country, jurisdiction.country) and
-        is_same_str(region, jurisdiction.region)
+        is_same_str(region, jurisdiction.region) and
+        is_same_str(legal_name, jurisdiction.legal_name)
     ):
         filing_meta.correction["continuationIn"] = {
             "country": country,
-            "region": region
+            "region": region,
+            "legalName": legal_name
         }
 
     jurisdiction.country = country
     jurisdiction.region = region
-    jurisdiction.legal_name = continuation_in.get("legalName")
+    jurisdiction.legal_name = legal_name
     jurisdiction.identifier = continuation_in.get("identifier")
     incorporation_date = continuation_in.get("incorporationDate")
     jurisdiction.incorporation_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(incorporation_date)
