@@ -22,6 +22,7 @@ from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 from sqlalchemy import or_, text
 
+from business_common.utils.relationship_director import relationship_to_director
 from business_model.models import (
     Address,
     Alias,
@@ -82,6 +83,14 @@ def get_completed_filings_for_colin():
                 # to skip this filing and block subsequent filing from syncing in update-colin-filings
                 filing_json["filing"]["header"]["name"] = None
 
+        elif (filing.filing_type == "changeOfDirectors"
+              and filing_json["filing"]["changeOfDirectors"].get("relationships")):
+            try:
+                _convert_cod_relationships_to_directors(filing, filing_json)
+            except Exception as ex:
+                current_app.logger.error(f"changeOfDirectors: filingId={filing.id}, error: {ex!s}")
+                # to skip this filing and block subsequent filing from syncing in update-colin-filings
+                filing_json["filing"]["header"]["name"] = None
         elif (filing.filing_type == "dissolution" and filing.filing_sub_type == "involuntary"):
             if batch_processings := BatchProcessing.find_by(filing_id=filing.id):
                 filing_json["filing"]["dissolution"]["metaData"] = batch_processings[0].meta_data
@@ -278,6 +287,74 @@ def has_share_changed(filing: Filing) -> bool:
                               [int(share_class["id"]) for share_class in share_classes]))
                           .exists())
     return bool(db.session.query(share_series_query).scalar())
+
+
+_COLIN_ADDRESS_COMPARE_FIELDS = ("streetAddress", "streetAddressAdditional", "addressCity",
+                                 "addressRegion", "addressCountry", "postalCode")
+
+
+def _prev_party_json(prev_completed_filing: Filing, party_id) -> dict | None:
+    """Return the party's revision json as of the previous completed filing."""
+    if not prev_completed_filing or not party_id:
+        return None
+    prev_party = VersionedBusinessDetailsService.get_party_revision(prev_completed_filing, party_id)
+    if not prev_party:
+        return None
+    return VersionedBusinessDetailsService.party_revision_json(
+        prev_completed_filing.transaction_id, prev_party, True)
+
+
+def _norm(value):
+    return (value or "").strip().upper()
+
+
+def _names_differ(officer: dict, prev_officer: dict) -> bool:
+    return any(_norm(officer.get(field)) != _norm(prev_officer.get(field))
+               for field in ("firstName", "middleInitial", "lastName"))
+
+
+def _addresses_differ(director: dict, prev_party_json: dict) -> bool:
+    for address_type in ("deliveryAddress", "mailingAddress"):
+        address = director.get(address_type)
+        prev_address = prev_party_json.get(address_type)
+        if bool(address) != bool(prev_address):
+            return True
+        if address and any(_norm(address.get(field)) != _norm(prev_address.get(field))
+                           for field in _COLIN_ADDRESS_COMPARE_FIELDS):
+            return True
+    return False
+
+
+def _convert_cod_relationships_to_directors(filing: Filing, filing_json: dict):
+    """Convert relationships-shaped changeOfDirectors to the legacy directors shape."""
+    cod_json = filing_json["filing"]["changeOfDirectors"]
+    prev_completed_filing = Filing.get_previous_completed_filing(filing)
+
+    directors = []
+    for relationship in cod_json["relationships"]:
+        director = relationship_to_director(relationship)
+        prev_party_json = _prev_party_json(prev_completed_filing, director["officer"].get("id"))
+        prev_officer = (prev_party_json or {}).get("officer", {})
+
+        if not director["actions"] and prev_party_json:
+            # derive the specific legacy actions from the db revisions
+            actions = []
+            if _names_differ(director["officer"], prev_officer):
+                actions.append("nameChanged")
+            if _addresses_differ(director, prev_party_json):
+                actions.append("addressChanged")
+            # NOTE: director processing with no actions will be skipped in the colin-api
+            director["actions"] = actions
+
+        if "nameChanged" in director["actions"] and prev_officer:
+            director["officer"]["prevFirstName"] = prev_officer.get("firstName")
+            director["officer"]["prevMiddleInitial"] = prev_officer.get("middleInitial")
+            director["officer"]["prevLastName"] = prev_officer.get("lastName")
+
+        directors.append(director)
+
+    cod_json["directors"] = directors
+    del cod_json["relationships"]
 
 
 def _map_entity_to_officer(entity: dict[str, str]):
