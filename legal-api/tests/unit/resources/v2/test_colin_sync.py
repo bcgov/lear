@@ -312,3 +312,135 @@ def test_get_completed_filings_for_colin_short_form_amalgamation(session, client
     assert synced['amalgamationApplication']['parties'] == aml['parties']
     assert synced['amalgamationApplication']['shareStructure'] == aml['shareStructure']
     assert synced['amalgamationApplication']['amalgamatingBusinesses'] == aml['amalgamatingBusinesses']
+
+
+def test_get_completed_filings_for_colin_cod_relationships(session, client, jwt):
+    """Assert a relationships-shaped COD is down-converted to the legacy directors shape."""
+    identifier = 'BC7654322'
+    b = factory_business(identifier=identifier, entity_type=Business.LegalTypes.COMP.value)
+    factory_business_mailing_address(b)
+
+    # a previous completed filing whose revision window will contain the existing directors
+    prev_filing = factory_completed_filing(b, ANNUAL_REPORT)
+
+    def _create_director(first_name, last_name, street):
+        officer = {
+            'firstName': first_name,
+            'lastName': last_name,
+            'middleInitial': '',
+            'partyType': 'person',
+            'organizationName': ''
+        }
+        party_role = factory_party_role(
+            factory_address(street, 'delivery'),
+            factory_address(street, 'mailing'),
+            officer,
+            prev_filing.effective_date,
+            None,
+            PartyRole.RoleTypes.DIRECTOR
+        )
+        b.party_roles.append(party_role)
+        b.save()
+        return party_role.party_id
+
+    removed_party_id = _create_director('Peter', 'Griffin', 'old removed st')
+    renamed_party_id = _create_director('Joe', 'Swanson', 'old renamed st')
+    edited_party_id = _create_director('Jane', 'Smith', 'old edited st')
+    noop_party_id = _create_director('Cleveland', 'Brown', 'old noop st')
+
+    # pin the previous filing's revision window to include the directors created above
+    prev_filing.transaction_id = VersioningProxy.get_transaction_id(db.session()) - 1
+    prev_filing.save()
+
+    def _address(street):
+        return {
+            'streetAddress': street,
+            'addressCity': 'Victoria',
+            'addressRegion': 'BC',
+            'addressCountry': 'CA',
+            'postalCode': 'V8W1P6'
+        }
+
+    def _relationship(given, family, street, party_id=None, actions=None, cessation_date=None,
+                      address_builder=None):
+        address = (address_builder or _address)(street)
+        relationship = {
+            'entity': {'givenName': given, 'familyName': family},
+            'deliveryAddress': copy.deepcopy(address),
+            'mailingAddress': copy.deepcopy(address),
+            'roles': [{
+                'roleType': 'Director',
+                'appointmentDate': '2020-01-01',
+                'cessationDate': cessation_date
+            }]
+        }
+        if party_id is not None:
+            relationship['entity']['identifier'] = str(party_id)
+        if actions is not None:
+            relationship['actions'] = actions
+        return relationship
+
+    def _stored_address(street):
+        # mirrors the factory_address fields so the no-op director's address diff is empty
+        return {
+            'streetAddress': street,
+            'addressCity': 'Test City',
+            'addressRegion': 'BC',
+            'addressCountry': 'TA',
+            'postalCode': 'T3S3T3'
+        }
+
+    cod_filing_json = copy.deepcopy(FILING_HEADER)
+    cod_filing_json['filing']['header']['name'] = 'changeOfDirectors'
+    cod_filing_json['filing']['business']['identifier'] = identifier
+    cod_filing_json['filing']['business']['legalType'] = 'BC'
+    cod_filing_json['filing']['changeOfDirectors'] = {
+        'relationships': [
+            _relationship('Glenn', 'Quagmire', 'new appointed st', actions=['ADDED']),
+            _relationship('Peter', 'Griffin', 'old removed st', party_id=removed_party_id,
+                          actions=['REMOVED'], cessation_date='2020-06-01'),
+            _relationship('Joseph', 'Swanson', 'old renamed st', party_id=renamed_party_id,
+                          actions=['NAME_CHANGED']),
+            # no actions: name matches the stored director, address differs -> derived addressChanged
+            _relationship('Jane', 'Smith', 'new edited st', party_id=edited_party_id),
+            # no actions and nothing changed -> empty actions, skipped by the colin-api
+            _relationship('Cleveland', 'Brown', 'old noop st', party_id=noop_party_id,
+                          address_builder=_stored_address)
+        ]
+    }
+    cod_filing = factory_completed_filing(b, cod_filing_json)
+    assert cod_filing.status == Filing.Status.COMPLETED.value
+
+    rv = client.get('/api/v2/businesses/internal/filings',
+                    headers=create_header(jwt, [COLIN_SVC_ROLE]))
+    assert rv.status_code == HTTPStatus.OK
+    synced = next(f for f in rv.json.get('filings') if f['filingId'] == cod_filing.id)
+
+    cod_body = synced['filing']['changeOfDirectors']
+    assert 'relationships' not in cod_body
+    directors = cod_body['directors']
+    assert len(directors) == 5
+
+    added, removed, renamed, edited, noop = directors
+    assert added['actions'] == ['appointed']
+    assert added['officer']['firstName'] == 'Glenn'
+    assert added['appointmentDate'] == '2020-01-01'
+    assert 'id' not in added['officer']
+
+    assert removed['actions'] == ['ceased']
+    assert removed['officer']['id'] == removed_party_id
+    assert removed['cessationDate'] == '2020-06-01'
+
+    assert renamed['actions'] == ['nameChanged']
+    assert renamed['officer']['firstName'] == 'Joseph'
+    assert renamed['officer']['prevFirstName'] == 'Joe'
+    assert renamed['officer']['prevLastName'] == 'Swanson'
+
+    assert edited['actions'] == ['addressChanged']
+    assert edited['officer'].get('prevFirstName') is None
+
+    assert noop['actions'] == []
+    assert noop['officer']['id'] == noop_party_id
+
+    # the stored filing json still carries the submitted relationships shape
+    assert 'relationships' in cod_filing.filing_json['filing']['changeOfDirectors']

@@ -26,6 +26,7 @@ from flask import current_app, jsonify
 
 from business_common.utils.datetime import datetime
 from business_common.utils.legislation_datetime import LegislationDatetime
+from business_common.utils.relationship_director import relationship_to_director
 from business_model.models import (
     AmalgamatingBusiness,
     Business,
@@ -550,8 +551,13 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing["report_date"] = self._report_date_time.strftime(OUTPUT_DATE_FORMAT)
 
     def _set_directors(self, filing):
-        if filing.get("changeOfDirectors"):
-            filing["listOfDirectors"] = filing["changeOfDirectors"]
+        if change_of_directors := filing.get("changeOfDirectors"):
+            if relationships := change_of_directors.get("relationships"):
+                filing["listOfDirectors"] = {
+                    "directors": [relationship_to_director(relationship) for relationship in relationships]
+                }
+            else:
+                filing["listOfDirectors"] = change_of_directors
         else:
             filing["listOfDirectors"] = {
                 "directors": filing["annualReport"].get("directors", [])
