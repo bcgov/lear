@@ -452,7 +452,7 @@ def test_processor_does_not_revoke_when_actions_missing(mock_revoke_digital_cred
                 ]
             }
         }}, business_id=business.id)
-    
+
     user = create_user(firstname='John', lastname='Doe')
     mock_credential = MagicMock()
     mock_credential.id = 1
@@ -462,4 +462,94 @@ def test_processor_does_not_revoke_when_actions_missing(mock_revoke_digital_cred
     change_of_directors.process(business, filing)
 
     mock_get_all_digital_credentials_for_business.assert_called_once_with(business=business)
+    mock_revoke_digital_credential.assert_not_called()
+
+
+def _relationships_filing_json(relationship: dict) -> dict:
+    return {
+        'filing': {
+            'header': {
+                'name': 'changeOfDirectors',
+                'filingId': None
+            },
+            'changeOfDirectors': {
+                'relationships': [relationship]
+            }
+        }}
+
+
+@patch.object(change_of_directors, 'get_all_digital_credentials_for_business')
+@patch.object(change_of_directors, 'revoke_digital_credential')
+def test_processor_revokes_credential_when_relationship_removed(mock_revoke_digital_credential,
+                                                                mock_get_all_digital_credentials_for_business,
+                                                                app, session):
+    """Assert that the processor revokes credential for a relationships item with a REMOVED action."""
+    business = create_business(identifier='BC0000001', legal_type='BEN')
+    filing = create_filing(filing_json=_relationships_filing_json({
+        'entity': {'givenName': 'John', 'familyName': 'Doe', 'identifier': '12345'},
+        'actions': ['REMOVED'],
+        'roles': [{'roleType': 'Director', 'appointmentDate': '2020-01-01', 'cessationDate': '2023-05-01'}]
+    }), business_id=business.id)
+
+    user = create_user(firstname='John', lastname='Doe')
+    mock_credential = MagicMock()
+    mock_credential.id = 1
+    mock_credential.connection.business_user.user = user
+    mock_get_all_digital_credentials_for_business.return_value = [mock_credential]
+
+    change_of_directors.process(business, filing)
+
+    mock_revoke_digital_credential.assert_called_once_with(
+        credential=mock_credential,
+        reason=DCRevocationReason.CHANGE_OF_DIRECTORS
+    )
+
+
+@patch.object(change_of_directors, 'get_all_digital_credentials_for_business')
+@patch.object(change_of_directors, 'revoke_digital_credential')
+def test_processor_revokes_credential_when_relationship_derived_ceased(mock_revoke_digital_credential,
+                                                                       mock_get_all_digital_credentials_for_business,
+                                                                       app, session):
+    """Assert that the processor revokes credential for an actions-less relationships item with a cessation date."""
+    business = create_business(identifier='BC0000001', legal_type='BEN')
+    filing = create_filing(filing_json=_relationships_filing_json({
+        'entity': {'givenName': 'John', 'familyName': 'Doe', 'identifier': '12345'},
+        'roles': [{'roleType': 'Director', 'appointmentDate': '2020-01-01', 'cessationDate': '2023-05-01'}]
+    }), business_id=business.id)
+
+    user = create_user(firstname='John', lastname='Doe')
+    mock_credential = MagicMock()
+    mock_credential.id = 1
+    mock_credential.connection.business_user.user = user
+    mock_get_all_digital_credentials_for_business.return_value = [mock_credential]
+
+    change_of_directors.process(business, filing)
+
+    mock_revoke_digital_credential.assert_called_once_with(
+        credential=mock_credential,
+        reason=DCRevocationReason.CHANGE_OF_DIRECTORS
+    )
+
+
+@patch.object(change_of_directors, 'get_all_digital_credentials_for_business')
+@patch.object(change_of_directors, 'revoke_digital_credential')
+def test_processor_does_not_revoke_when_relationship_edit_only(mock_revoke_digital_credential,
+                                                               mock_get_all_digital_credentials_for_business,
+                                                               app, session):
+    """Assert that the processor does not revoke credential for an edit-only relationships item."""
+    business = create_business(identifier='BC0000001', legal_type='BEN')
+    filing = create_filing(filing_json=_relationships_filing_json({
+        'entity': {'givenName': 'John', 'familyName': 'Doe', 'identifier': '12345'},
+        'actions': ['NAME_CHANGED', 'ADDRESS_CHANGED'],
+        'roles': [{'roleType': 'Director', 'appointmentDate': '2020-01-01'}]
+    }), business_id=business.id)
+
+    user = create_user(firstname='John', lastname='Doe')
+    mock_credential = MagicMock()
+    mock_credential.id = 1
+    mock_credential.connection.business_user.user = user
+    mock_get_all_digital_credentials_for_business.return_value = [mock_credential]
+
+    change_of_directors.process(business, filing)
+
     mock_revoke_digital_credential.assert_not_called()
