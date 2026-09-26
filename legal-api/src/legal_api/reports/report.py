@@ -647,6 +647,15 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing.filing_json["filing"]["business"] = business_json
         filing.filing_json["filing"]["header"]["filingId"] = filing.id
 
+    @staticmethod
+    def _format_resolution_dates(dates: list) -> list:
+        """Format share structure resolution dates, accepting both the legacy string and the {date} object shape."""
+        formatted_dates = []
+        for resolution_date in dates:
+            date_str = resolution_date["date"] if isinstance(resolution_date, dict) else resolution_date
+            formatted_dates.append(datetime.fromisoformat(date_str).strftime(OUTPUT_DATE_FORMAT))
+        return formatted_dates
+
     def _format_transition_data(self, filing):
         filing.update(filing["transition"])
 
@@ -664,10 +673,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if filing.get("shareStructure", {}).get("shareClasses", None):
             filing["shareClasses"] = filing["shareStructure"]["shareClasses"]
             dates = filing["shareStructure"].get("resolutionDates", [])
-            formatted_dates = [
-                datetime.fromisoformat(date).strftime(OUTPUT_DATE_FORMAT) for date in dates
-            ]
-            filing["resolutions"] = formatted_dates
+            filing["resolutions"] = self._format_resolution_dates(dates)
 
     def _format_receiver_data(self, filing):
         if self._filing.filing_type == "appointReceiver":
@@ -915,10 +921,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if filing["alteration"].get("shareStructure", None):
             filing["shareClasses"] = filing["alteration"]["shareStructure"].get("shareClasses", [])
             dates = filing["alteration"]["shareStructure"].get("resolutionDates", [])
-            formatted_dates = [
-                datetime.fromisoformat(date).strftime(OUTPUT_DATE_FORMAT) for date in dates
-            ]
-            filing["resolutions"] = formatted_dates
+            filing["resolutions"] = self._format_resolution_dates(dates)
 
         to_legal_name = None
         if self._filing.status in (Filing.Status.COMPLETED, Filing.Status.CORRECTED):
@@ -963,8 +966,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing["parties"] = amalgamation["parties"]
         filing["shareClasses"] = amalgamation.get("shareStructure", {}).get("shareClasses", [])
         filing["resolutions"] = [
-            {"date": datetime.fromisoformat(date).strftime(OUTPUT_DATE_FORMAT)}
-            for date in amalgamation.get("shareStructure", {}).get("resolutionDates", [])
+            {"date": formatted_date}
+            for formatted_date in self._format_resolution_dates(
+                amalgamation.get("shareStructure", {}).get("resolutionDates", []))
         ]
 
         # Formatting addresses for registered and records office
@@ -1383,10 +1387,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             return
         filing["shareClasses"] = filing.get("correction").get("shareStructure", {}).get("shareClasses")
         dates = filing["correction"]["shareStructure"].get("resolutionDates", [])
-        formatted_dates = [
-            datetime.fromisoformat(date).strftime(OUTPUT_DATE_FORMAT) for date in dates
-        ]
-        filing["resolutions"] = formatted_dates
+        filing["resolutions"] = self._format_resolution_dates(dates)
         filing["newShareClasses"] = []
         if filing.get("shareClasses"):
             prev_share_class_json = VersionedBusinessDetailsService.get_share_class_revision(

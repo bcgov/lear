@@ -1227,7 +1227,11 @@ def test_set_amalgamating_businesses_colin(session, monkeypatch):
     assert entry['jurisdiction'] == 'British Columbia'
 
 
-def test_format_amalgamation_data_uses_filing_json(session):
+@pytest.mark.parametrize('resolution_dates', [
+    ['2020-05-13'],
+    [{'date': '2020-05-13'}],
+])
+def test_format_amalgamation_data_uses_filing_json(session, resolution_dates):
     """Assert short-form report data comes from the filing json - not rebuilt from the primary/holding DB rows."""
     identifier = 'BC9900002'
     filing_json = copy.deepcopy(FILING_HEADER)
@@ -1241,7 +1245,7 @@ def test_format_amalgamation_data_uses_filing_json(session):
         {'role': 'holding', 'identifier': 'US7654321', 'legalName': 'Foreign Holding Corp',
          'foreignJurisdiction': {'country': 'US', 'region': 'WA'}}
     ]
-    aml['shareStructure']['resolutionDates'] = ['2020-05-13']
+    aml['shareStructure']['resolutionDates'] = resolution_dates
 
     business = factory_business(identifier=identifier, entity_type='BC')
     filing = factory_completed_filing(business, filing_json)
@@ -1258,6 +1262,18 @@ def test_format_amalgamation_data_uses_filing_json(session):
     assert len(filing_data['parties']) == len(aml['parties'])
     assert filing_data['shareClasses'] == aml['shareStructure']['shareClasses']
     assert filing_data['resolutions'] == [{'date': 'May 13, 2020'}]
+
+
+@pytest.mark.parametrize('resolution_dates,expected', [
+    ([], []),
+    (['2020-05-13'], ['May 13, 2020']),
+    ([{'date': '2026-09-25'}], ['September 25, 2026']),
+    ([{'id': 7, 'date': '2020-05-13'}, {'date': '2026-09-25'}], ['May 13, 2020', 'September 25, 2026']),
+    (['2020-05-13', {'date': '2026-09-25'}], ['May 13, 2020', 'September 25, 2026']),
+])
+def test_format_resolution_dates(resolution_dates, expected):
+    """Assert resolution dates are formatted from both the legacy string and the {date} object shape."""
+    assert Report._format_resolution_dates(resolution_dates) == expected
 
 
 @pytest.mark.parametrize('filing_type,expected_report_type', [
