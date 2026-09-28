@@ -795,7 +795,9 @@ def validate_relationships( # noqa: PLR0913
     role_types: list[PartyRole.RoleTypes],
     allow_new: bool,
     allow_edits: bool,
-    role_types_for_colin_sync: list[PartyRole.RoleTypes] | None = None
+    role_types_for_colin_sync: list[PartyRole.RoleTypes] | None = None,
+    min_date: date | None = None,
+    min_date_reason: str | None = None
 ) -> list:
     """Validate the relationships information."""
     msg = []
@@ -823,11 +825,12 @@ def validate_relationships( # noqa: PLR0913
             msg.append({"error": "New Relationships are not allowed in this filing.", "path": f"{path}/entity"})
 
         msg.extend(validate_relationship_entity_name(relationship, path))
-        msg.extend(validate_relationship_roles(relationship, role_types, path, business))
+        msg.extend(validate_relationship_roles(relationship, role_types, path, business,
+                                               min_date, min_date_reason))
         # Below is for colin sync checking only (i.e. any relationship with Director roles)
         converted_sync_roles = [role.value.lower().replace(" ", "_") for role in role_types_for_colin_sync or []]
         if any(role for role in relationship["roles"] if role["roleType"].lower() in converted_sync_roles):
-            validate_relationship_entity_colin_sync(relationship, business.legal_type, f"{path}/entity")
+            msg.extend(validate_relationship_entity_colin_sync(relationship, business.legal_type, f"{path}/entity"))
 
     msg.extend(validate_parties_addresses(filing_json, filing_type, "relationships"))
     return msg
@@ -961,37 +964,42 @@ def validate_relationship_entity_colin_sync(relationship: dict, legal_type: str,
     return msg
 
 
-def validate_relationship_roles(relationship: dict,
+def validate_relationship_roles(relationship: dict,  # noqa: PLR0913
                                 allowed_roles: list[PartyRole.RoleTypes],
                                 path: str,
-                                business: Business) -> list:
+                                business: Business,
+                                min_date: date | None = None,
+                                min_date_reason: str | None = None) -> list:
     """Validate relationship roles."""
     msg = []
     converted_allowed_roles = [role.value for role in allowed_roles]
-    earliest_allowed_date = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
+    if not min_date:
+        min_date = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
 
     roles = relationship["roles"]
     for index, role in enumerate(roles):
         if role.get("roleType").lower().replace(" ", "_") not in converted_allowed_roles:
             err_msg = "Invalid role type for this filing."
-            msg.append({"error": err_msg, "path": f"{path}/{index}/roleType"})
+            msg.append({"error": err_msg, "path": f"{path}/roles/{index}/roleType"})
         # FUTURE: appointment/cessation date checks (currently set to filing effective date by filer)
 
         appointment_date = date.fromisoformat(role.get("appointmentDate")) if role.get("appointmentDate") else None
         cessation_date = date.fromisoformat(role.get("cessationDate")) if role.get("cessationDate") else None
 
         msg.extend(_validate_relationship_date(appointment_date,
-                                              f"{path}/{index}/appointmentDate",
+                                              f"{path}/roles/{index}/appointmentDate",
                                               "Appointment",
-                                              earliest_allowed_date))
+                                              min_date,
+                                              min_date_reason))
         msg.extend(_validate_relationship_date(cessation_date,
-                                              f"{path}/{index}/cessationDate",
+                                              f"{path}/roles/{index}/cessationDate",
                                               "Cessation",
-                                              earliest_allowed_date))
+                                              min_date,
+                                              min_date_reason))
 
         msg.extend(_validate_director_dates(appointment_date,
                                               cessation_date,
-                                              f"{path}/{index}",
+                                              f"{path}/roles/{index}",
                                               role))
     return msg
 
@@ -1027,7 +1035,8 @@ def _compare_director_dates(appointment_date: date, cessation_date: date, path: 
 def _validate_relationship_date(date_value: date,
                                 path: str,
                                 error_name: str,
-                                earliest_allowed_date: date) -> list:
+                                min_date: date,
+                                min_date_reason: str | None = None) -> list:
     msg = []
     if date_value is None:
         return msg
@@ -1039,9 +1048,10 @@ def _validate_relationship_date(date_value: date,
             "path": path
         })
 
-    if date_value < earliest_allowed_date:
+    if date_value < min_date:
+        reason = min_date_reason or "the business founding date"
         msg.append({
-            "error": _(f"{error_name} date cannot be before the business founding date."),
+            "error": _(f"{error_name} date cannot be before {reason}."),
             "path": path
         })
 
@@ -1175,6 +1185,25 @@ def validate_parties_addresses(filing_json: dict, filing_type: str, key: str = "
     parties_path = f"/filing/{filing_type}/{key}"
     for idx, party in enumerate(parties_array):
         msg.extend(validate_addresses(party, f"{parties_path}/{idx}"))
+    return msg
+
+
+def validate_parties_countries(filing_json: dict, filing_type: str, key: str = "parties") -> list:
+    """Validate that party address countries resolve to a valid ISO-2 country."""
+    msg = []
+    parties_array = filing_json["filing"][filing_type][key]
+    parties_path = f"/filing/{filing_type}/{key}"
+    for idx, party in enumerate(parties_array):
+        for address_type in Address.JSON_ADDRESS_TYPES:
+            if address_type in party:
+                try:
+                    country = get_str(party, f"/{address_type}/addressCountry")
+                    pycountry.countries.search_fuzzy(country)  # raises LookupError when unresolvable
+                except LookupError:
+                    msg.append({
+                        "error": _("Address Country must resolve to a valid ISO-2 country."),
+                        "path": f"{parties_path}/{idx}/{address_type}/addressCountry"
+                    })
     return msg
 
 

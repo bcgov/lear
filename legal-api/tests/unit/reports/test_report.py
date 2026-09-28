@@ -369,6 +369,103 @@ def test_set_directors_flags_address_changed_without_officer_id(session, mocker)
     assert director['deliveryAddress']['changed'] is True
 
 
+def test_set_directors_from_relationships(session, mocker):
+    """Assert a relationships-shaped COD is converted for the legacy report template."""
+    business = factory_business(identifier='BC1234567', entity_type='BC')
+
+    previous_filing_json = copy.deepcopy(FILING_HEADER)
+    previous_filing_json['filing']['header']['name'] = 'changeOfDirectors'
+    previous_filing_json['filing']['business']['identifier'] = 'BC1234567'
+    previous_filing_json['filing']['business']['legalType'] = 'BC'
+    previous_filing_json['filing']['changeOfDirectors'] = {'directors': []}
+    factory_completed_filing(business, previous_filing_json, filing_date=datetime(2020, 1, 1))
+
+    address = {
+        'streetAddress': 'New Street',
+        'addressCity': 'Victoria',
+        'addressRegion': 'BC',
+        'addressCountry': 'CA',
+        'postalCode': 'V8W1P6'
+    }
+    current_filing_json = copy.deepcopy(FILING_HEADER)
+    current_filing_json['filing']['header']['name'] = 'changeOfDirectors'
+    current_filing_json['filing']['business']['identifier'] = 'BC1234567'
+    current_filing_json['filing']['business']['legalType'] = 'BC'
+    current_filing_json['filing']['changeOfDirectors'] = {
+        'relationships': [
+            {
+                'entity': {'givenName': 'Glenn', 'familyName': 'Quagmire'},
+                'roles': [{'roleType': 'Director', 'appointmentDate': '2020-01-02'}],
+                'deliveryAddress': copy.deepcopy(address),
+                'mailingAddress': copy.deepcopy(address),
+                'actions': ['ADDED']
+            },
+            {
+                'entity': {'identifier': '123', 'givenName': 'Peter', 'familyName': 'Griffin'},
+                'roles': [{'roleType': 'Director', 'appointmentDate': '2018-01-01',
+                           'cessationDate': '2020-01-02'}],
+                'deliveryAddress': copy.deepcopy(address),
+                'mailingAddress': copy.deepcopy(address),
+                'actions': ['REMOVED']
+            },
+            {
+                'entity': {'identifier': '456', 'givenName': 'Jane', 'middleInitial': 'A', 'familyName': 'Smith'},
+                'roles': [{'roleType': 'Director', 'appointmentDate': '2018-01-01'}],
+                'deliveryAddress': copy.deepcopy(address),
+                'mailingAddress': copy.deepcopy(address),
+                'actions': ['ADDRESS_CHANGED']
+            }
+        ]
+    }
+    filing = factory_completed_filing(business, current_filing_json, filing_date=datetime(2020, 1, 2))
+    report = Report(filing)
+    report._business = business
+    report._report_key = 'changeOfDirectors'
+
+    mocker.patch('legal_api.services.VersionedBusinessDetailsService.get_party_revision', return_value=object())
+    mocker.patch('legal_api.services.VersionedBusinessDetailsService.party_revision_json', return_value={
+        'mailingAddress': {
+            'streetAddress': 'Old Street',
+            'addressCity': 'Victoria',
+            'addressRegion': 'BC',
+            'addressCountry': 'CA',
+            'postalCode': 'V8W1P5'
+        },
+        'deliveryAddress': {
+            'streetAddress': 'Old Street',
+            'addressCity': 'Victoria',
+            'addressRegion': 'BC',
+            'addressCountry': 'CA',
+            'postalCode': 'V8W1P4'
+        }
+    })
+
+    filing_data = filing.filing_json['filing']
+    report._set_directors(filing_data)
+
+    directors = filing_data['listOfDirectors']['directors']
+    assert len(directors) == 3
+    assert directors[0]['officer'] == {
+        'firstName': 'Glenn', 'middleInitial': '', 'lastName': 'Quagmire', 'partyType': 'person'
+    }
+    assert directors[0]['appointmentDate'] == '2020-01-02'
+
+    appointed = filing_data['listOfDirectors']['directorsAppointed']
+    ceased = filing_data['listOfDirectors']['directorsCeased']
+    assert [d['officer']['lastName'] for d in appointed] == ['Quagmire']
+    assert [d['officer']['lastName'] for d in ceased] == ['Griffin']
+    assert ceased[0]['cessationDate'] == '2020-01-02'
+
+    # the ADDRESS_CHANGED director resolves the changed-address flags via the int-cast party id
+    address_changed_director = directors[2]
+    assert address_changed_director['officer']['id'] == 456
+    assert address_changed_director['mailingAddress']['changed'] is True
+    assert address_changed_director['deliveryAddress']['changed'] is True
+
+    # the submitted filing json keeps the relationships shape
+    assert 'relationships' in filing.filing_json['filing']['changeOfDirectors']
+
+
 def test_alteration_name_change(session, monkeypatch):
     """Assert alteration name change filings can be returned as a PDF."""
     # Create a mock flags object with is_on method
@@ -1227,7 +1324,11 @@ def test_set_amalgamating_businesses_colin(session, monkeypatch):
     assert entry['jurisdiction'] == 'British Columbia'
 
 
-def test_format_amalgamation_data_uses_filing_json(session):
+@pytest.mark.parametrize('resolution_dates', [
+    ['2020-05-13'],
+    [{'date': '2020-05-13'}],
+])
+def test_format_amalgamation_data_uses_filing_json(session, resolution_dates):
     """Assert short-form report data comes from the filing json - not rebuilt from the primary/holding DB rows."""
     identifier = 'BC9900002'
     filing_json = copy.deepcopy(FILING_HEADER)
@@ -1241,7 +1342,7 @@ def test_format_amalgamation_data_uses_filing_json(session):
         {'role': 'holding', 'identifier': 'US7654321', 'legalName': 'Foreign Holding Corp',
          'foreignJurisdiction': {'country': 'US', 'region': 'WA'}}
     ]
-    aml['shareStructure']['resolutionDates'] = ['2020-05-13']
+    aml['shareStructure']['resolutionDates'] = resolution_dates
 
     business = factory_business(identifier=identifier, entity_type='BC')
     filing = factory_completed_filing(business, filing_json)
@@ -1258,6 +1359,18 @@ def test_format_amalgamation_data_uses_filing_json(session):
     assert len(filing_data['parties']) == len(aml['parties'])
     assert filing_data['shareClasses'] == aml['shareStructure']['shareClasses']
     assert filing_data['resolutions'] == [{'date': 'May 13, 2020'}]
+
+
+@pytest.mark.parametrize('resolution_dates,expected', [
+    ([], []),
+    (['2020-05-13'], ['May 13, 2020']),
+    ([{'date': '2026-09-25'}], ['September 25, 2026']),
+    ([{'id': 7, 'date': '2020-05-13'}, {'date': '2026-09-25'}], ['May 13, 2020', 'September 25, 2026']),
+    (['2020-05-13', {'date': '2026-09-25'}], ['May 13, 2020', 'September 25, 2026']),
+])
+def test_format_resolution_dates(resolution_dates, expected):
+    """Assert resolution dates are formatted from both the legacy string and the {date} object shape."""
+    assert Report._format_resolution_dates(resolution_dates) == expected
 
 
 @pytest.mark.parametrize('filing_type,expected_report_type', [

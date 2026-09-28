@@ -29,6 +29,7 @@ from registry_schemas.example_data import (
     AMALGAMATION_APPLICATION,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
+    CHANGE_OF_DIRECTORS_RELATIONSHIPS,
     CHANGE_OF_LIQUIDATORS,
     CHANGE_OF_OFFICERS,
     CHANGE_OF_RECEIVERS,
@@ -342,6 +343,7 @@ def test_validate_offices_addresses_non_ca_postal_code_not_validated(session):
 @pytest.mark.parametrize('filing_type, filing_data, party_key', [
     ('amaglamationApplication', AMALGAMATION_APPLICATION, 'parties'),
     ('changeOfDirectors', CHANGE_OF_DIRECTORS, 'directors'),
+    ('changeOfDirectors', CHANGE_OF_DIRECTORS_RELATIONSHIPS, 'relationships'),
     ('changeOfLiquidators', CHANGE_OF_LIQUIDATORS, 'relationships'),
     ('changeOfOfficers', CHANGE_OF_OFFICERS, 'relationships'),
     ('changeOfReceivers', CHANGE_OF_RECEIVERS, 'relationships'),

@@ -733,8 +733,8 @@ def _norm_share_series(series: dict) -> tuple:
 
 
 def _norm_resolution_dates(dates: list | None) -> set:
-    """Return the dates as YYYY-MM-DD strings (tolerates datetimes and date objects)."""
-    return {str(date)[:10] for date in dates or [] if date}
+    """Return the dates as YYYY-MM-DD strings (tolerates dicts, datetimes and date objects)."""
+    return {str(date.get("date") if isinstance(date, dict) else date)[:10] for date in dates or [] if date}
 
 
 def _validate_amalgamation_type(  # pylint: disable=too-many-arguments

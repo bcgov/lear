@@ -333,28 +333,8 @@ def test_correction_share_class_series_validation(session, app, jwt, legal_type,
 NOW = datetime(2025, 1, 1, 12, 0, tzinfo=timezone.utc)
 FOUNDING_DATE = NOW - datedelta.YEAR
 
-@pytest.mark.parametrize(
-    'test_name, has_rights_or_restrictions, has_series, resolution_dates, expected_code, expected_msg',
-    [
-        ('SUCCESS_class_has_rights', True, False, ['2024-01-01'], None, None),
-        ('SUCCESS_class_no_rights', False, False, [], None, None),
-        ('SUCCESS_series_has_rights', True, True, ['2024-01-01'], None, None),
-        ('SUCCESS_series_no_rights', False, False, [], None, None),
-
-        ('FAILURE_future_date', True, False, [(NOW + datedelta.DAY).date().isoformat()], HTTPStatus.BAD_REQUEST, [
-            {'error': 'Resolution date cannot be in the future.',
-             'path': '/filing/correction/shareStructure/resolutionDates'}
-        ]),
-
-        ('FAILURE_before_founding', True, False, [(FOUNDING_DATE - datedelta.DAY).date().isoformat()], HTTPStatus.BAD_REQUEST, [
-            {'error': 'Resolution date cannot be before the business founding date.',
-             'path': '/filing/correction/shareStructure/resolutionDates'}
-        ]),
-    ]
-)
-def test_correction_resolution_date_old(session, app, jwt, test_name, has_rights_or_restrictions,
-                                    has_series, resolution_dates, expected_code, expected_msg):
-    """Test share class/series resolution date validation in correction filings."""
+def test_correction_resolution_date_old_format_rejected(session, app, jwt):
+    """Assert the legacy string resolutionDates format is rejected by the schema."""
     identifier = 'BC1234567'
     business = factory_business(identifier, entity_type='BC')
     business.founding_date = FOUNDING_DATE
@@ -367,36 +347,17 @@ def test_correction_resolution_date_old(session, app, jwt, test_name, has_rights
     del filing['filing']['correction']['commentOnly']
     del filing['filing']['correction']['nameRequest']
 
-    # Share structure setup
     filing['filing']['correction']['shareStructure'] = copy.deepcopy(
         INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication'].get('shareStructure', {})
     )
-    share_class = filing['filing']['correction']['shareStructure']['shareClasses'][0]
-    share_class['hasRightsOrRestrictions'] = has_rights_or_restrictions
-
-    # Series handling
-    if has_series:
-        share_class['series'] = share_class.get('series', [{}])
-        share_class['series'][0]['hasRightsOrRestrictions'] = True
-    else:
-        share_class.pop('series', None)
-
-    filing['filing']['correction']['shareStructure']['resolutionDates'] = resolution_dates
-
-    # Remove the second share class if it exists
-    share_classes = filing['filing']['correction']['shareStructure']['shareClasses']
-    if len(share_classes) > 1:
-        share_classes.pop(1)
+    filing['filing']['correction']['shareStructure']['resolutionDates'] = ['2024-01-01']
 
     with freeze_time(NOW):
         with jwt_request_context(app, jwt, [BASIC_USER]):
             err = validate(business, filing)
 
-    if expected_code:
-        assert err
-        assert any(expected_msg[0]['error'] in e['error'] for e in err.msg)
-    else:
-        assert err is None
+    assert err
+    assert any("is not of type 'object'" in e['error'] for e in err.msg)
 
 
 @pytest.mark.parametrize(
