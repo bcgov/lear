@@ -50,6 +50,10 @@ APP_PDF: Final[str] =  "application/pdf"
 CONTENT_JSON: Final = {"Content-Type": "application/json"}
 CONTENT_PDF: Final = {"Content-Type": APP_PDF}
 
+# Temp bootstrap ids start with "T" (for example: Tabc12XyZ9). Real tramways are TMY + 7 digits
+# (for example: TMY0000008) — exclude only that shape so random temps like TMYHLpcaq7 stay temp.
+TEMP_REG_ID_PATTERN = re.compile(r"TMY\d{7}")
+
 
 @cors_preflight("GET, POST")
 @bp.route(DOCUMENTS_BASE_ROUTE, methods=["GET", "OPTIONS"])
@@ -67,19 +71,20 @@ def get_documents(identifier: str, # noqa: PLR0911, PLR0912
         return jsonify(
             message=get_error_message(ErrorCode.NOT_AUTHORIZED, identifier=identifier)
         ), HTTPStatus.UNAUTHORIZED
-    if identifier.startswith("T"):
+    is_temp_reg = identifier.startswith("T") and not TEMP_REG_ID_PATTERN.fullmatch(identifier)
+    if is_temp_reg:
         filing_model = FilingModel.get_temp_reg_filing(identifier)
         business = Business.find_by_internal_id(filing_model.business_id)
     else:
         business = Business.find_by_identifier(identifier)
 
-    if not business and not identifier.startswith("T"):
+    if not business and not is_temp_reg:
         return jsonify(
             message=get_error_message(ErrorCode.MISSING_BUSINESS, identifier=identifier)
         ), HTTPStatus.NOT_FOUND
 
     filing = Filing.get(identifier, filing_id)
-    if filing and identifier.startswith("T") and filing.id != filing_id:
+    if filing and is_temp_reg and filing.id != filing_id:
         withdrawn_filing = Filing.get_by_withdrawn_filing_id(filing_id=filing_id,
                                                              withdrawn_filing_id=filing.id,
                                                              filing_type=Filing.FilingTypes.NOTICEOFWITHDRAWAL)
@@ -93,7 +98,7 @@ def get_documents(identifier: str, # noqa: PLR0911, PLR0912
         ), HTTPStatus.NOT_FOUND
 
     if not legal_filing_name and not file_key:
-        if identifier.startswith("T") and filing.status == Filing.Status.COMPLETED and \
+        if is_temp_reg and filing.status == Filing.Status.COMPLETED and \
                 filing.filing_type != Filing.FilingTypes.NOTICEOFWITHDRAWAL:
             return {"documents": {}}, HTTPStatus.OK
         return _get_document_list(business, filing)
@@ -283,7 +288,7 @@ def regenerate_document(query: RegenerateQueryModel, identifier: str, filing_id:
     """
     Regenerate documents for a business.
     """
-    if identifier.startswith("T"):
+    if identifier.startswith("T") and not TEMP_REG_ID_PATTERN.fullmatch(identifier):
         # not supported for temp registrations
         return {}, HTTPStatus.NOT_FOUND
 

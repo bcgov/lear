@@ -16,6 +16,7 @@
 from __future__ import annotations
 
 import copy
+import re
 from contextlib import suppress
 from enum import Enum
 from typing import TYPE_CHECKING, Final
@@ -279,7 +280,9 @@ class Filing:  # pylint: disable=too-many-public-methods
     @staticmethod
     def get(identifier, filing_id=None) -> Filing | None:
         """Return a Filing domain by the id."""
-        if identifier.startswith("T"):
+        # Temp bootstrap ids start with "T" (for example: Tabc12XyZ9). Real tramways are TMY + 7 digits
+        # (for example: TMY0000008) — exclude only that shape so random temps like TMYHLpcaq7 stay temp.
+        if identifier.startswith("T") and not re.fullmatch(r"TMY\d{7}", identifier):
             storage = FilingStorage.get_temp_reg_filing(identifier, filing_id)
         else:
             storage = Business.get_filing_by_id(identifier, filing_id)
