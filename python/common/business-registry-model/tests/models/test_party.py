@@ -19,6 +19,7 @@ Test-Suite to ensure that the Party Model is working as expected.
 from http import HTTPStatus
 
 import pytest
+from sqlalchemy.exc import DataError
 
 from business_model.exceptions import BusinessException
 from business_model.models import Party
@@ -83,3 +84,23 @@ def test_party_save(session):
     member2.save()
     assert member1.id
     assert member2.id
+
+
+def test_party_first_name_length(session):
+    """Assert first_name fits 60 characters (BCSC bundles given names) and is capped there."""
+    person = Party(
+        party_type=Party.PartyTypes.PERSON.value,
+        first_name='A' * 60,
+        last_name='Crane'
+    )
+    person.save()
+    assert person.id
+    assert len(person.first_name) == 60
+
+    too_long = Party(
+        party_type=Party.PartyTypes.PERSON.value,
+        first_name='A' * 61,
+        last_name='Crane'
+    )
+    with pytest.raises(DataError):
+        too_long.save()
