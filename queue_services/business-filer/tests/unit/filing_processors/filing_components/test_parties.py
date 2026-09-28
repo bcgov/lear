@@ -32,6 +32,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """The Unit Tests for the business filing component processors."""
+import copy
 import json
 import datetime
 import pytest
@@ -170,6 +171,28 @@ def test_manage_parties_structure__delete_and_recreate(app, session, test_name, 
     filing2.save()
 
     update_and_validate_party_and_roles(business, SECOND_PARTY, 1, 1, filing2, 0)
+
+
+def test_manage_parties_structure__long_first_name(app, session):
+    """Assert a 60 character first name round-trips into the model."""
+    business = Business()
+    business.save()
+
+    data = {'filing': 'not a real filing, fail validation'}
+    filing = Filing()
+    filing.business_id = business.id
+    filing.filing_date = datetime.datetime.now(datetime.timezone.utc)
+    filing.filing_data = json.dumps(data)
+    filing.save()
+
+    long_first_name = 'A' * 60
+    parties_structure = copy.deepcopy(PARTIES_STRUCTURE)
+    parties_structure['parties'][0]['officer']['firstName'] = long_first_name
+
+    update_and_validate_party_and_roles(business, parties_structure, 1, 1, filing, 2)
+
+    party = Business.find_by_internal_id(business.id).party_roles.all()[0].party
+    assert party.first_name == long_first_name
 
 
 def update_and_validate_party_and_roles(business, parties_structure, roles_count, parties_count, filing,
