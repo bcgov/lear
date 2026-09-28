@@ -19,6 +19,7 @@ from business_registry_digital_credentials import (
 )
 from flask import current_app
 
+from business_common.utils.relationship_director import relationship_to_director
 from business_model.models import Business, DCRevocationReason, Filing
 
 from .helpers import does_officer_have_action
@@ -34,6 +35,8 @@ def process(business: Business, filing: Filing) -> None:
         return None
 
     filing_data = filing.filing_json.get("filing", {}).get(filing.filing_type, {})
+    if relationships := filing_data.get("relationships"):
+        filing_data = {"directors": [relationship_to_director(relationship) for relationship in relationships]}
 
     credentials = get_all_digital_credentials_for_business(business=business)
     if not (credentials and len(credentials)):

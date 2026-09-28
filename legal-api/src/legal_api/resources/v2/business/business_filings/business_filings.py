@@ -37,6 +37,7 @@ from werkzeug.local import LocalProxy
 import legal_api.reports
 from business_common.utils import datetime
 from business_common.utils.legislation_datetime import LegislationDatetime
+from business_common.utils.relationship_director import cod_directors, is_change_free
 from business_model.models import (
     Address,
     Business,
@@ -875,14 +876,9 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
     @staticmethod
     def get_filing_types_for_cod(filing_json: dict, legal_type: str, filing_type_code: str) -> str:
         """Get the change of director filing type fee code."""
-        free = True
-        free_changes = ["nameChanged", "addressChanged"]
-        for director in filing_json["filing"]["changeOfDirectors"].get("directors"):
-            # if changes other than name/address change then this is not a free filing
-            if not all(change in free_changes for change in director.get("actions", [])):
-                free = False
-                break
-        if free:
+        directors = cod_directors(filing_json["filing"]["changeOfDirectors"])
+        # if changes other than name/address change then this is not a free filing
+        if all(is_change_free(director) for director in directors):
             filing_type_code = Filing.FILINGS["changeOfDirectors"]["free"]["codes"].get(legal_type)
 
         return filing_type_code

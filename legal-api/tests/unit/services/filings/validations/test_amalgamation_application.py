@@ -2309,7 +2309,7 @@ def _short_form_filing_from_lear(business):
     # no scrub here - the share class schema requires parValue/currency present even when null
     aml['shareStructure'] = {
         'shareClasses': [share_class.json for share_class in business.share_classes.all()],
-        'resolutionDates': [resolution.resolution_date.isoformat() for resolution in business.resolutions]
+        'resolutionDates': [{'date': resolution.resolution_date.isoformat()} for resolution in business.resolutions]
     }
 
     completing_party = copy.deepcopy(AMALGAMATION_APPLICATION['parties'][0])
@@ -2505,7 +2505,7 @@ def test_short_form_match_colin(mocker, app, session, jwt, test_status):
     aml['offices'] = _without_nones(snapshot['offices'])
     # no scrub here - the share class schema requires parValue/currency present even when null
     aml['shareStructure'] = {'shareClasses': copy.deepcopy(snapshot['shareClasses']),
-                             'resolutionDates': ['2010-10-10']}
+                             'resolutionDates': [{'date': '2010-10-10'}]}
     completing_party = copy.deepcopy(AMALGAMATION_APPLICATION['parties'][0])
     completing_party['roles'] = [role for role in completing_party['roles']
                                  if role['roleType'] == 'Completing Party']
