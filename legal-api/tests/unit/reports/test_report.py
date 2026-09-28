@@ -1363,14 +1363,14 @@ def test_format_amalgamation_data_uses_filing_json(session, resolution_dates):
 
 @pytest.mark.parametrize('resolution_dates,expected', [
     ([], []),
-    (['2020-05-13'], ['May 13, 2020']),
-    ([{'date': '2026-09-25'}], ['September 25, 2026']),
-    ([{'id': 7, 'date': '2020-05-13'}, {'date': '2026-09-25'}], ['May 13, 2020', 'September 25, 2026']),
-    (['2020-05-13', {'date': '2026-09-25'}], ['May 13, 2020', 'September 25, 2026']),
+    (['2020-05-13'], [{'date': 'May 13, 2020'}]),
+    ([{'date': '2026-09-25'}], [{'date': 'September 25, 2026'}]),
+    ([{'id': 7, 'date': '2020-05-13'}, {'date': '2026-09-25'}], [{'date': 'May 13, 2020'}, {'date': 'September 25, 2026'}]),
+    (['2020-05-13', {'date': '2026-09-25'}], [{'date': 'May 13, 2020'}, {'date': 'September 25, 2026'}]),
 ])
 def test_format_resolution_dates(resolution_dates, expected):
     """Assert resolution dates are formatted from both the legacy string and the {date} object shape."""
-    assert Report._format_resolution_dates(resolution_dates) == expected
+    assert Report(None)._format_resolution_dates(resolution_dates) == expected
 
 
 @pytest.mark.parametrize('filing_type,expected_report_type', [
