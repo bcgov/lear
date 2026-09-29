@@ -2045,12 +2045,12 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
     def _process_share_structure(cls, cursor, filing: Filing, corp_num: str):
         """Process share structure."""
         if share_structure := filing.body.get('shareStructure', None):
-            for date_str in share_structure.get('resolutionDates', []):
+            for resolution_date in share_structure.get('resolutionDates', []):
                 Business.create_resolution(
                     cursor=cursor,
                     corp_num=corp_num,
                     event_id=filing.event_id,
-                    resolution_date=date_str
+                    resolution_date=resolution_date["date"] if isinstance(resolution_date, dict) else resolution_date
                 )
 
             if filing.business.corp_type != Business.TypeCodes.COOP.value and \
@@ -2155,7 +2155,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
             )
 
         old_resolution_dates = Business.get_resolutions(cursor, corp_num)
-        for date_str in share_structure.get('resolutionDates', []):
+        for resolution_date in share_structure.get('resolutionDates', []):
+            date_str = resolution_date["date"] if isinstance(resolution_date, dict) else resolution_date
             if date_str not in old_resolution_dates:  # new resolution date
                 Business.create_resolution(
                     cursor=cursor,
@@ -2167,8 +2168,8 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                 old_resolution_dates.remove(date_str)
 
         if old_resolution_dates:  # remove deleted resolution dates
-            for resoultion_date in old_resolution_dates:
-                Business.end_resolution(cursor, corp_num, filing.event_id, resoultion_date)
+            for resolution_date in old_resolution_dates:
+                Business.end_resolution(cursor, corp_num, filing.event_id, resolution_date)
 
         return filing.event_id
 
