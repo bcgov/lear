@@ -2050,7 +2050,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                     cursor=cursor,
                     corp_num=corp_num,
                     event_id=filing.event_id,
-                    resolution_date=resolution_date["date"] if isinstance(resolution_date, dict) else resolution_date
+                    resolution_date=resolution_date['date'] if isinstance(resolution_date, dict) else resolution_date
                 )
 
             if filing.business.corp_type != Business.TypeCodes.COOP.value and \
@@ -2156,7 +2156,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
 
         old_resolution_dates = Business.get_resolutions(cursor, corp_num)
         for resolution_date in share_structure.get('resolutionDates', []):
-            date_str = resolution_date["date"] if isinstance(resolution_date, dict) else resolution_date
+            date_str = resolution_date['date'] if isinstance(resolution_date, dict) else resolution_date
             if date_str not in old_resolution_dates:  # new resolution date
                 Business.create_resolution(
                     cursor=cursor,
