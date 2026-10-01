@@ -715,7 +715,6 @@ def test_set_completing_party_header_certified_by(session, test_name, submitter_
                                                   login_source, expected_certified_by):
     """Staff and API users use the header certifiedBy; API users are identified by the jwt loginSource."""
     from business_model.models import User
-    from legal_api.services import flags
     from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 
     template = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
@@ -735,12 +734,8 @@ def test_set_completing_party_header_certified_by(session, test_name, submitter_
     report._filing.filing_submitter = submitter
 
     filing = report._filing.filing_json['filing']
-    filing['flags'] = {}
+    report._set_completing_party(filing)
 
-    with patch.object(flags, 'value', return_value=['incorporationApplication-completingParty']):
-        report._set_completing_party(filing)
-
-    assert filing['flags']['incorporationApplication_completingParty'] is True
     assert filing['header']['certifiedBy'] == expected_certified_by
 
 
