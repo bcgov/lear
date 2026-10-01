@@ -39,7 +39,7 @@ from legal_api.services import authorized
 from legal_api.services import doc_service as client_doc_service
 from legal_api.services.request_context import add_account_linking_key_header
 from legal_api.utils.auth import jwt
-from legal_api.utils.util import cors_preflight
+from legal_api.utils.util import cors_preflight, is_temp_reg_identifier
 
 DOCUMENTS_BASE_ROUTE: Final[str] = "/<string:identifier>/filings/<int:filing_id>/documents"
 PARAM_REPORT_TYPE: Final[str] = "reportType"
@@ -49,10 +49,6 @@ PARAM_REGENERATE: Final[str] = "regenerate"
 APP_PDF: Final[str] =  "application/pdf"
 CONTENT_JSON: Final = {"Content-Type": "application/json"}
 CONTENT_PDF: Final = {"Content-Type": APP_PDF}
-
-# Temp bootstrap ids start with "T" (for example: Tabc12XyZ9). Real tramways are TMY + 7 digits
-# (for example: TMY0000008) — exclude only that shape so random temps like TMYHLpcaq7 stay temp.
-TEMP_REG_ID_PATTERN = re.compile(r"TMY\d{7}")
 
 
 @cors_preflight("GET, POST")
@@ -71,7 +67,7 @@ def get_documents(identifier: str, # noqa: PLR0911, PLR0912
         return jsonify(
             message=get_error_message(ErrorCode.NOT_AUTHORIZED, identifier=identifier)
         ), HTTPStatus.UNAUTHORIZED
-    is_temp_reg = identifier.startswith("T") and not TEMP_REG_ID_PATTERN.fullmatch(identifier)
+    is_temp_reg = is_temp_reg_identifier(identifier)
     if is_temp_reg:
         filing_model = FilingModel.get_temp_reg_filing(identifier)
         business = Business.find_by_internal_id(filing_model.business_id)
@@ -288,7 +284,7 @@ def regenerate_document(query: RegenerateQueryModel, identifier: str, filing_id:
     """
     Regenerate documents for a business.
     """
-    if identifier.startswith("T") and not TEMP_REG_ID_PATTERN.fullmatch(identifier):
+    if is_temp_reg_identifier(identifier):
         # not supported for temp registrations
         return {}, HTTPStatus.NOT_FOUND
 

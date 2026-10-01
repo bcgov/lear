@@ -15,7 +15,6 @@
 
 Provides all the search and retrieval from the business entity datastore.
 """
-import re
 from datetime import UTC, datetime
 from http import HTTPStatus
 
@@ -27,6 +26,7 @@ from legal_api.exceptions import BusinessException
 from legal_api.services import authorized
 from legal_api.services.comments import validate
 from legal_api.utils.auth import jwt
+from legal_api.utils.util import is_temp_reg_identifier
 
 from .bp import bp
 
@@ -124,10 +124,7 @@ def _basic_checks(identifier, filing_id, client_request: Request) -> tuple[dict,
         return ({"message": f"No filing json data in body of post for {identifier}."},
                 HTTPStatus.BAD_REQUEST)
 
-    # Temp bootstrap ids start with "T" (for example: Tabc12XyZ9). Real tramways are TMY + 7 digits
-    # (for example: TMY0000008) — exclude only that shape so random temps like TMYHLpcaq7 stay temp.
-    if client_request.method == "GET" and identifier.startswith("T") and \
-            not re.fullmatch(r"TMY\d{7}", identifier):
+    if client_request.method == "GET" and is_temp_reg_identifier(identifier):
         filing_model = Filing.get_temp_reg_filing(identifier)
         business = Business.find_by_internal_id(filing_model.business_id)
     else:

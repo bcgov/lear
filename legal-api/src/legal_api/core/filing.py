@@ -16,7 +16,6 @@
 from __future__ import annotations
 
 import copy
-import re
 from contextlib import suppress
 from enum import Enum
 from typing import TYPE_CHECKING, Final
@@ -29,6 +28,7 @@ from business_model.models import Filing as FilingStorage
 from legal_api.core.meta import FilingMeta
 from legal_api.services import VersionedBusinessDetailsService
 from legal_api.services.authz import has_any_roles, is_competent_authority
+from legal_api.utils.util import is_temp_reg_identifier
 
 from .constants import REDACTED_STAFF_SUBMITTER
 
@@ -280,9 +280,7 @@ class Filing:  # pylint: disable=too-many-public-methods
     @staticmethod
     def get(identifier, filing_id=None) -> Filing | None:
         """Return a Filing domain by the id."""
-        # Temp bootstrap ids start with "T" (for example: Tabc12XyZ9). Real tramways are TMY + 7 digits
-        # (for example: TMY0000008) — exclude only that shape so random temps like TMYHLpcaq7 stay temp.
-        if identifier.startswith("T") and not re.fullmatch(r"TMY\d{7}", identifier):
+        if is_temp_reg_identifier(identifier):
             storage = FilingStorage.get_temp_reg_filing(identifier, filing_id)
         else:
             storage = Business.get_filing_by_id(identifier, filing_id)
