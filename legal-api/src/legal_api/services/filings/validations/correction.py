@@ -216,6 +216,8 @@ def _validate_corps_correction_historical(business: Business, filing_dict, msg):
             [PartyRole.RoleTypes.CUSTODIAN, PartyRole.RoleTypes.COMPLETING_PARTY]
         ))
 
+    msg.extend(_validate_share_structure_correction(filing_dict, filing_type, business))
+
 
 def _validate_corps_correction_active(business: Business, filing_dict, legal_type, msg):
     filing_type = "correction"
@@ -253,16 +255,22 @@ def _validate_corps_correction_active(business: Business, filing_dict, legal_typ
             [PartyRole.RoleTypes.DIRECTOR, PartyRole.RoleTypes.COMPLETING_PARTY]
         ))
 
+    msg.extend(_validate_share_structure_correction(filing_dict, filing_type, business))
+    msg.extend(_validate_continuation_in_correction(filing_dict, filing_type, legal_type, business))
+    msg.extend(_validate_amalgamation_correction(filing_dict, filing_type, business))
+
+
+def _validate_share_structure_correction(filing_dict, filing_type, business: Business):
+    msg = []
     if filing_dict.get("filing", {}).get("correction", {}).get("shareStructure", None):
-        err = validate_share_structure(filing_dict, filing_type, legal_type)
+        err = validate_share_structure(filing_dict, filing_type, business.legal_type)
         if err:
             msg.extend(err)
 
         msg.extend(validate_share_currency(filing_dict, filing_type, business))
         msg.extend(validate_resolution_date_in_share_structure_correction(filing_dict, filing_type, business))
 
-    msg.extend(_validate_continuation_in_correction(filing_dict, filing_type, legal_type, business))
-    msg.extend(_validate_amalgamation_correction(filing_dict, filing_type, business))
+    return msg
 
 
 def _validate_name_request(business, filing_dict, new_legal_type, filing_type):
