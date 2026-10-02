@@ -16,6 +16,16 @@
 
 A simple decorator to add the options method to a Request Class.
 """
+import re
+
+# Temp bootstrap ids start with "T" (for example: Tabc12XyZ9). Real tramways are TMY + 7 digits
+# (for example: TMY0000008) — exclude only that shape so random temps like TMYHLpcaq7 stay temp.
+TRAMWAY_PATTERN = re.compile(r"TMY\d{7}")
+
+
+def is_temp_reg_identifier(identifier: str) -> bool:
+    """Return True if the identifier is a temp registration id (and not a real tramway id)."""
+    return identifier.startswith("T") and not TRAMWAY_PATTERN.fullmatch(identifier)
 
 
 def cors_preflight(methods: str = "GET"):

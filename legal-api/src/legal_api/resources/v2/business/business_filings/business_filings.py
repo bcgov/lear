@@ -75,6 +75,7 @@ from legal_api.services.permissions import PermissionService
 from legal_api.services.request_context import add_account_linking_key_header
 from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
+from legal_api.utils.util import is_temp_reg_identifier
 
 
 class QueryModel(BaseModel):
@@ -100,9 +101,7 @@ class FilingModel(BaseModel, Generic[FilingT]):
 @pydantic_validate(query=QueryModel)
 def get_filings(identifier: str, filing_id: int | None = None):
     """Return a JSON object with meta information about the Filing Submission."""
-    # Temp bootstrap ids start with "T" (e.g. Tabc12XyZ9). Real tramways are TMY + 7 digits
-    # (e.g. TMY0000008) — exclude only that shape so random temps like TMYHLpcaq7 stay temp.
-    if filing_id or (identifier.startswith("T") and not re.fullmatch(r"TMY\d{7}", identifier)):
+    if filing_id or is_temp_reg_identifier(identifier):
         if str(request.args.get("public", None)).lower() == "true":
             return ListFilingResource.get_single_filing_public_json(filing_id)
 
