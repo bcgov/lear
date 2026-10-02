@@ -140,3 +140,5 @@ jobs/sftp-*/archive
 # Delta restore run artifacts
 data-tool/scripts/generated/delta_restore/
 
+#csv files
+dump/*

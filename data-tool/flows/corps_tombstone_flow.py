@@ -598,6 +598,7 @@ def tombstone_flow():
 
             print(f'👷 Start processing {len(corp_nums)} corps: {", ".join(corp_nums[:5])}...')
 
+            # migrate all the users first from all the corps
             try:
                 users_mapper = migrate_corp_users(colin_engine, lear_engine, corp_nums)
             except Exception as e:
@@ -613,12 +614,14 @@ def tombstone_flow():
                 is_user_failed = True
                 continue
 
+            # return data from colin
             data_futures = []
             for corp_num in corp_nums:
                 data_futures.append(
                     get_tombstone_data.submit(config, colin_engine, corp_num)
                 )
 
+            # load to lear
             corp_futures = []
             failed = 0
             for f in data_futures:

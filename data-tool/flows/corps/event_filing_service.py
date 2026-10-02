@@ -16,6 +16,8 @@ class IAEventFilings(str, Enum):
     FILE_ICORP = 'FILE_ICORP'
     FILE_ICORU = 'FILE_ICORU'
     FILE_ICORC = 'FILE_ICORC'
+    FILE_OTINC = 'FILE_OTINC'  # LVE Incorporation Application
+
 
     @classmethod
     def has_value(cls, value):
@@ -24,6 +26,8 @@ class IAEventFilings(str, Enum):
 
 class OtherEventFilings(str, Enum):
     FILE_ANNBC = 'FILE_ANNBC'
+    FILE_OTCDR = 'FILE_OTCDR'  # LVE Change of Director
+
 
     @classmethod
     def has_value(cls, value):
@@ -34,8 +38,10 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     IAEventFilings.FILE_ICORP: FilingCore.FilingTypes.INCORPORATIONAPPLICATION.value,
     IAEventFilings.FILE_ICORU: FilingCore.FilingTypes.INCORPORATIONAPPLICATION.value,
     IAEventFilings.FILE_ICORC: FilingCore.FilingTypes.INCORPORATIONAPPLICATION.value,
+    IAEventFilings.FILE_OTINC: FilingCore.FilingTypes.INCORPORATIONAPPLICATION.value,  # LVE
 
-    OtherEventFilings.FILE_ANNBC: FilingCore.FilingTypes.ANNUALREPORT.value
+    OtherEventFilings.FILE_ANNBC: FilingCore.FilingTypes.ANNUALREPORT.value,
+    OtherEventFilings.FILE_OTCDR: FilingCore.FilingTypes.CHANGEOFDIRECTORS.value,  # LVE
 }
 
 
