@@ -274,6 +274,7 @@ def test_valid_comment_only_correction(session, app, jwt, correction_type, err_m
         assert err.msg[0]['error'] == err_msg
 
 
+@pytest.mark.parametrize('state', [Business.State.ACTIVE.value, Business.State.HISTORICAL.value])
 @pytest.mark.parametrize(
     'legal_type, has_rights_or_restrictions, has_series, should_pass',
     [
@@ -295,11 +296,13 @@ def test_valid_comment_only_correction(session, app, jwt, correction_type, err_m
         ('BEN', True, False, True),
     ]
 )
-def test_correction_share_class_series_validation(session, app, jwt, legal_type, has_rights_or_restrictions,
+def test_correction_share_class_series_validation(session, app, jwt, state, legal_type, has_rights_or_restrictions,
                                                   has_series, should_pass):
     """Test share class/series validation in correction filing."""
     identifier = 'BC1234567'
     business = factory_business(identifier, entity_type=legal_type)
+    business.state = state
+    business.save()
     corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
 
     filing = copy.deepcopy(CORRECTION)
