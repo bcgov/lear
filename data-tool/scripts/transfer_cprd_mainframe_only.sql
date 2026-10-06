@@ -1,7 +1,25 @@
+-- transfer_cprd_mainframe_only.sql
+-- Extracts the COLIN 'mainframe' corp types (RLY, TMY, LIB, CEM, SB, PFS) from CPRD into the Postgres extract DB.
+-- Which types are transferred is controlled by ONE variable, mainframe_corp_types, set below.
+
 vset cli.settings.ignore_errors=false
+vset cli.settings.replace_variables=true
 vset cli.settings.transfer_threads=4
 vset format.date=YYYY-MM-dd'T'hh:mm:ss'Z'
 vset format.timestamp=YYYY-MM-dd'T'hh:mm:ss'Z'
+
+-- ====================================================================================================
+-- WHAT THIS SCRIPT TRANSFERS  (edit this one line before running)
+-- ====================================================================================================
+-- mainframe_corp_types = the COLIN corp types (CORP_TYP_CD) this run will transfer.
+-- To transfer only some types, DELETE the codes you do not want and keep the rest
+-- for example:
+--     only RLY .......... vset mainframe_corp_types='RLY'
+--     RLY and TMY ....... vset mainframe_corp_types='RLY','TMY'
+-- Format: a single line, each code in single quotes, separated by commas with NO spaces, no trailing comma.
+-- Only list types that are NOT already loaded in the staging DB: re-running a loaded type can fail on
+-- duplicate keys or insert duplicate rows.
+vset mainframe_corp_types='RLY','TMY','LIB','CEM','SB','PFS'
 
 connect cprd_pg;
 
@@ -88,7 +106,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -143,7 +161,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -181,7 +199,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -218,7 +236,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -257,7 +275,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -308,7 +326,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -347,7 +365,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -385,7 +403,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -469,7 +487,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -509,7 +527,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -544,7 +562,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -593,7 +611,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -626,7 +644,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -659,7 +677,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -696,7 +714,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -741,7 +759,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -777,7 +795,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -816,7 +834,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -859,7 +877,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -875,9 +893,10 @@ where e.event_id = cl.event_id
   and c.corp_num = e.corp_num
 order by e.event_id;
 
--- CARS tables (carsfile, carsbox, carsrept, carindiv) have no PK/unique constraint in the staging DB and
--- these transfers read the whole source table (no corp filter), so re-running them on an already-loaded
--- staging DB silently duplicates every row. They are already loaded globally by the earlier full/type-specific extract runs, so skip here.
+-- CARS tables (carsfile, carsbox, carsrept, carindiv) are intentionally NOT transferred here: they have no
+-- PK/unique constraint and these queries read the whole source table (no corp filter), so re-running them on an
+-- already-loaded staging DB silently duplicates every row. They were loaded globally by the earlier RLY/full
+-- extract run. Uncomment the four blocks below ONLY when loading into a staging DB whose CARS tables are empty.
 -- transfer public.carsfile from cprd using
 -- select
 --     documtid,
@@ -935,7 +954,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1020,7 +1039,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1059,7 +1078,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1099,7 +1118,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1136,7 +1155,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1177,7 +1196,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1214,7 +1233,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1249,7 +1268,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1304,7 +1323,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1352,7 +1371,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1392,7 +1411,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1432,7 +1451,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')
@@ -1473,7 +1492,7 @@ with corporation_cte as (
                 and u.user_id = 'BCOMPS'
                 and f.filing_typ_cd in ('BEINC', 'ICORP', 'ICORU', 'ICORC', 'CONTB', 'CONTI', 'CONTU', 'CONTC')
         )
-        and c.CORP_TYP_CD in ('TMY')
+        and c.CORP_TYP_CD in (&mainframe_corp_types)
 
          -- altered from BC to BEN then BEN to BC before directed launch
         and c.CORP_NUM not in ('0460007', '1255957', '1186381')

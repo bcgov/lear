@@ -74,6 +74,26 @@ Notes:
 
 ---
 
+## Mainframe corp types (RLY, TMY, LIB, CEM, SB, PFS)
+
+`data-tool/scripts/transfer_cprd_mainframe_only.sql` replaces the old per type
+`transfer_cprd_<type>_only.sql` scripts. Which types it transfers is controlled by one variable near the top of the file:
+
+```
+vset mainframe_corp_types='RLY','TMY','LIB','CEM','SB','PFS'
+```
+
+Delete the codes you do not want before running (e.g. `vset mainframe_corp_types='TMY'`, or `'RLY','TMY'`). Keep it on one line,
+each code in single quotes, comma-separated with no spaces. Only list types not already loaded in the staging DB.
+Run it like the full refresh: `dbschemacli <lear-repo-base-path>/data-tool/scripts/transfer_cprd_mainframe_only.sql`.
+
+Notes:
+- The CARS table transfers are commented out (no PK and no corp filter, so a re-run duplicates every row). Uncomment them only
+  for a staging DB whose CARS tables are empty.
+- To onboard another mainframe type, add its code to the list (and to the allowlists in the flows, see `LIB_Migration_ChangeLog.md`).
+
+---
+
 ## Preserved-table backup, full restore, and delta restore
 
 The preserved migration/tracking/auth side-table list is centralized in `data-tool/scripts/restore/preserved_tables.conf` and is shared by:
