@@ -1100,10 +1100,13 @@ def tests_filer_resolution_dates_change(app, session, mocker, test_name, legal_t
         ('ulc_delete_share_class', 'ULC'),
     ]
 )
-def tests_filer_share_class_and_series_change(app, session, mocker, test_name, legal_type):
+@pytest.mark.parametrize('state', [Business.State.ACTIVE.value, Business.State.HISTORICAL.value])
+def tests_filer_share_class_and_series_change(app, session, mocker, test_name, legal_type, state):
     """Assert the worker processes the court order correctly."""
     identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_entity(identifier, legal_type, 'Test Entity')
+    business.state = state
+    business.save()
     create_share_class(business)
     business_id = business.id
 

@@ -28,6 +28,7 @@ from business_model.models import Filing as FilingStorage
 from legal_api.core.meta import FilingMeta
 from legal_api.services import VersionedBusinessDetailsService
 from legal_api.services.authz import has_any_roles, is_competent_authority
+from legal_api.utils.util import is_temp_reg_identifier
 
 from .constants import REDACTED_STAFF_SUBMITTER
 
@@ -279,7 +280,7 @@ class Filing:  # pylint: disable=too-many-public-methods
     @staticmethod
     def get(identifier, filing_id=None) -> Filing | None:
         """Return a Filing domain by the id."""
-        if identifier.startswith("T"):
+        if is_temp_reg_identifier(identifier):
             storage = FilingStorage.get_temp_reg_filing(identifier, filing_id)
         else:
             storage = Business.get_filing_by_id(identifier, filing_id)

@@ -591,6 +591,13 @@ def _update_share_structure(correction_filing: dict, business: Business) -> bool
     return updated
 
 
+def _update_share_structure(correction_filing: dict, business: Business):
+    """Update share structure and resolutions, if any."""
+    with suppress(IndexError, KeyError, TypeError):
+        share_structure = dpath.get(correction_filing, CORRECTION_SHARE_STRUCTURE_PATH)
+        shares.update_share_structure_correction(business, share_structure)
+
+
 def _set_lear_only(correction_filing: dict, filing_rec: Filing, relationships: list[dict], business: Business):
     """Set lear_only if the only changes are to receivers and/or liquidators."""
     def _has_director_role(relationship: dict):

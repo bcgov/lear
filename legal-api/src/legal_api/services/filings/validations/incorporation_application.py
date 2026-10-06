@@ -141,11 +141,6 @@ def _validate_address(addresses: dict, address_key: str, filing_type: str) -> li
 
     return msg
 
-def _incorp_completing_party_not_required() -> bool:
-    """Return True when incorporationApplication-completingParty ff is enabled and completing party is not required."""
-    enabled_features: list[str] = flags.value("enable-new-feature", [])
-    return "incorporationApplication-completingParty" in enabled_features
-
 def validate_roles(filing_dict: dict, # noqa: PLR0912
                    legal_type: str,
                    filing_type: str = "incorporationApplication") -> Error:
@@ -191,8 +186,7 @@ def validate_roles(filing_dict: dict, # noqa: PLR0912
         })
 
     is_incorp_application = filing_type == "incorporationApplication"
-    skip_completing_party_validation = is_incorp_application and legal_type in Business.CORPS and \
-                                         _incorp_completing_party_not_required()
+    skip_completing_party_validation = is_incorp_application and legal_type in Business.CORPS
 
     if not skip_completing_party_validation and (
             is_incorp_application or \
@@ -324,7 +318,7 @@ def _validate_incorporation_permission(
     if not flags.is_on("enabled-deeper-permission-action"):
         return None
     
-    if _incorp_completing_party_not_required() and legal_type in Business.CORPS:
+    if legal_type in Business.CORPS:
         return None
 
     return validate_permission_and_completing_party(

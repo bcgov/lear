@@ -45,7 +45,6 @@ from legal_api.reports.document_service import DocumentService, ReportTypes
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.reports.utils import get_formatted_amalg_business_data
 from legal_api.services import VersionedBusinessDetailsService, flags
-from legal_api.services.request_context import get_request_context
 from legal_api.utils.auth import jwt
 from legal_api.utils.formatting import float_to_str
 
@@ -248,7 +247,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             "incorporation-application/benefitCompanyStmt",
             "incorporation-application/completingPartyCoop",
             "incorporation-application/completingPartyCorp",
-            "incorporation-application/completingPartyOld",
             "incorporation-application/effectiveDate",
             "incorporation-application/incorporator",
             "incorporation-application/nameRequest",
@@ -328,8 +326,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_filing_json(filing)
 
         filing["header"]["reportType"] = self._report_key
-
-        filing["flags"] = {}
 
         self._format_par_value(filing)
         self._set_dates(filing)
@@ -419,19 +415,13 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing["business"]["isCorp"] = legal_type in Business.CORPS
 
     def _set_completing_party(self, filing):
-        request_context = get_request_context()
-        enabled_new_features: list[str] = (flags.value("enable-new-feature",
-                                                       request_context.user,
-                                                       request_context.account_id)) or []
-        incorp_compparty_stmnt_enabled = "incorporationApplication-completingParty" in enabled_new_features
-        filing["flags"]["incorporationApplication_completingParty"] = incorp_compparty_stmnt_enabled
         is_corp_incorp = (
             self._filing.filing_type == "incorporationApplication"
             and self._business
             and self._business.legal_type in Business.CORPS
         )
 
-        if is_corp_incorp and incorp_compparty_stmnt_enabled:
+        if is_corp_incorp:
             # staff and API gateway users supply the completing party name via header certifiedBy;
             # for API users the token resolves to the account name, not a user name, so it can't be
             # sourced from the submitter (API users are identified by the jwt loginSource, not a role).
