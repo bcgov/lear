@@ -257,6 +257,8 @@ def correct_corp_data_historical(business: Business,
         update_relationship_addresses(relationships, business)
         update_relationship_entity_info(relationships, business)
 
+    _update_share_structure(correction_filing, business)
+
     with suppress(IndexError, KeyError, TypeError):
         continuation_out = dpath.get(correction_filing, "/correction/continuationOut")
         if continuation_out:
@@ -372,13 +374,7 @@ def correct_corp_data(business: Business,
         update_relationship_entity_info(relationships, business)
         _set_lear_only(correction_filing, correction_filing_rec, relationships, business)
 
-    # update share structure and resolutions, if any
-    with suppress(IndexError, KeyError, TypeError):
-        share_structure = dpath.get(correction_filing, CORRECTION_SHARE_STRUCTURE_PATH)
-        shares.update_share_structure_correction(business, share_structure)
-        # If share classes exists they are either updated or created so filing has a NOA.
-        if share_structure and share_structure.get("shareClasses"):
-            has_noa = True
+    has_noa = has_noa or _update_share_structure(correction_filing, business)
 
     with suppress(IndexError, KeyError, TypeError):
         amalgamation = dpath.get(correction_filing, "/correction/amalgamation")
@@ -582,6 +578,16 @@ def _update_addresses(offices_structure) -> bool:
                 if address:
                     update_address(address, updated_address)
                     updated = True
+    return updated
+
+
+def _update_share_structure(correction_filing: dict, business: Business) -> bool:
+    """Update share structure and resolutions, if any. Return true if share classes updated."""
+    updated: bool = False
+    with suppress(IndexError, KeyError, TypeError):
+        share_structure = dpath.get(correction_filing, CORRECTION_SHARE_STRUCTURE_PATH)
+        shares.update_share_structure_correction(business, share_structure)
+        updated = share_structure and share_structure.get("shareClasses")
     return updated
 
 
