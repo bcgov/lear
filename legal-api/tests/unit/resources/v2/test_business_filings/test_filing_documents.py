@@ -311,6 +311,11 @@ def make_expected_documents(identifier, expected_docs=None, expected_legal_filin
     ('cben_notice_of_withdrawal_paid', 'C7654321', Business.LegalTypes.BCOMP_CONTINUE_IN.value, 'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, Filing.Status.PAID, ['receipt'], ['noticeOfWithdrawal'], None, HTTPStatus.OK, '2024-09-26'),
     ('cul_notice_of_withdrawal_paid', 'C7654321', Business.LegalTypes.ULC_CONTINUE_IN.value, 'noticeOfWithdrawal', MOCK_NOTICE_OF_WITHDRAWAL, Filing.Status.PAID, ['receipt'], ['noticeOfWithdrawal'], None, HTTPStatus.OK, '2024-09-26'),
     ('ben_court_order_completed', 'BC7654321', Business.LegalTypes.BCOMP.value, 'courtOrder', COURT_ORDER, Filing.Status.COMPLETED, ['receipt'], None, None, HTTPStatus.OK, '2017-10-01'),
+    ('ben_correction_completed_no_noa', 'BC7654321', Business.LegalTypes.BCOMP.value, 'correction_no_noa', CORRECTION_INCORPORATION['filing']['correction'], Filing.Status.COMPLETED, ['receipt'], ['correction'], None, HTTPStatus.OK, '2017-10-01'),
+    ('cbc_correction_completed_no_noa', 'BC7654321', Business.LegalTypes.COMP.value, 'correction_no_noa', CORRECTION_INCORPORATION['filing']['correction'], Filing.Status.COMPLETED, ['receipt', 'certificateOfContinuation'], ['correction'], None, HTTPStatus.OK, '2017-10-01'),
+    ('bc_correction_completed_no_noa', 'BC7654321', Business.LegalTypes.COMP.value, 'correction_no_noa', CORRECTION_INCORPORATION['filing']['correction'], Filing.Status.COMPLETED, ['receipt'], ['correction'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ccc_correction_completed_no_noa', 'BC7654321', Business.LegalTypes.BC_CCC.value, 'correction_no_noa', CORRECTION_INCORPORATION['filing']['correction'], Filing.Status.COMPLETED, ['receipt'], ['correction'], None, HTTPStatus.OK, '2017-10-01'),
+    ('ulc_correction_completed_no_noa', 'BC7654321', Business.LegalTypes.BC_ULC_COMPANY.value, 'correction_no_noa', CORRECTION_INCORPORATION['filing']['correction'], Filing.Status.COMPLETED, ['receipt'], ['correction'], None, HTTPStatus.OK, '2017-10-01'),
 ])
 def test_document_list_for_various_filing_states(app, session, mocker, client, jwt, monkeypatch, mock_drs_service,
                                                  test_name,
@@ -325,11 +330,14 @@ def test_document_list_for_various_filing_states(app, session, mocker, client, j
     business = factory_business(identifier, entity_type=entity_type)
 
     filing_json = copy.deepcopy(FILING_HEADER)
-    filing_json['filing']['header']['name'] = filing_name
+    filing_json['filing']['header']['name'] = "correction" if filing_name == 'correction_no_noa' else filing_name
     filing_json['filing']['business']['legalType'] = entity_type
     if filing_name == 'incorporationApplication':
         legal_filing['nameRequest']['legalType'] = entity_type
-    filing_json['filing'][filing_name] = legal_filing
+    if filing_name == 'correction_no_noa':
+        filing_json['filing']['correction'] = legal_filing
+    else:
+        filing_json['filing'][filing_name] = legal_filing
 
     if additional_filing:
         add_name, add_filing = additional_filing
@@ -409,10 +417,11 @@ def filer_action(filing_name, filing_json, meta_data, business, expected_docs):
         meta_data['continuationIn'] = {}
         meta_data['continuationIn']['affidavitFileKey'] = continuation_in['foreignJurisdiction']['affidavitFileKey']
         meta_data['continuationIn']['authorizationFiles'] = continuation_in['authorization']['files']
-    
+
+    adjusted_filing_name = 'correction' if filing_name == 'correction_no_noa' else filing_name
     court_order = (
         filing_json['filing'][filing_name] if filing_name == 'courtOrder'
-        else filing_json['filing'][filing_name].get('courtOrder')
+        else filing_json['filing'][adjusted_filing_name].get('courtOrder')
     )
     if court_order:
         file_number = court_order['fileNumber']
@@ -436,7 +445,7 @@ def filer_action(filing_name, filing_json, meta_data, business, expected_docs):
             }
         ]
 
-    if filing_name == 'correction':
+    if filing_name in ('correction', 'correction_no_noa'):
         meta_data['correction'] = {
             "correctedFilingId": filing_json["filing"]["correction"].get("correctedFilingId"),
             "correctedFilingType": filing_json["filing"]["correction"].get("correctedFilingType")
@@ -453,7 +462,9 @@ def filer_action(filing_name, filing_json, meta_data, business, expected_docs):
                 'region': 'AB'
             }
 
-        if business.legal_type == 'CP':
+        if business.legal_type in Business.CORPS:
+            meta_data['correction']['hasNoa'] = filing_name == 'correction'
+        elif business.legal_type == 'CP':
             if (legal_name := filing_json['filing']['correction'].get('nameRequest', {}).get('legalName')):
                 meta_data['correction']['fromLegalName'] = business.legal_name
                 meta_data['correction']['toLegalName'] = legal_name

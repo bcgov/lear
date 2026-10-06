@@ -324,6 +324,8 @@ def test_correction_name_change(app, session, mocker, test_name, legal_name, new
     corrected_filing_id = factory_completed_filing(business, BC_CORRECTION_APPLICATION).id
     filing['filing']['correction']['correctedFilingId'] = corrected_filing_id
 
+    del filing['filing']['correction']['offices']
+    del filing['filing']['correction']['shareStructure']
     if test_name == 'name_change':
         filing['filing']['correction']['nameRequest']['legalName'] = new_legal_name
         filing['filing']['business']['legalName'] = new_legal_name
@@ -353,14 +355,17 @@ def test_correction_name_change(app, session, mocker, test_name, legal_name, new
     correction = final_filing.meta_data.get('correction', {})
     business = Business.find_by_internal_id(business_id)
 
+    assert "hasNoa" in correction
     if new_legal_name:
         assert business.legal_name == new_legal_name
         assert correction.get('toLegalName') == new_legal_name
         assert correction.get('fromLegalName') == legal_name
+        assert correction.get("hasNoa")
     else:
         assert business.legal_name == legal_name
         assert correction.get('toLegalName') is None
         assert correction.get('fromLegalName') is None
+        assert not correction.get("hasNoa")
 
     corrected_filing = Filing.find_by_id(corrected_filing_id)
     filing_comments = final_filing.comments.all()
@@ -421,6 +426,12 @@ def test_correction_name_translation(app, session, mocker, test_name, legal_type
         filing['filing']['correction']['nameTranslations'][0]['name'],
         filing['filing']['correction']['nameTranslations'][1]['name']
     ])
+    correction_filing: Filing = Filing.find_by_id(filing_id)
+    assert correction_filing and correction_filing.meta_data
+    meta_data = correction_filing.meta_data
+    assert "hasNoa" in meta_data["correction"]
+    assert not meta_data["correction"].get("hasNoa")
+
 
 
 @pytest.mark.parametrize(
@@ -454,6 +465,7 @@ def test_correction_business_address(app, session, mocker, test_name, legal_type
     filing['filing']['correction']['correctedFilingId'] = corrected_filing_id
 
     del filing['filing']['correction']['nameRequest']
+    del filing['filing']['correction']['shareStructure']
 
     filing['filing']['correction']['offices']['registeredOffice']['deliveryAddress'] = \
         Address.find_by_id(office_delivery_address_id).json
@@ -486,6 +498,10 @@ def test_correction_business_address(app, session, mocker, test_name, legal_type
     for key in ['streetAddress', 'postalCode', 'addressCity', 'addressRegion']:
         assert changed_mailing_address.json[key] == \
             filing['filing']['correction']['offices']['registeredOffice']['mailingAddress'][key]
+    correction_filing: Filing = Filing.find_by_id(filing_id)
+    assert correction_filing and correction_filing.meta_data
+    meta_data = correction_filing.meta_data
+    assert meta_data["correction"].get("hasNoa")
 
 
 
@@ -518,6 +534,8 @@ def tests_filer_correction_court_order(app, session, mocker, test_name, legal_ty
     filing['filing']['correction']['courtOrder']['effectOfOrder'] = effect_of_order
 
     del filing['filing']['correction']['nameRequest']
+    del filing['filing']['correction']['offices']
+    del filing['filing']['correction']['shareStructure']
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
@@ -544,6 +562,8 @@ def tests_filer_correction_court_order(app, session, mocker, test_name, legal_ty
     assert effect_of_order == court_order_obj.effect_of_order
     assert final_filing.meta_data.get('courtOrder')['fileNumber'] == file_number
     assert final_filing.meta_data.get('courtOrder')['effectOfOrder'] == effect_of_order
+    assert "hasNoa" in final_filing.meta_data.get('correction')
+    assert not final_filing.meta_data["correction"].get("hasNoa")
 
 
 @pytest.mark.parametrize('test_name', [
@@ -860,6 +880,8 @@ def tests_filer_director_name_and_address_change(app, session, mocker, test_name
         del filing['filing']['correction']['parties'][1]
 
     del filing['filing']['correction']['nameRequest']
+    del filing['filing']['correction']['offices']
+    del filing['filing']['correction']['shareStructure']
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
@@ -901,6 +923,11 @@ def tests_filer_director_name_and_address_change(app, session, mocker, test_name
     if 'delete_director' in test_name:
         deleted_role = PartyRole.get_party_roles_by_party_id(business_id, party_id_2)[0]
         assert deleted_role.cessation_date is not None
+
+    correction_filing: Filing = Filing.find_by_id(filing_id)
+    assert correction_filing and correction_filing.meta_data
+    meta_data = correction_filing.meta_data
+    assert meta_data["correction"].get("hasNoa")
 
 
 @pytest.mark.parametrize('value_type', ['string', 'object'])
@@ -968,6 +995,7 @@ def tests_filer_resolution_dates_change(app, session, mocker, test_name, legal_t
         filing['filing']['correction']['shareStructure']['resolutionDates'] = []
 
     del filing['filing']['correction']['nameRequest']
+    del filing['filing']['correction']['offices']
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
@@ -1045,6 +1073,9 @@ def tests_filer_resolution_dates_change(app, session, mocker, test_name, legal_t
             assert parse(existing_resolution_date).date() in resolution_dates
         # else: # Uncomment when we update the code
         #     assert parse(existing_resolution_date).date() not in resolution_dates
+    meta_data = filing.meta_data
+    assert meta_data and  meta_data.get("correction") and "hasNoa" in meta_data.get("correction")
+    assert meta_data["correction"].get("hasNoa")
 
 
 
@@ -1101,6 +1132,7 @@ def tests_filer_share_class_and_series_change(app, session, mocker, test_name, l
         del filing['filing']['correction']['shareStructure']['shareClasses'][0]
 
     del filing['filing']['correction']['nameRequest']
+    del filing['filing']['correction']['offices']
 
     payment_id = str(random.randint(1000000, 9999999))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
@@ -1195,6 +1227,9 @@ def tests_filer_share_class_and_series_change(app, session, mocker, test_name, l
         assert business.share_classes.all()[0].par_value == share_class_json2['parValue']
         assert business.share_classes.all()[0].currency == share_class_json2['currency']
         assert [item.json for item in business.share_classes.all()[0].series] == share_class_json2['series']
+    meta_data = filing.meta_data
+    assert meta_data and  meta_data.get("correction") and "hasNoa" in meta_data.get("correction")
+    assert meta_data["correction"].get("hasNoa")
         
 
 @pytest.mark.parametrize(
@@ -1247,6 +1282,8 @@ def test_comment_only_correction(app, session, mocker, test_name):
     filing_comments = final_filing.comments.all()
     assert len(filing_comments) == 1
     assert filing_comments[0].comment == filing['filing']['correction']['comment']
+    assert "hasNoa" in meta_data
+    assert not meta_data.get("hasNoa")
 
 
 @pytest.mark.parametrize(
@@ -1268,6 +1305,8 @@ def test_new_legal_type(app, session, mocker, legal_type, new_legal_type):
 
     filing['filing']['correction']['contactPoint'] = CONTACT_POINT
     del filing['filing']['correction']['nameRequest']
+    del filing['filing']['correction']['offices']
+    del filing['filing']['correction']['shareStructure']
     filing['filing']['correction']['newLegalType'] = new_legal_type
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -1289,6 +1328,9 @@ def test_new_legal_type(app, session, mocker, legal_type, new_legal_type):
 
     # Check outcome
     assert business.legal_type == new_legal_type
+    final_filing = Filing.find_by_id(filing_id)
+    meta_data = final_filing.meta_data.get('correction', {})
+    assert meta_data.get("hasNoa")
 
 
 @pytest.mark.parametrize(
@@ -1380,6 +1422,12 @@ def test_continuation_in_correction(app, session, mocker, is_country_changed, is
         }
     else:
         assert 'continuationIn' not in filing.meta_data['correction']
+    final_filing = Filing.find_by_id(filing.id)
+    meta_data = final_filing.meta_data.get('correction', {})
+    if is_country_changed or is_region_changed:
+        assert meta_data.get("hasNoa")
+    else:
+        assert "hasNoa" in meta_data and not meta_data.get("hasNoa")
 
 
 @pytest.mark.parametrize("is_custodian_changed", [
@@ -1463,6 +1511,9 @@ def test_custodian_correction(app, session, mocker, is_custodian_changed):
     assert custodian_party_roles[0].party.first_name.upper() == filing_json['filing']['correction']['relationships'][1]['entity']['givenName'].upper()
     assert custodian_party_roles[0].party.last_name.upper() == filing_json['filing']['correction']['relationships'][1]['entity']['familyName'].upper()
     assert custodian_party_roles[0].party.email.upper() == filing_json['filing']['correction']['relationships'][1]['entity']['email'].upper()
+    final_filing = Filing.find_by_id(filing.id)
+    meta_data = final_filing.meta_data.get('correction', {})
+    assert "hasNoa" in meta_data and not meta_data.get("hasNoa")
 
 
 @pytest.mark.parametrize("out_type", ["continuationOut", "amalgamationOut"])
@@ -1554,6 +1605,9 @@ def test_out_correction(app, session, mocker, out_type, is_country_changed, is_r
         assert filing.meta_data['correction'][out_type] == out_data
     else:
         assert out_type not in filing.meta_data['correction']
+    final_filing = Filing.find_by_id(filing.id)
+    meta_data = final_filing.meta_data.get('correction', {})
+    assert "hasNoa" in meta_data and not meta_data.get("hasNoa")
 
 
 def test_correction_amalgamation(app, session, mocker):
@@ -1611,6 +1665,9 @@ def test_correction_amalgamation(app, session, mocker):
         'courtApproval': True,
         'amalgamatingBusinessesCorrected': True
     }
+    meta_data = final_filing.meta_data.get('correction', {})
+    assert "hasNoa" in meta_data and not meta_data.get("hasNoa")
+
 
 def _create_amalgation_business(business, jurisdiction=None):
     if jurisdiction is None:

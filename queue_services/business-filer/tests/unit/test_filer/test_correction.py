@@ -158,3 +158,10 @@ def test_process_correction_filing_with_relationships(app, session, mocker, fili
             assert role.party.delivery_address.street == expected_delivery_street
             if filing_name == 'changeOfDirectors':
                 assert role.appointment_date.date().isoformat() == correction_data['filing']['correction']['relationships'][0]['roles'][0]['appointmentDate']
+
+    final_filing = Filing.find_by_id(correction_filing_rec.id)
+    meta_data = final_filing.meta_data.get('correction', {})
+    if filing_name == "changeOfDirectors":
+        assert meta_data.get("hasNoa")
+    else:
+        assert "hasNoa" in meta_data and not meta_data.get("hasNoa")

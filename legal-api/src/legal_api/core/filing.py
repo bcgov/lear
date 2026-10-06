@@ -608,6 +608,18 @@ class Filing:  # pylint: disable=too-many-public-methods
         ):
             documents["documents"]["staticDocuments"] = static_docs
 
+        # CORPS corrections NOA conditionally included based on what was corrected.
+        # filing.meta_data["correction"]["hasNoa"] is set by the filer.
+        # Not backwards compatable: previous corrections do not include a NOA filing report without a db patch.
+        if (
+            filing.filing_type == Filing.FilingTypes.CORRECTION.value and
+            business.legal_type in Business.CORPS and
+            documents["documents"].get("noticeOfArticles") and
+            filing.storage.meta_data and
+            not filing.storage.meta_data.get("correction", {}).get("hasNoa", False)
+        ):
+            del documents["documents"]["noticeOfArticles"]
+
     @staticmethod
     def get_document_list(business, filing, jwt: JwtManager) -> dict | None:  # NOSONAR(S3776)
         """Return a list of documents for a particular filing."""
