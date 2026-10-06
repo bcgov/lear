@@ -71,9 +71,6 @@ class EventFilings(str, Enum):
     # CONVOTHER Change of Directors
     CONVOTHER_OTCDR = 'CONVOTHER_OTCDR'
 
-    # Change of Name
-    FILE_OTNCN = 'FILE_OTNCN'
-
     # Consent Continuation Out
     FILE_CONTO = 'FILE_CONTO'
 
