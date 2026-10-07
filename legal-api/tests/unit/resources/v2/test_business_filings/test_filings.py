@@ -612,6 +612,28 @@ def test_post_allowed_historical(session, client, jwt):
     assert rv.status_code == HTTPStatus.CREATED
 
 
+@pytest.mark.parametrize('filing_status', [Filing.Status.DRAFT.value, Filing.Status.PENDING.value])
+def test_post_court_order_not_allowed_with_incomplete_correction(session, client, jwt, filing_status):
+    """Assert that courtOrder is not allowed when business has an incomplete correction filing."""
+    identifier = 'BC7654321'
+    business = factory_business(identifier, state=Business.State.ACTIVE)
+    correction_data = copy.deepcopy(CORRECTION_AR)
+    correction_data['filing']['header']['name'] = 'correction'
+    filing = factory_filing(business, correction_data)
+    filing.skip_status_listener = True
+    filing._status = filing_status
+    filing._filing_type = 'correction'
+    filing.save()
+
+    co = get_filing_template('courtOrder', identifier)
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
+                     json=co,
+                     headers=create_header(jwt, [STAFF_ROLE], 'user')
+                     )
+
+    assert rv.status_code == HTTPStatus.FORBIDDEN
+
+
 def test_special_resolution_sanitation(session, client, jwt):
     """Assert that script tags can't be passed into special resolution resolution field."""
     identifier = 'CP7654399'

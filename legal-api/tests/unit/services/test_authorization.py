@@ -1206,6 +1206,10 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
             if flag == 'enabled-specific-filings' else {}
         )
         monkeypatch.setattr(
+            'legal_api.services.flags.is_on',
+            lambda flag, _user=None, _account_id=None: False
+        )
+        monkeypatch.setattr(
             'business_model.models.User.get_or_create_user_by_jwt',
             lambda _: None
         )
@@ -2128,7 +2132,10 @@ def test_allowed_filings_blocker_filing_specific_incomplete(monkeypatch, app, se
                                              filing_dict=filing_dict,
                                              filing_type=filing_type)
                     allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
-                    assert allowed_filing_types == expected
+                    expected_filings = expected
+                    if filing_type == 'correction':
+                        expected_filings = [f for f in expected if f.get('name') != 'courtOrder']
+                    assert allowed_filing_types == expected_filings
 
 
 @pytest.mark.parametrize(
@@ -3849,3 +3856,94 @@ def test_get_allowable_actions_dbc_fields_when_not_allowed(
 
     assert result['digitalBusinessCard'] is False
     assert result['digitalBusinessCardPreconditions'] == {}
+
+
+@pytest.mark.parametrize('legal_type', ['BC', 'BEN', 'CP', 'SP', 'GP', 'ULC'])
+@pytest.mark.parametrize(
+    'filing_status',
+    [
+        Filing.Status.DRAFT.value,
+        Filing.Status.PENDING.value,
+        Filing.Status.PAID.value,
+        Filing.Status.ERROR.value,
+    ],
+)
+def test_court_order_blocked_by_incomplete_correction(monkeypatch, app, session, jwt, legal_type, filing_status):
+    """Assert courtOrder is not allowed when business has an incomplete correction filing."""
+    with jwt_request_context(app, jwt, roles=[STAFF_ROLE], username='staff'):
+        monkeypatch.setattr('legal_api.services.flags.value', lambda *a, **kw: '')
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
+        business = create_business(legal_type, Business.State.ACTIVE)
+        create_incomplete_filing(
+            business=business,
+            filing_name='correction',
+            filing_status=filing_status,
+            filing_dict=FILING_DATA.get('correction', None),
+            filing_type='correction',
+        )
+        assert is_allowed(business, Business.State.ACTIVE, 'courtOrder', legal_type, jwt) is False
+        allowed_filings = get_allowed_filings(business, Business.State.ACTIVE, legal_type, jwt)
+        assert 'courtOrder' not in [f['name'] for f in allowed_filings]
+
+
+def test_court_order_allowed_when_correction_completed_or_other_incomplete(monkeypatch, app, session, jwt):
+    """Assert courtOrder is allowed when correction is completed or other filings are incomplete."""
+    with jwt_request_context(app, jwt, roles=[STAFF_ROLE], username='staff'):
+        monkeypatch.setattr('legal_api.services.flags.value', lambda *a, **kw: '')
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
+        # other draft filing eg annualReport should not block courtOrder
+        business = create_business('BC', Business.State.ACTIVE)
+        create_incomplete_filing(
+            business=business,
+            filing_name='annualReport',
+            filing_status=Filing.Status.DRAFT.value,
+            filing_type='annualReport',
+        )
+        assert is_allowed(business, Business.State.ACTIVE, 'courtOrder', 'BC', jwt) is True
+        allowed_filings = get_allowed_filings(business, Business.State.ACTIVE, 'BC', jwt)
+        assert 'courtOrder' in [f['name'] for f in allowed_filings]
+
+        # completed correction should not block courtOrder
+        business2 = create_business('BEN', Business.State.ACTIVE)
+        factory_completed_filing(
+            business2,
+            FILING_DATA.get('correction', copy.deepcopy(FILING_TEMPLATE)),
+            filing_type='correction',
+        )
+        assert is_allowed(business2, Business.State.ACTIVE, 'courtOrder', 'BEN', jwt) is True
+        allowed_filings2 = get_allowed_filings(business2, Business.State.ACTIVE, 'BEN', jwt)
+        assert 'courtOrder' in [f['name'] for f in allowed_filings2]
+
+
+@pytest.mark.parametrize('legal_type', ['BC', 'BEN', 'CC', 'ULC', 'CP', 'SP', 'GP'])
+def test_court_order_blocked_by_incomplete_correction_historical(monkeypatch, app, session, jwt, legal_type):
+    """Assert courtOrder is blocked by incomplete correction for historical business."""
+    with jwt_request_context(app, jwt, roles=[STAFF_ROLE], username='staff'):
+        monkeypatch.setattr('legal_api.services.flags.value', lambda *a, **kw: '')
+        monkeypatch.setattr(
+            'legal_api.models.User.get_or_create_user_by_jwt',
+            lambda _: None
+        )
+
+        business = create_business(legal_type, Business.State.HISTORICAL)
+
+        # no incomplete correction -> allow courtOrder
+        assert is_allowed(business, Business.State.HISTORICAL, 'courtOrder', legal_type, jwt) is True
+
+        # incomplete correction -> block courtOrder
+        create_incomplete_filing(
+            business=business,
+            filing_name='correction',
+            filing_status=Filing.Status.DRAFT.value,
+            filing_dict=FILING_DATA.get('correction', None),
+            filing_type='correction',
+        )
+        assert is_allowed(business, Business.State.HISTORICAL, 'courtOrder', legal_type, jwt) is False
+        allowed_filings = get_allowed_filings(business, Business.State.HISTORICAL, legal_type, jwt)
+        assert 'courtOrder' not in [f['name'] for f in allowed_filings]
