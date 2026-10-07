@@ -326,6 +326,8 @@ def test_correction_name_change(app, session, mocker, test_name, legal_name, new
 
     del filing['filing']['correction']['offices']
     del filing['filing']['correction']['shareStructure']
+    del filing['filing']['correction']['parties'][0]
+
     if test_name == 'name_change':
         filing['filing']['correction']['nameRequest']['legalName'] = new_legal_name
         filing['filing']['business']['legalName'] = new_legal_name
@@ -360,14 +362,11 @@ def test_correction_name_change(app, session, mocker, test_name, legal_name, new
         assert business.legal_name == new_legal_name
         assert correction.get('toLegalName') == new_legal_name
         assert correction.get('fromLegalName') == legal_name
+        assert correction.get("hasNoa")
     else:
         assert business.legal_name == legal_name
         assert correction.get('toLegalName') is None
         assert correction.get('fromLegalName') is None
-
-    if test_name == 'name_change':
-        assert correction.get("hasNoa")
-    else:
         assert not correction.get("hasNoa")
 
     corrected_filing = Filing.find_by_id(corrected_filing_id)
@@ -407,6 +406,7 @@ def test_correction_name_translation(app, session, mocker, test_name, legal_type
     del filing['filing']['correction']['business']
     del filing['filing']['correction']['offices']
     del filing['filing']['correction']['shareStructure']
+    del filing['filing']['correction']['parties'][0]
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
 
@@ -469,6 +469,7 @@ def test_correction_business_address(app, session, mocker, test_name, legal_type
 
     del filing['filing']['correction']['nameRequest']
     del filing['filing']['correction']['shareStructure']
+    del filing['filing']['correction']['parties'][0]
 
     filing['filing']['correction']['offices']['registeredOffice']['deliveryAddress'] = \
         Address.find_by_id(office_delivery_address_id).json
@@ -539,6 +540,7 @@ def tests_filer_correction_court_order(app, session, mocker, test_name, legal_ty
     del filing['filing']['correction']['nameRequest']
     del filing['filing']['correction']['offices']
     del filing['filing']['correction']['shareStructure']
+    del filing['filing']['correction']['parties'][0]
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
@@ -999,6 +1001,7 @@ def tests_filer_resolution_dates_change(app, session, mocker, test_name, legal_t
 
     del filing['filing']['correction']['nameRequest']
     del filing['filing']['correction']['offices']
+    del filing['filing']['correction']['parties'][0]
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
@@ -1139,6 +1142,7 @@ def tests_filer_share_class_and_series_change(app, session, mocker, test_name, l
 
     del filing['filing']['correction']['nameRequest']
     del filing['filing']['correction']['offices']
+    del filing['filing']['correction']['parties'][0]
 
     payment_id = str(random.randint(1000000, 9999999))
     filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
@@ -1314,6 +1318,7 @@ def test_new_legal_type(app, session, mocker, legal_type, new_legal_type):
     del filing['filing']['correction']['nameRequest']
     del filing['filing']['correction']['offices']
     del filing['filing']['correction']['shareStructure']
+    del filing['filing']['correction']['parties'][0]
     filing['filing']['correction']['newLegalType'] = new_legal_type
 
     payment_id = str(random.SystemRandom().getrandbits(0x58))
@@ -1473,6 +1478,7 @@ def test_custodian_correction(app, session, mocker, is_custodian_changed):
     del filing_json['filing']['correction']['offices']
     del filing_json['filing']['correction']['shareStructure']
     del filing_json['filing']['correction']['business']
+    del filing_json['filing']['correction']['parties'][0]
 
     filing_json['filing']['correction']['relationships'] = dissolution_json['filing']['dissolution']['parties']
     filing_json['filing']['correction']['relationships'][0]['entity'] = {
