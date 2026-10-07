@@ -360,11 +360,14 @@ def test_correction_name_change(app, session, mocker, test_name, legal_name, new
         assert business.legal_name == new_legal_name
         assert correction.get('toLegalName') == new_legal_name
         assert correction.get('fromLegalName') == legal_name
-        assert correction.get("hasNoa")
     else:
         assert business.legal_name == legal_name
         assert correction.get('toLegalName') is None
         assert correction.get('fromLegalName') is None
+
+    if test_name == 'name_change':
+        assert correction.get("hasNoa")
+    else:
         assert not correction.get("hasNoa")
 
     corrected_filing = Filing.find_by_id(corrected_filing_id)
