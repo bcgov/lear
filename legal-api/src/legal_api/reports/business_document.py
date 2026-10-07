@@ -576,7 +576,8 @@ class BusinessDocument:
         if filings:
             amalgamation_application = filings[0]
             business["business"]["amalgamatedEntity"] = True
-            if self._is_imported_amalgamation(amalgamation_application):
+            amalgamation = self._business.amalgamation.first()
+            if self._is_imported_amalgamation(amalgamation_application) and not amalgamation:
                 # imported from COLIN
                 amalgamated_businesses.append({
                     "legalName": "N/A",
@@ -584,7 +585,7 @@ class BusinessDocument:
                     "jurisdiction": "N/A"
                 })
             else:
-                if amalgamation := self._business.amalgamation.first():
+                if amalgamation:
                     amalgamating_businesses = amalgamation.amalgamating_businesses.all()
                 else:
                     # fallback: if an amalgamation was dissolved through an admin dissolution
