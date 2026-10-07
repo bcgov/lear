@@ -72,7 +72,9 @@ def get_recipients(option: str, filing_json: dict, token: str | None = None, fil
 
         # add relevant party emails
         # FUTURE: after amalg and continuation have completing party removed 'temp_logic' can be removed
-        temp_logic = filing_type in ["amalgamationApplication", "continuationIn"] and option in ["PAID", "bn"]
+        # NB: amalgamation also sends to the completing party on COMPLETED (all emails shown in Document Delivery)
+        temp_logic = ((filing_type == "continuationIn" and option in ["PAID", "bn"])
+                      or (filing_type == "amalgamationApplication" and option in ["PAID", "COMPLETED", "bn"]))
         is_coop_incorp_paid = is_coop and filing_type == "incorporationApplication" and option == "PAID"
         is_valid_filing = filing_type in ["changeOfRegistration", "registration", "correction", "dissolution"]
         if ((temp_logic or is_coop_incorp_paid or is_valid_filing)
