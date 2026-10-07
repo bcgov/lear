@@ -5,7 +5,7 @@ Revises: c4e7b2a95d18
 Create Date: 2026-10-07 14:05:17.105621
 
 """
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 import sqlalchemy as sa
 from alembic import op
@@ -20,7 +20,7 @@ PERMISSION_NAME = 'REVIEW_IMPORTED_DATA_FILING'
 
 
 def upgrade():
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     permissions = sa.table(
         'permissions',
