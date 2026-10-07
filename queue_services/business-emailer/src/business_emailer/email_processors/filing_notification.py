@@ -56,6 +56,9 @@ def _get_additional_info(filing: Filing) -> dict:
         additional_info["nameChange"] = "requestTypeCd" in filing.filing_json["filing"]["correction"].get("nameRequest", {})
         additional_info["rulesChange"] = bool(filing.filing_json["filing"]["correction"].get("rulesFileKey"))
         additional_info["memorandumChange"] = bool(filing.filing_json["filing"]["correction"].get("memorandumFileKey"))
+        additional_info["noaChange"] = (
+            filing.meta_data and filing.meta_data.get("correction") and filing.meta_data["correction"].get("hasNoa", False)
+        )
 
     return additional_info
 
@@ -117,6 +120,11 @@ def _get_attachments_and_extra_pdf_types(status: str, filing_type: str, filing: 
             # remove cm if in the attachments list
             _remove_from_list(attachments, "Certified Memorandum")
             _remove_from_list(extra_pdf_types, "certifiedMemorandum")
+
+        if filing.filing_type == "correction" and not additional_info.get("noaChange"):
+            # NOA output conditional on what was corrected: set in the filer.
+            _remove_from_list(attachments, "Notice of Articles")
+            _remove_from_list(extra_pdf_types, "noticeOfArticles")
 
     if status != Filing.Status.COMPLETED.value:
         extra_pdf_types = []

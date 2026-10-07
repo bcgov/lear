@@ -1099,45 +1099,57 @@ def test_correction_filing_via_filing_notification(app, session, mock_pdfs,
         assert PARTY_EMAIL_1 in email['recipients']
 
 
-@pytest.mark.parametrize('orig_filing_type, legal_type, identifier, has_name_change, has_rule_change, expected_attachments', [
+@pytest.mark.parametrize('orig_filing_type, legal_type, identifier, has_name_change, has_rule_change, expected_attachments, has_noa', [
     ('incorporationApplication', 'BC', 'BC1234567', False, False, [
         {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Notice of Articles.pdf', 'content': 'pdf_content_noa', 'order': '2'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
-    ]),
+    ],
+    True),
+    ('incorporationApplication', 'BC', 'BC1234568', False, False, [
+        {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ],
+    False),
     ('registration', 'SP', 'FM1234567', False, False, [
         {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Corrected Registration Statement.pdf', 'content': 'pdf_content_crs', 'order': '2'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
-    ]),
+    ],
+    False),
     ('registration', 'GP', 'FM1234567', False, False, [
         {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Corrected Registration Statement.pdf', 'content': 'pdf_content_crs', 'order': '2'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
-    ]),
+    ],
+    False),
     ('specialResolution', 'CP', 'CP1234567', False, False, [
         {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
-    ]),
+    ],
+    False),
     ('specialResolution', 'CP', 'CP1234567', True, False, [
         {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Certificate of Name Correction.pdf', 'content': 'pdf_content_con', 'order': '2'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
-    ]),
+    ],
+    False),
     ('specialResolution', 'CP', 'CP1234567', False, True, [
         {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Certified Rules.pdf', 'content': 'pdf_content_cr', 'order': '2'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
-    ]),
+    ],
+    False),
     ('specialResolution', 'CP', 'CP1234567', True, True, [
         {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Certificate of Name Correction.pdf', 'content': 'pdf_content_con', 'order': '2'},
         {'fileName': 'Certified Rules.pdf', 'content': 'pdf_content_cr', 'order': '3'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '4'},
-    ]),
+    ],
+    False),
 ])
 def test_correction_filing_attachments(session, config, mock_recipients, mock_user_email,
-                                       orig_filing_type, legal_type, identifier, has_name_change, has_rule_change, expected_attachments):
+                                       orig_filing_type, legal_type, identifier, has_name_change, has_rule_change, expected_attachments, has_noa):
     """Assert correction filings add the correct attachments."""
     # Setup
     if orig_filing_type == 'specialResolution':
@@ -1148,6 +1160,8 @@ def test_correction_filing_attachments(session, config, mock_recipients, mock_us
     corrected_filing = prep_correction_filing(
         session, business, original_filing.id, orig_filing_type, 'COMPLETED',
         has_name_change=has_name_change, has_rule_change=has_rule_change)
+    if legal_type == "BC":
+        corrected_filing.meta_data["correction"]["hasNoa"] = has_noa
 
     # Test
     with requests_mock.Mocker() as m:

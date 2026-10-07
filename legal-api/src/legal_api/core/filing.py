@@ -28,7 +28,6 @@ from business_model.models import Filing as FilingStorage
 from legal_api.core.meta import FilingMeta
 from legal_api.services import VersionedBusinessDetailsService
 from legal_api.services.authz import has_any_roles, is_competent_authority
-from legal_api.utils.util import is_temp_reg_identifier
 
 from .constants import REDACTED_STAFF_SUBMITTER
 
@@ -280,7 +279,7 @@ class Filing:  # pylint: disable=too-many-public-methods
     @staticmethod
     def get(identifier, filing_id=None) -> Filing | None:
         """Return a Filing domain by the id."""
-        if is_temp_reg_identifier(identifier):
+        if identifier.startswith("T"):
             storage = FilingStorage.get_temp_reg_filing(identifier, filing_id)
         else:
             storage = Business.get_filing_by_id(identifier, filing_id)
@@ -608,6 +607,18 @@ class Filing:  # pylint: disable=too-many-public-methods
             (static_docs := FilingMeta.get_static_documents(filing.storage, f"{base_url}{doc_url}/static"))
         ):
             documents["documents"]["staticDocuments"] = static_docs
+
+        # CORPS corrections NOA conditionally included based on what was corrected.
+        # filing.meta_data["correction"]["hasNoa"] is set by the filer.
+        # Not backwards compatable: previous corrections do not include a NOA filing report without a db patch.
+        if (
+            filing.filing_type == Filing.FilingTypes.CORRECTION.value and
+            business.legal_type in Business.CORPS and
+            documents["documents"].get("noticeOfArticles") and
+            filing.storage.meta_data and
+            not filing.storage.meta_data.get("correction", {}).get("hasNoa", False)
+        ):
+            del documents["documents"]["noticeOfArticles"]
 
     @staticmethod
     def get_document_list(business, filing, jwt: JwtManager) -> dict | None:  # NOSONAR(S3776)
