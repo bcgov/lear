@@ -26,6 +26,7 @@ from legal_api.exceptions import BusinessException
 from legal_api.services import authorized
 from legal_api.services.comments import validate
 from legal_api.utils.auth import jwt
+from legal_api.utils.util import is_temp_reg_identifier
 
 from .bp import bp
 
@@ -123,7 +124,7 @@ def _basic_checks(identifier, filing_id, client_request: Request) -> tuple[dict,
         return ({"message": f"No filing json data in body of post for {identifier}."},
                 HTTPStatus.BAD_REQUEST)
 
-    if client_request.method == "GET" and identifier.startswith("T"):
+    if client_request.method == "GET" and is_temp_reg_identifier(identifier):
         filing_model = Filing.get_temp_reg_filing(identifier)
         business = Business.find_by_internal_id(filing_model.business_id)
     else:

@@ -29,6 +29,7 @@ from registry_schemas.example_data import (
     AMALGAMATION_APPLICATION,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
+    CHANGE_OF_DIRECTORS_RELATIONSHIPS,
     CHANGE_OF_LIQUIDATORS,
     CHANGE_OF_OFFICERS,
     CHANGE_OF_RECEIVERS,
@@ -342,6 +343,7 @@ def test_validate_offices_addresses_non_ca_postal_code_not_validated(session):
 @pytest.mark.parametrize('filing_type, filing_data, party_key', [
     ('amaglamationApplication', AMALGAMATION_APPLICATION, 'parties'),
     ('changeOfDirectors', CHANGE_OF_DIRECTORS, 'directors'),
+    ('changeOfDirectors', CHANGE_OF_DIRECTORS_RELATIONSHIPS, 'relationships'),
     ('changeOfLiquidators', CHANGE_OF_LIQUIDATORS, 'relationships'),
     ('changeOfOfficers', CHANGE_OF_OFFICERS, 'relationships'),
     ('changeOfReceivers', CHANGE_OF_RECEIVERS, 'relationships'),
@@ -781,7 +783,6 @@ def test_validate_certified_by_coops(
 
         assert errors[0]['path'] == '/filing/header/certifiedBy'
 
-@pytest.mark.parametrize('feature_enabled', [True, False])
 @pytest.mark.parametrize('legal_type', Business.CORPS + [
     Business.LegalTypes.COOP, Business.LegalTypes.SOLE_PROP, Business.LegalTypes.PARTNERSHIP])
 @pytest.mark.parametrize('authorization_received, expected_error', [
@@ -795,20 +796,12 @@ def test_validate_certified_by_coops(
     (CoreFiling.FilingTypes.DISSOLUTION, True, "voluntary"),
     (CoreFiling.FilingTypes.DISSOLUTION, False, "administrative"),
     (CoreFiling.FilingTypes.REGISTRARSORDER, False, None),  # staff filing
-    (CoreFiling.FilingTypes.INCORPORATIONAPPLICATION, False, None), # conditionally required via enable-new-feature flag
+    (CoreFiling.FilingTypes.INCORPORATIONAPPLICATION, True, None),
 ])
-def test_validate_authorization_received(session, monkeypatch, legal_type, authorization_received,
+def test_validate_authorization_received(session, legal_type, authorization_received,
                                          expected_error, filing_type, requires_authorization,
-                                         dissolution_type, feature_enabled):
+                                         dissolution_type):
     """Test that authorizationReceived is enforced for required Corps filings."""
-
-    monkeypatch.setattr(
-        'legal_api.services.flags.value',
-        lambda flag, default=None:
-            ["incorporationApplication-completingParty"]
-            if flag == "enable-new-feature" and feature_enabled else default
-    )
-
     filing = copy.deepcopy(FILING_HEADER)
     if authorization_received is not None:
         filing['filing']['header']['authorizationReceived'] = authorization_received
@@ -820,12 +813,7 @@ def test_validate_authorization_received(session, monkeypatch, legal_type, autho
 
     errors = validate_authorization_received(filing, filing_type, legal_type)
 
-    ia_requires_authorization = (
-        filing_type == CoreFiling.FilingTypes.INCORPORATIONAPPLICATION and feature_enabled
-    )
-
-    if legal_type in Business.CORPS and \
-            (requires_authorization or ia_requires_authorization) and expected_error:
+    if legal_type in Business.CORPS and requires_authorization and expected_error:
         assert errors
         assert errors[0]['error'] == 'Authorization received must be true to authorize the filing submission.'
         assert errors[0]['path'] == '/filing/header/authorizationReceived'
@@ -2365,13 +2353,6 @@ def test_get_file_data_from_drs(session, monkeypatch, file_key, expected_class, 
 
 def test_get_file_data_drs_failure(session, monkeypatch):
     """Test that DRS retrieval errors raise an exception."""
-
-    monkeypatch.setattr(
-        'legal_api.services.flags.value',
-        lambda flag, default=None:
-            ["drs-upload"]
-            if flag == "enable-new-feature" else default
-    )
 
     monkeypatch.setattr(
         'legal_api.services.filings.validations.common_validations.doc_service.get_document',

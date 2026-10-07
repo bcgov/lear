@@ -1069,10 +1069,13 @@ def tests_filer_resolution_dates_change(app, session, mocker, test_name, legal_t
         ('ulc_delete_share_class', 'ULC'),
     ]
 )
-def tests_filer_share_class_and_series_change(app, session, mocker, test_name, legal_type):
+@pytest.mark.parametrize('state', [Business.State.ACTIVE.value, Business.State.HISTORICAL.value])
+def tests_filer_share_class_and_series_change(app, session, mocker, test_name, legal_type, state):
     """Assert the worker processes the court order correctly."""
     identifier = f'BC{random.randint(1000000, 9999999)}'
     business = create_entity(identifier, legal_type, 'Test Entity')
+    business.state = state
+    business.save()
     create_share_class(business)
     business_id = business.id
 
@@ -1334,9 +1337,9 @@ def test_continuation_in_correction(app, session, mocker, is_country_changed, is
     continuation_in = {
         'country': 'US' if is_country_changed else 'CA',
         'region': '' if is_region_changed else 'AB',
-        'legalName': 'Foreign Company',
-        'identifier': 'US1234567',
-        'incorporationDate': '2019-01-01',
+        'legalName': continuation_in_json['filing']['continuationIn']['foreignJurisdiction']['legalName'],
+        'identifier': continuation_in_json['filing']['continuationIn']['foreignJurisdiction']['identifier'],
+        'incorporationDate': continuation_in_json['filing']['continuationIn']['foreignJurisdiction']['incorporationDate'],
         'expro': {
             'identifier': 'A0077779',
             'legalName': 'Test Company Inc.'
@@ -1375,7 +1378,8 @@ def test_continuation_in_correction(app, session, mocker, is_country_changed, is
     if is_country_changed or is_region_changed:
         assert filing.meta_data['correction']['continuationIn'] == {
             'country': continuation_in['country'],
-            'region': continuation_in['region']
+            'region': continuation_in['region'],
+            'legalName': continuation_in['legalName']
         }
     else:
         assert 'continuationIn' not in filing.meta_data['correction']

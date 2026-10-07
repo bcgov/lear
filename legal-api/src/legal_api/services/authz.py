@@ -65,6 +65,7 @@ class BusinessBlocker(str, Enum):
     FILING_WITHDRAWAL = "FILING_WITHDRAWAL"
     MAX_DISSOLUTION_DELAYS_REACHED = "MAX_DISSOLUTION_DELAYS_REACHED"
     MIN_LR_DATE_REACHED = "MIN_LR_DATE_REACHED"
+    INCOMPLETE_CORRECTION = "INCOMPLETE_CORRECTION"
 
 
 class BusinessRequirement(str, Enum):
@@ -365,7 +366,10 @@ def get_allowable_filings_dict(is_authorization: bool = False):
                     }
                 },
                 "courtOrder": {
-                    "legalTypes": ["SP", "GP", "CP", "BC", "BEN", "CC", "ULC", "C", "CBEN", "CUL", "CCC"]
+                    "legalTypes": ["SP", "GP", "CP", "BC", "BEN", "CC", "ULC", "C", "CBEN", "CUL", "CCC"],
+                    "blockerChecks": {
+                        "business": [BusinessBlocker.INCOMPLETE_CORRECTION]
+                    }
                 },
                 "dissolution": {
                     "voluntary": {
@@ -458,6 +462,9 @@ def get_allowable_filings_dict(is_authorization: bool = False):
                 },
                 "courtOrder": {
                     "legalTypes": ["SP", "GP", "CP", "BC", "BEN", "CC", "ULC", "C", "CBEN", "CUL", "CCC"],
+                    "blockerChecks": {
+                        "business": [BusinessBlocker.INCOMPLETE_CORRECTION]
+                    }
                 },
                 "putBackOn": {
                     "legalTypes": ["SP", "GP", "BEN", "CP", "BC", "CC", "ULC", "C", "CBEN", "CUL", "CCC"],
@@ -968,7 +975,8 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
         BusinessBlocker.IN_LIQUIDATION: False,
         BusinessBlocker.FILING_WITHDRAWAL: False,
         BusinessBlocker.MAX_DISSOLUTION_DELAYS_REACHED: False,
-        BusinessBlocker.MIN_LR_DATE_REACHED: False
+        BusinessBlocker.MIN_LR_DATE_REACHED: False,
+        BusinessBlocker.INCOMPLETE_CORRECTION: False
     }
 
     if not business:
@@ -1001,6 +1009,9 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
 
     if len(business.public_user_dod_filings) >= MAX_PUBLIC_USER_DOD_FILINGS:
         business_blocker_checks[BusinessBlocker.MAX_DISSOLUTION_DELAYS_REACHED] = True
+
+    if has_incomplete_correction_filing(business):
+        business_blocker_checks[BusinessBlocker.INCOMPLETE_CORRECTION] = True
 
     return business_blocker_checks
 
@@ -1154,6 +1165,19 @@ def has_notice_of_withdrawal_filing_blocker(business: Business, is_ignore_draft_
     now = datetime.now(UTC)
     paid_filings = Filing.get_filings_by_status(business.id, [Filing.Status.PAID.value])
     return not any(f.effective_date and f.effective_date > now for f in paid_filings)
+
+
+def has_incomplete_correction_filing(business: Business) -> bool:
+    """Check if the business has an incomplete correction filing."""
+    # importing here to avoid circular dependencies
+    # pylint: disable=import-outside-toplevel
+    from legal_api.core.filing import Filing as CoreFiling
+
+    if not business or not business.id:
+        return False
+
+    blocker_filing_matches = Filing.get_incomplete_filings_by_types(business.id, [CoreFiling.FilingTypes.CORRECTION.value])
+    return any(blocker_filing_matches)
 
 
 def get_allowed(state: Business.State, legal_type: str, jwt: JwtManager):

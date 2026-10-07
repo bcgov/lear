@@ -37,6 +37,7 @@ from werkzeug.local import LocalProxy
 import legal_api.reports
 from business_common.utils import datetime
 from business_common.utils.legislation_datetime import LegislationDatetime
+from business_common.utils.relationship_director import cod_directors, is_change_free
 from business_model.models import (
     Address,
     Business,
@@ -74,6 +75,7 @@ from legal_api.services.permissions import PermissionService
 from legal_api.services.request_context import add_account_linking_key_header
 from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
+from legal_api.utils.util import is_temp_reg_identifier
 
 
 class QueryModel(BaseModel):
@@ -99,9 +101,7 @@ class FilingModel(BaseModel, Generic[FilingT]):
 @pydantic_validate(query=QueryModel)
 def get_filings(identifier: str, filing_id: int | None = None):
     """Return a JSON object with meta information about the Filing Submission."""
-    # Temp bootstrap ids start with "T" (e.g. Tabc12XyZ9). Real tramways are TMY + 7 digits
-    # (e.g. TMY0000008) — exclude only that shape so random temps like TMYHLpcaq7 stay temp.
-    if filing_id or (identifier.startswith("T") and not re.fullmatch(r"TMY\d{7}", identifier)):
+    if filing_id or is_temp_reg_identifier(identifier):
         if str(request.args.get("public", None)).lower() == "true":
             return ListFilingResource.get_single_filing_public_json(filing_id)
 
@@ -875,14 +875,9 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
     @staticmethod
     def get_filing_types_for_cod(filing_json: dict, legal_type: str, filing_type_code: str) -> str:
         """Get the change of director filing type fee code."""
-        free = True
-        free_changes = ["nameChanged", "addressChanged"]
-        for director in filing_json["filing"]["changeOfDirectors"].get("directors"):
-            # if changes other than name/address change then this is not a free filing
-            if not all(change in free_changes for change in director.get("actions", [])):
-                free = False
-                break
-        if free:
+        directors = cod_directors(filing_json["filing"]["changeOfDirectors"])
+        # if changes other than name/address change then this is not a free filing
+        if all(is_change_free(director) for director in directors):
             filing_type_code = Filing.FILINGS["changeOfDirectors"]["free"]["codes"].get(legal_type)
 
         return filing_type_code

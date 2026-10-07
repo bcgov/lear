@@ -45,6 +45,7 @@ def test_valid_special_resolution_correction(session, app, jwt):
     f = copy.deepcopy(correction_data)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    f['filing']['correction']['correctedFilingType'] = 'specialResolution'
     del f['filing']['correction']['rulesFileKey']
 
     with jwt_request_context(app, jwt, [STAFF_ROLE]):
@@ -92,6 +93,7 @@ def test_parties_special_resolution_correction(session, app, jwt, test_name, leg
     f = copy.deepcopy(correction_data)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    f['filing']['correction']['correctedFilingType'] = 'specialResolution'
     f['filing']['correction']['type'] = correction_type
 
     if test_name == 'no_roles':

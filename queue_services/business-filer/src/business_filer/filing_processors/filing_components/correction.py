@@ -257,6 +257,8 @@ def correct_corp_data_historical(business: Business,
         update_relationship_addresses(relationships, business)
         update_relationship_entity_info(relationships, business)
 
+    _update_share_structure(correction_filing, business)
+
     with suppress(IndexError, KeyError, TypeError):
         continuation_out = dpath.get(correction_filing, "/correction/continuationOut")
         if continuation_out:
@@ -363,10 +365,7 @@ def correct_corp_data(business: Business,
         update_relationship_entity_info(relationships, business)
         _set_lear_only(correction_filing, correction_filing_rec, relationships, business)
 
-    # update share structure and resolutions, if any
-    with suppress(IndexError, KeyError, TypeError):
-        share_structure = dpath.get(correction_filing, CORRECTION_SHARE_STRUCTURE_PATH)
-        shares.update_share_structure_correction(business, share_structure)
+    _update_share_structure(correction_filing, business)
 
     with suppress(IndexError, KeyError, TypeError):
         amalgamation = dpath.get(correction_filing, "/correction/amalgamation")
@@ -385,19 +384,22 @@ def update_continuation_in(business: Business, continuation_in: dict, filing_met
 
     country = continuation_in.get("country")
     region = continuation_in.get("region")
+    legal_name = continuation_in.get("legalName")
 
     if not (
         is_same_str(country, jurisdiction.country) and
-        is_same_str(region, jurisdiction.region)
+        is_same_str(region, jurisdiction.region) and
+        is_same_str(legal_name, jurisdiction.legal_name)
     ):
         filing_meta.correction["continuationIn"] = {
             "country": country,
-            "region": region
+            "region": region,
+            "legalName": legal_name
         }
 
     jurisdiction.country = country
     jurisdiction.region = region
-    jurisdiction.legal_name = continuation_in.get("legalName")
+    jurisdiction.legal_name = legal_name
     jurisdiction.identifier = continuation_in.get("identifier")
     incorporation_date = continuation_in.get("incorporationDate")
     jurisdiction.incorporation_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(incorporation_date)
@@ -545,6 +547,13 @@ def _update_addresses(offices_structure):
                 address = Address.find_by_id(updated_address.get("id"))
                 if address:
                     update_address(address, updated_address)
+
+
+def _update_share_structure(correction_filing: dict, business: Business):
+    """Update share structure and resolutions, if any."""
+    with suppress(IndexError, KeyError, TypeError):
+        share_structure = dpath.get(correction_filing, CORRECTION_SHARE_STRUCTURE_PATH)
+        shares.update_share_structure_correction(business, share_structure)
 
 
 def _set_lear_only(correction_filing: dict, filing_rec: Filing, relationships: list[dict], business: Business):
