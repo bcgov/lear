@@ -1059,11 +1059,12 @@ def _validate_relationship_date(date_value: date,
     return msg
 
 
-def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
+def validate_name_request(filing_json: dict,  # noqa: PLR0913 # pylint: disable=too-many-locals
                           legal_type: str,
                           filing_type: str,
                           accepted_request_types: list | None = None,
-                          filing_id: int | None = None) -> list:
+                          filing_id: int | None = None,
+                          accepted_legal_types: list | None = None) -> list:
     """Validate name request section."""
     nr_path = f"/filing/{filing_type}/nameRequest"
     nr_number_path = f"{nr_path}/nrNumber"
@@ -1108,7 +1109,7 @@ def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
 
     # ensure business type
     nr_legal_type = nr_response_json.get("legalType")
-    if legal_type != nr_legal_type:
+    if nr_legal_type not in (accepted_legal_types or [legal_type]):
         msg.append({"error": _("Name Request legal type is not same as the business legal type."),
                     "path": legal_type_path})
 

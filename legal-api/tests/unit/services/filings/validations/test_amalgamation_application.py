@@ -105,6 +105,40 @@ def test_invalid_nr_amalgamation(mocker, app, session):
 
 
 @pytest.mark.parametrize(
+    'test_name, legal_type, nr_legal_type, expected_msg',
+    [
+        ('SUCCESS_BC_NR_BC', Business.LegalTypes.COMP.value, Business.LegalTypes.COMP.value, None),
+        ('SUCCESS_BEN_NR_BEN', Business.LegalTypes.BCOMP.value, Business.LegalTypes.BCOMP.value, None),
+        ('SUCCESS_BEN_NR_BC', Business.LegalTypes.BCOMP.value, Business.LegalTypes.COMP.value, None),
+        ('SUCCESS_BC_NR_BEN', Business.LegalTypes.COMP.value, Business.LegalTypes.BCOMP.value, None),
+        ('FAIL_BC_NR_ULC', Business.LegalTypes.COMP.value, Business.LegalTypes.BC_ULC_COMPANY.value,
+         'Name Request legal type is not same as the business legal type.'),
+        ('FAIL_ULC_NR_BC', Business.LegalTypes.BC_ULC_COMPANY.value, Business.LegalTypes.COMP.value,
+         'Name Request legal type is not same as the business legal type.'),
+        ('FAIL_CC_NR_BEN', Business.LegalTypes.BC_CCC.value, Business.LegalTypes.BCOMP.value,
+         'Name Request legal type is not same as the business legal type.'),
+    ]
+)
+def test_amalgamation_nr_legal_type(mocker, app, session, test_name, legal_type, nr_legal_type, expected_msg):
+    """Assert a BC or BEN resulting business accepts an NR of either type; other mismatches are rejected."""
+    filing = _get_amalg_template()
+    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = legal_type
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_amalgamating_businesses',
+                 return_value=[])
+    with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response(nr_legal_type)):
+        err = validate(None, filing)
+
+    if expected_msg:
+        assert err.code == HTTPStatus.BAD_REQUEST
+        assert lists_are_equal(err.msg, [{'error': expected_msg,
+                                          'path': '/filing/amalgamationApplication/nameRequest/legalType'}])
+    else:
+        assert err is None
+
+
+@pytest.mark.parametrize(
     'amalgamation_type',
     [
         Amalgamation.AmalgamationTypes.horizontal.name,
