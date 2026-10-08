@@ -789,6 +789,9 @@ def format_users_data(users_data: list) -> list:
         user = {
             **user,
             'username': username,
+            'firstname': x.get('u_first_name'),
+            'middlename': x.get('u_middle_name'),
+            'lastname': x.get('u_last_name'),
             'email': x['u_email_addr'],
             'creation_date': x['earliest_event_dt_str']
         }
