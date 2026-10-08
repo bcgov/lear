@@ -85,7 +85,7 @@ class ContOut:
             )
 
         except Exception as err:
-            current_app.logger.error(f'Error inserting cont_out for event {cont_out_obj.event_id}.')
+            current_app.logger.error(f'Error inserting cont_out for event {cont_out_obj.start_event_id}.')
             raise err
 
     @classmethod

@@ -547,7 +547,7 @@ class BusinessDocument:
             region = None
             if region_code and region_code.upper() != "FEDERAL":
                 region = pycountry.subdivisions.get(code=f"{country_code}-{region_code}")
-            filing_info["jurisdiction"] = f"{region.name}, {country.name}" if region else country.name
+            filing_info["jurisdiction"] = region.name if region else country.name
             filing_info["foreignLegalName"] = filing_meta["continuationOut"]["legalName"]
             continuation_out_date = LegislationDatetime.as_legislation_timezone_from_date_str(
                 filing_meta["continuationOut"]["continuationOutDate"])
@@ -576,34 +576,56 @@ class BusinessDocument:
         if filings:
             amalgamation_application = filings[0]
             business["business"]["amalgamatedEntity"] = True
-            if (self._epoch_filing_date and amalgamation_application.effective_date < self._epoch_filing_date) or\
-                    (self._tombstone_filing_date and
-                     amalgamation_application.effective_date < self._tombstone_filing_date):
+            if self._is_imported_amalgamation(amalgamation_application):
                 # imported from COLIN
-                amalgamated_businesses_info = {
+                amalgamated_businesses.append({
                     "legalName": "N/A",
                     "identifier": "N/A",
                     "jurisdiction": "N/A"
-                }
-                amalgamated_businesses.append(amalgamated_businesses_info)
+                })
             else:
-                amalgamation = Amalgamation.get_revision(amalgamation_application.transaction_id,
-                                                         amalgamation_application.business_id)
-                amalgamating_businesses = AmalgamatingBusiness.get_revision(amalgamation_application.transaction_id,
-                                                                            amalgamation.id)
-                for amalgamating_business in amalgamating_businesses:
-                    ting_business = None
-                    if not (foreign_name := amalgamating_business.foreign_name):
-                        ting_business = VersionedBusinessDetailsService.get_business_revision_obj(amalgamation_application,
-                                                                                                  amalgamating_business.business_id)
-                    amalgamated_businesses_info = get_formatted_amalg_business_data(amalgamating_business.foreign_identifier,
-                                                                                    foreign_name,
-                                                                                    amalgamating_business.foreign_jurisdiction,
-                                                                                    amalgamating_business.foreign_jurisdiction_region,
-                                                                                    ting_business)
-                    amalgamated_businesses.append(amalgamated_businesses_info)
+                if amalgamation := self._business.amalgamation.first():
+                    amalgamating_businesses = amalgamation.amalgamating_businesses.all()
+                else:
+                    # fallback: if an amalgamation was dissolved through an admin dissolution
+                    # (then the amalgamation record exist only in version table)
+                    recent_filing = Filing.get_most_recent_filing(self._business.id)
+                    amalgamation = Amalgamation.get_revision(recent_filing.transaction_id, self._business.id)
+                    amalgamating_businesses = AmalgamatingBusiness.get_revision(recent_filing.transaction_id,
+                                                                                amalgamation.id)
+                amalgamated_businesses = [
+                    self._amalgamating_business_data(amalgamation_application, amalgamating_business)
+                    for amalgamating_business in amalgamating_businesses
+                ]
 
         business["amalgamatedEntities"] = amalgamated_businesses
+
+    def _is_imported_amalgamation(self, amalgamation_application: Filing) -> bool:
+        """Return whether the amalgamation predates this business's COLIN import/tombstone migration."""
+        effective_date = amalgamation_application.effective_date
+        return bool(
+            (self._epoch_filing_date and effective_date < self._epoch_filing_date) or
+            (self._tombstone_filing_date and effective_date < self._tombstone_filing_date)
+        )
+
+    @staticmethod
+    def _amalgamating_business_data(amalgamation_application: Filing,
+                                    amalgamating_business: AmalgamatingBusiness) -> dict:
+        """Return one amalgamating business's formatted report data."""
+        ting_business = None
+        identifier = amalgamating_business.foreign_identifier
+        if not (foreign_name := amalgamating_business.foreign_name):
+            if amalgamating_business.colin_identifier:
+                # a COLIN business not loaded in LEAR - name is resolved from COLIN
+                identifier = amalgamating_business.colin_identifier
+            else:
+                ting_business = VersionedBusinessDetailsService.get_business_revision_obj(
+                    amalgamation_application, amalgamating_business.business_id)
+        return get_formatted_amalg_business_data(identifier,
+                                                 foreign_name,
+                                                 amalgamating_business.foreign_jurisdiction,
+                                                 amalgamating_business.foreign_jurisdiction_region,
+                                                 ting_business)
 
     def _set_amalgamating_details(self, business: dict):
         if ("amalgamatedInto" in business["business"]) and business.get("amalgamatedEntities"):
@@ -627,7 +649,7 @@ class BusinessDocument:
             region = None
             if region_code and region_code.upper() != "FEDERAL":
                 region = pycountry.subdivisions.get(code=f"{country_code}-{region_code}")
-            filing_info["jurisdiction"] = f"{region.name}, {country.name}" if region else country.name
+            filing_info["jurisdiction"] = region.name if region else country.name
             filing_info["foreignLegalName"] = filing_meta["amalgamationOut"]["legalName"]
             amalgamation_out_date = LegislationDatetime.as_legislation_timezone_from_date_str(
                 filing_meta["amalgamationOut"]["amalgamationOutDate"])
@@ -673,7 +695,7 @@ class BusinessDocument:
                 region = None
                 if region_code and region_code.upper() != "FEDERAL":
                     region = pycountry.subdivisions.get(code=f"{country_code}-{region_code}")
-                location_jurisdiction = f"{region.name}, {country.name}" if region else country.name
+                location_jurisdiction = region.name if region else country.name
 
             # Format incorporation date
             if jurisdiction.incorporation_date:

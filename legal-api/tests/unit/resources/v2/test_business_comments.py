@@ -47,6 +47,22 @@ def test_get_all_business_comments_no_results(session, client, jwt):
     assert 0 == len(rv.json.get('comments'))
 
 
+def test_get_tramway_business_comments(session, client, jwt):
+    """Assert tramway identifiers use normal business lookup (not temp-reg path)."""
+    identifier = 'TMY0000008'
+    # TMY identifiers don't pass the standard CP/BC/FM validate_identifier check.
+    # Use a valid placeholder then set _identifier directly.
+    b = factory_business('CP0000002', entity_type='TMY')
+    b._identifier = identifier
+    b.save()
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/comments',
+                    headers=create_header(jwt, [STAFF_ROLE]))
+
+    assert HTTPStatus.OK == rv.status_code
+    assert [] == rv.json.get('comments')
+
+
 def test_get_all_business_comments_only_one(session, client, jwt):
     """Assert that a list of comments with a single comment is returned correctly."""
     identifier = 'CP7654321'

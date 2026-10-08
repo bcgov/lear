@@ -24,6 +24,7 @@ import pytest
 from business_model.models import Amalgamation, AmalgamatingBusiness, Business, Jurisdiction
 from business_model.utils.legislation_datetime import LegislationDatetime
 from legal_api.services.authz import PUBLIC_USER, STAFF_ROLE
+from legal_api.services.colin import ColinService
 from registry_schemas.example_data import (
     AMALGAMATION_APPLICATION,
     AMALGAMATION_OUT,
@@ -114,6 +115,77 @@ def test_get_business_extended_amalgamation(app, session, client, jwt, for_corre
 
     assert rv.status_code == HTTPStatus.OK
     assert rv.json['amalgamation'] == data
+
+
+@pytest.mark.parametrize('for_correction', [True, False])
+def test_get_business_extended_amalgamation_colin_ting(app, session, client, jwt, monkeypatch, for_correction):
+    """Assert a COLIN amalgamating business is queried by identifier and uses its name from COLIN for corrections."""
+    identifier = 'BC7654321'
+    colin_identifier = 'BC5556667'
+    business = factory_business(identifier, entity_type='BC')
+
+    filing_json = copy.deepcopy(FILING_HEADER)
+    filing_json['filing']['amalgamationApplication'] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing_json['filing']['header']['name'] = 'amalgamationApplication'
+    filing = factory_completed_filing(business, filing_json)
+
+    amalgamation = Amalgamation(
+        amalgamation_type=Amalgamation.AmalgamationTypes.regular,
+        amalgamation_date=LegislationDatetime.now(),
+        court_approval=False,
+        filing_id=filing.id,
+        business_id=business.id,
+    )
+    amalgamation.save()
+
+    ting = AmalgamatingBusiness(
+        role=AmalgamatingBusiness.Role.amalgamating,
+        colin_identifier=colin_identifier,
+        amalgamation_id=amalgamation.id
+    )
+    ting.save()
+
+    colin_call_count = {'count': 0}
+    mailing_address = {
+        'streetAddress': '123 Fake St',
+        'streetAddressAdditional': None,
+        'addressCity': 'Victoria',
+        'addressRegion': 'BC',
+        'addressCountry': 'CA',
+        'postalCode': 'V8V 8V8',
+        'deliveryInstructions': None
+    }
+
+    def mock_colin_snapshot(id_):
+        colin_call_count['count'] += 1
+        assert id_ == colin_identifier
+        return {
+            'business': {'legalName': 'Colin Corp Ltd.', 'legalType': 'BC', 'jurisdiction': 'BC'},
+            'offices': {'registeredOffice': {'mailingAddress': mailing_address}}
+        }, HTTPStatus.OK
+
+    # staticmethod: the endpoint calls get_snapshot through the colin singleton instance,
+    # so a bare function would get bound and receive the instance as its argument
+    monkeypatch.setattr(ColinService, 'get_snapshot', staticmethod(mock_colin_snapshot))
+
+    query_string = '?forCorrection=true' if for_correction else ''
+    rv = client.get(f'/api/v2/businesses/{identifier}/extended/amalgamationApplication{query_string}',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier)
+                    )
+
+    assert rv.status_code == HTTPStatus.OK
+    expected_entry = {
+        'id': ting.id,
+        'role': 'amalgamating',
+        'identifier': colin_identifier
+    }
+    if for_correction:
+        expected_entry['legalName'] = 'Colin Corp Ltd.'
+        expected_entry['legalType'] = 'BC'
+        expected_entry['jurisdiction'] = 'BC'
+        expected_entry['mailingAddress'] = mailing_address
+    assert rv.json['amalgamation']['amalgamatingBusinesses'] == [expected_entry]
+    assert colin_call_count['count'] == (1 if for_correction else 0)
 
 
 def test_get_business_extended_bad_request(app, session, client, jwt):

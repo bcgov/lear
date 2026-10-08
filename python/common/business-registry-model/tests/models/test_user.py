@@ -28,6 +28,14 @@ from business_model.models import User
 def create_sub():
     return base64.urlsafe_b64encode(uuid.uuid4().bytes).decode().replace('=', '')
 
+
+def _set_jwt_oidc_claim_config(app, monkeypatch):
+    """Configure the JWT claim names so token claims map onto the User attributes."""
+    monkeypatch.setitem(app.config, 'JWT_OIDC_USERNAME', 'username')
+    monkeypatch.setitem(app.config, 'JWT_OIDC_FIRSTNAME', 'firstname')
+    monkeypatch.setitem(app.config, 'JWT_OIDC_LASTNAME', 'lastname')
+
+
 def test_user(session):
     """Assert that a User can be stored in the service.
 
@@ -101,6 +109,136 @@ def test_get_or_create_user_by_jwt_invlaid_jwt(session):
         User.get_or_create_user_by_jwt(token)
 
     assert excinfo.value.error == 'unable_to_get_or_create_user'
+
+
+def test_get_or_create_user_by_jwt_creates_new_user_with_token_claims(session, app, monkeypatch):
+    """Assert that a brand new user is created and populated from the JWT claims."""
+    _set_jwt_oidc_claim_config(app, monkeypatch)
+    idp_userid = create_sub()
+    token = {'username': 'newusername',
+             'firstname': 'New',
+             'lastname': 'User',
+             'iss': 'iss',
+             'sub': create_sub(),
+             'idp_userid': idp_userid,
+             'loginSource': 'BCSC'
+             }
+
+    u = User.get_or_create_user_by_jwt(token)
+
+    assert u.id is not None
+    assert u.username == 'newusername'
+    assert u.firstname == 'New'
+    assert u.lastname == 'User'
+
+
+@pytest.mark.parametrize('test_name, attribute', [
+    ('firstname changed', 'firstname'),
+    ('lastname changed', 'lastname'),
+    ('username changed', 'username'),
+])
+def test_get_or_create_user_by_jwt_syncs_changed_claim(session, app, monkeypatch, test_name, attribute):
+    """Assert that an existing user's stored attribute is refreshed when the JWT claim has changed."""
+    _set_jwt_oidc_claim_config(app, monkeypatch)
+    idp_userid = create_sub()
+    user = User(username='username', firstname='firstname', lastname='lastname',
+                sub=create_sub(), iss='iss', idp_userid=idp_userid, login_source='IDIR')
+    session.add(user)
+    session.commit()
+    user_id = user.id
+
+    token = {'username': 'username', 'firstname': 'firstname', 'lastname': 'lastname',
+             'iss': 'iss', 'sub': create_sub(), 'idp_userid': idp_userid, 'loginSource': 'IDIR'}
+    token[attribute] = 'updated_value'
+
+    u = User.get_or_create_user_by_jwt(token)
+
+    assert u.id == user_id
+    assert getattr(u, attribute) == 'updated_value'
+
+
+def test_get_or_create_user_by_jwt_leaves_matching_claims_unchanged(session, app, monkeypatch):
+    """Assert that an existing user's attributes are left unchanged when the JWT claims already match."""
+    _set_jwt_oidc_claim_config(app, monkeypatch)
+    idp_userid = create_sub()
+    user = User(username='username', firstname='firstname', lastname='lastname',
+                sub=create_sub(), iss='iss', idp_userid=idp_userid, login_source='IDIR')
+    session.add(user)
+    session.commit()
+    user_id = user.id
+
+    token = {'username': 'username', 'firstname': 'firstname', 'lastname': 'lastname',
+             'iss': 'iss', 'sub': create_sub(), 'idp_userid': idp_userid, 'loginSource': 'IDIR'}
+
+    u = User.get_or_create_user_by_jwt(token)
+
+    assert u.id == user_id
+    assert u.username == 'username'
+    assert u.firstname == 'firstname'
+    assert u.lastname == 'lastname'
+
+
+def test_get_or_create_user_by_jwt_preserves_stored_values_when_claims_missing(session, app, monkeypatch):
+    """Assert that stored name values survive a token with no name claims (eg. a service account)."""
+    _set_jwt_oidc_claim_config(app, monkeypatch)
+    idp_userid = create_sub()
+    user = User(username='username', firstname='firstname', lastname='lastname',
+                sub=create_sub(), iss='iss', idp_userid=idp_userid, login_source='IDIR')
+    session.add(user)
+    session.commit()
+    user_id = user.id
+
+    # service-account style token: no username/firstname/lastname claims present
+    token = {'iss': 'iss', 'sub': create_sub(), 'idp_userid': idp_userid, 'loginSource': 'system'}
+
+    u = User.get_or_create_user_by_jwt(token)
+
+    assert u.id == user_id
+    assert u.username == 'username'
+    assert u.firstname == 'firstname'
+    assert u.lastname == 'lastname'
+
+
+def test_get_or_create_user_by_jwt_split_name_is_not_stale(session, app, monkeypatch):
+    """Assert that a record splitting the same name differently is left untouched."""
+    _set_jwt_oidc_claim_config(app, monkeypatch)
+    idp_userid = create_sub()
+    user = User(username='username', firstname='Joe', middlename='P', lastname='Swanson',
+                sub=create_sub(), iss='iss', idp_userid=idp_userid, login_source='BCSC')
+    session.add(user)
+    session.commit()
+    user_id = user.id
+
+    token = {'username': 'username', 'firstname': 'Joe P', 'lastname': 'Swanson',
+             'iss': 'iss', 'sub': create_sub(), 'idp_userid': idp_userid, 'loginSource': 'BCSC'}
+
+    u = User.get_or_create_user_by_jwt(token)
+
+    assert u.id == user_id
+    assert u.firstname == 'Joe'
+    assert u.middlename == 'P'
+    assert u.lastname == 'Swanson'
+
+
+def test_get_or_create_user_by_jwt_name_change_clears_middlename(session, app, monkeypatch):
+    """Assert that a genuine name change replaces the whole stored name, middlename included."""
+    _set_jwt_oidc_claim_config(app, monkeypatch)
+    idp_userid = create_sub()
+    user = User(username='username', firstname='Joe', middlename='P', lastname='Swanson',
+                sub=create_sub(), iss='iss', idp_userid=idp_userid, login_source='BCSC')
+    session.add(user)
+    session.commit()
+    user_id = user.id
+
+    token = {'username': 'username', 'firstname': 'Joseph P', 'lastname': 'Swanson',
+             'iss': 'iss', 'sub': create_sub(), 'idp_userid': idp_userid, 'loginSource': 'BCSC'}
+
+    u = User.get_or_create_user_by_jwt(token)
+
+    assert u.id == user_id
+    assert u.firstname == 'Joseph P'
+    assert u.middlename is None
+    assert u.lastname == 'Swanson'
 
 
 def test_create_from_jwt_token_no_token(session):

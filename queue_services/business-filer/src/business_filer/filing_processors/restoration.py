@@ -34,12 +34,12 @@
 """File processing rules and actions for the restoration on filing."""
 
 from contextlib import suppress
+from datetime import UTC
 
 import dpath
+from business_common.utils import LegislationDatetime, datetime
 from business_model.models import Business, Filing, PartyRole
 
-from business_filer.common.datetime import datetime, timezone
-from business_filer.common.legislation_datetime import LegislationDatetime
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import business_info, filings
 from business_filer.filing_processors.filing_components.aliases import update_aliases
@@ -110,7 +110,7 @@ def process(business: Business, filing: dict, filing_rec: Filing, filing_meta: F
 
 def cease_custodian(business: Business):
     """Cease custodian if exist."""
-    end_date_time = datetime.now(timezone.utc)
+    end_date_time = datetime.now(UTC)
     custodian_party_roles = PartyRole.get_party_roles(business.id,
                                                       end_date_time.date(),
                                                       PartyRole.RoleTypes.CUSTODIAN.value)

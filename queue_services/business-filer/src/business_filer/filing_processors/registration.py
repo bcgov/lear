@@ -34,9 +34,9 @@
 """File processing rules and actions for the registration of a business."""
 import copy
 
+from business_common.utils import LegislationDatetime
 from business_model.models import Business, Filing
 
-from business_filer.common.legislation_datetime import LegislationDatetime
 from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import business_info, filings

@@ -36,13 +36,12 @@ from contextlib import suppress
 from datetime import UTC
 
 import dpath
+from business_common.utils import LegislationDatetime, datetime
 from business_model.models import BatchProcessing, Business, Document, DocumentType, Filing, db
+from business_model.models.types.filings import DissolutionSubTypes as DissolutionTypes
 from datedelta import datedelta
 from flask import current_app
 
-from business_filer.common.datetime import datetime, timezone
-from business_filer.common.filing import DissolutionTypes
-from business_filer.common.legislation_datetime import LegislationDatetime
 from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import filings
@@ -74,6 +73,18 @@ def process(business: Business, filing: dict, filing_rec: Filing, filing_meta: F
     business.dissolution_date = dissolution_date
 
     if dissolution_type == DissolutionTypes.ADMINISTRATIVE and (amalgamation := business.amalgamation.one_or_none()):
+        # If an amalgamation is dissolved through an administrative dissolution,
+        # its record will exist only in the version table.
+
+        # Rationale: A court order can admin dissolve an amalgamation and restore each of the amalgamating businesses
+        # (staff do that through putbackon filing). Because there is no dedicated filing for this scenario,
+        # the business chose to handle it through the generic admin dissolution filing.
+
+        # Known limitation: This is a generic admin dissolution flow. If an admin dissolution is filed for a
+        # different reason, this logic may still remove the amalgamation record, which is not ideal.
+        # The business accepted this risk when the implementation was introduced.
+
+        # Suggestion: Introduce a field in admin dissolution filing to specify if the amalgamation should be removed.
         for amalgamating_business in amalgamation.amalgamating_businesses.all():
             db.session.delete(amalgamating_business)
         db.session.delete(amalgamation)
@@ -110,7 +121,7 @@ def process(business: Business, filing: dict, filing_rec: Filing, filing_meta: F
         for batch_processing in batch_processings:
             if batch_processing.status == BatchProcessing.BatchProcessingStatus.QUEUED:
                 batch_processing.status = BatchProcessing.BatchProcessingStatus.COMPLETED
-                batch_processing.last_modified = datetime.now(timezone.utc)
+                batch_processing.last_modified = datetime.now(UTC)
                 batch_processing.save()
 
 

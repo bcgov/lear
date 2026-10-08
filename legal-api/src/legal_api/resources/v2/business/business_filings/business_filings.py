@@ -37,6 +37,7 @@ from werkzeug.local import LocalProxy
 import legal_api.reports
 from business_common.utils import datetime
 from business_common.utils.legislation_datetime import LegislationDatetime
+from business_common.utils.relationship_director import cod_directors, is_change_free
 from business_model.models import (
     Address,
     Business,
@@ -99,7 +100,9 @@ class FilingModel(BaseModel, Generic[FilingT]):
 @pydantic_validate(query=QueryModel)
 def get_filings(identifier: str, filing_id: int | None = None):
     """Return a JSON object with meta information about the Filing Submission."""
-    if filing_id or identifier.startswith("T"):
+    # Temp bootstrap ids start with "T" (e.g. Tabc12XyZ9). Real tramways are TMY + 7 digits
+    # (e.g. TMY0000008) — exclude only that shape so random temps like TMYHLpcaq7 stay temp.
+    if filing_id or (identifier.startswith("T") and not re.fullmatch(r"TMY\d{7}", identifier)):
         if str(request.args.get("public", None)).lower() == "true":
             return ListFilingResource.get_single_filing_public_json(filing_id)
 
@@ -155,7 +158,7 @@ def saving_filings(body: FilingModel,  # noqa: PLR0911, PLR0912
             business_validate = RegistrationBootstrap.find_by_identifier(identifier)
         else:
             business_validate = business
-        err = validate(business_validate, json_input, payment_account_id)
+        err = validate(business_validate, json_input, payment_account_id, filing_id=filing_id)
         if err or query.only_validate:
             if err:
                 json_input["errors"] = err.msg
@@ -873,14 +876,9 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
     @staticmethod
     def get_filing_types_for_cod(filing_json: dict, legal_type: str, filing_type_code: str) -> str:
         """Get the change of director filing type fee code."""
-        free = True
-        free_changes = ["nameChanged", "addressChanged"]
-        for director in filing_json["filing"]["changeOfDirectors"].get("directors"):
-            # if changes other than name/address change then this is not a free filing
-            if not all(change in free_changes for change in director.get("actions", [])):
-                free = False
-                break
-        if free:
+        directors = cod_directors(filing_json["filing"]["changeOfDirectors"])
+        # if changes other than name/address change then this is not a free filing
+        if all(is_change_free(director) for director in directors):
             filing_type_code = Filing.FILINGS["changeOfDirectors"]["free"]["codes"].get(legal_type)
 
         return filing_type_code
@@ -1150,14 +1148,20 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
                      .get("dissolution", {})
                      .get("affidavitFileKey", None)):
             ListFilingResource.delete_uploaded_file(affidavit_file_key)
-        elif filing_type == Filing.FILINGS["courtOrder"].get("name") \
-                and (file_key := filing_json
-                     .get("filing", {})
-                     .get("courtOrder", {})
-                     .get("fileKey", None)):
-            ListFilingResource.delete_uploaded_file(file_key)
+        elif filing_type == Filing.FILINGS["courtOrder"].get("name"):
+            ListFilingResource.delete_court_order_files(filing_json)
         elif filing_type == Filing.FILINGS["continuationIn"].get("name"):
             ListFilingResource.delete_continuation_in_files(filing_json)
+
+    @staticmethod
+    def delete_court_order_files(filing_json: dict):
+        """Delete court order files from DRS."""
+        if file_key := filing_json.get("filing", {}).get("courtOrder", {}).get("fileKey", None):
+            ListFilingResource.delete_uploaded_file(file_key)
+        elif files := filing_json.get("filing", {}).get("courtOrder", {}).get("files", []):
+            for file in files:
+                if (file_key := file.get("fileKey")):
+                    ListFilingResource.delete_uploaded_file(file_key)
 
     @staticmethod
     def delete_continuation_in_files(filing_json: dict):

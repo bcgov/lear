@@ -7,8 +7,10 @@
       <table class="section-data section-data-table mt-4">
           <div class="section-data mt-4">
             <div class="title">
-              <span class="upper-text section-sub-title">{{ receiver.officer.lastName }}</span>,
-              <span class="upper-text section-sub-title">{{ receiver.officer.firstName }}</span>
+              <span class="upper-text section-sub-title">{{ receiver.officer.lastName }}</span>
+              {% if receiver.officer.firstName %}
+                , <span class="upper-text section-sub-title">{{ receiver.officer.firstName }}</span>
+              {% endif %}
             </div>
           </div>
           <tr class="no-page-break">
@@ -62,8 +64,10 @@
       <table class="section-data section-data-table mt-4">
           <div class="section-data mt-4">
             <div class="title">
-              <span class="upper-text section-sub-title">{{ receiver.officer.lastName }}</span>,
-              <span class="upper-text section-sub-title">{{ receiver.officer.firstName }}</span>
+              <span class="upper-text section-sub-title">{{ receiver.officer.lastName }}</span>
+              {% if receiver.officer.firstName %}
+                , <span class="upper-text section-sub-title">{{ receiver.officer.firstName }}</span>
+              {% endif %}
             </div>
           </div>
           <tr class="no-page-break">
@@ -119,8 +123,10 @@
       <table class="section-data section-data-table mt-4">
           <div class="section-data mt-4">
             <div class="title">
-              <span class="upper-text section-sub-title">{{ receiver.officer.lastName }}</span>,
-              <span class="upper-text section-sub-title">{{ receiver.officer.firstName }}</span>
+              <span class="upper-text section-sub-title">{{ receiver.officer.lastName }}</span>
+              {% if receiver.officer.firstName %}
+                , <span class="upper-text section-sub-title">{{ receiver.officer.firstName }}</span>
+              {% endif %}
             </div>
           </div>
           <tr class="no-page-break">

@@ -151,6 +151,16 @@ class FilingInfo(Resource):
 
             # Filter out null-values in the filing_list dictionary
             filing_list = {k: v for k, v in filing_list.items() if v}
+
+            if legal_type == Business.TypeCodes.COOP.value:
+                # not implemented for coops - fail the whole filing so it stays unsynced and
+                # blocks the coop's later filings from syncing out of order
+                if 'alteration' in filing_list:
+                    raise GenericException('alteration of a COOP is not implemented!',
+                                           HTTPStatus.NOT_IMPLEMENTED)
+                if json_data.get('changeOfName'):
+                    raise GenericException('changeOfName of a COOP is not implemented!',
+                                           HTTPStatus.NOT_IMPLEMENTED)
             try:
                 # get db connection and start a session, in case we need to roll back
                 con = DB.connection
@@ -208,6 +218,13 @@ class FilingInfo(Resource):
                 if con:
                     con.rollback()
                 raise db_err
+
+        except GenericException as err:  # pylint: disable=duplicate-code
+            current_app.logger.error(str(err))
+            return jsonify({
+                'message': f'Error when trying to file for business {identifier}',
+                'error': err.error
+            }), err.status_code
 
         except Exception as err:  # pylint: disable=broad-except; want to catch all errors
             # general catch-all exception

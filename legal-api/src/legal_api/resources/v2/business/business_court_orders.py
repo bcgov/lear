@@ -17,7 +17,8 @@ from http import HTTPStatus
 from flask import current_app, jsonify, url_for
 from flask_cors import cross_origin
 
-from business_model.models import Business, CourtOrder, Document, DocumentType, Filing
+from business_model.models import Business, CourtOrder, Filing
+from business_model.models.types.filings import FilingTypes
 from legal_api.services import authorized
 from legal_api.utils.auth import jwt
 
@@ -47,26 +48,29 @@ def get_court_orders(identifier, court_order_id=None):
         return jsonify(court_order), code
 
     court_orders_list = CourtOrder.get_json_with_filing_type(business.id)
+    for court_order in court_orders_list:
+        _include_court_order_files(court_order, business)
     return jsonify({
         "courtOrders": court_orders_list
     }), HTTPStatus.OK
 
 
-def _get_court_order(business, court_order_id=None):
+def _get_court_order(business, court_order_id):
     if court_order := CourtOrder.get_by_id(court_order_id):
         court_order_json = court_order.json
-        filing = Filing.find_by_id(court_order.filing_id)
-        if filing.filing_type == "courtOrder":
-            _include_court_order_files(court_order_json, filing, business)
+        _include_court_order_files(court_order_json, business)
 
         return {"courtOrder": court_order_json}, HTTPStatus.OK
 
     return {"message": f"{business.identifier} court order not found"}, HTTPStatus.NOT_FOUND
 
 
-def _include_court_order_files(court_order_json, filing, business):
-    documents = Document.find_all_by(filing.id, DocumentType.COURT_ORDER.value)
-    if documents:
+def _include_court_order_files(court_order_json, business):
+    filing = Filing.find_by_id(court_order_json["filingId"])
+    if filing.filing_type != FilingTypes.COURTORDER:
+        return
+
+    if documents := filing.documents.all():
         base_url = current_app.config.get("BUSINESS_API_GW_URL")
         doc_url = url_for(
             "API2.get_documents",
@@ -83,5 +87,6 @@ def _include_court_order_files(court_order_json, filing, business):
                 "fileName": file_name,
                 "fileKey": doc.file_key,
                 "url": f"{base_url}{doc_url}/static/{doc.file_key}",
+                "documentType": doc.type
             })
         court_order_json["files"] = files

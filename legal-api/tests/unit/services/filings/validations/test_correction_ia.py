@@ -13,6 +13,7 @@
 # limitations under the License.
 """Test Correction IA validations."""
 
+import uuid
 import copy
 import datedelta
 import pycountry
@@ -23,7 +24,16 @@ from unittest.mock import patch
 
 import pytest
 
-from business_model.models import AmalgamatingBusiness, Amalgamation, Business, CourtOrder, Resolution
+from business_model.models import (
+    AmalgamatingBusiness,
+    Amalgamation,
+    Business,
+    CourtOrder,
+    Document,
+    DocumentType,
+    PartyRole,
+    Resolution
+)
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_common.utils.datetime import datetime as dt, timedelta
 from legal_api.services import NameXService
@@ -36,12 +46,19 @@ from registry_schemas.example_data import (
     CONTINUATION_IN_FILING_TEMPLATE,
     CONTINUATION_OUT,
     COURT_ORDER_FILING_TEMPLATE,
+    DISSOLUTION,
     FILING_HEADER,
     INCORPORATION_FILING_TEMPLATE
 )
 
 from tests.unit import MockResponse
-from tests.unit.models import factory_business, factory_completed_filing
+from tests.unit.models import (
+    factory_address,
+    factory_business,
+    factory_completed_filing,
+    factory_jurisdiction,
+    factory_party_role
+)
 from tests.unit.services.filings.validations import lists_are_equal
 from tests.unit.services.utils import jwt_request_context
 
@@ -290,6 +307,7 @@ def test_correction_share_class_series_validation(session, app, jwt, legal_type,
     filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
     filing['filing']['business']['legalType'] = legal_type
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
 
     if legal_type == 'CC':
         director = copy.deepcopy(filing['filing']['correction']['parties'][0])
@@ -315,42 +333,8 @@ def test_correction_share_class_series_validation(session, app, jwt, legal_type,
 NOW = datetime(2025, 1, 1, 12, 0, tzinfo=timezone.utc)
 FOUNDING_DATE = NOW - datedelta.YEAR
 
-@pytest.mark.parametrize(
-    'test_name, has_rights_or_restrictions, has_series, resolution_dates, expected_code, expected_msg',
-    [
-        ('SUCCESS_class_has_rights', True, False, ['2024-01-01'], None, None),
-        ('SUCCESS_class_no_rights', False, False, [], None, None),
-        ('SUCCESS_series_has_rights', True, True, ['2024-01-01'], None, None),
-        ('SUCCESS_series_no_rights', False, False, [], None, None),
-
-        ('FAILURE_class_missing_date', True, False, [], HTTPStatus.BAD_REQUEST, [
-            {'error': 'Resolution date is required when hasRightsOrRestrictions is true.',
-             'path': '/filing/correction/shareStructure/resolutionDates'}
-        ]),
-        ('FAILURE_series_missing_date', False, True, [], HTTPStatus.BAD_REQUEST, [
-            {'error': 'Resolution date is required when hasRightsOrRestrictions is true.',
-             'path': '/filing/correction/shareStructure/resolutionDates'}
-        ]),
-
-        ('FAILURE_too_many_dates', True, False, ['2024-01-01', '2024-02-01'], HTTPStatus.BAD_REQUEST, [
-            {'error': 'Only one resolution date is permitted.',
-             'path': '/filing/correction/shareStructure/resolutionDates'}
-        ]),
-
-        ('FAILURE_future_date', True, False, [(NOW + datedelta.DAY).date().isoformat()], HTTPStatus.BAD_REQUEST, [
-            {'error': 'Resolution date cannot be in the future.',
-             'path': '/filing/correction/shareStructure/resolutionDates'}
-        ]),
-
-        ('FAILURE_before_founding', True, False, [(FOUNDING_DATE - datedelta.DAY).date().isoformat()], HTTPStatus.BAD_REQUEST, [
-            {'error': 'Resolution date cannot be before the business founding date.',
-             'path': '/filing/correction/shareStructure/resolutionDates'}
-        ]),
-    ]
-)
-def test_correction_resolution_date_old(session, app, jwt, test_name, has_rights_or_restrictions,
-                                    has_series, resolution_dates, expected_code, expected_msg):
-    """Test share class/series resolution date validation in correction filings."""
+def test_correction_resolution_date_old_format_rejected(session, app, jwt):
+    """Assert the legacy string resolutionDates format is rejected by the schema."""
     identifier = 'BC1234567'
     business = factory_business(identifier, entity_type='BC')
     business.founding_date = FOUNDING_DATE
@@ -361,37 +345,19 @@ def test_correction_resolution_date_old(session, app, jwt, test_name, has_rights
     filing['filing']['header']['identifier'] = identifier
     filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
 
-    # Share structure setup
     filing['filing']['correction']['shareStructure'] = copy.deepcopy(
         INCORPORATION_FILING_TEMPLATE['filing']['incorporationApplication'].get('shareStructure', {})
     )
-    share_class = filing['filing']['correction']['shareStructure']['shareClasses'][0]
-    share_class['hasRightsOrRestrictions'] = has_rights_or_restrictions
-
-    # Series handling
-    if has_series:
-        share_class['series'] = share_class.get('series', [{}])
-        share_class['series'][0]['hasRightsOrRestrictions'] = True
-    else:
-        share_class.pop('series', None)
-
-    filing['filing']['correction']['shareStructure']['resolutionDates'] = resolution_dates
-
-    # Remove the second share class if it exists
-    share_classes = filing['filing']['correction']['shareStructure']['shareClasses']
-    if len(share_classes) > 1:
-        share_classes.pop(1)
+    filing['filing']['correction']['shareStructure']['resolutionDates'] = ['2024-01-01']
 
     with freeze_time(NOW):
         with jwt_request_context(app, jwt, [BASIC_USER]):
             err = validate(business, filing)
 
-    if expected_code:
-        assert err
-        assert any(expected_msg[0]['error'] in e['error'] for e in err.msg)
-    else:
-        assert err is None
+    assert err
+    assert any("is not of type 'object'" in e['error'] for e in err.msg)
 
 
 @pytest.mark.parametrize(
@@ -402,15 +368,6 @@ def test_correction_resolution_date_old(session, app, jwt, test_name, has_rights
         ('SUCCESS_series_has_rights', True, True, [{'date':'2024-01-01'}], None, None),
         ('SUCCESS_series_no_rights', False, False, [], None, None),
         ('SUCCESS_existing_resolution', True, False, [{'date':'2024-01-01'}], None, None),
-
-        ('FAILURE_class_missing_date', True, False, [], HTTPStatus.BAD_REQUEST, [
-            {'error': 'Resolution date is required when hasRightsOrRestrictions is true.',
-             'path': '/filing/correction/shareStructure/resolutionDates'}
-        ]),
-        ('FAILURE_series_missing_date', False, True, [], HTTPStatus.BAD_REQUEST, [
-            {'error': 'Resolution date is required when hasRightsOrRestrictions is true.',
-             'path': '/filing/correction/shareStructure/resolutionDates'}
-        ]),
 
         ('FAILURE_future_date', True, False, [{'date': (NOW + datedelta.DAY).date().isoformat()}], HTTPStatus.BAD_REQUEST, [
             {'error': 'Resolution date cannot be in the future.',
@@ -441,6 +398,7 @@ def test_correction_resolution_date(session, app, jwt, test_name, has_rights_or_
     filing['filing']['header']['identifier'] = identifier
     filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
 
     # Share structure setup
     filing['filing']['correction']['shareStructure'] = copy.deepcopy(
@@ -650,7 +608,7 @@ def test_validate_correction_continuation_in_incorporation_date(mocker, app, ses
     """Assert that an error is raised if the correction continuation_in incorporation date is set to a future date."""
     identifier = 'BC1234567'
     business = factory_business(identifier, entity_type='C')
-    corrected_filing = factory_completed_filing(business, CONTINUATION_IN_FILING_TEMPLATE)
+    corrected_filing = factory_completed_filing(business, CONTINUATION_IN_FILING_TEMPLATE, filing_type='continuationIn')
 
     filing = copy.deepcopy(CORRECTION)
     filing['filing']['header']['identifier'] = identifier
@@ -667,7 +625,15 @@ def test_validate_correction_continuation_in_incorporation_date(mocker, app, ses
     }
     filing['filing']['business']['legalType'] = 'C'
     del filing['filing']['correction']['commentOnly']
-
+    del filing['filing']['correction']['nameRequest']
+    factory_jurisdiction(
+        business_id=business.id,
+        filing_id=corrected_filing.id,
+        identifier=filing['filing']['correction']['continuationIn']['identifier'],
+        name=filing['filing']['correction']['continuationIn']['legalName'],
+        country=filing['filing']['correction']['continuationIn']['country'],
+        region=filing['filing']['correction']['continuationIn']['region']
+    )
 
     with jwt_request_context(app, jwt, [BASIC_USER]):
         err = validate(business, filing)
@@ -747,7 +713,7 @@ def test_validate_continuation_in_field_lengths(mocker, app, session, jwt,
     """
     _identifier = 'BC1234567'
     business = factory_business(_identifier, entity_type='C')
-    corrected_filing = factory_completed_filing(business, CONTINUATION_IN_FILING_TEMPLATE)
+    corrected_filing = factory_completed_filing(business, CONTINUATION_IN_FILING_TEMPLATE, filing_type='continuationIn')
 
     filing = copy.deepcopy(CORRECTION)
     filing['filing']['header']['identifier'] = _identifier
@@ -761,6 +727,15 @@ def test_validate_continuation_in_field_lengths(mocker, app, session, jwt,
     }
     filing['filing']['business']['legalType'] = 'C'
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
+
+    factory_jurisdiction(
+        business_id=business.id,
+        filing_id=corrected_filing.id,
+        name=continuation_in['legalName'],
+        country=continuation_in['country'],
+        region=continuation_in['region']
+    )
 
     if identifier is not None:
         continuation_in['identifier'] = identifier
@@ -782,7 +757,7 @@ def test_validate_continuation_in_expro_founding_date_match(mocker, app, session
     """Assert continuation EXPRO business with matching founding date."""
     identifier = 'BC1234567'
     business = factory_business(identifier, entity_type='C')
-    corrected_filing = factory_completed_filing(business, CONTINUATION_IN_FILING_TEMPLATE)
+    corrected_filing = factory_completed_filing(business, CONTINUATION_IN_FILING_TEMPLATE, filing_type='continuationIn')
 
     filing = copy.deepcopy(CORRECTION)
     filing['filing']['header']['identifier'] = identifier
@@ -801,6 +776,15 @@ def test_validate_continuation_in_expro_founding_date_match(mocker, app, session
     }
     filing['filing']['business']['legalType'] = 'C'
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
+    factory_jurisdiction(
+        business_id=business.id,
+        filing_id=corrected_filing.id,
+        identifier=filing['filing']['correction']['continuationIn']['identifier'],
+        name=filing['filing']['correction']['continuationIn']['legalName'],
+        country=filing['filing']['correction']['continuationIn']['country'],
+        region=filing['filing']['correction']['continuationIn']['region']
+    )
 
     mocker.patch('legal_api.services.filings.validations.continuation_in.colin.query_business', return_value=(
         {
@@ -817,6 +801,54 @@ def test_validate_continuation_in_expro_founding_date_match(mocker, app, session
     assert not err
 
 
+@pytest.mark.parametrize(
+    'test_name, country, expected_code, message',
+    [
+        ('FAIL', 'NONE', HTTPStatus.BAD_REQUEST, 'Invalid country.'),
+        ('SUCCESS', 'UNKNOWN', None, None)
+    ]
+)
+def test_validate_correction_continuation_in_existing_foreign_jurisdiction(mocker, app, session, jwt, test_name, country, expected_code, message):
+    """Assert that an error is raised if the country is invalid and not for existing foreign jurisdiction."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='C')
+    corrected_filing = factory_completed_filing(business, CONTINUATION_IN_FILING_TEMPLATE, filing_type='continuationIn')
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    filing['filing']['correction']['correctedFilingType'] = 'continuationIn'
+    filing['filing']['correction']['continuationIn'] = {
+        'country': country,
+        'region': '',
+        'legalName': 'HAULER SERVICES',
+        'identifier': 'AB1234567',
+        'incorporationDate': dt.now().date().isoformat()
+    }
+    filing['filing']['business']['legalType'] = 'C'
+    del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
+    factory_jurisdiction(
+        business_id=business.id,
+        filing_id=corrected_filing.id,
+        identifier=filing['filing']['correction']['continuationIn']['identifier'],
+        name=filing['filing']['correction']['continuationIn']['legalName'],
+        country='UNKNOWN',
+        region=''
+    )
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+
+    # validate outcomes
+    if test_name != 'SUCCESS':
+        assert expected_code == err.code
+        if message:
+            assert message == err.msg[0]['error']
+    else:
+        assert not err
+
+
 @pytest.mark.parametrize('filing_type', ['continuationOut', 'amalgamationOut'])
 @pytest.mark.parametrize(
     'test_name, expected_code, message',
@@ -830,6 +862,8 @@ def test_validate_continuation_out_date(session, app, jwt, filing_type, test_nam
     """Assert validate continuation_out_date."""
     identifier = 'BC1234567'
     business = factory_business(identifier, entity_type='BC')
+    business.state = Business.State.HISTORICAL.value
+    business.save()
     continuation_out_filing = copy.deepcopy(FILING_HEADER)
     continuation_out_filing['filing'][filing_type] = copy.deepcopy(CONTINUATION_OUT if filing_type == 'continuationOut' else AMALGAMATION_OUT)
     continuation_out_filing['filing']['header']['name'] = filing_type
@@ -848,6 +882,7 @@ def test_validate_continuation_out_date(session, app, jwt, filing_type, test_nam
         'date': '2023-06-19'
     }
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
 
     if test_name == 'FAIL_IN_FUTURE':
         filing['filing']['correction'][filing_type]['date'] = \
@@ -880,6 +915,8 @@ def test_validate_continuation_out_foreign_jurisdiction(session, app, jwt, filin
     """Assert validate continuation_out foreign jurisdiction."""
     identifier = 'BC1234567'
     business = factory_business(identifier, entity_type='BC')
+    business.state = Business.State.HISTORICAL.value
+    business.save()
     continuation_out_filing = copy.deepcopy(FILING_HEADER)
     continuation_out_filing['filing'][filing_type] = copy.deepcopy(CONTINUATION_OUT if filing_type == 'continuationOut' else AMALGAMATION_OUT)
     continuation_out_filing['filing']['header']['name'] = filing_type
@@ -897,7 +934,7 @@ def test_validate_continuation_out_foreign_jurisdiction(session, app, jwt, filin
         'date': '2023-06-19'
     }
     del filing['filing']['correction']['commentOnly']
-
+    del filing['filing']['correction']['nameRequest']
 
     if test_name == 'FAIL_NO_COUNTRY':
         del filing['filing']['correction'][filing_type]['country']
@@ -910,6 +947,52 @@ def test_validate_continuation_out_foreign_jurisdiction(session, app, jwt, filin
     elif test_name == 'FAIL_INVALID_US_REGION':
         filing['filing']['correction'][filing_type]['country'] = 'US'
         filing['filing']['correction'][filing_type]['region'] = 'NONE'
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+
+    # validate outcomes
+    if test_name != 'SUCCESS':
+        assert expected_code == err.code
+        if message:
+            assert message == err.msg[0]['error']
+    else:
+        assert not err
+
+
+@pytest.mark.parametrize('filing_type', ['continuationOut', 'amalgamationOut'])
+@pytest.mark.parametrize(
+    'test_name, country, expected_code, message',
+    [
+        ('FAIL', 'NONE', HTTPStatus.BAD_REQUEST, 'Invalid country.'),
+        ('SUCCESS', 'UNKNOWN', None, None)
+    ]
+)
+def test_validate_correction_out_existing_foreign_jurisdiction(mocker, app, session, jwt, filing_type, test_name, country, expected_code, message):
+    """Assert that an error is raised if the country is invalid and not for existing foreign jurisdiction."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    business.jurisdiction = 'UNKNOWN'
+    business.state = Business.State.HISTORICAL.value
+    business.save()
+    continuation_out_filing = copy.deepcopy(FILING_HEADER)
+    continuation_out_filing['filing'][filing_type] = copy.deepcopy(CONTINUATION_OUT if filing_type == 'continuationOut' else AMALGAMATION_OUT)
+    continuation_out_filing['filing']['header']['name'] = filing_type
+
+    corrected_filing = factory_completed_filing(business, continuation_out_filing)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    filing['filing']['correction']['correctedFilingType'] = filing_type
+    filing['filing']['correction'][filing_type] = {
+        'country': country,
+        'region': '',
+        'legalName': 'HAULER SERVICES',
+        'date': '2023-06-19'
+    }
+    del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
 
     with jwt_request_context(app, jwt, [BASIC_USER]):
         err = validate(business, filing)
@@ -940,7 +1023,7 @@ def test_validate_correction_amalgamation_ting_not_found(mocker, app, session, j
     filing['filing']['correction']['amalgamation'] = data
     filing['filing']['business']['legalType'] = 'BC'
     del filing['filing']['correction']['commentOnly']
-
+    del filing['filing']['correction']['nameRequest']
 
     with jwt_request_context(app, jwt, [BASIC_USER]):
         err = validate(business, filing)
@@ -985,6 +1068,47 @@ def test_validate_correction_amalgamation_foreign_jurisdiction(mocker, app, sess
     filing['filing']['correction']['amalgamation'] = data
     filing['filing']['business']['legalType'] = 'BC'
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+
+    # validate outcomes
+    if test_name != 'SUCCESS':
+        assert expected_code == err.code
+        if message:
+            assert message == err.msg[0]['error']
+    else:
+        assert not err
+
+
+@pytest.mark.parametrize(
+    'test_name, country, expected_code, message',
+    [
+        ('FAIL', 'NONE', HTTPStatus.BAD_REQUEST, 'Invalid country.'),
+        ('SUCCESS', 'UNKNOWN', None, None)
+    ]
+)
+def test_validate_correction_amalgamation_existing_foreign_jurisdiction(mocker, app, session, jwt, test_name, country, expected_code, message):
+    """Assert that an error is raised if the country is invalid and not for existing foreign jurisdiction."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    filing_type = 'amalgamationApplication'
+    data, corrected_filing = _create_amalgation_business(business, {'country': 'UNKNOWN', 'region': ''})
+    del data['amalgamatingBusinesses'][0]
+
+    data['amalgamatingBusinesses'][0]['foreignJurisdiction']['country'] = country
+    data['amalgamatingBusinesses'][0]['foreignJurisdiction']['region'] = ''
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+
+    filing['filing']['correction']['correctedFilingType'] = filing_type
+    filing['filing']['correction']['amalgamation'] = data
+    filing['filing']['business']['legalType'] = 'BC'
+    del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
 
     with jwt_request_context(app, jwt, [BASIC_USER]):
         err = validate(business, filing)
@@ -1017,7 +1141,7 @@ def test_validate_correction_amalgamation_ting_invalid(mocker, app, session, jwt
     filing['filing']['correction']['amalgamation'] = data
     filing['filing']['business']['legalType'] = 'BC'
     del filing['filing']['correction']['commentOnly']
-
+    del filing['filing']['correction']['nameRequest']
 
     with jwt_request_context(app, jwt, [BASIC_USER]):
         err = validate(business, filing)
@@ -1027,7 +1151,52 @@ def test_validate_correction_amalgamation_ting_invalid(mocker, app, session, jwt
     assert err.msg[0]['path'] == '/filing/correction/amalgamation/amalgamatingBusinesses/0'
 
 
-def _create_amalgation_business(business):
+def test_validate_correction_amalgamation_colin_ting(mocker, app, session, jwt):
+    """Assert a COLIN (incl. extraprovincial) ting is not correctable and errors cleanly."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    filing_type = 'amalgamationApplication'
+    data, corrected_filing = _create_amalgation_business(business)
+
+    # swap in a COLIN-identifier ting (an extraprovincial)
+    amalgamation = business.amalgamation.first()
+    colin_ting = AmalgamatingBusiness(
+        role=AmalgamatingBusiness.Role.amalgamating,
+        colin_identifier='A7654321'
+    )
+    amalgamation.amalgamating_businesses.append(colin_ting)
+    business.save()
+    # schema-valid correction entry attempting to attach foreign data to the COLIN ting
+    data['amalgamatingBusinesses'] = [
+        {
+            'role': 'amalgamating',
+            'identifier': 'A7654321',
+            'id': colin_ting.id,
+            'legalName': 'NOT A FOREIGN CO',
+            'foreignJurisdiction': {'country': 'CA', 'region': 'AB'}
+        }
+    ]
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    filing['filing']['correction']['correctedFilingType'] = filing_type
+    filing['filing']['correction']['amalgamation'] = data
+    filing['filing']['business']['legalType'] = 'BC'
+    del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+
+    assert len(err.msg) == 1
+    assert err.msg[0]['error'] == 'Can only correct foreign businesses.'
+    assert err.msg[0]['path'] == '/filing/correction/amalgamation/amalgamatingBusinesses/0'
+
+
+def _create_amalgation_business(business, jurisdiction=None):
+    if jurisdiction is None:
+        jurisdiction = {'country': 'CA', 'region': 'AB'}
     amalgamating_identifier = 'BC1234567'
     amalgamating_business = factory_business(amalgamating_identifier, entity_type='BC')
     filing_type = "amalgamationApplication"
@@ -1043,10 +1212,7 @@ def _create_amalgation_business(business):
         },
         {
             'role': 'amalgamating',
-            'foreignJurisdiction': {
-                'country': 'CA',
-                'region': 'AB',
-            },
+            'foreignJurisdiction': jurisdiction,
             'legalName': 'HAULER SERVICES',
             'identifier': 'AB1234567'
         }
@@ -1121,6 +1287,7 @@ def test_validate_invalid_court_order(app, jwt, session, invalid_court_order, er
     filing['filing']['header']['identifier'] = identifier
     filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
     filing['filing']['correction']['courtOrder'] = invalid_court_order
 
     with jwt_request_context(app, jwt, [BASIC_USER]):
@@ -1166,6 +1333,7 @@ def test_validate_invalid_court_orders_new(app, jwt, session, invalid_court_orde
     filing['filing']['header']['identifier'] = identifier
     filing['filing']['correction']['correctedFilingId'] = ia_filing.id
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
     invalid_court_order["filingId"] = ia_filing.id
 
     filing['filing']['correction']['courtOrders'] = [invalid_court_order]
@@ -1211,6 +1379,7 @@ def test_validate_invalid_court_orders_old(app, jwt, session, invalid_court_orde
     filing['filing']['header']['identifier'] = identifier
     filing['filing']['correction']['correctedFilingId'] = ia_filing.id
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
     invalid_court_order["filingId"] = ia_filing.id
     invalid_court_order["id"] = court_order.id
 
@@ -1245,6 +1414,7 @@ def test_validate_invalid_court_orders(app, jwt, session, test_name, error_msg):
     filing['filing']['header']['identifier'] = identifier
     filing['filing']['correction']['correctedFilingId'] = ia_filing.id
     del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
     if test_name == "court_order_not_found":
         invalid_court_order["filingId"] = ia_filing.id
         invalid_court_order["id"] = 99999999
@@ -1273,3 +1443,248 @@ def test_validate_invalid_court_orders(app, jwt, session, test_name, error_msg):
         err = validate(business, filing)
     assert err
     assert err.msg[0]['error'] == error_msg
+
+
+@pytest.mark.parametrize('test_name', [
+    ('no_change'),
+    ('add_new_court_order'),
+    ('replace_existing_court_order')
+])
+def test_validate_correction_court_order_documents(app, session, jwt, mocker, test_name):
+    """Assert the worker process process the court orders correctly."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+
+    ia_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+    court_order_filing = factory_completed_filing(business, COURT_ORDER_FILING_TEMPLATE)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = ia_filing.id
+    del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['nameRequest']
+
+    file_number = '#1234-5678/90'
+    new_file_number = '#2222-2222/22'
+    effect_of_order = 'planOfArrangement'
+    order_details = 'Court order details'
+
+    court_order = CourtOrder(
+        filing_id=court_order_filing.id,
+        business_id=business.id,
+        file_number=file_number,
+        effect_of_order=effect_of_order,
+        order_details=order_details
+    )
+    court_order.save()
+
+    court_order_json = {
+        "filingId": court_order_filing.id,
+        "fileNumber": file_number,
+        "effectOfOrder": effect_of_order,
+        "orderDetails": order_details,
+        "id": court_order.id
+    }
+    file_key_1 = f"{uuid.uuid4()}.pdf"
+    file_key_2 = f"{uuid.uuid4()}.pdf"
+    file_key_3 = f"{uuid.uuid4()}.pdf"
+    file_name_1 = f'Court Order {file_number}_01.pdf'
+    file_name_2 = f'Court Order {file_number}_02.pdf'
+    file_name_3 = f'Court Order {file_number}_03.pdf'
+    file_1 = {
+        "fileKey": file_key_1,
+        "fileName": file_name_1,
+        "documentType": DocumentType.COURT_ORDER.value
+    }
+    file_2 = {
+        "fileKey": file_key_2,
+        "fileName": file_name_2,
+        "documentType": DocumentType.SUPPORTING_DOCUMENT.value
+    }
+    file_3 = {
+        "fileKey": file_key_3,
+        "fileName": file_name_3,
+        "documentType": DocumentType.COURT_ORDER.value
+    }
+
+    document = Document()
+    document.type = file_1.get("documentType")
+    document.file_key = file_1.get("fileKey")
+    document.file_name = file_1.get("fileName")
+    document.filing_id = court_order_filing.id
+    document.business_id = business.id
+    document.save()
+
+    if test_name == 'add_new_court_order':
+        court_order_json['files'] = [file_1, file_2]
+    elif test_name == 'replace_existing_court_order':
+        court_order_json['files'] = [file_3]
+    else:
+        court_order_json['files'] = [file_1]
+
+    filing['filing']['correction']['courtOrders'] = [court_order_json]
+
+    
+    mock_validate_pdf = mocker.patch('legal_api.services.filings.validations.common_validations.validate_pdf', return_value=[])
+
+    with jwt_request_context(app, jwt, [BASIC_USER]):
+        err = validate(business, filing)
+    assert not err
+
+    if test_name == 'add_new_court_order':
+        assert len(mock_validate_pdf.call_args_list) == 1
+        assert mock_validate_pdf.call_args_list[0].args[0] == file_key_2
+    elif test_name == 'replace_existing_court_order':
+        assert len(mock_validate_pdf.call_args_list) == 1
+        assert mock_validate_pdf.call_args_list[0].args[0] == file_key_3
+    else:
+        assert len(mock_validate_pdf.call_args_list) == 0
+
+
+
+@pytest.mark.parametrize('test_name, err_msg', [
+    ("test_completing_party_staff", "Should not provide completing party when correction type is STAFF"),
+    ("test_multiple_completing_parties", 'Only one completing party is allowed.'),
+    ("test_no_completing_parties", 'Completing party is required.'),
+    ("test_multiple_custodians", "Only one custodian is allowed."),
+    ("test_existing_custodian", "Custodian already exists for this business, cannot create another custodian."),
+    ("test_custodian_not_voluntary_dissolution", "Custodian is only allowed in voluntary dissolution filings."),
+    ("test_custodian_not_dissolution", "Custodian is only allowed in voluntary dissolution filings.")
+])
+def test_validate_correction_relationships_roles(session, app, jwt, test_name, err_msg):
+    """Test valid comment only IA validation."""
+    # setup
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    business.state = Business.State.HISTORICAL
+    business.save()
+
+    if test_name == "test_existing_custodian":
+        custodian = factory_party_role(
+            delivery_address=factory_address('delivery street', 'delivery'),
+            mailing_address=factory_address('mailing street', 'mailing'),
+            appointment_date='2026-01-01',
+            cessation_date=None,
+            officer={
+                'firstName': 'first',
+                'lastName': 'last',
+                'middleInitial': 'mid',
+                'partyType': 'person',
+                'organizationName': ''
+            },
+            role_type=PartyRole.RoleTypes.CUSTODIAN
+        )
+
+        custodian.business_id = business.id
+        session.add(custodian)
+        session.commit()
+
+    corrected_filing_json = INCORPORATION_APPLICATION
+    corrected_filing_type = 'incorporationApplication'
+    corrected_filing_sub_type = None
+
+    if "custodian" in test_name and test_name != "test_custodian_not_dissolution":
+        corrected_filing_type = 'dissolution'
+        corrected_filing_json = copy.deepcopy(FILING_HEADER)
+        corrected_filing_json['filing'][corrected_filing_type] = copy.deepcopy(DISSOLUTION)
+        corrected_filing_json['filing']['header']['name'] = corrected_filing_type
+        if test_name == "test_custodian_not_voluntary_dissolution":
+            corrected_filing_sub_type = 'administrative'
+        else:
+            corrected_filing_sub_type = 'voluntary'
+
+    corrected_filing = factory_completed_filing(business, corrected_filing_json, filing_type=corrected_filing_type, filing_sub_type=corrected_filing_sub_type)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    filing['filing']['correction']['correctedFilingType'] = corrected_filing_type
+    filing['filing']['business']['legalType'] = business.legal_type
+    del filing['filing']['correction']['commentOnly']
+    del filing['filing']['correction']['parties']
+    del filing['filing']['correction']['nameRequest']
+
+    if test_name == "test_completing_party_staff":
+        filing['filing']['correction']['type'] = 'STAFF'
+    filing['filing']['correction']['relationships'] = []
+    if test_name != "test_no_completing_parties":
+        filing['filing']['correction']['relationships'].append({
+            'entity': {
+                'givenName': 'Joe',
+                'familyName': 'Swanson',
+            },
+            'mailingAddress': {
+                'streetAddress': 'mailing_address - address line one',
+                'streetAddressAdditional': '',
+                'addressCity': 'mailing_address city',
+                'addressCountry': 'CA',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC'
+            },
+            'deliveryAddress': {
+                'streetAddress': 'delivery_address - address line one',
+                'streetAddressAdditional': '',
+                'addressCity': 'delivery_address city',
+                'addressCountry': 'CA',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC'
+            },
+            'roles': [
+                {
+                    'roleType': 'Completing Party',
+                    'appointmentDate': '2018-01-01'
+
+                }
+            ]
+        })
+
+        if test_name == "test_multiple_completing_parties":
+            filing['filing']['correction']['relationships'].append(filing['filing']['correction']['relationships'][0])
+
+    if "custodian" in test_name or test_name == "test_no_completing_parties":
+        custodian_role = {
+            'entity': {
+                'givenName': 'first',
+                'familyName': 'last',
+                'email': 'test@test.com'
+            },
+            'mailingAddress': {
+                'streetAddress': 'mailing_address - address line one',
+                'streetAddressAdditional': '',
+                'addressCity': 'mailing_address city',
+                'addressCountry': 'CA',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC'
+            },
+            'deliveryAddress': {
+                'streetAddress': 'delivery_address - address line one',
+                'streetAddressAdditional': '',
+                'addressCity': 'delivery_address city',
+                'addressCountry': 'CA',
+                'postalCode': 'H0H0H0',
+                'addressRegion': 'BC'
+            },
+            'roles': [
+                {
+                    'roleType': 'Custodian',
+                    'appointmentDate': '2018-01-01'
+                }
+            ]
+        }
+        if test_name == "test_multiple_custodians":
+            filing['filing']['correction']['relationships'].append(custodian_role)
+        # elif test_name == "test_existing_custodian":
+        #     custodian_role["entity"]["identifier"] = str(custodian.party.id)
+        filing['filing']['correction']['relationships'].append(custodian_role)
+
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        if err := validate(business, filing):
+            print(err.msg)
+
+    if not err_msg:
+        assert None is err
+    else:
+        assert err
+        assert HTTPStatus.BAD_REQUEST == err.code
+        assert err.msg[0]['error'] == err_msg

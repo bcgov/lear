@@ -37,6 +37,7 @@ def test_bootstrap_bn_notificaton(app, session, filing_type, expected_emails):
     identifier = 'BC1234567'
     filing = prep_bootstrap_filing(session, filing_type, identifier, 'BC', 'COMPLETED')
     business = Business.find_by_identifier(identifier)
+    business.tax_id = '123456789BC0001'
     # sanity check
     assert filing.id
     assert business.id
@@ -46,7 +47,10 @@ def test_bootstrap_bn_notificaton(app, session, filing_type, expected_emails):
     # check email values
     assert expected_emails == email['recipients']
     assert email['content']['subject'] == f'{business.legal_name} - Business Number Information'
-    assert email['content']['body']
+    body = email['content']['body']
+    assert '# Business number information' in body
+    assert '**Business Number:** 123456789 BC0001' in body
+    assert f'[BC Business Registry dashboard]({app.config.get("DASHBOARD_URL")}{identifier})' in body
     assert email['content']['attachments'] == []
 
 
@@ -69,5 +73,9 @@ def test_bn_move_notificaton(app, session):
         # check email values
         assert 'user@email.com' in email['recipients']
         assert email['content']['subject'] == f'{business.legal_name} - Business Number Changed'
-        assert email['content']['body']
+        body = email['content']['body']
+        assert '# Business number changed' in body
+        assert '**Old Business Number:** 993775204 BC0001' in body
+        assert '**New Business Number:** 993777399 BC0001' in body
+        assert f'[BC Business Registry dashboard]({app.config.get("DASHBOARD_URL")}{identifier})' in body
         assert email['content']['attachments'] == []

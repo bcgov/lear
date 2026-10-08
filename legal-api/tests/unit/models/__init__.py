@@ -37,6 +37,7 @@ from business_model.models import (
     Filing,
     Furnishing,
     FurnishingGroup,
+    Jurisdiction,
     Office,
     Party,
     PartyRole,
@@ -135,6 +136,19 @@ def factory_user(username: str, firstname: str = None, lastname: str = None):
     user.lastname = lastname
     user.save()
     return user
+
+
+def factory_jurisdiction(business_id, filing_id, identifier: str = '', name: str = '', country: str = 'CA', region: str = 'BC'):
+    """Create a jurisdiction entity."""
+    jurisdiction = Jurisdiction()
+    jurisdiction.identifier = identifier
+    jurisdiction.legal_name = name
+    jurisdiction.country = country
+    jurisdiction.region = region
+    jurisdiction.business_id = business_id
+    jurisdiction.filing_id = filing_id
+    jurisdiction.save()
+    return jurisdiction
 
 
 def factory_business(identifier,

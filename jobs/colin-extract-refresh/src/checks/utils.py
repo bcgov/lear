@@ -207,9 +207,7 @@ def get_candidates_not_matching_saf_criteria_query(updated_corp_nums: list, targ
     AND email_used_count = 1
     AND director_count = 1
     AND address_all_any_bad_count = 0
-    AND meets_share_criteria = true
     AND has_bar_filing = false
-    AND directors_within_bc = true
     AND is_bad_email = false
     AND is_email_excluded = false
     AND is_migration_excluded = false
@@ -245,5 +243,6 @@ def prune_candidates_from_account(pruning_corps_list: list, target_schema: str) 
 
 def get_cutoff_timestamp_query(target_schema: str) -> str:
     return f"""
-    SELECT extracted_at FROM {target_schema}.colin_extract_version
+    SELECT extracted_at AT TIME ZONE 'America/Los_Angeles' as extracted_at
+    FROM {target_schema}.colin_extract_version
     """

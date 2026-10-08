@@ -31,7 +31,7 @@ def get_filings(token, limit, offset):
     return req.json().get("filings")
 
 
-def send_filing(token: str, filing: dict, filing_id: str):
+def send_filing(token: str, filing: dict, filing_id: str, job_stats: dict):
     """Post to colin-api with filing."""
     clean_none(filing)
 
@@ -46,11 +46,25 @@ def send_filing(token: str, filing: dict, filing_id: str):
                                           "Authorization": "Bearer " + token},
                                  json=filing,
                                  timeout=current_app.config["COLIN_SVC_TIMEOUT"])
+    else:
+        missing = [name for name, value in (("business.legalType", legal_type),
+                                            ("business.identifier", identifier),
+                                            ("header.name", filing_type)) if not value]
+        current_app.logger.error(f"Filing {filing_id} has no {' or '.join(missing)} - not sent to colin.")
+        job_stats["permanent_failures"].append(filing_id)
 
     if not response or response.status_code != HTTPStatus.CREATED:
         current_app.logger.error(f"Filing {filing_id} not created in colin {identifier}.")
-        if response is not None and (colin_error := response.json().get("error")):
-            current_app.logger.error(f"colin-api: {colin_error}")
+        if response is not None:
+            if colin_error := response.json().get("error"):
+                current_app.logger.error(f"colin-api: {colin_error}")
+            # 4xx and 501 responses will fail the same way on every run until fixed
+            if (HTTPStatus.BAD_REQUEST <= response.status_code < HTTPStatus.INTERNAL_SERVER_ERROR
+                    or response.status_code == HTTPStatus.NOT_IMPLEMENTED):
+                job_stats["permanent_failures"].append(filing_id)
+                current_app.logger.error(
+                    f"Filing {filing_id} for {identifier} failed with status {response.status_code} - "
+                    "retrying will not succeed without a data or code fix.")
         return None
     # if it's an AR containing multiple filings it will have multiple colinIds
     return response.json()["filing"]["header"]["colinIds"]
@@ -74,12 +88,36 @@ def update_colin_id(token: dict, filing_id: str, colin_ids: list):
     return True
 
 
+ADDRESS_KEYS = ("deliveryAddress", "mailingAddress")
+
+
+def _strip_empty_addresses(dictionary: dict):
+    """Remove empty address keys (colin-api's checks are presence based)."""
+    for key in ADDRESS_KEYS:
+        if key in dictionary and not dictionary[key]:
+            del dictionary[key]
+
+
+def _clean_none_items(items: list):
+    """Clean the dicts (parties, directors, offices, etc.) in the given list."""
+    for item in items:
+        if isinstance(item, dict):
+            clean_none(item)
+
+
 def clean_none(dictionary: dict | None = None):
-    """Replace all none values with empty string."""
+    """Clean the filing json so colin-api receives the shapes it expects.
+
+    - empty address keys are removed entirely
+    - remaining None scalar values are replaced with empty string
+    - nested dicts and lists are cleaned recursively
+    """
+    _strip_empty_addresses(dictionary)
     for key, value in dictionary.items():
-        if value:
-            if isinstance(value, dict):
-                clean_none(value)
+        if isinstance(value, dict):
+            clean_none(value)
+        elif isinstance(value, list):
+            _clean_none_items(value)
         elif value is None:
             dictionary[key] = ""
 
@@ -88,12 +126,15 @@ def process_filing(filing: dict, token: str, job_stats: dict):
     """Send the filing to COLIN and update LEAR."""
     filing_id = filing["filingId"]
     identifier = filing["filing"]["business"]["identifier"]
-    if identifier in job_stats["corps_with_failed_filing"]:
+    if identifier in current_app.config["SKIPPED_IDENTIFIERS"]:
+        job_stats["skipped_known_drift"] += 1
+        current_app.logger.debug(f"Skipping filing {filing_id} for known data drift business {identifier}.")
+    elif identifier in job_stats["corps_with_failed_filing"]:
         job_stats["skipped_sync"] += 1
         current_app.logger.debug(f'Skipping filing {filing_id} for'
                                     f' {filing["filing"]["business"]["identifier"]}.')
     else:
-        colin_ids = send_filing(token, filing, filing_id)
+        colin_ids = send_filing(token, filing, filing_id, job_stats)
         update = None
         if colin_ids:
             update = update_colin_id(token, filing_id, colin_ids)
@@ -109,6 +150,8 @@ def run():
     """Get filings that haven't been synced with colin and send them to the colin-api."""
     job_stats = {
         "corps_with_failed_filing": [],
+        "permanent_failures": [],
+        "skipped_known_drift": 0,
         "skipped_sync": 0,
         "success": 0
     }
@@ -117,18 +160,27 @@ def run():
     try:
         # get updater-job token
         token = AccountService.get_bearer_token()
-        while filings := get_filings(token, limit, len(job_stats["corps_with_failed_filing"]) + job_stats["skipped_sync"]):
-            total_processed = len(job_stats["corps_with_failed_filing"]) + job_stats["skipped_sync"] + job_stats["success"]
+        while filings := get_filings(token,
+                                     limit,
+                                     len(job_stats["corps_with_failed_filing"])
+                                     + job_stats["skipped_sync"]
+                                     + job_stats["skipped_known_drift"]):
+            # skipped filings don't count against the run limit - only filings actually sent
+            total_processed = len(job_stats["corps_with_failed_filing"]) + job_stats["success"]
             if total_processed > total_limit:
                 current_app.logger.warning("Job hit total filing limit for run. Ending job cycle.")
                 break
             for filing in filings:
                 process_filing(filing, token, job_stats)
 
-        current_app.logger.debug("Success: %s, Failed: %s, Skipped: %s",
+        current_app.logger.debug("Success: %s, Failed: %s, Skipped: %s, Skipped (known drift): %s",
                                  job_stats["success"],
                                  len(job_stats["corps_with_failed_filing"]),
-                                 job_stats["skipped_sync"])
+                                 job_stats["skipped_sync"],
+                                 job_stats["skipped_known_drift"])
+        if job_stats["permanent_failures"]:
+            current_app.logger.error("Permanent failures (4xx/501) needing manual attention or a fix, filing ids: %s",
+                                     job_stats["permanent_failures"])
 
     except Exception as err:
         current_app.logger.error(err)

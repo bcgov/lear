@@ -22,12 +22,10 @@ from flask import current_app, jsonify, request
 from flask_cors import cross_origin
 from sqlalchemy import or_, text
 
-from business_common.utils.legislation_datetime import LegislationDatetime
+from business_common.utils.relationship_director import relationship_to_director
 from business_model.models import (
     Address,
     Alias,
-    AmalgamatingBusiness,
-    Amalgamation,
     BatchProcessing,
     Business,
     Filing,
@@ -43,7 +41,7 @@ from business_model.models import (
 from business_model.models.colin_event_id import ColinEventId
 from business_model.models.db import VersioningProxy
 from legal_api.exceptions import BusinessException
-from legal_api.services.business_details_version import OPERATION_TYPE_DELETE, VersionedBusinessDetailsService
+from legal_api.services.business_details_version import VersionedBusinessDetailsService
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -68,6 +66,13 @@ def get_completed_filings_for_colin():
             try:
                 set_correction_flags(filing_json, filing)
                 inner_filing_json = filing_json["filing"].get(filing.filing_type, {})
+                if not _has_colin_relevant_correction(filing, filing_json):
+                    # nothing to sync - colin-api would reject it with 'No filing created' on every run
+                    current_app.logger.info(
+                        f"correction: filingId={filing.id} has no COLIN relevant changes - marking lear_only")
+                    filing.lear_only = True
+                    filing.save()
+                    continue
                 if inner_filing_json.get("relationships"):
                     # set directors and completing party from the db when filing_json is using relationships schema - ignore other parties
                     # NOTE: in the case where only non director parties were changed then set_correction_flags will not set partyChanged and parties will not be processed by the colin-api
@@ -78,17 +83,14 @@ def get_completed_filings_for_colin():
                 # to skip this filing and block subsequent filing from syncing in update-colin-filings
                 filing_json["filing"]["header"]["name"] = None
 
-        elif (filing.filing_type == "amalgamationApplication" and
-              filing_json["filing"]["amalgamationApplication"]["type"] in [
-                  Amalgamation.AmalgamationTypes.horizontal.name,
-                  Amalgamation.AmalgamationTypes.vertical.name]):
+        elif (filing.filing_type == "changeOfDirectors"
+              and filing_json["filing"]["changeOfDirectors"].get("relationships")):
             try:
-                set_from_primary_or_holding_business_data(filing_json, filing)
+                _convert_cod_relationships_to_directors(filing, filing_json)
             except Exception as ex:
-                current_app.logger.error(f"amalgamation: filingId={filing.id}, error: {ex!s}")
+                current_app.logger.error(f"changeOfDirectors: filingId={filing.id}, error: {ex!s}")
                 # to skip this filing and block subsequent filing from syncing in update-colin-filings
                 filing_json["filing"]["header"]["name"] = None
-
         elif (filing.filing_type == "dissolution" and filing.filing_sub_type == "involuntary"):
             if batch_processings := BatchProcessing.find_by(filing_id=filing.id):
                 filing_json["filing"]["dissolution"]["metaData"] = batch_processings[0].meta_data
@@ -96,8 +98,9 @@ def get_completed_filings_for_colin():
                 current_app.logger.error(f"dissolution: filingId={filing.id}, missing batch processing info")
                 # to skip this filing and block subsequent filing from syncing in update-colin-filings
                 filing_json["filing"]["header"]["name"] = None
-        elif (filing.filing_type == "dissolution" and filing.filing_sub_type == "voluntary"):
-            mailing = business.mailing_address.one_or_none()
+        elif (filing.filing_type == "dissolution"
+              and filing.filing_sub_type == "voluntary"
+              and (mailing := business.mailing_address.one_or_none())):
             filing_json["filing"]["dissolution"]["mailingAddress"] = mailing.json
         filings.append(filing_json)
     return jsonify({"filings": filings}), HTTPStatus.OK
@@ -134,10 +137,25 @@ def _get_initial_filing_json(filing: Filing, business: Business):
             # should never happen unless its a test data created directly in db.
             # found some filing in DEV, adding this check to avoid exception
             filing_json["filing"]["business"] = business.json()
-    elif not filing_json["filing"]["business"].get("legalName"):
-        filing_json["filing"]["business"]["legalName"] = business.legal_name
-    
+    else:
+        # old filings may predate these fields in the business block; without legalType the
+        # update-colin-filings job cannot build the colin-api url and silently skips the filing
+        if not filing_json["filing"]["business"].get("legalName"):
+            filing_json["filing"]["business"]["legalName"] = business.legal_name
+        if not filing_json["filing"]["business"].get("legalType"):
+            filing_json["filing"]["business"]["legalType"] = business.legal_type
+
     return filing_json
+
+
+def _has_colin_relevant_correction(filing: Filing, filing_json: dict) -> bool:
+    """Return whether the correction changes anything the colin-api can create a filing for."""
+    colin_correction_flags = ("nameChanged", "nameTranslationsChanged", "officeChanged",
+                              "partyChanged", "resolutionChanged", "shareChanged", "commentOnly")
+    correction_json = filing_json["filing"].get("correction", {})
+    return ((filing.meta_data or {}).get("commentOnly", False)
+            or filing_json["filing"]["header"].get("correctionBenStatement", False)
+            or any(correction_json.get(flag) for flag in colin_correction_flags))
 
 
 def set_correction_flags(filing_json, filing: Filing):
@@ -271,78 +289,72 @@ def has_share_changed(filing: Filing) -> bool:
     return bool(db.session.query(share_series_query).scalar())
 
 
-def set_from_primary_or_holding_business_data(filing_json, filing: Filing):
-    """Set legal_name, director, office and shares from holding/primary business."""
-    amalgamation_filing = filing_json["filing"]["amalgamationApplication"]
-    primary_or_holding = next(x for x in amalgamation_filing["amalgamatingBusinesses"]
-                              if x["role"] in [AmalgamatingBusiness.Role.holding.name,
-                                               AmalgamatingBusiness.Role.primary.name])
-
-    ting_business = Business.find_by_identifier(primary_or_holding["identifier"])
-    primary_or_holding_business = VersionedBusinessDetailsService.get_business_revision_obj(filing, ting_business.id)
-
-    amalgamation_filing["nameRequest"]["legalName"] = primary_or_holding_business.legal_name
-
-    _set_parties(primary_or_holding_business, filing, amalgamation_filing)
-    _set_offices(primary_or_holding_business, amalgamation_filing, filing.id, filing.transaction_id)
-    _set_shares(primary_or_holding_business, amalgamation_filing, filing.transaction_id)
+_COLIN_ADDRESS_COMPARE_FIELDS = ("streetAddress", "streetAddressAdditional", "addressCity",
+                                 "addressRegion", "addressCountry", "postalCode")
 
 
-def _set_parties(primary_or_holding_business, filing, amalgamation_filing):
-    parties = []
-    parties_version = VersionedBusinessDetailsService.get_party_role_revision(filing,
-                                                                              primary_or_holding_business.id,
-                                                                              role=PartyRole.RoleTypes.DIRECTOR.value)
-    # copy director
-    for director_json in parties_version:
-        director_json["roles"] = [{
-            "roleType": "Director",
-            "appointmentDate": LegislationDatetime.format_as_legislation_date(filing.effective_date)
-        }]
-        parties.append(director_json)
-
-    # copy completing party from filing json
-    for party_info in amalgamation_filing.get("parties"):
-        if comp_party_role := next((x for x in party_info.get("roles")
-                                    if x["roleType"].lower() == "completing party"), None):
-            party_info["roles"] = [comp_party_role]  # override roles to have only completing party
-            parties.append(party_info)
-            break
-    amalgamation_filing["parties"] = parties
+def _prev_party_json(prev_completed_filing: Filing, party_id) -> dict | None:
+    """Return the party's revision json as of the previous completed filing."""
+    if not prev_completed_filing or not party_id:
+        return None
+    prev_party = VersionedBusinessDetailsService.get_party_revision(prev_completed_filing, party_id)
+    if not prev_party:
+        return None
+    return VersionedBusinessDetailsService.party_revision_json(
+        prev_completed_filing.transaction_id, prev_party, True)
 
 
-def _set_offices(primary_or_holding_business, amalgamation_filing, filing_id, transaction_id):
-    # copy offices
-    amalgamation_filing["offices"] = VersionedBusinessDetailsService.get_office_revision(filing_id,
-                                                                                         transaction_id,
-                                                                                         primary_or_holding_business.id)
+def _norm(value):
+    return (value or "").strip().upper()
 
 
-def _set_shares(primary_or_holding_business, amalgamation_filing, transaction_id):
-    """Set shares from holding/primary business."""
-    # Copy shares
-    share_classes = VersionedBusinessDetailsService.get_share_class_revision(transaction_id,
-                                                                             primary_or_holding_business.id)
-    amalgamation_filing["shareStructure"] = {"shareClasses": share_classes}
+def _names_differ(officer: dict, prev_officer: dict) -> bool:
+    return any(_norm(officer.get(field)) != _norm(prev_officer.get(field))
+               for field in ("firstName", "middleInitial", "lastName"))
 
-    # Get resolution dates using versioned query
-    resolution_version = VersioningProxy.version_class(db.session(), Resolution)
-    resolutions_query = (
-        db.session.query(resolution_version.resolution_date)
-        .filter(resolution_version.transaction_id <= transaction_id)  # Get records valid at or before the transaction
-        .filter(resolution_version.operation_type != OPERATION_TYPE_DELETE)  # Exclude deleted records
-        .filter(resolution_version.business_id == primary_or_holding_business.id)
-        .filter(or_(
-            resolution_version.end_transaction_id.is_(None),  # Records not yet ended
-            resolution_version.end_transaction_id > transaction_id  # Records ended after our transaction
-        ))
-        .order_by(resolution_version.transaction_id)
-        .all()
-    )
 
-    business_dates = [res.resolution_date.isoformat() for res in resolutions_query]
-    if business_dates:
-        amalgamation_filing["shareStructure"]["resolutionDates"] = business_dates
+def _addresses_differ(director: dict, prev_party_json: dict) -> bool:
+    for address_type in ("deliveryAddress", "mailingAddress"):
+        address = director.get(address_type)
+        prev_address = prev_party_json.get(address_type)
+        if bool(address) != bool(prev_address):
+            return True
+        if address and any(_norm(address.get(field)) != _norm(prev_address.get(field))
+                           for field in _COLIN_ADDRESS_COMPARE_FIELDS):
+            return True
+    return False
+
+
+def _convert_cod_relationships_to_directors(filing: Filing, filing_json: dict):
+    """Convert relationships-shaped changeOfDirectors to the legacy directors shape."""
+    cod_json = filing_json["filing"]["changeOfDirectors"]
+    prev_completed_filing = Filing.get_previous_completed_filing(filing)
+
+    directors = []
+    for relationship in cod_json["relationships"]:
+        director = relationship_to_director(relationship)
+        prev_party_json = _prev_party_json(prev_completed_filing, director["officer"].get("id"))
+        prev_officer = (prev_party_json or {}).get("officer", {})
+
+        if not director["actions"] and prev_party_json:
+            # derive the specific legacy actions from the db revisions
+            actions = []
+            if _names_differ(director["officer"], prev_officer):
+                actions.append("nameChanged")
+            if _addresses_differ(director, prev_party_json):
+                actions.append("addressChanged")
+            # NOTE: director processing with no actions will be skipped in the colin-api
+            director["actions"] = actions
+
+        if "nameChanged" in director["actions"] and prev_officer:
+            director["officer"]["prevFirstName"] = prev_officer.get("firstName")
+            director["officer"]["prevMiddleInitial"] = prev_officer.get("middleInitial")
+            director["officer"]["prevLastName"] = prev_officer.get("lastName")
+
+        directors.append(director)
+
+    cod_json["directors"] = directors
+    del cod_json["relationships"]
 
 
 def _map_entity_to_officer(entity: dict[str, str]):

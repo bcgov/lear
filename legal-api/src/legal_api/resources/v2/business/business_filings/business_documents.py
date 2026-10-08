@@ -28,7 +28,7 @@ from pydantic import BaseModel
 
 from business_account import AccountService
 from business_common.utils.legislation_datetime import LegislationDatetime
-from business_model.models import Business, Document, UserRoles
+from business_model.models import Business, UserRoles
 from business_model.models import Filing as FilingModel
 from legal_api.core import Filing
 from legal_api.exceptions import ErrorCode, get_error_message
@@ -122,15 +122,13 @@ def get_documents(identifier: str, # noqa: PLR0911, PLR0912
                 return _get_receipt(business, filing)
 
             return get_pdf(filing.storage, legal_filing_name)
-        elif file_key and (document := Document.find_by_file_key(file_key)):
-            if document.filing_id == filing.id and (match := re.match(r"^([A-Z]+)-(DS\d+)$", document.file_key)):  # make sure the file belongs to this filing
-                drs_response = client_doc_service.get_document(match.group(2), match.group(1), doc_binary=True)
-                return current_app.response_class(
-                    response=drs_response.content,
-                    status=drs_response.status_code,
-                    mimetype=APP_PDF
-                )
-                
+        elif file_key and (match := re.match(r"^([A-Z]+)-(DS\d+)$", file_key)):
+            drs_response = client_doc_service.get_document(match.group(2), match.group(1), doc_binary=True)
+            return current_app.response_class(
+                response=drs_response.content,
+                status=drs_response.status_code,
+                mimetype=APP_PDF
+            )
 
     return {}, HTTPStatus.NOT_FOUND
 

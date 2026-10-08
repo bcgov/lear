@@ -18,12 +18,12 @@ from business_model.models import Business
 from .business import check_business
 
 
-def check_warnings(business: Business) -> list:
+def check_warnings(business: Business, is_staff: bool = False) -> list:
     """Check warnings for a business."""
     result = []
 
     # Currently only checks for missing business info warnings but in future other warning checks can be included
     # e.g. compliance checks - result.extend(check_compliance(business))
-    result.extend(check_business(business))
+    result.extend(check_business(business, is_staff))
 
     return result

@@ -527,12 +527,26 @@ def auth_delete(db_engine: Engine, identifiers: list):
 def colin_delete(config, db_engine: Engine, identifiers: list):
     with db_engine.connect() as conn:
         with replica_role(conn):
-            plan = execute_query(conn, {
+            corp_plan = execute_query(conn, {
                 'source': 'corp_processing',
+                'columns': ['id', 'corp_num', 'mig_batch_id'],
+                'params': {'corp_num': identifiers, 'environment': [config.DATA_LOAD_ENV]},
+                'targets': ['corp_processing', 'corp_num', 'mig_batch_id']
+            })
+            freeze_plan = execute_query(conn, {
+                'source': 'colin_tracking',
+                'params': {'corp_num': identifiers, 'environment': [config.DATA_LOAD_ENV]}
+            })
+            auth_plan = execute_query(conn, {
+                'source': 'auth_processing',
                 'params': {'corp_num': identifiers, 'environment': [config.DATA_LOAD_ENV]}
             })
 
-            delete_by_ids(conn, 'corp_processing', plan['corp_processing'])
+            delete_by_ids(conn, 'corp_processing', corp_plan['corp_processing'])
+            delete_by_ids(conn, 'colin_tracking', freeze_plan['colin_tracking'])
+            delete_by_ids(conn, 'auth_processing', auth_plan['auth_processing'])
+            insert_exclude_corps(conn, corp_plan['corp_num'], corp_plan['mig_batch_id'])
+
 
 
 @task
@@ -666,6 +680,22 @@ def execute_query(conn: Connection, template: dict) -> dict:
 
     return ret
 
+def insert_exclude_corps(conn: Connection, corp_nums: list, batch_ids: list):
+    payload = [
+        {'corp_num': corp_num, 'notes': f'De-migrated from batch #{batch_id}'}
+        for corp_num, batch_id in zip(corp_nums,batch_ids)
+    ]
+    if not payload:
+        return
+    result = conn.execute(
+        text("""
+            INSERT INTO exclude_corps (corp_num, notes)
+            VALUES (:corp_num, :notes)
+            ON CONFLICT (corp_num) DO UPDATE SET notes = EXCLUDED.notes
+            """),
+            payload,
+    )
+    print(f'Insert/Update {result.rowcount} rows in excluded_corps')
 
 @task(persist_result=False, cache_policy=NO_CACHE)
 def execute_delete_plan(conn: Connection, table: str, ids: list):

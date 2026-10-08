@@ -6,8 +6,11 @@
       <tr class="no-page-break">
         <td colspan="3" style="border: none">
           <div class="pb-2">
-            <span class="capitalize-text bold">{{ party.officer.lastName }}</span>,
-            <span class="capitalize-text bold">{{ party.officer.firstName }}</span>
+            <span class="capitalize-text bold">{{ party.officer.lastName }}</span>
+            {% if party.officer.firstName or party.officer.middleInitial %},{% endif %}
+            {% if party.officer.firstName %}
+              <span class="capitalize-text bold">{{ party.officer.firstName }}</span>
+            {% endif %}
             {% if party.officer.middleInitial %}
               <span class="capitalize-text bold">{{ party.officer.middleInitial }}</span>
             {% endif %}

@@ -15,6 +15,7 @@
 
 Provides all the search and retrieval from the business entity datastore.
 """
+import re
 from contextlib import suppress
 from http import HTTPStatus
 
@@ -28,13 +29,24 @@ from legal_api.core import Filing as CoreFiling
 from legal_api.resources.v2.business.business_filings import saving_filings
 from legal_api.services import (
     ACCOUNT_IDENTITY,
+    STAFF_ROLE,
     SYSTEM_ROLE,
     RegistrationBootstrapService,
     check_warnings,
     colin,
     flags,
 )
-from legal_api.services.authz import authorized, get_allowable_actions, get_allowed, get_could_files
+from legal_api.services.authz import (
+    COLIN_SVC_ROLE,
+    CONTACT_CENTRE_STAFF_ROLE,
+    MAXIMUS_STAFF_ROLE,
+    SBC_STAFF_ROLE,
+    authorized,
+    get_allowable_actions,
+    get_allowed,
+    get_could_files,
+    has_any_roles,
+)
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.search_service import AffiliationSearchDetails, BusinessSearchService
 from legal_api.utils.auth import jwt
@@ -52,7 +64,8 @@ def get_businesses(identifier: str):
         # - (i.e. business/person search updates)
         return get_businesses_public(identifier, True)
 
-    if identifier.startswith("T"):
+    # Temp bootstrap ids start with "T". Real tramways are TMY + 7 digits (e.g. TMY0000008).
+    if identifier.startswith("T") and not re.fullmatch(r"TMY\d{7}", identifier):
         return {"message": babel("No information on temp registrations.")}, 200
 
     business = Business.find_by_identifier(identifier)
@@ -72,7 +85,15 @@ def get_businesses(identifier: str):
                         f"You are not authorized to view business {identifier}."}), \
             HTTPStatus.UNAUTHORIZED
 
-    warnings = check_warnings(business)
+    is_staff = has_any_roles(jwt, [
+        STAFF_ROLE,
+        SYSTEM_ROLE,
+        COLIN_SVC_ROLE,
+        SBC_STAFF_ROLE,
+        CONTACT_CENTRE_STAFF_ROLE,
+        MAXIMUS_STAFF_ROLE,
+    ])
+    warnings = check_warnings(business, is_staff)
     # TODO remove complianceWarnings line when UI has been integrated to use warnings instead of complianceWarnings
     business.compliance_warnings = warnings
     business.warnings = warnings
@@ -116,7 +137,7 @@ def get_businesses(identifier: str):
 @jwt.requires_auth
 def get_businesses_public(identifier: str, slim = False):
     """Return a JSON object with public meta information about the business."""
-    if identifier.startswith("T"):
+    if identifier.startswith("T") and not re.fullmatch(r"TMY\d{7}", identifier):
         return {"message": babel("No information on temp registrations.")}, 200
 
     business = Business.find_by_identifier(identifier)

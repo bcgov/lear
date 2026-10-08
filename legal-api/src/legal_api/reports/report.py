@@ -26,9 +26,9 @@ from flask import current_app, jsonify
 
 from business_common.utils.datetime import datetime
 from business_common.utils.legislation_datetime import LegislationDatetime
+from business_common.utils.relationship_director import relationship_to_director
 from business_model.models import (
     AmalgamatingBusiness,
-    Amalgamation,
     Business,
     ConsentContinuationOut,
     CorpType,
@@ -45,7 +45,6 @@ from legal_api.reports.document_service import DocumentService, ReportTypes
 from legal_api.reports.registrar_meta import RegistrarInfo
 from legal_api.reports.utils import get_formatted_amalg_business_data
 from legal_api.services import VersionedBusinessDetailsService, flags
-from legal_api.services.request_context import get_request_context
 from legal_api.utils.auth import jwt
 from legal_api.utils.formatting import float_to_str
 
@@ -248,7 +247,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             "incorporation-application/benefitCompanyStmt",
             "incorporation-application/completingPartyCoop",
             "incorporation-application/completingPartyCorp",
-            "incorporation-application/completingPartyOld",
             "incorporation-application/effectiveDate",
             "incorporation-application/incorporator",
             "incorporation-application/nameRequest",
@@ -328,8 +326,6 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_filing_json(filing)
 
         filing["header"]["reportType"] = self._report_key
-
-        filing["flags"] = {}
 
         self._format_par_value(filing)
         self._set_dates(filing)
@@ -419,19 +415,13 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing["business"]["isCorp"] = legal_type in Business.CORPS
 
     def _set_completing_party(self, filing):
-        request_context = get_request_context()
-        enabled_new_features: list[str] = (flags.value("enable-new-feature",
-                                                       request_context.user,
-                                                       request_context.account_id)) or []
-        incorp_compparty_stmnt_enabled = "incorporationApplication-completingParty" in enabled_new_features
-        filing["flags"]["incorporationApplication_completingParty"] = incorp_compparty_stmnt_enabled
         is_corp_incorp = (
             self._filing.filing_type == "incorporationApplication"
             and self._business
             and self._business.legal_type in Business.CORPS
         )
 
-        if is_corp_incorp and incorp_compparty_stmnt_enabled:
+        if is_corp_incorp:
             # staff and API gateway users supply the completing party name via header certifiedBy;
             # for API users the token resolves to the account name, not a user name, so it can't be
             # sourced from the submitter (API users are identified by the jwt loginSource, not a role).
@@ -551,8 +541,13 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing["report_date"] = self._report_date_time.strftime(OUTPUT_DATE_FORMAT)
 
     def _set_directors(self, filing):
-        if filing.get("changeOfDirectors"):
-            filing["listOfDirectors"] = filing["changeOfDirectors"]
+        if change_of_directors := filing.get("changeOfDirectors"):
+            if relationships := change_of_directors.get("relationships"):
+                filing["listOfDirectors"] = {
+                    "directors": [relationship_to_director(relationship) for relationship in relationships]
+                }
+            else:
+                filing["listOfDirectors"] = change_of_directors
         else:
             filing["listOfDirectors"] = {
                 "directors": filing["annualReport"].get("directors", [])
@@ -582,17 +577,22 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             director["deliveryAddress"]["changed"] = True
 
     def _find_director_id_using_name(self, director, prev_completed_filing):
-        director_name = (director["officer"].get("firstName") +
-            director["officer"].get("middleInitial", "") +
-            director["officer"].get("lastName"))
+        director_name = "".join([
+            x.strip() for x in [
+                director["officer"].get("firstName"),
+                director["officer"].get("middleInitial"),
+                director["officer"].get("lastName")] if x and x.strip()
+        ]).upper()
         previous_directors = VersionedBusinessDetailsService.get_party_role_revision(
             prev_completed_filing, self._business.id, role=PartyRole.RoleTypes.DIRECTOR.value)
         for previous_director in previous_directors:
-            previous_director_name = (previous_director["officer"].get("firstName") +
-                                    previous_director["officer"].get("middleInitial", "") +
-                                    previous_director["officer"].get("lastName"))
-            if (previous_director_name.upper() == director_name.upper() and
-                    previous_director["cessationDate"] is None):
+            previous_director_name = "".join([
+                x.strip() for x in [
+                    previous_director["officer"].get("firstName"),
+                    previous_director["officer"].get("middleInitial"),
+                    previous_director["officer"].get("lastName")] if x and x.strip()
+            ]).upper()
+            if previous_director_name == director_name and previous_director["cessationDate"] is None:
                 return previous_director["id"]
 
     def _format_directors(self, directors):
@@ -659,11 +659,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_address(filing["offices"]["recordsOffice"]["mailingAddress"])
         if filing.get("shareStructure", {}).get("shareClasses", None):
             filing["shareClasses"] = filing["shareStructure"]["shareClasses"]
-            dates = filing["shareStructure"].get("resolutionDates", [])
-            formatted_dates = [
-                datetime.fromisoformat(date).strftime(OUTPUT_DATE_FORMAT) for date in dates
-            ]
-            filing["resolutions"] = formatted_dates
+            filing["resolutions"] = self._format_resolution_dates(filing["shareStructure"].get("resolutionDates", []))
 
     def _format_receiver_data(self, filing):
         if self._filing.filing_type == "appointReceiver":
@@ -822,7 +818,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if cco.foreign_jurisdiction_region and cco.foreign_jurisdiction_region != "FEDERAL":
             region = pycountry.subdivisions.\
                 get(code=f"{cco.foreign_jurisdiction}-{cco.foreign_jurisdiction_region}")
-        filing["jurisdiction"] = f"{region.name}, {country.name}" if region else country.name
+        filing["jurisdiction"] = region.name if region else country.name
 
         expiry_date = LegislationDatetime.as_legislation_timezone(cco.expiry_date)
         filing["cco_expiry_date"] = expiry_date.strftime(OUTPUT_DATE_FORMAT)
@@ -910,11 +906,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 filing["previousNameTranslations"] = [alias.json for alias in self._business.aliases.all()]
         if filing["alteration"].get("shareStructure", None):
             filing["shareClasses"] = filing["alteration"]["shareStructure"].get("shareClasses", [])
-            dates = filing["alteration"]["shareStructure"].get("resolutionDates", [])
-            formatted_dates = [
-                datetime.fromisoformat(date).strftime(OUTPUT_DATE_FORMAT) for date in dates
-            ]
-            filing["resolutions"] = formatted_dates
+            filing["resolutions"] = self._format_resolution_dates(
+                filing["alteration"]["shareStructure"].get("resolutionDates", [])
+            )
 
         to_legal_name = None
         if self._filing.status in (Filing.Status.COMPLETED, Filing.Status.CORRECTED):
@@ -955,13 +949,12 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing["incorporationAgreement"] = amalgamation.get("incorporationAgreement", {})
 
         self._set_amalgamating_businesses(filing)
-        if amalgamation["type"] in [Amalgamation.AmalgamationTypes.horizontal.name,
-                                    Amalgamation.AmalgamationTypes.vertical.name]:
-            self._set_from_primary_or_holding_business_data(filing)
-        else:
-            filing["offices"] = amalgamation.get("offices", {})
-            filing["parties"] = amalgamation["parties"]
-            filing["shareClasses"] = amalgamation.get("shareStructure", {}).get("shareClasses", [])
+        filing["offices"] = amalgamation.get("offices", {})
+        filing["parties"] = amalgamation["parties"]
+        filing["shareClasses"] = amalgamation.get("shareStructure", {}).get("shareClasses", [])
+        filing["resolutions"] = self._format_resolution_dates(
+            amalgamation.get("shareStructure", {}).get("resolutionDates", [])
+        )
 
         # Formatting addresses for registered and records office
         self._format_address(filing["offices"]["registeredOffice"]["deliveryAddress"])
@@ -991,26 +984,44 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _set_amalgamating_businesses(self, filing):
         ting_businesses = []
         # Determine the source filing for amalgamating businesses
-        if correction := filing.get("correction"):
-            original_filing = Filing.find_by_id(correction.get("correctedFilingId"))
-            amalgamating_businesses = (
-                original_filing.filing_json["filing"]
-                .get("amalgamationApplication", {})
-                .get("amalgamatingBusinesses", [])
-                if original_filing else []
+        if filing.get("correction"):
+            amalgamation = self._business.amalgamation.first()
+            amalgamating_businesses_revision = AmalgamatingBusiness.get_revision(
+                self._filing.transaction_id, amalgamation.id
             )
+            amalgamating_businesses = []
+            for ting_business in amalgamating_businesses_revision:
+                ting = {}
+                if ting_business.foreign_jurisdiction:
+                    ting["foreignJurisdiction"] = {
+                        "country": ting_business.foreign_jurisdiction,
+                        "region": ting_business.foreign_jurisdiction_region
+                    }
+                    ting["legalName"] = ting_business.foreign_name
+                    ting["identifier"] = ting_business.foreign_identifier
+                elif ting_business.colin_identifier:
+                    ting["identifier"] = ting_business.colin_identifier
+                else:
+                    _ting = Business.find_by_internal_id(ting_business.business_id)
+                    ting["identifier"] = _ting.identifier
+
+                amalgamating_businesses.append(ting)
         else:
             amalgamating_businesses = filing.get("amalgamationApplication", {}).get("amalgamatingBusinesses", [])
 
         for amalgamating_business in amalgamating_businesses:
             identifier = amalgamating_business.get("identifier")
             ting_business = None
-            if not (foreign_name := amalgamating_business.get("legalName")):
+            foreign_name = None
+            if foreign_jurisdiction := amalgamating_business.get("foreignJurisdiction"):
+                foreign_name = amalgamating_business.get("legalName")
+            else:
+                # a LEAR business, or a COLIN business not loaded in LEAR (no LEAR row)
                 ting_business = self._get_versioned_amalgamating_business(identifier)
             amalgamated_businesses_info = get_formatted_amalg_business_data(identifier,
                                                                             foreign_name,
-                                                                            amalgamating_business.get("foreignJurisdiction", {}).get("country"),
-                                                                            amalgamating_business.get("foreignJurisdiction", {}).get("region"),
+                                                                            (foreign_jurisdiction or {}).get("country"),
+                                                                            (foreign_jurisdiction or {}).get("region"),
                                                                             ting_business)
             ting_businesses.append(amalgamated_businesses_info)
 
@@ -1019,85 +1030,13 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
     def _get_versioned_amalgamating_business(self, identifier):
         # until TED business is created, get it from business table
         ting_business = Business.find_by_identifier(identifier)
-        if self._filing.transaction_id:
+        if ting_business and self._filing.transaction_id:
             # get TING business from version
             # when TED is dissolved by staff (with court order) and TING is restored, user can modify TING data
             # which should not be reflected here
             ting_business = VersionedBusinessDetailsService.get_business_revision_obj(
                 self._filing, ting_business.id)
         return ting_business
-
-    def _set_from_primary_or_holding_business_data(self, filing):  # noqa: PLR0912
-        ting_business = next(x for x in filing["amalgamationApplication"]["amalgamatingBusinesses"]
-                             if x["role"] in [AmalgamatingBusiness.Role.holding.name,
-                                              AmalgamatingBusiness.Role.primary.name])
-        primary_or_holding_business = self._get_versioned_amalgamating_business(ting_business["identifier"])
-        filing["nameRequest"]["legalName"] = primary_or_holding_business.legal_name
-
-        parties = []
-        # copy director
-        if self._filing.transaction_id:
-            parties_version = VersionedBusinessDetailsService.get_party_role_revision(
-                self._filing,
-                primary_or_holding_business.id,
-                role=PartyRole.RoleTypes.DIRECTOR.value)
-            for director_json in parties_version:
-                director_json["roles"] = [{"roleType": "Director"}]
-                parties.append(director_json)
-        else:
-            active_directors = PartyRole.get_active_directors(primary_or_holding_business.id,
-                                                              self._filing.effective_date.date())
-            for director in active_directors:
-                director_json = director.json
-                director_json["roles"] = [{"roleType": "Director"}]
-                parties.append(director_json)
-
-        # copy completing party from filing json
-        for party_info in filing["amalgamationApplication"].get("parties"):
-            if comp_party_role := next((x for x in party_info.get("roles")
-                                        if x["roleType"].lower() == "completing party"), None):
-                party_info["roles"] = [comp_party_role]  # override roles to have only completing party
-                parties.append(party_info)
-                break
-        filing["parties"] = parties
-
-        # copy offices
-        offices = {}
-        if self._filing.transaction_id:
-            offices = VersionedBusinessDetailsService.get_office_revision(
-                self._filing.id,
-                self._filing.transaction_id,
-                primary_or_holding_business.id)
-        else:
-            officelist = primary_or_holding_business.offices.all()
-            for i in officelist:
-                if i.office_type in [OfficeType.REGISTERED, OfficeType.RECORDS]:
-                    offices[i.office_type] = {}
-                    for address in i.addresses:
-                        offices[i.office_type][f"{address.address_type}Address"] = address.json
-        filing["offices"] = offices
-
-        # copy shares
-        share_classes = []
-        if self._filing.transaction_id:
-            share_classes = VersionedBusinessDetailsService.get_share_class_revision(
-                self._filing.transaction_id,
-                primary_or_holding_business.id)
-        else:
-            for share_class in primary_or_holding_business.share_classes.all():
-                share_classes.append(share_class.json)
-        filing["shareClasses"] = share_classes
-
-        # copy resolution dates
-        resolutions = []
-        if self._filing.transaction_id:
-            resolutions = VersionedBusinessDetailsService.get_resolution_dates_revision(
-                self._filing.transaction_id,
-                primary_or_holding_business.id)
-        else:
-            for resolution in primary_or_holding_business.resolutions.all():
-                resolutions.append({"date": resolution.resolution_date.strftime(OUTPUT_DATE_FORMAT)})
-        filing["resolutions"] = resolutions
 
     def _format_change_of_registration_data(self, filing, filing_type):  # noqa: PLR0912, PLR0915
         prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
@@ -1190,10 +1129,13 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_certificate_of_continuation_in_data(self, filing):
         if filing.get("correction"):
-            original_filing = Filing.find_by_id(filing.get("correction").get("correctedFilingId"))
-            continuation_in = original_filing.meta_data.get("continuationIn")
+            continuation_in = VersionedBusinessDetailsService.get_jurisdiction_revision(
+                self._filing.transaction_id, self._business.id)
+            filing["prevJurisdictionLegalName"] = continuation_in.get("legalName")
         else:
             continuation_in = self._filing.meta_data.get("continuationIn")
+            filing["prevJurisdictionLegalName"] = filing["continuationIn"].get("foreignJurisdiction").get("legalName")
+
         country_code = continuation_in["country"]
         region_code = continuation_in["region"]
 
@@ -1201,8 +1143,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         region = None
         if region_code and region_code.upper() != "FEDERAL":
             region = pycountry.subdivisions.get(code=f"{country_code}-{region_code}")
-        filing["jurisdiction"] = f"{region.name}, {country.name}" if region else country.name
-        filing["prev_legal_name"] = filing["continuationIn"].get("foreignJurisdiction").get("legalName")
+        filing["jurisdiction"] = region.name if region else country.name
 
     def _format_continuation_in_data(self, filing):
         self._format_address(filing["continuationIn"]["offices"]["registeredOffice"]["deliveryAddress"])
@@ -1276,10 +1217,12 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             # This is not a common scenario, adding it for migrated data
             changed = True
         elif officer.get("partyType") == "person":
-            middle_name = officer.get("middleName", officer.get("middleInitial", ""))
-            if prev_officer.get("firstName").upper() != officer.get("firstName").upper() or \
-                    prev_officer.get("middleName", "").upper() != middle_name.upper() or \
-                    prev_officer.get("lastName").upper() != officer.get("lastName").upper():
+            middle_name = officer.get("middleName", officer.get("middleInitial")) or ""
+            if (
+                (prev_officer.get("firstName") or "").upper() != (officer.get("firstName") or "").upper() or
+                (prev_officer.get("middleName") or "").upper() != middle_name.upper() or
+                prev_officer.get("lastName").upper() != officer.get("lastName").upper()
+            ):
                 changed = True
         elif (
             officer.get("partyType") == "organization" and
@@ -1405,7 +1348,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     parties_to_edit.append(str(party_id))
                     prev_party =\
                         VersionedBusinessDetailsService.get_party_revision(
-                            prev_completed_filing, party_id)
+                            prev_completed_filing, int(party_id))
                     prev_party_json = VersionedBusinessDetailsService.party_revision_json(
                         prev_completed_filing.transaction_id, prev_party, True)
                     if self._has_party_name_change(prev_party_json, party):
@@ -1426,15 +1369,20 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             parties_deleted = [p for p in existing_party_json if p["officer"]["id"] not in parties_to_edit]
             filing["ceasedParties"] = parties_deleted
 
+    def _format_resolution_dates(self, resolution_dates: list[str | dict]) -> list[dict]:
+        formatted_dates = []
+        for date in resolution_dates:
+            date_str = date.get("date") if isinstance(date, dict) else date
+            formatted_dates.append({"date": datetime.fromisoformat(date_str).strftime(OUTPUT_DATE_FORMAT)})
+
+        return formatted_dates
+
     def _format_share_class_data(self, filing, prev_completed_filing: Filing):  # pylint: disable=too-many-locals;
         if filing.get("correction").get("shareStructure") is None:
             return
         filing["shareClasses"] = filing.get("correction").get("shareStructure", {}).get("shareClasses")
-        dates = filing["correction"]["shareStructure"].get("resolutionDates", [])
-        formatted_dates = [
-            datetime.fromisoformat(date).strftime(OUTPUT_DATE_FORMAT) for date in dates
-        ]
-        filing["resolutions"] = formatted_dates
+        filing["resolutions"] = self._format_resolution_dates(
+            filing["correction"]["shareStructure"].get("resolutionDates", []))
         filing["newShareClasses"] = []
         if filing.get("shareClasses"):
             prev_share_class_json = VersionedBusinessDetailsService.get_share_class_revision(

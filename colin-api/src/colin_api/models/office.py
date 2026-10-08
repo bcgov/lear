@@ -19,6 +19,7 @@ from typing import Dict, List, Optional
 
 from flask import current_app
 
+from colin_api.exceptions import GenericException
 from colin_api.models import Address  # pylint: disable=cyclic-import
 from colin_api.resources.db import DB
 from colin_api.utils import delete_from_table_by_event_ids, stringify_list
@@ -113,8 +114,12 @@ class Office:
 
         addresses.keys() = ['deliveryAddress', 'mailingAddress']
         """
-        delivery_addr_id = Address.create_new_address(cursor, addresses['deliveryAddress'], corp_num=corp_num)
-        mailing_addr_id = Address.create_new_address(cursor, addresses['mailingAddress'], corp_num=corp_num)
+        delivery_address = addresses.get('deliveryAddress') or addresses.get('mailingAddress')
+        mailing_address = addresses.get('mailingAddress') or addresses.get('deliveryAddress')
+        if not delivery_address:
+            raise GenericException(f'No delivery or mailing address for {office_type} of {corp_num}', 400)
+        delivery_addr_id = Address.create_new_address(cursor, delivery_address, corp_num=corp_num)
+        mailing_addr_id = Address.create_new_address(cursor, mailing_address, corp_num=corp_num)
         office_code = Office.OFFICE_TYPES_CODES[office_type]
 
         # update office table to include new addresses and end old office

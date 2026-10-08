@@ -654,13 +654,10 @@ def test_validate_name_request(session, mocker, test_name, legal_type, expected_
                                       'path': '/filing/incorporationApplication/parties/roles'}]
         )
     ])
-@pytest.mark.parametrize('cp_flag_enabled', [True, False])
 def test_validate_incorporation_role(session, monkeypatch, mocker, test_name,
-                                     legal_type, parties, expected_code, expected_msg,
-                                     cp_flag_enabled):
+                                     legal_type, parties, expected_code, expected_msg):
     """Assert that incorporation parties roles can be validated."""
     mock_drs_get_document(monkeypatch)
-    mocker.patch.object(flags, 'value', return_value=["incorporationApplication-completingParty"] if cp_flag_enabled else [])
 
     filing_json = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
     filing_json['filing']['header'] = {'name': incorporation_application_name, 'date': '2019-04-08', 
@@ -706,7 +703,7 @@ def test_validate_incorporation_role(session, monkeypatch, mocker, test_name,
     err = validate(business, filing_json)
 
     # validate outcomes
-    is_corp_incorp_cp_skip = cp_flag_enabled and legal_type in Business.CORPS
+    is_corp_incorp_cp_skip = legal_type in Business.CORPS
 
     if is_corp_incorp_cp_skip and test_name in [
         'FAIL_NO_COMPLETING_PARTY',
@@ -900,25 +897,6 @@ def test_validate_incorporation_parties_mailing_address(session, mocker, test_na
                 }
             ],
             None
-        ),
-        (
-            'FAIL_FIRST_NAME_EMPTY', 'BEN',
-            [
-                {
-                    'partyName': 'officer1',
-                    'roles': ['Completing Party', 'Incorporator'],
-                    'officer': {'firstName': '', 'middleName': None, 'lastName': 'Doe'}
-                },
-                {
-                    'partyName': 'officer2',
-                    'roles': ['Incorporator', 'Director'],
-                    'officer': {'firstName': '', 'middleName': 'jkalsdf', 'lastName': 'Doe'}
-                }
-            ],
-            [{'error': 'Completing Party, Incorporator first name is required',
-              'path': '/filing/incorporationApplication/parties'},
-             {'error': 'Incorporator, Director first name is required',
-              'path': '/filing/incorporationApplication/parties'}]
         ),
         (
             'FAIL_FIRST_NAME_LEADING_AND_TRAILING_WHITESPACE', 'BEN',
@@ -1954,10 +1932,9 @@ def test_incorporation_permission_and_completing_party_flag(mocker, app, session
     account_id = '123456'
     filing_json = _build_incorporation_filing_json()
 
-    _setup_incorporation_permission_mocks(mocker, filing_json, Business.LegalTypes.BCOMP.value)
+    _setup_incorporation_permission_mocks(mocker, filing_json, Business.LegalTypes.COOP.value)
 
     mocker.patch.object(flags, 'is_on', return_value=flag_enabled)
-    mocker.patch.object(incorporation_application, '_incorp_completing_party_not_required', return_value=False)
     mock_validate_permission = mocker.patch.object(incorporation_application,
         'validate_permission_and_completing_party', return_value=permission_error)
     
@@ -1988,24 +1965,21 @@ def test_incorporation_permission_and_completing_party_flag(mocker, app, session
 
 
 @pytest.mark.parametrize(
-    'test_name, legal_type, cp_not_required, expected_called',
+    'test_name, legal_type, expected_called',
     [
-        ('corp_flag_on_skips', Business.LegalTypes.BCOMP.value, True, False),
-        ('corp_flag_off_validates', Business.LegalTypes.BCOMP.value, False, True),
-        ('coop_flag_on_still_validates', Business.LegalTypes.COOP.value, True, True),
-        ('coop_flag_off_validates', Business.LegalTypes.COOP.value, False, True),
+        ('corp_skips', Business.LegalTypes.BCOMP.value, False),
+        ('coop_validates', Business.LegalTypes.COOP.value, True),
     ]
 )
-def test_incorporation_permission_cp_not_required_flag(mocker, app, session, test_name, legal_type,
-                                                       cp_not_required, expected_called):
-    """Test that corps are skipped when completing party feature flag is on, coops always validate."""
+def test_incorporation_permission_completing_party(mocker, app, session, test_name, legal_type,
+                                                   expected_called):
+    """Test that corps skip permission and completing party validation, coops always validate."""
     account_id = '123456'
     filing_json = _build_incorporation_filing_json()
 
     _setup_incorporation_permission_mocks(mocker, filing_json, legal_type)
 
     mocker.patch.object(flags, 'is_on', return_value=True)
-    mocker.patch.object(incorporation_application, '_incorp_completing_party_not_required', return_value=cp_not_required)
     mock_validate_permission = mocker.patch.object(incorporation_application,
         'validate_permission_and_completing_party', return_value=None)
 

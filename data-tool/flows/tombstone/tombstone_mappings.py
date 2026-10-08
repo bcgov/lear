@@ -49,6 +49,9 @@ class EventFilings(str, Enum):
     # CONVOTHER Annual Report
     CONVOTHER_OTANN = 'CONVOTHER_OTANN'
 
+    # Change of Name
+    FILE_OTNCN = 'FILE_OTNCN'
+
     # Change of Address
     FILE_APTRA = 'FILE_APTRA'
     FILE_NOERA = 'FILE_NOERA'
@@ -276,6 +279,9 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     EventFilings.FILE_AM_DO: 'changeOfAddress',
     EventFilings.FILE_AM_RR: 'changeOfAddress',
 
+    # FILE_OTNCN
+    EventFilings.FILE_OTNCN: 'changeOfName',
+    
     # CONVOTHER Change of Address
     EventFilings.CONVOTHER_OTADD: 'changeOfAddress',
 
@@ -370,14 +376,14 @@ EVENT_FILING_LEAR_TARGET_MAPPING = {
     # TODO: Liquidation - unsupported
     EventFilings.FILE_ADCOL: 'courtOrderedLiquidation',
     EventFilings.FILE_ADVLQ: 'voluntaryLiquidation',
-    EventFilings.FILE_NOAPL: 'appointLiquidator',
-    EventFilings.FILE_NOARM: 'appointReceiver',
-    EventFilings.FILE_NOCAL: 'changeLiquidatorAddress',
+    EventFilings.FILE_NOAPL: ['changeOfLiquidators', 'appointLiquidator'],
+    EventFilings.FILE_NOARM: ['changeOfReceivers', 'appointReceiver'],
+    EventFilings.FILE_NOCAL: ['changeOfLiquidators', 'changeLiquidatorAddress'],
     EventFilings.FILE_NOCDS: 'changeRespectingDCR',
-    EventFilings.FILE_NOCEL: 'ceaseLiquidator',
-    EventFilings.FILE_NOCER: 'ceaseReceiver',
+    EventFilings.FILE_NOCEL: ['changeOfLiquidators', 'ceaseLiquidator'],
+    EventFilings.FILE_NOCER: ['changeOfReceivers', 'ceaseReceiver'],
     EventFilings.FILE_NOLDS: 'locationDCR',
-    EventFilings.FILE_NOCRM: 'changeReceiverAddress',
+    EventFilings.FILE_NOCRM: ['changeOfReceivers', 'changeReceiverAddress'],
     EventFilings.FILE_NOTRA: 'transferRecordsOffice',
 
     EventFilings.FILE_NWITH: 'noticeOfWithdrawal',
@@ -456,6 +462,9 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_OTADD: 'Notice of Change of Address',
     EventFilings.FILE_AM_DO: 'Amendment - Dissolved Office',
     EventFilings.FILE_AM_RR: 'Amendment - Registered and Records Offices',
+
+    # CONVOTHER Change of Name
+    EventFilings.FILE_OTNCN: 'Change of Name of a Cobrs Entity',
 
     # CONVOTHER Change of Address
     EventFilings.CONVOTHER_OTADD: 'Notice of Change of Address',
@@ -547,7 +556,7 @@ EVENT_FILING_DISPLAY_NAME_MAPPING = {
     EventFilings.FILE_NOLDS: 'Notice of Location of Dissolved Company\'s Records',
     EventFilings.FILE_NOCRM: 'Notice of Change of Address of Receiver or Receiver Manager',
     EventFilings.FILE_NOTRA: 'Notice of Transfer of Records',
-    # LQSIN: 'Statement of Intent to Liquidate'
+    # EventFilings.FILE_LQSIN: 'Statement of Intent to Liquidate',
     # LQSCO: 'Stay of Liquidation - Court Ordered'
     # LQDIS: 'Discontinuance of Liquidation - Court Ordered'
     # LQCON: 'Continuance of Liquidation - Court Ordered'

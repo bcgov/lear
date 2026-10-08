@@ -40,7 +40,7 @@ class Party(db.Model, Versioned):  # pylint: disable=too-many-instance-attribute
     party_type = db.Column('party_type', db.String(30),
                            default=PartyTypes.PERSON.value)
     # person
-    first_name = db.Column('first_name', db.String(30), index=True)
+    first_name = db.Column('first_name', db.String(60), index=True)
     middle_initial = db.Column('middle_initial', db.String(30), index=True)
     last_name = db.Column('last_name', db.String(30))
     alternate_name = db.Column('alternate_name', db.String(90))

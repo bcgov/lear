@@ -400,9 +400,9 @@ FOUNDING_DATE = NOW - datedelta.YEAR
     'test_name, has_rights_or_restrictions, has_rights_or_restrictions_series, '
     'resolution_dates, expected_code, expected_msg',
     [
-        ('SUCCESS_class_has_rights', True, False, ['2024-01-01'], None, None),
+        ('SUCCESS_class_has_rights', True, False, [{'date': '2024-01-01'}], None, None),
         ('SUCCESS_class_no_rights', False, False, [], None, None),
-        ('SUCCESS_series_has_rights', False, True, ['2024-01-01'], None, None),
+        ('SUCCESS_series_has_rights', False, True, [{'date': '2024-01-01'}], None, None),
         ('SUCCESS_series_no_rights', False, False, [], None, None),
 
         ('FAILURE_class_missing_date', True, False, [], HTTPStatus.BAD_REQUEST, [
@@ -414,19 +414,19 @@ FOUNDING_DATE = NOW - datedelta.YEAR
              'path': '/filing/alteration/shareStructure/resolutionDates'}
         ]),
 
-        ('FAILURE_too_many_dates', True, False, ['2024-01-01', '2024-02-01'], HTTPStatus.BAD_REQUEST, [
+        ('FAILURE_too_many_dates', True, False, [{'date': '2024-01-01'}, {'date': '2024-02-01'}], HTTPStatus.BAD_REQUEST, [
             {'error': 'Only one resolution date is permitted.',
              'path': '/filing/alteration/shareStructure/resolutionDates'}
         ]),
 
-        ('FAILURE_future_date', True, False, [(NOW + datedelta.DAY).date().isoformat()], HTTPStatus.BAD_REQUEST, [
+        ('FAILURE_future_date', True, False, [{'date': (NOW + datedelta.DAY).date().isoformat()}], HTTPStatus.BAD_REQUEST, [
             {'error': 'Resolution date cannot be in the future.',
-             'path': '/filing/alteration/shareStructure/resolutionDates'}
+             'path': '/filing/alteration/shareStructure/resolutionDates/0'}
         ]),
 
-        ('FAILURE_before_founding', True, False, [(FOUNDING_DATE - datedelta.DAY).date().isoformat()], HTTPStatus.BAD_REQUEST, [
+        ('FAILURE_before_founding', True, False, [{'date': (FOUNDING_DATE - datedelta.DAY).date().isoformat()}], HTTPStatus.BAD_REQUEST, [
             {'error': 'Resolution date cannot be before the business founding date.',
-             'path': '/filing/alteration/shareStructure/resolutionDates'}
+             'path': '/filing/alteration/shareStructure/resolutionDates/0'}
         ]),
     ]
 )
@@ -478,7 +478,7 @@ def test_alteration_share_classes_optional(session):
     del f['filing']['alteration']['nameRequest']
     del f['filing']['alteration']['business']['legalType']
     del f['filing']['alteration']['shareStructure']['shareClasses']
-    f['filing']['alteration']['shareStructure']['resolutionDates'] = ['2020-05-23']
+    f['filing']['alteration']['shareStructure']['resolutionDates'] = [{'date': '2020-05-23'}]
 
     err = validate(business, f)
     assert None is err

@@ -20,7 +20,7 @@ from flask_cors import cross_origin
 from business_model.models import Business, Filing, Jurisdiction
 from business_model.utils.legislation_datetime import LegislationDatetime
 from legal_api.core import Filing as CoreFiling
-from legal_api.services import authorized
+from legal_api.services import authorized, colin
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -164,33 +164,17 @@ def _get_amalgamation_application_data(business: Business, for_correction: bool 
 
     amalgamating_businesses = []
     for ting in amalgamation.amalgamating_businesses:
-        ting_info = {
-            "id": ting.id,
-            "role": ting.role.name
-        }
         if ting.business_id:
-            ting_business = Business.find_by_internal_id(ting.business_id)
-            ting_info.update({
-                "identifier": ting_business.identifier
-            })
-            if for_correction:
-                ting_info.update({
-                    "legalName": ting_business.legal_name,
-                    "legalType": ting_business.legal_type
-                })
-                mailing_address = ting_business.mailing_address.one_or_none()
-                if mailing_address:
-                    ting_info["mailingAddress"] = mailing_address.json
+            ting_info = _lear_ting_info(ting, for_correction)
+        elif ting.colin_identifier:
+            ting_info = _colin_ting_info(ting, for_correction)
         else:
-            ting_info.update({
-                "identifier": ting.foreign_identifier,
-                "foreignJurisdiction": {
-                    "country": ting.foreign_jurisdiction,
-                    "region": ting.foreign_jurisdiction_region
-                },
-                "legalName": ting.foreign_name
-            })
-        amalgamating_businesses.append(ting_info)
+            ting_info = _foreign_ting_info(ting)
+        amalgamating_businesses.append({
+            "id": ting.id,
+            "role": ting.role.name,
+            **ting_info
+        })
 
     return {
         "amalgamation": {
@@ -198,3 +182,50 @@ def _get_amalgamation_application_data(business: Business, for_correction: bool 
             "courtApproval": amalgamation.court_approval
         }
     }, HTTPStatus.OK
+
+
+def _lear_ting_info(ting, for_correction: bool) -> dict:
+    ting_business = Business.find_by_internal_id(ting.business_id)
+    ting_info = {"identifier": ting_business.identifier}
+    if for_correction:
+        ting_info.update({
+            "legalName": ting_business.legal_name,
+            "legalType": ting_business.legal_type
+        })
+        if mailing_address := ting_business.mailing_address.one_or_none():
+            ting_info["mailingAddress"] = mailing_address.json
+    return ting_info
+
+
+def _colin_ting_info(ting, for_correction: bool) -> dict:
+    """Return the data of a COLIN business not loaded in LEAR, resolved from its snapshot."""
+    ting_info = {"identifier": ting.colin_identifier}
+    if not for_correction:
+        return ting_info
+
+    snapshot_json, snapshot_status = colin.get_snapshot(ting.colin_identifier)
+    if snapshot_status != HTTPStatus.OK:
+        return ting_info
+
+    snapshot_business = (snapshot_json or {}).get("business") or {}
+    ting_info.update({
+        "legalName": snapshot_business.get("legalName"),
+        "legalType": snapshot_business.get("legalType"),
+        "jurisdiction": snapshot_business.get("jurisdiction")
+    })
+    mailing_address = (((snapshot_json or {}).get("offices") or {})
+                       .get("registeredOffice") or {}).get("mailingAddress")
+    if mailing_address:
+        ting_info["mailingAddress"] = mailing_address
+    return ting_info
+
+
+def _foreign_ting_info(ting) -> dict:
+    return {
+        "identifier": ting.foreign_identifier,
+        "foreignJurisdiction": {
+            "country": ting.foreign_jurisdiction,
+            "region": ting.foreign_jurisdiction_region
+        },
+        "legalName": ting.foreign_name
+    }

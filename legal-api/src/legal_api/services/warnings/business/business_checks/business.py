@@ -22,7 +22,7 @@ from .firms import check_business as firms_check
 from .involuntary_dissolution import check_business as involuntary_dissolution_check
 
 
-def check_business(business: Business) -> list:
+def check_business(business: Business, is_staff: bool = False) -> list:
     """Check business for warnings."""
     result = []
 
@@ -31,7 +31,7 @@ def check_business(business: Business) -> list:
              Business.LegalTypes.PARTNERSHIP.value):
         result = firms_check(business)
     elif business.legal_type in Business.CORPS:
-        result = corps_check(business)
+        result = corps_check(business, is_staff)
 
     if business.legal_type in InvoluntaryDissolutionService.ELIGIBLE_TYPES:
         result.extend(involuntary_dissolution_check(business))

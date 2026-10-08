@@ -35,7 +35,7 @@
 from business_model.models import Business, Document, DocumentType, Filing
 
 from business_filer.filing_meta import FilingMeta
-from business_filer.filing_processors.filing_components import filings
+from business_filer.filing_processors.filing_components import documents, filings
 
 
 def process(business: Business, court_order_filing: Filing, filing: dict, filing_meta: FilingMeta):
@@ -54,20 +54,15 @@ def process(business: Business, court_order_filing: Filing, filing: dict, filing
         business.documents.append(document)
         file_list.append({
             "fileKey": document.file_key,
-            "fileName": f'Court Order {court_order_data.get("fileNumber")}.pdf'
+            "fileName": f'Court Order {court_order_data.get("fileNumber")}.pdf',
+            "documentType": document.type
         })
     elif files := court_order_data.get("files", []):
-        for file in files:
-            document = Document()
-            document.type = DocumentType.COURT_ORDER.value
-            document.file_key = file.get("fileKey")
-            document.file_name = file.get("fileName")
-            file_list.append({
-                "fileKey": document.file_key,
-                "fileName": document.file_name
-            })
-            document.filing_id = court_order_filing.id
-            business.documents.append(document)
+        file_list = documents.create_filing_documents(
+            files,
+            business,
+            court_order_filing
+        )
 
     if file_list:
         filing_meta.court_order = {
