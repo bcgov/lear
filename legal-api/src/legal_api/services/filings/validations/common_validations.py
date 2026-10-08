@@ -1077,12 +1077,11 @@ def validate_name_request(filing_json: dict,  # noqa: PLR0913 # pylint: disable=
     if not nr_number and not legal_name:
         if legal_type in Business.CORPS:
             return []  # It's numbered company
-        else:
-            # CP, SP, GP doesn't support numbered company
-            return [{"error": _("Legal name and nrNumber is missing in nameRequest."), "path": nr_path}]
-    elif nr_number and not legal_name:
+        # CP, SP, GP doesn't support numbered company
+        return [{"error": _("Legal name and nrNumber is missing in nameRequest."), "path": nr_path}]
+    if nr_number and not legal_name:
         return [{"error": _("Legal name is missing in nameRequest."), "path": legal_name_path}]
-    elif not nr_number and legal_name:
+    if not nr_number and legal_name:
         # expecting nrNumber when legalName provided
         return [{
             "error": _("nrNumber is missing for the legal name provided in nameRequest."),
