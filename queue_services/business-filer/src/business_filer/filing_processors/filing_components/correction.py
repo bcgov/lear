@@ -268,6 +268,10 @@ def correct_corp_data_historical(business: Business,
         amalgamation_out = dpath.get(correction_filing, "/correction/amalgamationOut")
         if amalgamation_out:
             update_out("amalgamationOut", business, amalgamation_out, filing_meta)
+    filing_meta.correction = {
+        **filing_meta.correction,
+        "hasNoa": False
+    }
 
 
 def update_out(out_type: str, business: Business, out: dict, filing_meta: FilingMeta):
@@ -310,6 +314,8 @@ def correct_corp_data(business: Business,
                       filing_meta: FilingMeta):
     """Correct corporation data."""
     to_legal_type = None
+    # A corp correction has a NOA report if any of the following changes: business name, office, director, shares.
+    has_noa: bool = False
     with suppress(IndexError, KeyError, TypeError):
         to_legal_type = dpath.get(correction_filing, "/correction/newLegalType")
         if to_legal_type and business.legal_type != to_legal_type:
@@ -319,6 +325,7 @@ def correct_corp_data(business: Business,
                 "toLegalType": to_legal_type
             }
             business_info.set_corp_type(business, {"legalType": to_legal_type})
+            has_noa = True
 
     # Update business legalName if present
     with suppress(IndexError, KeyError, TypeError):
@@ -331,6 +338,7 @@ def correct_corp_data(business: Business,
                 "fromLegalName": from_legal_name,
                 "toLegalName": business.legal_name
             }
+            has_noa = True
 
     # update name translations, if any
     with suppress(IndexError, KeyError, TypeError):
@@ -340,16 +348,17 @@ def correct_corp_data(business: Business,
     # Update offices if present
     with suppress(IndexError, KeyError, TypeError):
         offices_structure = dpath.get(correction_filing, CORRECTION_OFFICES_PATH)
-        _update_addresses(offices_structure)
+        has_noa = has_noa or _update_addresses(offices_structure)
 
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
         party_json = dpath.get(correction_filing, CORRECTION_PARTIES_PATH)
-        update_parties(business, party_json, correction_filing_rec)
+        has_noa = has_noa or update_parties(business, party_json, correction_filing_rec)
 
     # Update relationships (newer schema for parties)
     with suppress(IndexError, KeyError, TypeError):
         relationships = dpath.get(correction_filing, "/correction/relationships")
+        has_noa = _director_relationship_changed(relationships, has_noa)
         create_relationships(relationships, business, correction_filing_rec)
         cease_relationships(relationships,
                             business,
@@ -365,7 +374,7 @@ def correct_corp_data(business: Business,
         update_relationship_entity_info(relationships, business)
         _set_lear_only(correction_filing, correction_filing_rec, relationships, business)
 
-    _update_share_structure(correction_filing, business)
+    has_noa = has_noa or _update_share_structure(correction_filing, business)
 
     with suppress(IndexError, KeyError, TypeError):
         amalgamation = dpath.get(correction_filing, "/correction/amalgamation")
@@ -375,13 +384,17 @@ def correct_corp_data(business: Business,
     with suppress(IndexError, KeyError, TypeError):
         continuation_in = dpath.get(correction_filing, "/correction/continuationIn")
         if continuation_in:
-            update_continuation_in(business, continuation_in, filing_meta)
+            has_noa = has_noa or update_continuation_in(business, continuation_in, filing_meta)
+    filing_meta.correction = {
+        **filing_meta.correction,
+        "hasNoa": has_noa
+    }
 
 
-def update_continuation_in(business: Business, continuation_in: dict, filing_meta: FilingMeta):
-    """Update continuation in details on correction."""
+def update_continuation_in(business: Business, continuation_in: dict, filing_meta: FilingMeta) -> bool:
+    """Update continuation in details on correction. Return True if jurisdiction is changing."""
     jurisdiction = Jurisdiction.get_continuation_in_jurisdiction(business.id)
-
+    updated_jurisdiction: bool = False
     country = continuation_in.get("country")
     region = continuation_in.get("region")
     legal_name = continuation_in.get("legalName")
@@ -396,6 +409,7 @@ def update_continuation_in(business: Business, continuation_in: dict, filing_met
             "region": region,
             "legalName": legal_name
         }
+        updated_jurisdiction = True
 
     jurisdiction.country = country
     jurisdiction.region = region
@@ -407,6 +421,7 @@ def update_continuation_in(business: Business, continuation_in: dict, filing_met
     if expro := continuation_in.get("expro"):
         jurisdiction.expro_identifier = expro.get("identifier")
         jurisdiction.expro_legal_name = expro.get("legalName")
+    return updated_jurisdiction
 
 
 def update_amalgamation(business: Business, amalgamation: dict, filing_meta: FilingMeta):
@@ -452,8 +467,9 @@ def update_amalgamation(business: Business, amalgamation: dict, filing_meta: Fil
         filing_meta.correction["amalgamation"] = amalgamation_meta
 
 
-def update_parties(business: Business, parties: list, correction_filing_rec: Filing):
-    """Create a new party or get them if they already exist."""
+def update_parties(business: Business, parties: list, correction_filing_rec: Filing) -> bool:
+    """Create a new party or get them if they already exist. Return True if directors modified."""
+    updated: bool = False
     if correction_filing_rec.colin_event_ids:
         # This may not be covering all the cases, introducing this to sync back the BEN to BC business as of today.
         directors = PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value)
@@ -473,9 +489,9 @@ def update_parties(business: Business, parties: list, correction_filing_rec: Fil
         filing_json["filing"]["correction"]["parties"] = parties
         correction_filing_rec._filing_json = filing_json  # pylint: disable=protected-access; bypass to update
 
-    # Cease the party roles not present in the edit request
     if parties is None:
-        return
+        return updated
+    # Cease the party roles not present in the edit request
     end_date_time = datetime.datetime.now(datetime.UTC)
     parties_to_update = [party.get("officer").get("id") for party in parties if
                          party.get("officer").get("id") is not None]
@@ -487,6 +503,8 @@ def update_parties(business: Business, parties: list, correction_filing_rec: Fil
             continue
         if party_role.party_id not in parties_to_update:
             party_role.cessation_date = end_date_time
+            if business.legal_type in Business.CORPS and party_role.role == PartyRole.RoleTypes.DIRECTOR.value:
+                updated = True
 
     # Create and Update
     for party_info in parties:
@@ -495,13 +513,16 @@ def update_parties(business: Business, parties: list, correction_filing_rec: Fil
         # The backend will have an id of type int
         if not party_info.get("officer").get("id") or \
                 (party_info.get("officer").get("id") and not isinstance(party_info.get("officer").get("id"), int)):
-            _create_party_info(business, correction_filing_rec, party_info)
+            updated = updated or _create_party_info(business, correction_filing_rec, party_info)
         else:
             # Update if id is present
-            _update_party(party_info)
+            updated = updated or _update_party(party_info)
+    return updated
 
 
-def _update_party(party_info):
+def _update_party(party_info) -> bool:
+    """Update an existing party. Return True if the party is a director."""
+    dir_updated: bool = False
     party = Party.find_by_id(party_id=party_info.get("officer").get("id"))
     if party:
         party.first_name = (party_info["officer"].get("firstName") or "").upper()
@@ -522,8 +543,15 @@ def _update_party(party_info):
             party.mailing_address = update_address(party.mailing_address, party_info.get("mailingAddress"))
         else:
             party.mailing_address = create_address(party_info.get("mailingAddress"), Address.MAILING)
+        for role_type in party_info.get("roles"):
+            if PartyRole.RoleTypes.DIRECTOR.value == role_type.get("roleType", "").lower():
+                dir_updated = True
+                break
+    return dir_updated
 
-def _create_party_info(business, correction_filing_rec, party_info):
+def _create_party_info(business, correction_filing_rec, party_info) -> bool:
+    """Create a new party. Return True if a director is created."""
+    dir_created = False
     party = create_party(business_id=business.id, party_info=party_info, create=False)
     for role_type in party_info.get("roles"):
         role_str = role_type.get("roleType", "").lower()
@@ -537,23 +565,31 @@ def _create_party_info(business, correction_filing_rec, party_info):
             correction_filing_rec.filing_party_roles.append(party_role)
         else:
             business.party_roles.append(party_role)
+            dir_created = dir_created or party_role.role == PartyRole.RoleTypes.DIRECTOR.value
+    return dir_created
 
-
-def _update_addresses(offices_structure):
-    """Update addresses when offices exists."""
+def _update_addresses(offices_structure) -> bool:
+    """Update addresses when offices exists. Return true if modified"""
+    updated: bool = False
     for addresses in offices_structure.values():
         for updated_address in addresses.values():
             if updated_address.get("id", None):
                 address = Address.find_by_id(updated_address.get("id"))
                 if address:
                     update_address(address, updated_address)
+                    updated = True
+    return updated
 
 
-def _update_share_structure(correction_filing: dict, business: Business):
-    """Update share structure and resolutions, if any."""
+def _update_share_structure(correction_filing: dict, business: Business) -> bool:
+    """Update share structure and resolutions, if any. Return true if share classes updated."""
+    updated: bool = False
     with suppress(IndexError, KeyError, TypeError):
         share_structure = dpath.get(correction_filing, CORRECTION_SHARE_STRUCTURE_PATH)
         shares.update_share_structure_correction(business, share_structure)
+        # NOA if share classes are updated.
+        updated = share_structure and share_structure.get("shareClasses")
+    return updated
 
 
 def _set_lear_only(correction_filing: dict, filing_rec: Filing, relationships: list[dict], business: Business):
@@ -578,4 +614,19 @@ def _set_lear_only(correction_filing: dict, filing_rec: Filing, relationships: l
         )
     ):
         filing_rec.lear_only = True
-            
+
+
+def _director_relationship_changed(relationships: list[dict], has_noa: bool) -> bool:
+    """True if director changed in relationships list."""
+    if has_noa:
+        return has_noa
+
+    if not relationships:
+        return False
+
+    for relationship_info in relationships:
+        for role_info in relationship_info.get("roles", []):
+            if role_info["roleType"].lower() == "director":
+                return True
+
+    return False

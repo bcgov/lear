@@ -422,8 +422,8 @@ def prep_correction_filing(session,
         del filing_template['filing']['correction']['rulesFileKey']
     if not has_memorandum_change:
         del filing_template['filing']['correction']['memorandumFileKey']
-
-    filing = create_filing(token='1', filing_json=filing_template, business_id=business.id)
+    meta_data = {"correction": {"hasNoa": False}}
+    filing = create_filing(token='1', filing_json=filing_template, business_id=business.id, meta_data=meta_data)
 
     filing.save()
     if status == 'COMPLETED':
