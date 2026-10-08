@@ -127,7 +127,11 @@ def _validate_name_request_section(amalgamation_json, amalgamation_type, legal_t
             "path": f"/filing/{filing_type}/nameRequest/nrNumber"
         }]
 
-    return validate_name_request(amalgamation_json, legal_type, filing_type)
+    # a BC or BEN resulting business may use an NR of either type
+    bc_ben_legal_types = [Business.LegalTypes.COMP.value, Business.LegalTypes.BCOMP.value]
+    accepted_legal_types = bc_ben_legal_types if legal_type in bc_ben_legal_types else None
+    return validate_name_request(amalgamation_json, legal_type, filing_type,
+                                 accepted_legal_types=accepted_legal_types)
 
 
 def _structural_validation_errors(amalgamation_json, legal_type, filing_type) -> list:

@@ -1059,11 +1059,12 @@ def _validate_relationship_date(date_value: date,
     return msg
 
 
-def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
+def validate_name_request(filing_json: dict,  # noqa: PLR0913 # pylint: disable=too-many-locals
                           legal_type: str,
                           filing_type: str,
                           accepted_request_types: list | None = None,
-                          filing_id: int | None = None) -> list:
+                          filing_id: int | None = None,
+                          accepted_legal_types: list | None = None) -> list:
     """Validate name request section."""
     nr_path = f"/filing/{filing_type}/nameRequest"
     nr_number_path = f"{nr_path}/nrNumber"
@@ -1076,12 +1077,11 @@ def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
     if not nr_number and not legal_name:
         if legal_type in Business.CORPS:
             return []  # It's numbered company
-        else:
-            # CP, SP, GP doesn't support numbered company
-            return [{"error": _("Legal name and nrNumber is missing in nameRequest."), "path": nr_path}]
-    elif nr_number and not legal_name:
+        # CP, SP, GP doesn't support numbered company
+        return [{"error": _("Legal name and nrNumber is missing in nameRequest."), "path": nr_path}]
+    if nr_number and not legal_name:
         return [{"error": _("Legal name is missing in nameRequest."), "path": legal_name_path}]
-    elif not nr_number and legal_name:
+    if not nr_number and legal_name:
         # expecting nrNumber when legalName provided
         return [{
             "error": _("nrNumber is missing for the legal name provided in nameRequest."),
@@ -1108,7 +1108,7 @@ def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
 
     # ensure business type
     nr_legal_type = nr_response_json.get("legalType")
-    if legal_type != nr_legal_type:
+    if nr_legal_type not in (accepted_legal_types or [legal_type]):
         msg.append({"error": _("Name Request legal type is not same as the business legal type."),
                     "path": legal_type_path})
 
