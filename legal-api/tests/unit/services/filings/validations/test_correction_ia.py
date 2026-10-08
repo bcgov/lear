@@ -109,6 +109,30 @@ def test_valid_ia_correction(session, app, jwt):
     assert None is err
 
 
+def test_valid_ia_correction_allows_legal_name_typo_correction_without_nr(session, app, jwt):
+    """Test that a valid IA without NR can fix a legal name typo."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    business.legal_name = 'Test Compnay Inc.'
+    business.save()
+
+    corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    filing['filing']['correction']['nameRequest'] = {
+        'nrNumber': '',
+        'legalName': 'Test Company Inc.',
+        'legalType': 'BC'
+    }
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        err = validate(business, filing)  
+
+    assert err is None
+
+
 @pytest.mark.parametrize('new_name, legal_type, nr_legal_type, nr_type, err_msg', [
     ('legal_name-BC1234568', 'CP', 'CP', 'BECV', None),
     ('legal_name-BC1234567_Changed', 'BEN', 'CP', 'BECV',

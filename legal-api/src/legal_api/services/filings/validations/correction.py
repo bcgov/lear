@@ -277,10 +277,9 @@ def _validate_name_request(business, filing_dict, new_legal_type, filing_type):
     msg = []
     if filing_dict.get("filing", {}).get("correction", {}).get("nameRequest", {}).get("nrNumber", None):
         msg.extend(validate_name_request(filing_dict, new_legal_type or business.legal_type, filing_type))
-    else:
+    elif new_legal_type:
         valid_names = [business.legal_name]
-        if (new_legal_type and
-                (new_numbered_name := Business.generate_numbered_legal_name(new_legal_type, business.identifier))):
+        if new_numbered_name := Business.generate_numbered_legal_name(new_legal_type, business.identifier):
             # if existing legal_name is a numbered name and if type has changed
             # then the legal name get updated according to the new legal type
             valid_names.append(new_numbered_name)
