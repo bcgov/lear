@@ -9,6 +9,9 @@ Prerequisites:
      - VERIFY_LEGAL_TYPE (e.g., 'RLY' - the entity type to verify)
      - VERIFY_MIGRATION_OUTPUT (Optional: custom path for CSV report, defaults to /tmp/migration_verification_report.csv)
      - CORP_NAME_SUFFIX (Optional: suffix appended to legal names in LEAR during migration)
+     - VERIFY_APPLY_MASKING (Optional: 'True' when the migration target was masked - COLIN
+       values are translated to their masked equivalents via mig_masking_map in the staging
+       DB (DATABASE_*_COLIN_MIGR) before comparison. Default 'False' = direct comparison.)
 """
 
 import csv
@@ -17,6 +20,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+import psycopg2
 from prefect import flow, task
 from prefect.cache_policies import NO_CACHE
 from sqlalchemy import Engine, text
@@ -28,6 +32,16 @@ from common.init_utils import colin_oracle_init, get_config, lear_init
 VERIFY_LEGAL_TYPE = os.getenv('VERIFY_LEGAL_TYPE', 'RLY')
 OUTPUT_CSV_PATH = os.getenv('VERIFY_MIGRATION_OUTPUT', '/tmp/migration_verification_report.csv')
 CORP_NAME_SUFFIX = os.getenv('CORP_NAME_SUFFIX', ' - LVE_RLY_IMPORT_TEST')
+
+# Masking-aware verification : when the migration target was masked,
+# COLIN-side values are translated to their masked equivalents (via mig_masking_map in
+# the staging DB) BEFORE comparison. False = direct comparison (prod / unmasked targets).
+VERIFY_APPLY_MASKING = os.getenv('VERIFY_APPLY_MASKING', 'False') == 'True'
+MASKING_DB_HOST = os.getenv('DATABASE_HOST_COLIN_MIGR')
+MASKING_DB_PORT = os.getenv('DATABASE_PORT_COLIN_MIGR')
+MASKING_DB_NAME = os.getenv('DATABASE_NAME_COLIN_MIGR')
+MASKING_DB_USER = os.getenv('DATABASE_USERNAME_COLIN_MIGR')
+MASKING_DB_PASSWORD = os.getenv('DATABASE_PASSWORD_COLIN_MIGR')
 
 # Mappings
 FILING_TYPE_MAP = {
@@ -54,6 +68,66 @@ STATE_MAP = {
     'HIS': 'HISTORICAL',
     'HDV': 'HISTORICAL'
 }
+
+# Masking map: {(source_table, source_key, column_name): masked_value} loaded once
+# from mig_masking_map in the staging DB when VERIFY_APPLY_MASKING=True.
+MASKING_MAP = {}
+
+
+def load_masking_map():
+    """Load mig_masking_map (read-only) from the staging DB named in .env.
+
+    Forward translation design: COLIN original -> mapped masked value, compared
+    against LEAR as-is. Reverse ("decrypt") is not used because pooled values
+    (one email/phone for everyone) make reverse lookup ambiguous.
+    """
+    if not MASKING_DB_NAME:
+        raise SystemExit('VERIFY_APPLY_MASKING=True but DATABASE_*_COLIN_MIGR is not '
+                         'configured in .env - cannot load mig_masking_map')
+    try:
+        conn = psycopg2.connect(host=MASKING_DB_HOST, port=MASKING_DB_PORT,
+                                dbname=MASKING_DB_NAME, user=MASKING_DB_USER,
+                                password=MASKING_DB_PASSWORD, connect_timeout=10)
+    except psycopg2.OperationalError as e:
+        raise SystemExit('VERIFY_APPLY_MASKING=True but cannot reach the staging DB '
+                         '{}@{}:{}/{} - is it running? ({})'.format(
+                             MASKING_DB_USER, MASKING_DB_HOST, MASKING_DB_PORT,
+                             MASKING_DB_NAME, str(e).strip()[:120]))
+    conn.autocommit = True
+    cur = conn.cursor()
+    cur.execute('SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY')
+    cur.execute("SELECT COUNT(*) FROM information_schema.tables "
+                "WHERE table_name='mig_masking_map'")
+    if cur.fetchone()[0] == 0:
+        conn.close()
+        raise SystemExit('VERIFY_APPLY_MASKING=True but mig_masking_map does not exist '
+                         'in {} - run the masking script first'.format(MASKING_DB_NAME))
+    cur.execute("SELECT source_table, source_key, column_name, masked_value, entity_type "
+                "FROM mig_masking_map")
+    per_entity = defaultdict(int)
+    for table, key, col, masked, entity in cur.fetchall():
+        MASKING_MAP[(table, key, col)] = masked
+        per_entity[entity] += 1
+    conn.close()
+    print('🎭 Masking-aware verification: loaded {} map entries from {}.{} {}'.format(
+        len(MASKING_MAP), MASKING_DB_HOST, MASKING_DB_NAME, dict(per_entity)))
+    if not MASKING_MAP:
+        print('⚠️  mig_masking_map is empty - nothing to translate; comparisons will be '
+              'direct. If the target was masked, re-run the masking script and check '
+              'for map/DB drift.')
+
+
+def translate(value, source_table: str, source_key: str, column_name: str):
+    """Return the mapped masked value for a COLIN value's source key, or the value
+    unchanged when no mapping exists (data added after masking - should flag)."""
+    if not VERIFY_APPLY_MASKING or not value:
+        return value
+    return MASKING_MAP.get((source_table, str(source_key), column_name), value)
+
+
+def _norm_text(value):
+    """Normalize a translated value the same way the getters normalize originals."""
+    return value.strip().upper() if isinstance(value, str) and value.strip() else value
 
 
 class VerificationResult:
@@ -164,10 +238,15 @@ def get_colin_parties(engine: Engine, corp_nums: List[str]) -> Dict[str, List[di
         with engine.connect() as conn:
             result = conn.execute(text(query))
             for r in result.fetchall():
+                first_nme = (r[2] or '').strip().upper() if r[2] else ''
+                last_nme = (r[3] or '').strip().upper() if r[3] else ''
+                if VERIFY_APPLY_MASKING:
+                    first_nme = _norm_text(translate(first_nme, 'corp_party', str(r[1]), 'first_name'))
+                    last_nme = _norm_text(translate(last_nme, 'corp_party', str(r[1]), 'last_name'))
                 results[r[0]].append({
                     'corp_party_id': str(r[1]),
-                    'first_nme': (r[2] or '').strip().upper() if r[2] else '',
-                    'last_nme': (r[3] or '').strip().upper() if r[3] else '',
+                    'first_nme': first_nme,
+                    'last_nme': last_nme,
                     'party_typ_cd': r[4],
                     'mailing_addr_id': str(r[5]) if r[5] else None,
                     'delivery_addr_id': str(r[6]) if r[6] else None,
@@ -204,10 +283,17 @@ def get_colin_addresses(engine: Engine, corp_nums: List[str]) -> Dict[Tuple[str,
                     addr_type = 'mailing'
                 elif str(r[7]) == addr_id:
                     addr_type = 'delivery'
+                street = (r[1] or '').strip().upper() if r[1] else ''
+                city = (r[2] or '').strip().upper() if r[2] else ''
+                postal_cd = (r[3] or '').strip().upper().replace(' ', '') if r[3] else ''
+                if VERIFY_APPLY_MASKING:
+                    street = _norm_text(translate(street, 'address', addr_id, 'addr_line_1'))
+                    city = _norm_text(translate(city, 'address', addr_id, 'city'))
+                    postal_cd = _norm_text(translate(postal_cd, 'address', addr_id, 'postal_cd'))
                 results[(corp_num, addr_id)] = {
-                    'street': (r[1] or '').strip().upper() if r[1] else '',
-                    'city': (r[2] or '').strip().upper() if r[2] else '',
-                    'postal_cd': (r[3] or '').strip().upper().replace(' ', '') if r[3] else '',
+                    'street': street,
+                    'city': city,
+                    'postal_cd': postal_cd,
                     'address_type': addr_type,
                 }
     return results
@@ -330,11 +416,13 @@ def get_colin_users(engine: Engine, corp_nums: List[str]) -> Dict[str, dict]:
         chunk = corp_nums[i:i + chunk_size]
         placeholders = ','.join([f"'{c}'" for c in chunk])
         query = f"""
-            SELECT DISTINCT 
+            SELECT DISTINCT
                 upper(u.user_id) as username,
                 trim(u.first_nme) as first_name,
                 trim(u.last_nme) as last_name,
-                u.email_addr as email
+                u.email_addr as email,
+                e.event_id as event_id,
+                u.user_id as user_id
             FROM filing_user u
             JOIN event e ON e.event_id = u.event_id
             WHERE e.corp_num IN ({placeholders})
@@ -344,11 +432,20 @@ def get_colin_users(engine: Engine, corp_nums: List[str]) -> Dict[str, dict]:
             for r in result.fetchall():
                 username = r[0]
                 if username:
+                    first_name = (r[1] or '').strip().upper() if r[1] else ''
+                    last_name = (r[2] or '').strip().upper() if r[2] else ''
+                    email = (r[3] or '').strip().upper() if r[3] else ''
+                    if VERIFY_APPLY_MASKING:
+                        # map key is event_id:user_id (the masking script's source key)
+                        user_key = '{}:{}'.format(r[4], (r[5] or '').strip())
+                        first_name = _norm_text(translate(first_name, 'filing_user', user_key, 'first_name'))
+                        last_name = _norm_text(translate(last_name, 'filing_user', user_key, 'last_name'))
+                        email = _norm_text(translate(email, 'filing_user', user_key, 'email_addr'))
                     results[username] = {
                         'username': username,
-                        'first_name': (r[1] or '').strip().upper() if r[1] else '',
-                        'last_name': (r[2] or '').strip().upper() if r[2] else '',
-                        'email': (r[3] or '').strip().upper() if r[3] else '',
+                        'first_name': first_name,
+                        'last_name': last_name,
+                        'email': email,
                     }
     return results
 
@@ -1054,6 +1151,9 @@ def verify_migration_flow():
     print(f'🚀 Starting migration verification for entity type: {VERIFY_LEGAL_TYPE}...\n')
 
     config = get_config()
+
+    if VERIFY_APPLY_MASKING:
+        load_masking_map()
 
     print('🔌 Connecting to COLIN Oracle...')
     colin_engine = colin_oracle_init(config)

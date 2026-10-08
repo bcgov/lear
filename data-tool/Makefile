@@ -94,6 +94,10 @@ run-corps-delete: ## Run delete flow
 	. $(VENV_DIR)/bin/activate && \
 	python flows/batch_delete_flow.py
 
+mask-staging-test: ## Mask PII in staging DB - add MASK_DRY_RUN=1 for dry-run
+	. $(VENV_DIR)/bin/activate && \
+	python scripts/mask_staging_test.py $(if $(MASK_DRY_RUN),--dry-run,)
+
 run-tombstone-migration: ## Run corp tombstone migration flow
 	. $(VENV_DIR)/bin/activate && \
 	python flows/corps_tombstone_flow.py
