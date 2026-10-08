@@ -30,7 +30,7 @@ from registry_schemas.example_data import (
     INCORPORATION,
 )
 
-from tests.unit import (CONTACT_POINT, LEGAL_NAME, PARTY_EMAIL_1, PARTY_EMAIL_2,
+from tests.unit import (COMP_PARTY_EMAIL, CONTACT_POINT, LEGAL_NAME, PARTY_EMAIL_1, PARTY_EMAIL_2,
                         create_business, create_future_effective_filing,
                         prep_bootstrap_filing, prep_change_of_registration_filing, prep_correction_filing,
                         prep_incorp_filing, prep_maintenance_filing, prep_notice_of_withdraw_filing,
@@ -164,6 +164,27 @@ def test_bootstrap_notification_subject(app, session, mock_pdfs, filing_type, st
     assert mock_pdfs.call_args[0][1]['identifier'] == identifier
     assert mock_pdfs.call_args[0][1]['legalType'] == 'BC'
     assert mock_pdfs.call_args[0][2] == filing
+
+
+@pytest.mark.parametrize('filing_type, status, expects_comp_party', [
+    # amalgamation: completing party is shown in Document Delivery so gets every output (#35050)
+    ('amalgamationApplication', 'PAID', True),
+    ('amalgamationApplication', 'COMPLETED', True),
+    ('continuationIn', 'PAID', True),
+    ('continuationIn', 'COMPLETED', False),
+    ('incorporationApplication', 'PAID', False),
+    ('incorporationApplication', 'COMPLETED', False),
+])
+def test_bootstrap_notification_recipients(app, session, mock_pdfs, filing_type, status, expects_comp_party):
+    """Assert that bootstrap filings send to the contact point and (when applicable) the completing party."""
+    filing = prep_bootstrap_filing(session, filing_type, 'BC1234567', 'BC', status, LEGAL_NAME)
+    if status == 'PAID':
+        make_future_effective(filing)
+
+    email = process_filing(filing, filing_type, status)
+
+    assert CONTACT_POINT in email['recipients']
+    assert (COMP_PARTY_EMAIL in email['recipients']) == expects_comp_party
 
 
 @pytest.mark.parametrize('filing_type, filing_sub_type, status, expected_attachments', [
