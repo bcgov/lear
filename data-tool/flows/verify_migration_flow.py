@@ -7,7 +7,7 @@ Prerequisites:
      - DATABASE_*_COLIN_ORACLE (Oracle host, user, password, service name)
      - DATABASE_* (LEAR Business DB host, user, password, db name)
      - VERIFY_LEGAL_TYPE (e.g., 'RLY' - the entity type to verify)
-     - VERIFY_MIGRATION_OUTPUT (Optional: custom path for CSV report, defaults to /tmp/migration_verification_report.csv)
+     - VERIFY_MIGRATION_OUTPUT (Optional: custom path for CSV report, defaults to ~/migration_verification_report.csv)
      - CORP_NAME_SUFFIX (Optional: suffix appended to legal names in LEAR during migration)
      - VERIFY_APPLY_MASKING (Optional: 'True' when the migration target was masked - COLIN
        values are translated to their masked equivalents via mig_masking_map in the staging
@@ -30,7 +30,9 @@ from common.init_utils import colin_oracle_init, get_config, lear_init
 
 # Load config vars
 VERIFY_LEGAL_TYPE = os.getenv('VERIFY_LEGAL_TYPE', 'RLY')
-OUTPUT_CSV_PATH = os.getenv('VERIFY_MIGRATION_OUTPUT', '/tmp/migration_verification_report.csv')
+OUTPUT_CSV_PATH = os.path.expanduser(
+    os.getenv('VERIFY_MIGRATION_OUTPUT') or str(Path.home() / 'migration_verification_report.csv')
+)
 CORP_NAME_SUFFIX = os.getenv('CORP_NAME_SUFFIX', ' - LVE_RLY_IMPORT_TEST')
 
 # Masking-aware verification : when the migration target was masked,

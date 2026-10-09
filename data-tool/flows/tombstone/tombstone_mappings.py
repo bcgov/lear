@@ -49,9 +49,6 @@ class EventFilings(str, Enum):
     # CONVOTHER Annual Report
     CONVOTHER_OTANN = 'CONVOTHER_OTANN'
 
-    # Change of Name
-    FILE_OTNCN = 'FILE_OTNCN'
-
     # Change of Address
     FILE_APTRA = 'FILE_APTRA'
     FILE_NOERA = 'FILE_NOERA'
