@@ -44,22 +44,18 @@ from business_account import AccountService
 from business_emailer.email_processors import (
     affiliation_notification,
     agm_extension_notification,
-    agm_location_change_notification,
-    amalgamation_out_notification,
     ar_reminder_notification,
     bn_notification,
-    consent_amalgamation_out_notification,
     continuation_authorization_notification,
     filing_notification,
     involuntary_dissolution_stage_1_notification,
     mras_notification,
     name_request,
-    notice_of_withdrawal_notification,
     nr_notification,
 )
 from business_emailer.email_processors.util import FILING_TITLE
 from business_emailer.exceptions import EmailException, QueueException
-from business_emailer.services import flags, gcp_queue, verify_gcp_jwt
+from business_emailer.services import gcp_queue, verify_gcp_jwt
 from business_model.models import Filing, Furnishing, ReviewStatus
 
 bp = Blueprint("worker", __name__)
@@ -218,27 +214,14 @@ def process_email(ce: SimpleCloudEvent):  # pylint: disable=too-many-branches, t
             email = mras_notification.process(email_msg["email"])
             send_email(email, token)
         elif etype == "annualReport" and option == "reminder":
-            flag_on = flags.is_on("disable-specific-service-provider")
-            email = ar_reminder_notification.process(email_msg["email"], token, flag_on)
-            send_email(email, token)
-        elif etype == "agmLocationChange" and option == Filing.Status.COMPLETED.value:
-            email = agm_location_change_notification.process(email_msg["email"], token)
+            email = ar_reminder_notification.process(email_msg["email"], token)
             send_email(email, token)
         elif etype == "agmExtension" and option == Filing.Status.COMPLETED.value:
             email = agm_extension_notification.process(email_msg["email"], token)
             send_email(email, token)
-        elif etype == "consentAmalgamationOut":
-            email = consent_amalgamation_out_notification.process(email_msg["email"], token)
-            send_email(email, token)
-        elif etype == "amalgamationOut":
-            email = amalgamation_out_notification.process(email_msg["email"], token)
-            send_email(email, token)
         elif etype == "continuationIn" and option in ReviewStatus._member_names_:
             # Special case for review step of continuation in filing. Regular filing notifications are handled by the filing_notification processor.
             email = continuation_authorization_notification.process(email_msg["email"], token)
-            send_email(email, token)
-        elif etype == "noticeOfWithdrawal" and option == Filing.Status.COMPLETED.value:
-            email = notice_of_withdrawal_notification.process(email_msg["email"], token)
             send_email(email, token)
         elif etype in FILING_TITLE:
             if email := filing_notification.process(email_msg["email"], token):

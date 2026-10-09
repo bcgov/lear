@@ -168,6 +168,14 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
                 province = province_state_name
                 province_state_name = ''
 
+            # ADDR_LINE_1/2 are VARCHAR2(50) in COLIN; LEAR allows longer values
+            addr_line_1 = (address_info.get('streetAddress') or '').upper()
+            addr_line_2 = (address_info.get('streetAddressAdditional') or '').upper()
+            if len(addr_line_1) > 50 or len(addr_line_2) > 50:
+                current_app.logger.warning(f'Truncating address line(s) over 50 chars for {corp_num}')
+                addr_line_1 = addr_line_1[:50]
+                addr_line_2 = addr_line_2[:50]
+
             cursor.execute("""
                             INSERT INTO address (addr_id, province, country_typ_cd, postal_cd, addr_line_1, addr_line_2,
                              city, delivery_instructions, province_state_name)
@@ -178,8 +186,8 @@ class Address:  # pylint: disable=too-many-instance-attributes; need all these f
                            province=province,
                            country_typ_cd=country_typ_cd,
                            postal_cd=(address_info.get('postalCode') or '').upper(),
-                           addr_line_1=(address_info.get('streetAddress') or '').upper(),
-                           addr_line_2=(address_info.get('streetAddressAdditional') or '').upper(),
+                           addr_line_1=addr_line_1,
+                           addr_line_2=addr_line_2,
                            city=(address_info.get('addressCity') or '').upper(),
                            delivery_instructions=(address_info.get('deliveryInstructions') or '').upper(),
                            province_state_name=province_state_name

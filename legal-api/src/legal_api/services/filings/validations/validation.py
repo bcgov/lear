@@ -64,7 +64,8 @@ from .transparency_register import validate as transparency_register_validate
 
 def validate(business: Business,  # noqa: PLR0915, PLR0912, PLR0911
              filing_json: dict,
-             account_id=None) -> Error:
+             account_id=None,
+             filing_id: int | None = None) -> Error:
     """Validate the filing JSON."""
     err = validate_against_schema(filing_json)
     if err:
@@ -237,7 +238,7 @@ def validate(business: Business,  # noqa: PLR0915, PLR0912, PLR0911
                     err = amalgamation_application_validate(filing_json, account_id)
 
                 elif k == Filing.FILINGS["continuationIn"].get("name"):
-                    err = continuation_in_validate(filing_json)
+                    err = continuation_in_validate(filing_json, filing_id=filing_id)
 
                 elif k == Filing.FILINGS["noticeOfWithdrawal"].get("name"):
                     err = notice_of_withdrawal_validate(filing_json)

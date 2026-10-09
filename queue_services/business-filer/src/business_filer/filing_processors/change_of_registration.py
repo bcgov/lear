@@ -121,14 +121,14 @@ def update_parties(business: Business, parties: dict, change_filing_rec: Filing)
 def _update_party(party_info):
     party = Party.find_by_id(party_id=party_info.get("officer").get("id"))
     if party:
-        party.first_name = party_info["officer"].get("firstName", "").upper()
-        party.last_name = party_info["officer"].get("lastName", "").upper()
-        party.middle_initial = party_info["officer"].get("middleName", "").upper()
-        party.title = party_info.get("title", "").upper()
-        party.organization_name = party_info["officer"].get("organizationName", "").upper()
+        party.first_name = (party_info["officer"].get("firstName") or "").upper()
+        party.last_name = (party_info["officer"].get("lastName") or "").upper()
+        party.middle_initial = (party_info["officer"].get("middleName") or "").upper()
+        party.title = (party_info.get("title") or "").upper()
+        party.organization_name = (party_info["officer"].get("organizationName") or "").upper()
         party.party_type = party_info["officer"].get("partyType")
-        party.email = party_info["officer"].get("email", "").lower()
-        party.identifier = party_info["officer"].get("identifier", "").upper()
+        party.email = (party_info["officer"].get("email") or "").lower()
+        party.identifier = (party_info["officer"].get("identifier") or "").upper()
 
         # add addresses to party
         if party_info.get("deliveryAddress", None):

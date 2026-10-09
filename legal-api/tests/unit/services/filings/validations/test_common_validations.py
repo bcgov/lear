@@ -29,12 +29,14 @@ from registry_schemas.example_data import (
     AMALGAMATION_APPLICATION,
     CHANGE_OF_ADDRESS,
     CHANGE_OF_DIRECTORS,
+    CHANGE_OF_DIRECTORS_RELATIONSHIPS,
     CHANGE_OF_LIQUIDATORS,
     CHANGE_OF_OFFICERS,
     CHANGE_OF_RECEIVERS,
     CHANGE_OF_REGISTRATION,
     CHANGE_OF_REGISTRATION_TEMPLATE,
     CONTINUATION_IN,
+    CONSENT_CONTINUATION_OUT,
     CORRECTION_INCORPORATION,
     DISSOLUTION,
     FILING_HEADER,
@@ -341,6 +343,7 @@ def test_validate_offices_addresses_non_ca_postal_code_not_validated(session):
 @pytest.mark.parametrize('filing_type, filing_data, party_key', [
     ('amaglamationApplication', AMALGAMATION_APPLICATION, 'parties'),
     ('changeOfDirectors', CHANGE_OF_DIRECTORS, 'directors'),
+    ('changeOfDirectors', CHANGE_OF_DIRECTORS_RELATIONSHIPS, 'relationships'),
     ('changeOfLiquidators', CHANGE_OF_LIQUIDATORS, 'relationships'),
     ('changeOfOfficers', CHANGE_OF_OFFICERS, 'relationships'),
     ('changeOfReceivers', CHANGE_OF_RECEIVERS, 'relationships'),
@@ -605,6 +608,11 @@ def test_validate_certified_by_corps(session, legal_type, input_value, expected_
             assert errors[0]['error'] == 'Certified by field is required.'
         assert errors[0]['path'] == '/filing/header/certifiedBy'
 
+
+@pytest.mark.parametrize('filing_type', [
+    CoreFiling.FilingTypes.INCORPORATIONAPPLICATION,
+    CoreFiling.FilingTypes.CONSENTCONTINUATIONOUT,
+])
 @pytest.mark.parametrize('test_name, roles, login_source, certified_by, expected_error', [
     ('api_user_missing', [], 'API_GW', '', 'Certified by field is required.'),
     ('api_user_whitespace', [], 'API_GW', ' John Doe ', 'Certified by field cannot start or end with whitespace.'),
@@ -613,12 +621,18 @@ def test_validate_certified_by_corps(session, legal_type, input_value, expected_
     ('staff_valid', ['staff'], 'IDIR', 'John Doe', None),
     ('public_user_not_required', [], 'BCSC', '', None),
 ])
-def test_validate_certified_by_corps_completing_party(app, session, test_name, roles,
-                                                      login_source, certified_by, expected_error):
-    """Corps IA requires certifiedBy for staff and API users (API users identified by loginSource)."""
+def test_validate_certified_by_corps_completing_party(app, session, filing_type, test_name, roles,
+                                                        login_source, certified_by, expected_error):
+    """Corps IA and CCO require certifiedBy for staff and API users (API users identified by loginSource)."""
+    filing_type_data = {
+        CoreFiling.FilingTypes.INCORPORATIONAPPLICATION: ('incorporationApplication', INCORPORATION),
+        CoreFiling.FilingTypes.CONSENTCONTINUATIONOUT: ('consentContinuationOut', CONSENT_CONTINUATION_OUT),
+    }
+    filing_key, filing_data = filing_type_data[filing_type]
+
     filing = copy.deepcopy(FILING_HEADER)
     filing['filing']['header']['certifiedBy'] = certified_by
-    filing['filing']['incorporationApplication'] = INCORPORATION
+    filing['filing'][filing_key] = filing_data
 
     with (
         patch('legal_api.services.filings.validations.common_validations.jwt.validate_roles',
@@ -627,7 +641,7 @@ def test_validate_certified_by_corps_completing_party(app, session, test_name, r
     ):
         from flask.globals import request_ctx
         request_ctx.current_user = {'sub': 'test-user', 'loginSource': login_source}
-        errors = validate_certified_by(filing, 'incorporationApplication', 'BEN')
+        errors = validate_certified_by(filing, filing_type, 'BEN')
 
     if expected_error:
         assert errors
@@ -769,7 +783,6 @@ def test_validate_certified_by_coops(
 
         assert errors[0]['path'] == '/filing/header/certifiedBy'
 
-@pytest.mark.parametrize('feature_enabled', [True, False])
 @pytest.mark.parametrize('legal_type', Business.CORPS + [
     Business.LegalTypes.COOP, Business.LegalTypes.SOLE_PROP, Business.LegalTypes.PARTNERSHIP])
 @pytest.mark.parametrize('authorization_received, expected_error', [
@@ -783,20 +796,12 @@ def test_validate_certified_by_coops(
     (CoreFiling.FilingTypes.DISSOLUTION, True, "voluntary"),
     (CoreFiling.FilingTypes.DISSOLUTION, False, "administrative"),
     (CoreFiling.FilingTypes.REGISTRARSORDER, False, None),  # staff filing
-    (CoreFiling.FilingTypes.INCORPORATIONAPPLICATION, False, None), # conditionally required via enable-new-feature flag
+    (CoreFiling.FilingTypes.INCORPORATIONAPPLICATION, True, None),
 ])
-def test_validate_authorization_received(session, monkeypatch, legal_type, authorization_received,
+def test_validate_authorization_received(session, legal_type, authorization_received,
                                          expected_error, filing_type, requires_authorization,
-                                         dissolution_type, feature_enabled):
+                                         dissolution_type):
     """Test that authorizationReceived is enforced for required Corps filings."""
-
-    monkeypatch.setattr(
-        'legal_api.services.flags.value',
-        lambda flag, default=None:
-            ["incorporationApplication-completingParty"]
-            if flag == "enable-new-feature" and feature_enabled else default
-    )
-
     filing = copy.deepcopy(FILING_HEADER)
     if authorization_received is not None:
         filing['filing']['header']['authorizationReceived'] = authorization_received
@@ -808,12 +813,7 @@ def test_validate_authorization_received(session, monkeypatch, legal_type, autho
 
     errors = validate_authorization_received(filing, filing_type, legal_type)
 
-    ia_requires_authorization = (
-        filing_type == CoreFiling.FilingTypes.INCORPORATIONAPPLICATION and feature_enabled
-    )
-
-    if legal_type in Business.CORPS and \
-            (requires_authorization or ia_requires_authorization) and expected_error:
+    if legal_type in Business.CORPS and requires_authorization and expected_error:
         assert errors
         assert errors[0]['error'] == 'Authorization received must be true to authorize the filing submission.'
         assert errors[0]['path'] == '/filing/header/authorizationReceived'
@@ -2355,13 +2355,6 @@ def test_get_file_data_drs_failure(session, monkeypatch):
     """Test that DRS retrieval errors raise an exception."""
 
     monkeypatch.setattr(
-        'legal_api.services.flags.value',
-        lambda flag, default=None:
-            ["drs-upload"]
-            if flag == "enable-new-feature" else default
-    )
-
-    monkeypatch.setattr(
         'legal_api.services.filings.validations.common_validations.doc_service.get_document',
         lambda *args, **kwargs:
             type(
@@ -2379,29 +2372,33 @@ def test_get_file_data_drs_failure(session, monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "test_name, filing_type, status, has_nr, expected",
+    "test_name, filing_type, status, has_nr, expected, exclude_own_id",
     [
         # All valid NR filing types in PENDING state are blocked
-        ("ia_pending", "incorporationApplication", "PENDING", True, True),
-        ("reg_pending", "registration", "PENDING", True, True),
-        ("amalg_pending", "amalgamationApplication", "PENDING", True, True),
-        ("cont_in_pending", "continuationIn", "PENDING", True, True),
-        ("alt_pending", "alteration", "PENDING", True, True),
-        ("con_name_pending", "changeOfName", "PENDING", True, True),
-        ("cor_reg_pending", "changeOfRegistration", "PENDING", True, True),
-        ("conv_pending", "conversion", "PENDING", True, True),
+        ("ia_pending", "incorporationApplication", "PENDING", True, True, False),
+        ("reg_pending", "registration", "PENDING", True, True, False),
+        ("amalg_pending", "amalgamationApplication", "PENDING", True, True, False),
+        ("cont_in_pending", "continuationIn", "PENDING", True, True, False),
+        ("alt_pending", "alteration", "PENDING", True, True, False),
+        ("con_name_pending", "changeOfName", "PENDING", True, True, False),
+        ("cor_reg_pending", "changeOfRegistration", "PENDING", True, True, False),
+        ("conv_pending", "conversion", "PENDING", True, True, False),
         # PAID filing blocks
-        ("ia_paid", "incorporationApplication", "PAID", True, True),
+        ("ia_paid", "incorporationApplication", "PAID", True, True, False),
         # DRAFT filing does not block
-        ("ia_draft", "incorporationApplication", "DRAFT", True, False),
+        ("ia_draft", "incorporationApplication", "DRAFT", True, False, False),
         # Valid NR filing type but no NR information present — does not block
-        ("ia_no_nr", "incorporationApplication", "PENDING", False, False),
+        ("ia_no_nr", "incorporationApplication", "PENDING", False, False, False),
         # Invalid NR filing type (dissolution is not in FILING_TYPES_WITH_NR) — does not block
-        ("dissolution_pending", "dissolution", "PENDING", True, False),
+        ("dissolution_pending", "dissolution", "PENDING", True, False, False),
+        # exclude_filing_id: excluding self does not block (continuationIn 2-step approval fix)
+        ("cont_in_self_exclude", "continuationIn", "PENDING", True, False, True),
+        # exclude_filing_id: excluding a different id still blocks
+        ("cont_in_other_exclude", "continuationIn", "PENDING", True, True, False),
     ]
 )
-def test_nr_in_pending_filing(session, test_name, filing_type, status, has_nr, expected):
-    """Assert _nr_in_pending_filing blocks based on filing type, status, and NR presence."""
+def test_nr_in_pending_filing(session, test_name, filing_type, status, has_nr, expected, exclude_own_id):
+    """Assert _nr_in_pending_filing blocks based on filing type, status, NR presence, and exclusion."""
     import random
     nr_number = f"NR {random.randint(1000000, 9999999)}"
 
@@ -2430,6 +2427,7 @@ def test_nr_in_pending_filing(session, test_name, filing_type, status, has_nr, e
         f.filing_json = filing_json
         f.save()
     else:  # PENDING
-        factory_pending_filing(None, filing_json)
+        f = factory_pending_filing(None, filing_json)
 
-    assert _nr_in_pending_filing(nr_number) is expected
+    exclude_filing_id = f.id if exclude_own_id else None
+    assert _nr_in_pending_filing(nr_number, exclude_filing_id=exclude_filing_id) is expected

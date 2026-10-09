@@ -85,3 +85,13 @@ def get_int(filing: dict, path: str) -> str:
         return int(raw)
     except (IndexError, KeyError, TypeError, ValueError):
         return None
+
+
+def normalize_str(value: str) -> str:
+    """Convert None or empty values to a stripped uppercase string."""
+    return (value or "").strip().upper()
+
+
+def is_same_str(str1: str, str2: str) -> bool:
+    """Check if two strings are the same after normalization."""
+    return normalize_str(str1) == normalize_str(str2)

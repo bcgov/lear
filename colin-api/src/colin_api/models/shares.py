@@ -21,6 +21,7 @@ from typing import List, Optional
 
 from flask import current_app
 
+from colin_api.exceptions import GenericException
 from colin_api.resources.db import DB
 from colin_api.utils import delete_from_table_by_event_ids, get_max_value
 
@@ -283,6 +284,10 @@ class ShareObject:  # pylint: disable=too-many-instance-attributes;
             )
         except Exception as err:
             current_app.logger.error(f'Error in Share Structure: Failed to create Share Classes for {corp_num}')
+            if 'ORA-01438' in str(err):
+                raise GenericException(  # pylint: disable=raise-missing-from
+                    f'Share quantity or par value of class {class_dict.get("name")} exceeds '
+                    f'the COLIN column precision for {corp_num}', 400)
             raise err
 
         series_id = 0
@@ -316,6 +321,10 @@ class ShareObject:  # pylint: disable=too-many-instance-attributes;
             )
         except Exception as err:
             current_app.logger.error(f'Error in Share Structure: Failed to create Share Series for {corp_num}')
+            if 'ORA-01438' in str(err):
+                raise GenericException(  # pylint: disable=raise-missing-from
+                    f'Share quantity of series {series_dict.get("name")} exceeds '
+                    f'the COLIN column precision for {corp_num}', 400)
             raise err
 
     @classmethod

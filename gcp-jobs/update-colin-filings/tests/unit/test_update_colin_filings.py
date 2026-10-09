@@ -34,7 +34,7 @@
 """Tests to ensure the job works as expected."""
 from http import HTTPStatus
 
-from update_colin_filings.worker import run
+from update_colin_filings.worker import clean_none, run
 
 from . import get_mocked_colin_resp, get_mocked_lear_resp
 
@@ -67,5 +67,120 @@ def test_worker_run(requests_mock, app):
     # assert patch mock was called with expected colin_ids
     assert update_ids_mock.called
     assert update_ids_mock.request_history[0].json() == {"colinIds": colin_ids}
-    
-    
+
+
+def test_worker_run_skips_known_drift(requests_mock, app):
+    """Ensure filings for identifiers in SKIPPED_IDENTIFIERS are not sent to colin."""
+    filing_id = 988
+    filing_name = "annualReport"
+    identifier = "BC7654321"
+    legal_type = "BEN"
+    app.config["SKIPPED_IDENTIFIERS"] = [identifier]
+    try:
+        # auth token mock
+        auth_mock = requests_mock.post(app.config.get("ACCOUNT_SVC_AUTH_URL"), json={"access_token": "token"})
+        # lear get outstanding filings mock (skipped filings are still returned, so they move the offset)
+        lear_get_url = f'{app.config["LEAR_SVC_URL"]}/businesses/internal/filings?offset=0&limit=50'
+        get_filings_mock = requests_mock.get(lear_get_url, json=get_mocked_lear_resp(filing_id, filing_name, identifier, legal_type))
+        lear_get_offset_url = f'{app.config["LEAR_SVC_URL"]}/businesses/internal/filings?offset=1&limit=50'
+        get_filings_offset_mock = requests_mock.get(lear_get_offset_url, json={"filings": []})
+        # colin post filing mock
+        colin_url = f'{app.config["COLIN_SVC_URL"]}/businesses/{legal_type}/{identifier}/filings/{filing_name}'
+        update_colin_mock = requests_mock.post(colin_url, json=get_mocked_colin_resp([1]), status_code=HTTPStatus.CREATED)
+
+        # test with mocked urls
+        run()
+
+        assert auth_mock.called
+        assert get_filings_mock.called
+        # the skipped filing was counted in the offset of the next page request
+        assert get_filings_offset_mock.called
+        # nothing was sent to colin
+        assert not update_colin_mock.called
+    finally:
+        app.config["SKIPPED_IDENTIFIERS"] = []
+
+
+def test_worker_run_flags_permanent_failure(requests_mock, app, caplog):
+    """Ensure a 4xx/501 colin response is logged as a permanent failure."""
+    filing_id = 989
+    filing_name = "specialResolution"
+    identifier = "CP1234567"
+    legal_type = "CP"
+    # auth token mock
+    auth_mock = requests_mock.post(app.config.get("ACCOUNT_SVC_AUTH_URL"), json={"access_token": "token"})
+    # lear get outstanding filings mock (failed filings move the offset)
+    lear_get_url = f'{app.config["LEAR_SVC_URL"]}/businesses/internal/filings?offset=0&limit=50'
+    get_filings_mock = requests_mock.get(lear_get_url, json=get_mocked_lear_resp(filing_id, filing_name, identifier, legal_type))
+    lear_get_offset_url = f'{app.config["LEAR_SVC_URL"]}/businesses/internal/filings?offset=1&limit=50'
+    requests_mock.get(lear_get_offset_url, json={"filings": []})
+    # colin post filing mock - permanent failure
+    colin_url = f'{app.config["COLIN_SVC_URL"]}/businesses/{legal_type}/{identifier}/filings/{filing_name}'
+    update_colin_mock = requests_mock.post(colin_url,
+                                           json={"message": "Error when trying to file", "error": "Filing type invalid"},
+                                           status_code=HTTPStatus.BAD_REQUEST)
+    # lear patch colin ids mock (should not be called)
+    lear_patch_url = f'{app.config["LEAR_SVC_URL"]}/businesses/internal/filings/{filing_id}'
+    update_ids_mock = requests_mock.patch(lear_patch_url, status_code=HTTPStatus.ACCEPTED)
+
+    # test with mocked urls
+    run()
+
+    assert auth_mock.called
+    assert get_filings_mock.called
+    assert update_colin_mock.called
+    assert not update_ids_mock.called
+    assert f"Filing {filing_id} for {identifier} failed with status 400" in caplog.text
+    assert f"filing ids: [{filing_id}]" in caplog.text
+
+
+def test_worker_run_flags_missing_fields(requests_mock, app, caplog):
+    """Ensure a filing missing legalType is not sent to colin and is flagged as a permanent failure."""
+    filing_id = 990
+    filing_name = "putBackOff"
+    identifier = "BC7654322"
+    # auth token mock
+    requests_mock.post(app.config.get("ACCOUNT_SVC_AUTH_URL"), json={"access_token": "token"})
+    # lear get outstanding filings mock (failed filings move the offset)
+    lear_get_url = f'{app.config["LEAR_SVC_URL"]}/businesses/internal/filings?offset=0&limit=50'
+    requests_mock.get(lear_get_url, json=get_mocked_lear_resp(filing_id, filing_name, identifier, None))
+    lear_get_offset_url = f'{app.config["LEAR_SVC_URL"]}/businesses/internal/filings?offset=1&limit=50'
+    requests_mock.get(lear_get_offset_url, json={"filings": []})
+
+    # test with mocked urls - no colin mock registered: no POST may be attempted
+    run()
+
+    assert f"Filing {filing_id} has no business.legalType - not sent to colin." in caplog.text
+    assert f"filing ids: [{filing_id}]" in caplog.text
+
+
+def test_clean_none():
+    """Ensure empty address keys are removed and Nones are cleaned inside lists."""
+    filing = {
+        "filing": {
+            "header": {"name": "changeOfDirectors", "email": None},
+            "business": {"identifier": "BC1234567", "legalType": None},
+            "changeOfDirectors": {
+                "directors": [
+                    {"officer": {"firstName": "TEST", "middleInitial": None},
+                     "mailingAddress": None,
+                     "deliveryAddress": {"streetAddress": "123 St", "addressRegion": None}},
+                    {"officer": {"firstName": "TESTER"},
+                     "mailingAddress": {},
+                     "deliveryAddress": ""},
+                ]
+            }
+        }
+    }
+    clean_none(filing)
+    directors = filing["filing"]["changeOfDirectors"]["directors"]
+    # empty addresses removed entirely so colin-api's presence checks work
+    assert "mailingAddress" not in directors[0]
+    assert "mailingAddress" not in directors[1]
+    assert "deliveryAddress" not in directors[1]
+    # populated addresses kept, with None leaves cleaned
+    assert directors[0]["deliveryAddress"] == {"streetAddress": "123 St", "addressRegion": ""}
+    # None scalars inside list items and nested dicts become empty strings
+    assert directors[0]["officer"]["middleInitial"] == ""
+    assert filing["filing"]["header"]["email"] == ""
+    assert filing["filing"]["business"]["legalType"] == ""

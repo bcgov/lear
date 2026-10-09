@@ -115,7 +115,7 @@ def test_process_correction_filing_with_relationships(app, session, mocker, fili
     mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
 
     orig_filing, payment_id, identifier = _get_filing(filing_name, original_data)
-    business = create_business(identifier)
+    business = create_business(identifier, legal_type='BC')
     orig_filing_rec = create_filing(payment_id, orig_filing, business.id)
 
     # process original filing

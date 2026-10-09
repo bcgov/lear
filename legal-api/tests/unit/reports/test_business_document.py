@@ -23,7 +23,12 @@ from legal_api.services.authz import STAFF_ROLE
 from tests.unit.services.utils import create_header
 
 from tests.unit.models import factory_address, factory_business, factory_business_mailing_address, factory_party_role
-from tests.unit.reports import make_amalgamation_filing_mock, make_foreign_amalgamating_business, set_amalgamation_details
+from tests.unit.reports import (
+    make_amalgamation_filing_mock,
+    make_colin_amalgamating_business,
+    make_foreign_amalgamating_business,
+    set_amalgamation_details,
+)
 
 
 @pytest.mark.parametrize(
@@ -113,51 +118,36 @@ def test_get_pdf(session, app, jwt, identifier, entity_type, document_name):
 
 
 @pytest.mark.parametrize(
-    'foreign_id,foreign_country,foreign_region,colin_status,colin_jurisdiction,'
-    'expected_id,expected_jurisdiction,expected_mock_calls,'
-    'expected_is_bc_company,expected_is_extraprovincial',
+    'foreign_id,foreign_country,foreign_region,expected_jurisdiction',
     [
-        ('A1234567', 'CA', 'BC', 200, 'ON', 'A1234567', 'Ontario', 1, False, True),
-        ('A1234567', 'CA', 'BC', 200, 'FD', 'A1234567', 'Federal', 1, False, True),
-        ('A1234567', 'CA', 'BC', 200, None, 'A1234567', 'N/A', 1, False, True),
-        ('A1234567', 'US', 'WA', 404, None, 'N/A', 'United States', 1, False, False),
-        ('UK1234567', 'GB', None, None, None, 'N/A', 'United Kingdom', 0, False, False),
-    ], 
+        ('A1234567', 'US', 'WA', 'United States'),
+        ('UK1234567', 'GB', None, 'United Kingdom'),
+        ('7654321', 'CA', 'AB', 'Alberta'),
+    ],
     ids=[
-        'expro province',
-        'expro federal',
-        'expro no jurisdiction',
-        'Non expro with expro like identifier',
-        'Non expro',
+        'foreign with A-prefix identifier',
+        'foreign GB',
+        'foreign CA province',
     ],
 )
 def test_set_amalgamation_details(
-    session, app, jwt, monkeypatch, foreign_id, foreign_country, foreign_region,
-    colin_status, colin_jurisdiction, expected_id, expected_jurisdiction, expected_mock_calls,
-    expected_is_bc_company, expected_is_extraprovincial
+    session, app, jwt, monkeypatch, foreign_id, foreign_country, foreign_region, expected_jurisdiction
 ):
-    """Assert that expros resolve as expected. 
-    
-    Foreign businesses with identifier starting with 'A' and existing in colin are treated as an expro: 
-     - identifier is set to the foreign_identifier
-     - region_code is taken from the colin response's business.jurisdiction field.
-    """
+    """Assert a foreign row renders from its stored columns alone - N/A identifier, COLIN never called."""
     foreign_name = 'Foreign Corp'
 
     ab = make_foreign_amalgamating_business(
         foreign_identifier=foreign_id,
         foreign_name=foreign_name,
         foreign_jurisdiction=foreign_country,
-        foreign_jurisdiction_region=foreign_region,  # original region — is overwritten for expros
+        foreign_jurisdiction_region=foreign_region,
     )
 
     colin_call_count = {'count': 0}
 
     def mock_colin(identifier):
         colin_call_count['count'] += 1
-        if colin_status == HTTPStatus.OK:
-            return {'business': {'jurisdiction': colin_jurisdiction}}, colin_status
-        return None, colin_status
+        return None, None
 
     business_json = set_amalgamation_details(
         app, jwt, session, monkeypatch,
@@ -169,12 +159,76 @@ def test_set_amalgamation_details(
     assert len(entities) == 1
     entity = entities[0]
 
-    assert colin_call_count['count'] == expected_mock_calls
-    assert entity['identifier'] == expected_id
+    assert colin_call_count['count'] == 0
+    assert entity['identifier'] == 'N/A'
     assert entity['jurisdiction'] == expected_jurisdiction
     assert entity['legalName'] == foreign_name
-    assert entity['isBcCompany'] is expected_is_bc_company
-    assert entity['isExtraprovincial'] is expected_is_extraprovincial
+    assert entity['isBcCompany'] is False
+    assert entity['isExtraprovincial'] is False
+
+
+@pytest.mark.parametrize(
+    'colin_jurisdiction, expected_jurisdiction',
+    [
+        ('ON', 'Ontario'),
+        ('FD', 'Federal'),
+    ],
+    ids=[
+        'expro province',
+        'expro federal',
+    ],
+)
+def test_set_amalgamation_details_expro(session, app, jwt, monkeypatch, colin_jurisdiction, expected_jurisdiction):
+    """Assert an expro row (colin_identifier) resolves its name and home jurisdiction from COLIN."""
+    expro_identifier = 'A1234567'
+    ab = make_colin_amalgamating_business(expro_identifier)
+
+    def mock_colin(identifier):
+        assert identifier == expro_identifier
+        return {'business': {'legalName': 'Expro Corp', 'legalType': 'A',
+                             'jurisdiction': colin_jurisdiction}}, HTTPStatus.OK
+
+    business_json = set_amalgamation_details(
+        app, jwt, session, monkeypatch,
+        amalgamating_businesses_list=[ab],
+        colin_query_side_effect=mock_colin,
+    )
+
+    entities = business_json.get('amalgamatedEntities', [])
+    assert len(entities) == 1
+    entity = entities[0]
+
+    assert entity['identifier'] == expro_identifier
+    assert entity['legalName'] == 'Expro Corp'
+    assert entity['jurisdiction'] == expected_jurisdiction
+    assert entity['isBcCompany'] is False
+    assert entity['isExtraprovincial'] is True
+
+
+def test_set_amalgamation_details_colin_business(session, app, jwt, monkeypatch):
+    """Assert a COLIN amalgamating business renders from the COLIN lookup with BC jurisdiction."""
+    colin_identifier = 'BC5556667'
+    ab = make_colin_amalgamating_business(colin_identifier)
+
+    def mock_colin(identifier):
+        assert identifier == colin_identifier
+        return {'business': {'legalName': 'Colin Corp Ltd.', 'legalType': 'BC'}}, HTTPStatus.OK
+
+    business_json = set_amalgamation_details(
+        app, jwt, session, monkeypatch,
+        amalgamating_businesses_list=[ab],
+        colin_query_side_effect=mock_colin,
+    )
+
+    entities = business_json.get('amalgamatedEntities', [])
+    assert len(entities) == 1
+    entity = entities[0]
+
+    assert entity['identifier'] == colin_identifier
+    assert entity['legalName'] == 'Colin Corp Ltd.'
+    assert entity['jurisdiction'] == 'British Columbia'
+    assert entity['isBcCompany'] is True
+    assert entity['isExtraprovincial'] is False
 
 
 @pytest.mark.parametrize('has_receiver, cessation_date, expected_count', [

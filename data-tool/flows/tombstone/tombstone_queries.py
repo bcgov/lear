@@ -80,7 +80,7 @@ def get_unprocessed_corps_subquery(flow_name, environment):
     # [2]->[1]->[3] (may fetch fewer eligible corps in [2] at the beginning, if so, go to [1] and then go back to [2], repeatedly)
     # Other usage:
     # [0] is used for other purposes, e.g. tweak query to select specific corps
-    subquery = subqueries[3]
+    subquery = subqueries[0]
     return subquery['cte'], subquery['where']
 
 def get_unprocessed_corps_query(flow_name, config, batch_size, *, include_account_ids: bool = False):
@@ -695,6 +695,26 @@ def get_jurisdictions_query(corp_num):
     """
     return query
 
+def get_court_order_query(corp_num):
+    query = f"""
+    select
+            -- event
+            e.event_id             as e_event_id,
+            e.corp_num             as e_corp_num,
+            f.arrangement_ind      as f_arrangement_ind,
+            f.court_order_num      as f_court_order_num,
+            lt.notation            as lt_notation
+        from event e
+                 left outer join filing f on e.event_id = f.event_id
+                 left outer join ledger_text lt on lt.event_id = f.event_id
+        where 1 = 1
+            and e.corp_num = '{corp_num}'
+            and f.court_order_num is not NULL
+        order by e.event_id
+        ;
+    """
+    return query
+
 
 def get_filings_query(corp_num):
     query = f"""
@@ -950,6 +970,7 @@ def get_corp_snapshot_filings_queries(config, corp_num):
         'resolutions': get_resolutions_query(corp_num),
         'jurisdictions': get_jurisdictions_query(corp_num),
         'filings': get_filings_query(corp_num),
+        'court_order':get_court_order_query(corp_num),
         'amalgamations': get_amalgamation_query(corp_num),
         'business_comments': get_business_comments_query(corp_num),
         'filing_comments': get_filing_comments_query(corp_num),

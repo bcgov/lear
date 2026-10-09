@@ -34,24 +34,22 @@
 """Manages the  names of a Business."""
 from contextlib import suppress
 
+from business_common.utils import datetime
 from business_model.models import Business, CourtOrder, Filing
-from flask_babel import _ as babel
+from business_model.models.types.filings import FilingTypes
 
-from business_filer.common.datetime import datetime
-from business_filer.common.filing import FilingTypes
 from business_filer.filing_meta import FilingMeta
+from business_filer.filing_processors.filing_components import documents
+from business_filer.services.utils import is_same_str
 
 
-def create_court_order(filing_submission: Filing,
+def create_court_order(filing: Filing,
                        court_order: dict,
-                       filing_meta: FilingMeta,
+                       filing_meta: FilingMeta = None,
                        new_business: Business = None) -> dict | None:
     """Create a court order."""
-    if not filing_submission:
-        return {"error": babel("Filing is required before a court order can be created.")}
-
     if not (file_number := court_order.get("fileNumber")):
-        return
+        return None
 
     court_order_obj = CourtOrder(
         file_number=file_number,
@@ -61,20 +59,111 @@ def create_court_order(filing_submission: Filing,
     with suppress(IndexError, KeyError, TypeError, ValueError):
         court_order_obj.order_date = datetime.fromisoformat(court_order.get("orderDate"))
 
-    filing_meta.court_order = {"fileNumber": file_number}
+    court_order_meta = {"fileNumber": file_number}
     if court_order_obj.effect_of_order:
-        filing_meta.court_order["effectOfOrder"] = court_order_obj.effect_of_order
+        court_order_meta["effectOfOrder"] = court_order_obj.effect_of_order
     if court_order.get("orderDate"):
-        filing_meta.court_order["orderDate"] = court_order.get("orderDate")
-    if filing_submission.filing_type == FilingTypes.COURTORDER.value:
+        court_order_meta["orderDate"] = court_order.get("orderDate")
+    if filing.filing_type == FilingTypes.COURTORDER:
         # Only add order details for court orders
-        filing_meta.court_order["orderDetails"] = court_order_obj.order_details
+        court_order_meta["orderDetails"] = court_order_obj.order_details
+
+    if filing_meta:
+        filing_meta.court_order = court_order_meta
 
     if new_business:
-        court_order_obj.filing_id = filing_submission.id
+        court_order_obj.filing_id = filing.id
         new_business.court_orders.append(court_order_obj)
     else:
-        court_order_obj.business_id = filing_submission.business_id
-        filing_submission.court_orders.append(court_order_obj)
+        court_order_obj.business_id = filing.business_id
+        filing.court_orders.append(court_order_obj)
 
-    return None
+    return court_order_meta
+
+
+def update_court_order(court_order: dict, filing: Filing, court_order_meta: dict) -> bool:
+    """Update a court order."""
+    has_changed = False
+    file_number = court_order.get("fileNumber")
+    effect_of_order = court_order.get("effectOfOrder")
+    order_details = court_order.get("orderDetails")
+
+    court_order_obj = CourtOrder.get_by_id(court_order.get("id"))
+    if not is_same_str(court_order_obj.file_number, file_number):
+        court_order_meta["fileNumber"] = file_number
+        has_changed = True
+    if not is_same_str(court_order_obj.effect_of_order, effect_of_order):
+        court_order_meta["effectOfOrder"] = effect_of_order
+        has_changed = True
+    if not is_same_str(court_order_obj.order_details, order_details):
+        court_order_meta["orderDetails"] = order_details
+        has_changed = True
+
+    if has_changed:
+        court_order_obj.file_number = file_number
+        court_order_obj.effect_of_order = effect_of_order
+        court_order_obj.order_details = order_details
+        filing.court_orders.append(court_order_obj)
+
+    return has_changed
+
+
+def update_court_orders(business: Business,
+                        court_orders: list[dict],
+                        filing_meta: FilingMeta) -> None:
+    """Update court orders."""
+    court_orders_meta = []
+    for court_order in court_orders:
+        filing = Filing.find_by_id(court_order.get("filingId"))
+
+        has_changed = False
+        court_order_meta = {"filingId": filing.id}
+        if court_order.get("id"):
+            has_changed = update_court_order(court_order, filing, court_order_meta)
+        else:
+            court_order_meta = {
+                **court_order_meta,
+                **create_court_order(filing, court_order)
+            }
+            has_changed = True
+
+        documents_changed = update_court_order_documents(court_order, filing, business, court_order_meta)
+        if has_changed or documents_changed:
+            # Only add court order if there are any changes
+            court_orders_meta.append(court_order_meta)
+
+    if court_orders_meta:
+        filing_meta.court_orders = court_orders_meta
+
+
+def update_court_order_documents(court_order: dict, filing: Filing, business: Business, court_order_meta: dict) -> bool:
+    """Update court order documents if the filing is a court order."""
+    if (
+            filing.filing_type != FilingTypes.COURTORDER or
+            "files" not in court_order
+    ):
+        return False
+
+    documents_changed = False
+    files = court_order.get("files", [])
+    new_files = []
+    if court_order_documents := filing.documents.all():
+        existing_file_keys = [document.file_key for document in court_order_documents]
+        new_files = [file for file in files if file.get("fileKey") not in existing_file_keys]
+        deleted_documents = [
+            document
+            for document in court_order_documents
+            if document.file_key not in [file.get("fileKey") for file in files]
+        ]
+        if deleted_documents:
+            for document in deleted_documents:
+                filing.documents.remove(document)
+            documents_changed = True
+    else:
+        new_files = files
+
+    if new_files:
+        file_list = documents.create_filing_documents(new_files, business, filing)
+        court_order_meta["files"] = file_list
+        documents_changed = True
+    return documents_changed

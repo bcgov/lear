@@ -6,13 +6,16 @@
           <td class="col-33">
              <div class="section-sub-title">
                 {% if completingParty.officer.partyType == 'organization' %}
-                           <span class="capitalize-text">{{ completingParty.officer.organizationName }}</span>
+                  <span class="capitalize-text">{{ completingParty.officer.organizationName }}</span>
                 {% else %}
-                   <span class="capitalize-text">{{ completingParty.officer.lastName }}</span>,
-                   <span class="capitalize-text">{{ completingParty.officer.firstName }}</span>
-                   {% if completingParty.officer.middleName %}
-                      <span class="capitalize-text">{{ completingParty.officer.middleName }}</span>
-                   {% endif %}
+                  <span class="capitalize-text">{{ completingParty.officer.lastName }}</span>
+                  {% if completingParty.officer.firstName or completingParty.officer.middleName %},{% endif %}
+                  {% if completingParty.officer.firstName %}
+                    <span class="capitalize-text">{{ completingParty.officer.firstName }}</span>
+                  {% endif %}
+                  {% if completingParty.officer.middleName %}
+                    <span class="capitalize-text">{{ completingParty.officer.middleName }}</span>
+                  {% endif %}
                 {% endif %}
              </div>
           </td>
@@ -59,12 +62,14 @@
       {% if completingParty.officer.partyType == 'organization' %}
          <span class="capitalize-text">{{ completingParty.officer.organizationName }}</span>
       {% else %}
-         <span class="capitalize-text">{{ completingParty.officer.firstName }}</span>
+         {% if completingParty.officer.firstName %}
+            <span class="capitalize-text">{{ completingParty.officer.firstName }}</span>
+         {% endif %}
          {% if completingParty.officer.middleName %}
             <span class="capitalize-text">{{ completingParty.officer.middleName }}</span>
          {% endif %}
          <span class="capitalize-text">{{ completingParty.officer.lastName }}</span>
-       {% endif %}
+      {% endif %}
        certifies that they have relevant knowledge of the {{ entityDescription }} and is authorized to make this filing.
    </div>
 </div>

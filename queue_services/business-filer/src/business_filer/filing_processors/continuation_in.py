@@ -14,12 +14,12 @@
 """File processing rules and actions for the continuation in of a business."""
 import copy
 
+from business_common.utils import LegislationDatetime
 from business_model.models import Business, Document, DocumentType, Filing, Jurisdiction
 
-from business_filer.common.legislation_datetime import LegislationDatetime
 from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
-from business_filer.filing_processors.filing_components import aliases, business_info, filings, shares
+from business_filer.filing_processors.filing_components import aliases, business_info, documents, filings, shares
 from business_filer.filing_processors.filing_components.offices import update_offices
 from business_filer.filing_processors.filing_components.parties import update_parties
 
@@ -73,18 +73,12 @@ def create_authorization_documents(continuation_in: dict,
                                    filing_meta: FilingMeta):
     """Create authorization documents."""
     authorization_files = continuation_in.get("authorization", {}).get("files", [])
-    files = []
-    for file in authorization_files:
-        document = Document()
-        document.type = DocumentType.AUTHORIZATION_FILE.value
-        document.file_key = file.get("fileKey")
-        document.file_name = file.get("fileName")
-        files.append({
-            "fileKey": document.file_key,
-            "fileName": document.file_name
-        })
-        document.filing_id = filing.id
-        business.documents.append(document)
+    files = documents.create_filing_documents(
+        authorization_files,
+        business,
+        filing,
+        DocumentType.AUTHORIZATION_FILE.value
+    )
 
     filing_meta.continuation_in = {
         **filing_meta.continuation_in,

@@ -316,7 +316,7 @@ files = [
 
 [[package]]
 name = "business-model"
-version = "3.4.11"
+version = "3.4.18"
 description = ""
 optional = false
 python-versions = ">=3.13,<3.14"
@@ -336,14 +336,14 @@ pg8000 = ">=1.31.2,<2.0.0"
 pycountry = ">=24.6.1,<25.0.0"
 pydantic = ">=2.10.6,<3.0.0"
 pytz = ">=2025.1,<2026.0"
-registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.82"}
+registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.85"}
 sql-versioning = {git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "python/common/sql-versioning-alt"}
 
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/lear.git"
 reference = "main"
-resolved_reference = "71fbd531a0a89db74d9182922eed949bb8104b0b"
+resolved_reference = "a3b6442c2a3839ec222e974301dc983a431cfe76"
 subdirectory = "python/common/business-registry-model"
 
 [[package]]
@@ -373,7 +373,7 @@ subdirectory = "python/common/business-registry-account"
 
 [[package]]
 name = "business-registry-common"
-version = "0.1.1"
+version = "0.1.2"
 description = ""
 optional = false
 python-versions = ">=3.13,<3.14"
@@ -391,7 +391,7 @@ pytz = ">=2025.1,<2026.0"
 type = "git"
 url = "https://github.com/bcgov/lear.git"
 reference = "main"
-resolved_reference = "ab74265227677d93896a8d9c85dd5bae6c617873"
+resolved_reference = "ed7c0c789fe6062ae4d4efebf20f8d6a313cec1b"
 subdirectory = "python/common/business-registry-common"
 
 [[package]]
@@ -699,7 +699,7 @@ sqlalchemy = "^2.0.0"
 type = "git"
 url = "https://github.com/bcgov/sbc-connect-common.git"
 reference = "main"
-resolved_reference = "42a520b3fc6f989d9401a34aa2267907ec1dc75f"
+resolved_reference = "9ba15bc19f01690185a46796c5d45c333e254bf8"
 subdirectory = "python/cloud-sql-connector"
 
 [[package]]
@@ -3336,7 +3336,7 @@ rpds-py = ">=0.7.0"
 
 [[package]]
 name = "registry_schemas"
-version = "2.18.82"
+version = "2.18.85"
 description = "A short description of the project"
 optional = false
 python-versions = ">=3.6"
@@ -3354,8 +3354,8 @@ strict-rfc3339 = "*"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
-reference = "2.18.82"
-resolved_reference = "7dd37ea586adceff8f5b0d775a9c27eabd2d5135"
+reference = "2.18.85"
+resolved_reference = "d1e72d06bd71b3ae9ca92958f0cda4842de9cc97"
 
 [[package]]
 name = "reportlab"

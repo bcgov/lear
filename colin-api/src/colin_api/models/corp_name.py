@@ -22,6 +22,7 @@ from typing import List, Optional
 
 from flask import current_app
 
+from colin_api.exceptions import GenericException
 from colin_api.resources.db import DB
 from colin_api.utils import get_max_value
 
@@ -84,6 +85,11 @@ class CorpName:
         """Add record to the CORP NAME table on incorporation."""
         try:
             search_name = cursor.callfunc('get_search_name', str, [corp_name_obj.corp_name])
+            if not search_name:
+                # SRCH_NME is not nullable and would fail the insert with an oracle error
+                raise GenericException(
+                    f'Unable to derive a search name from "{corp_name_obj.corp_name}" '
+                    f'for {corp_name_obj.corp_num}', 400)
             max_sequence_num = get_max_value(
                 cursor=cursor,
                 corp_num=corp_name_obj.corp_num,
@@ -126,6 +132,10 @@ class CorpName:
                 is_translation_existing = next((x for x in old_translations if x.corp_name == curr_corp_name), None)
                 if not is_translation_existing:
                     search_name = cursor.callfunc('get_search_name', str, [curr_corp_name])
+                    if not search_name:
+                        # SRCH_NME is not nullable and would fail the insert with an oracle error
+                        raise GenericException(
+                            f'Unable to derive a search name from "{curr_corp_name}" for {corp_num}', 400)
                     cursor.execute(
                         """
                         insert into CORP_NAME (CORP_NAME_TYP_CD, CORP_NAME_SEQ_NUM, DD_CORP_NUM, END_EVENT_ID, CORP_NME,

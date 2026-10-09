@@ -31,9 +31,12 @@ FILING_TITLE = {
     "alteration": "Alteration",
     "amalgamationApplication": "Amalgamation Application",
     "annualReport": "Annual Report",
+    "agmLocationChange": "AGM Location Change",
+    "amalgamationOut": "Amalgamation Out",
     "changeOfDirectors": "Director Change",
     "changeOfAddress": "Address Change",
     "changeOfRegistration": "Change of Registration",
+    "consentAmalgamationOut": "Consent to Amalgamate Out",
     "consentContinuationOut": "Consent to Continue Out",
     "continuationIn": "Continuation Application",
     "continuationOut": "Continuation Out",
@@ -43,6 +46,7 @@ FILING_TITLE = {
         "voluntary": "Voluntary Dissolution Application"
     },
     "incorporationApplication": "Incorporation Application",
+    "noticeOfWithdrawal": "Notice of Withdrawal",
     "registration": "Registration",
     "specialResolution": "Special Resolution",
     "restoration": "Restoration",
@@ -120,6 +124,14 @@ FILING_ATTACHMENTS = {
             "attachments": ["Alteration","Notice of Articles","Certificate of Name Change","Receipt"],
             "extraPdfTypes": ["noticeOfArticles","certificateOfNameChange"],
         },
+        "agmLocationChange": {
+            "attachments": ["Letter of AGM Location Change Approval", "Receipt"],
+            "extraPdfTypes": ["letterOfAgmLocationChange"],
+        },
+        "amalgamationOut": {
+            "attachments": ["Receipt"],
+            "extraPdfTypes": []
+        },
         "amalgamationApplication-horizontal": {
             "attachments": ["Amalgamation Application Short-form (Horizontal)","Notice of Articles","Certificate of Amalgamation","Receipt"],
             "extraPdfTypes": ["noticeOfArticles","certificateOfAmalgamation"],
@@ -149,15 +161,15 @@ FILING_ATTACHMENTS = {
             "extraPdfTypes": [],
         },
         "changeOfLiquidators-appointLiquidator": {
-            "attachments": ["Notice to Appoint Liquidators", "Receipt"],
+            "attachments": ["Liquidator Appointment", "Receipt"],
             "extraPdfTypes": [],
         },
         "changeOfLiquidators-ceaseLiquidator": {
-            "attachments": ["Notice to Cease Liquidators", "Receipt"],
+            "attachments": ["Liquidator Cessation", "Receipt"],
             "extraPdfTypes": [],
         },
         "changeOfLiquidators-changeAddressLiquidator": {
-            "attachments": ["Liquidators (or Records) Change of Address", "Receipt"],
+            "attachments": ["Liquidator (or Records) Address Change", "Receipt"],
             "extraPdfTypes": [],
         },
         "changeOfLiquidators-liquidationReport": {
@@ -175,6 +187,10 @@ FILING_ATTACHMENTS = {
         "changeOfReceivers-changeAddressReceiver": {
             "attachments": ["Receipt"],
             "extraPdfTypes": [],
+        },
+        "consentAmalgamationOut": {
+            "attachments": ["Letter of Consent", "Receipt"],
+            "extraPdfTypes": ["letterOfConsentAmalgamationOut"]
         },
         "consentContinuationOut": {
             "attachments": ["Continue Out Application", "Letter of Consent", "Receipt"],
@@ -203,6 +219,10 @@ FILING_ATTACHMENTS = {
         "incorporationApplication": {
             "attachments": ["Incorporation Application","Notice of Articles","Certificate of Incorporation","Receipt"],
             "extraPdfTypes": ["noticeOfArticles","certificateOfIncorporation"],
+        },
+        "noticeOfWithdrawal": {
+            "attachments": ["Notice of Withdrawal", "Receipt"],
+            "extraPdfTypes": [],
         },
         "restoration-fullRestoration": {
             "attachments": ["Full Restoration Application","Notice of Articles","Certificate of Restoration","Receipt"],

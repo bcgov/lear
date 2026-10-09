@@ -18,8 +18,9 @@ from contextlib import suppress
 from enum import Enum, auto
 from typing import Final
 
-from business_model.models import Business
+from business_model.models import Business, DocumentType
 from business_model.models import Filing as FilingStorage
+from business_model.models.types.filings import FilingTypes
 from legal_api.services import VersionedBusinessDetailsService as VersionService
 
 
@@ -1023,19 +1024,28 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 not correction.get("correctionBenStatement")  # BEN correction statement require NOA
             ):
                 outputs.remove("noticeOfArticles")
-            if correction.get("toLegalName"):
-                corrected_filing_type = filing.meta_data.get("correction", {}).get("correctedFilingType")
-                if corrected_filing_type == "amalgamationApplication":
-                    outputs.add("certificateOfAmalgamation")
-                elif corrected_filing_type == "continuationIn":
-                    outputs.add("certificateOfContinuation")
-                elif (
-                    corrected_filing_type == "incorporationApplication" and
-                    business.legal_type != Business.LegalTypes.COOP.value
+
+            corrected_filing_type = filing.meta_data.get("correction", {}).get("correctedFilingType")
+            if corrected_filing_type == FilingTypes.AMALGAMATIONAPPLICATION:
+                if (
+                    correction.get("toLegalName") or
+                    correction.get("amalgamation", {}).get("amalgamatingBusinessesCorrected")
                 ):
-                    outputs.add("certificateOfIncorporation")
-                elif business.legal_type == Business.LegalTypes.COOP.value:
+                    outputs.add("certificateOfAmalgamation")
+            elif corrected_filing_type == FilingTypes.CONTINUATIONIN:
+                if (
+                    correction.get("toLegalName") or
+                    correction.get("continuationIn")
+                ):
+                    outputs.add("certificateOfContinuation")
+            elif (
+                corrected_filing_type == FilingTypes.INCORPORATIONAPPLICATION and
+                correction.get("toLegalName")
+            ):
+                if business.legal_type == Business.LegalTypes.COOP.value:
                     outputs.add("certificateOfNameCorrection")
+                else:
+                    outputs.add("certificateOfIncorporation")
 
             if correction.get("uploadNewRules"):
                 outputs.add("certifiedRules")
@@ -1078,7 +1088,10 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
         elif filing.filing_type == "continuationOut":
             FilingMeta._get_continuation_out_static_documents(filing, url_prefix, outputs)
         elif filing.filing_type == "courtOrder":
-            FilingMeta._get_court_order_static_documents(filing, url_prefix, outputs)
+            court_order = filing.meta_data.get("courtOrder", {})
+            FilingMeta._get_court_order_static_documents(court_order, url_prefix, outputs)
+        elif filing.filing_type == "correction":
+            FilingMeta._get_correction_static_documents(filing, url_prefix, outputs)
         return outputs
 
     @staticmethod
@@ -1108,19 +1121,26 @@ class FilingMeta:  # pylint: disable=too-few-public-methods
                 })
 
     @staticmethod
-    def _get_court_order_static_documents(filing, url_prefix, outputs):
-        court_order = filing.meta_data.get("courtOrder", {})
+    def _get_court_order_static_documents(court_order, url_prefix, outputs):
         if files := court_order.get("files"):
             for file in files:
                 file_key = file.get("fileKey")
                 file_name = file.get("fileName")
+                document_type = file.get("documentType") or DocumentType.COURT_ORDER.value
                 if file_name.lower().endswith(".pdf"):
                     # This may not be required. Doing this to align with the current behavior
                     file_name = file_name[:-4]
                 outputs.append({
                     "name": file_name,
-                    "url": f"{url_prefix}/{file_key}"
+                    "url": f"{url_prefix}/{file_key}",
+                    "documentType": document_type
                 })
+
+    @staticmethod
+    def _get_correction_static_documents(filing, url_prefix, outputs):
+        court_orders = filing.meta_data.get("courtOrders", [])
+        for court_order in court_orders:
+            FilingMeta._get_court_order_static_documents(court_order, url_prefix, outputs)
 
     @staticmethod
     def get_display_name(legal_type: str, filing_type: str, filing_sub_type: str | None = None) -> str:

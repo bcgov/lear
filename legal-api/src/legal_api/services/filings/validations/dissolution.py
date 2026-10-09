@@ -97,10 +97,7 @@ def validate(business: Business, dissolution: dict) -> Error | None:
     if err:
         msg.extend(err)
 
-    # Specific validation for addresses in dissolution
-    err = validate_dissolution_parties_address(dissolution, business.legal_type, dissolution_type)
-    if err:
-        msg.extend(err)
+    msg.extend(validate_dissolution_parties_address(dissolution, business.legal_type, dissolution_type))
 
     if dissolution["filing"]["dissolution"].get("parties"):
         # Common validation for addresses
@@ -253,31 +250,39 @@ def validate_dissolution_parties_address(filing_json, legal_type, dissolution_ty
     This needs not to be validated for SP and GP
     This needs not to be validated for administrative dissolution
     """
-    if dissolution_type in [DissolutionTypes.ADMINISTRATIVE, DissolutionTypes.DELAY]:
-        return None
-
-    if legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]:
-        return None
-
-    if "parties" not in filing_json["filing"]["dissolution"]:
-        return None
+    msg = []
+    if (
+        dissolution_type in [DissolutionTypes.ADMINISTRATIVE, DissolutionTypes.DELAY] or
+        legal_type in [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value] or
+        "parties" not in filing_json["filing"]["dissolution"]
+    ):
+        return msg
 
     parties_json = filing_json["filing"]["dissolution"]["parties"]
-    custodians = list(filter(lambda x: _is_custodian_role(x.get("roles", [])), parties_json))
+    custodian_count = 0
 
-    if not custodians:
+    for idx, party in enumerate(parties_json):
+        if _is_custodian_role(party.get("roles", [])):
+            custodian_count += 1
+            path = f"/filing/dissolution/parties/{idx}"
+            if legal_type in Business.CORPS and dissolution_type == DissolutionTypes.VOLUNTARY.value:
+                # only validate email for CORP voluntary dissolution
+                email = party.get("officer", {}).get("email")
+                msg.extend(validate_custodian_email(email, f"{path}/officer/email"))
+                msg.extend(_validate_custodian_name(party, path))
+
+            for address_type in Address.JSON_ADDRESS_TYPES:
+                msg.extend(_validate_party_address(party, idx, address_type, legal_type in Business.CORPS))
+
+    if custodian_count == 0:
         # Handle case where there are no custodians, but there is a liquidator role
         # (this is not implemented in the Create UI, keeping behavior here)
         if any(_is_liquidator_role(p.get("roles", [])) for p in parties_json):
-            return None
-        return [{"error": "Dissolution party is required.", "path": "/filing/dissolution/parties"}]
+            return msg
+        msg.append({"error": "Dissolution party is required.", "path": "/filing/dissolution/parties"})
+        return msg
 
-    msg = []
-    msg.extend(_validate_custodian_email(custodians, dissolution_type, legal_type))
-    msg.extend(_validate_custodian_name(custodians, dissolution_type, legal_type))
-    msg.extend(_validate_address_location(custodians, legal_type))
-
-    return msg or None
+    return msg
 
 
 def _is_custodian_role(roles: list) -> bool:
@@ -288,16 +293,6 @@ def _is_custodian_role(roles: list) -> bool:
 def _is_liquidator_role(roles: list) -> bool:
     return any(role.get("roleType", "").lower() == PartyRole.RoleTypes.LIQUIDATOR.value
                for role in roles)
-
-
-def _validate_address_location(parties, legal_type):
-    """Every party address must be in Canada; CORP types also require the BC province."""
-    msg = []
-    require_bc = legal_type in Business.CORPS
-    for idx, party in enumerate(parties):
-        for address_type in Address.JSON_ADDRESS_TYPES:
-            msg.extend(_validate_party_address(party, idx, address_type, require_bc))
-    return msg
 
 
 def _validate_party_address(party, idx, address_type, require_bc):
@@ -356,57 +351,49 @@ def _validate_court_order(filing):
     return []
 
 
-def _validate_custodian_email(parties, dissolution_type, legal_type) -> list:
+def validate_custodian_email(email, path) -> list:
     """Validate custodian email for voluntary dissolution."""
-    # Only validate for CORP voluntary dissolution
-    if not (legal_type in Business.CORPS and dissolution_type == DissolutionTypes.VOLUNTARY.value):
-        return []
-
     msg = []
-    for idx, party in enumerate(parties):
-        email = get_str(party, "/officer/email")
-        if not email:
-            msg.append({"error": "Custodian email is required for voluntary dissolution.",
-                        "path": f"/filing/dissolution/parties/{idx}/officer/email"})
-        elif any(char.isspace() for char in email):
-            msg.append({
-                "error": "Custodian email cannot contain any whitespaces.",
-                "path": f"/filing/dissolution/parties/{idx}/officer/email"
-            })
+    if not email:
+        msg.append({"error": "Custodian email is required.",
+                    "path": path})
+    elif any(char.isspace() for char in email):
+        msg.append({
+            "error": "Custodian email cannot contain any whitespaces.",
+            "path": path
+        })
     return msg
 
-def _validate_custodian_name(parties, dissolution_type, legal_type) -> list:
+
+def _validate_custodian_name(custodian, path) -> list:
     """Validate custodian name of the dissolution filing and trim it."""
-    # Only validate for CORP voluntary dissolution
-    if not (legal_type in Business.CORPS and dissolution_type == DissolutionTypes.VOLUNTARY.value):
-        return []
-
     msg = []
-    for idx, party in enumerate(parties):
-        party_type = get_str(party, "/officer/partyType")
-        # Organization custodian name (required + no surrounding whitespace) is enforced by the
-        # schema (business-schemas parties officer.organizationName pattern). firstName is not
-        # schema-patterned, so it is still validated here.
-        if party_type != "organization":
-            first_name = get_str(party, "/officer/firstName")
+    party_type = get_str(custodian, "/officer/partyType")
+    # Organization custodian name (required + no surrounding whitespace) is enforced by the
+    # schema (business-schemas parties officer.organizationName pattern).
+    # firstName is not schema-patterned, so it is still validated here.
+    if party_type != "organization":
+        first_name = get_str(custodian, "/officer/firstName")
 
-            if first_name is None or not first_name.strip():
-                msg.append({
-                    "error": "Custodian first name is required.",
-                    "path": f"/filing/dissolution/parties/{idx}/officer/firstName"
+        if first_name is None or not first_name.strip():
+            msg.append({
+                "error": "Custodian first name is required.",
+                "path": f"{path}/officer/firstName"
                 })
-            elif first_name != first_name.strip():
-                msg.append({
-                    "error": "Custodian first name cannot have leading or trailing spaces.",
-                    "path": f"/filing/dissolution/parties/{idx}/officer/firstName"
+        elif first_name != first_name.strip():
+            msg.append({
+                "error": "Custodian first name cannot have leading or trailing spaces.",
+                "path": f"{path}/officer/firstName"
                 })
 
     return msg
+
 
 def _check_dissolution_permission(required_permission: str, dissolution_type: str, filing_type: str) -> Error | None:
     """Check if the user has the required permission for the dissolution filing."""
     message = "Permission Denied - You do not have permissions file {dissolution_type} {filing_type} filing."
     return PermissionService.check_user_permission(required_permission, message=message)
+
 
 def _validate_dissolution_permission(business: Business, dissolution: dict, dissolution_type: str, filing_type: str, msg: list) -> Error | None:
     """Validate dissolution permission based on business and dissolution type."""
@@ -449,4 +436,4 @@ def _validate_dissolution_permission(business: Business, dissolution: dict, diss
             "check_email":True,
             "check_address":True,
             "check_document_email":True}
-                            )
+    )

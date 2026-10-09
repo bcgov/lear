@@ -175,8 +175,12 @@ def get_firm_affiliation_passcode(business_id: int):
     if party.party_type == "organization":
         pass_code = party.organization_name
     else:
-        pass_code = party.last_name + ", " + party.first_name
-        if hasattr(party, "middle_initial") and party.middle_initial:
-            pass_code = pass_code + " " + party.middle_initial
+        pass_code = party.last_name
+        if party.first_name or party.middle_initial:
+            pass_code = pass_code + ", " + " ".join([
+                x.strip() for x in [
+                    party.first_name,
+                    party.middle_initial] if x and x.strip()
+            ])
 
     return pass_code

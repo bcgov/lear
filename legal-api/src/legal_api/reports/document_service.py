@@ -68,6 +68,9 @@ STATIC_DOCUMENTS = {
     },
     "Court Order": {
         "documentType": "CRTO"
+    },
+    "Supporting Document": {
+        "documentType": "SUPP"
     }
 }
 APP_JSON = "application/json"

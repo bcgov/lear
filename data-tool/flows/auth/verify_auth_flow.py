@@ -1441,6 +1441,16 @@ def build_candidate_queries(config: Any, settings: AuthCandidateSettings | None 
         auth_mig_group_ids=settings.auth_mig_group_ids,
         auth_mig_batch_ids=settings.auth_mig_batch_ids,
     ).strip()
+    file_cnt_gt = getattr(settings, "file_cnt_last_2yrs", None)
+    if file_cnt_gt is not None:
+        base_sql = f"""
+            SELECT candidates.corp_num
+            FROM (
+                {base_sql}
+            ) candidates
+            INNER JOIN mv_legacy_corps_data lcd ON lcd.corp_num = candidates.corp_num
+            WHERE lcd.file_cnt_last_2yrs > {int(file_cnt_gt)}
+        """.strip()
 
     count_sql = f"""
         SELECT COUNT(*)
