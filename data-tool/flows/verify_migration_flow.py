@@ -30,7 +30,6 @@ from common.init_utils import colin_oracle_init, get_config, lear_init
 
 # Load config vars
 VERIFY_LEGAL_TYPE = os.getenv('VERIFY_LEGAL_TYPE', 'RLY')
-# Default to the user's home directory (private to the user) rather than a dir like /tmp.
 OUTPUT_CSV_PATH = os.path.expanduser(
     os.getenv('VERIFY_MIGRATION_OUTPUT') or str(Path.home() / 'migration_verification_report.csv')
 )
