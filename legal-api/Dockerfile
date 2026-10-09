@@ -77,7 +77,8 @@ RUN echo "$APP_ENV" \
   && poetry version \
   # Install deps:
   && poetry run pip install -U pip \
-  && poetry install --only main --no-interaction --no-ansi
+  && poetry install --only main --no-interaction --no-ansi \
+  && rm -rf "$POETRY_CACHE_DIR"
 
 # Running as non-root user:
 USER web
