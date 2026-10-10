@@ -414,6 +414,12 @@ def get_allowable_filings_dict(is_authorization: bool = False):
                     # only show filing when providing allowable filings not specific to a business
                     "businessRequirement": BusinessRequirement.NOT_EXIST
                 },
+                "reviewImportedData": {
+                    "legalTypes": ["BC", "BEN", "CC", "ULC", "C", "CBEN", "CUL", "CCC"],
+                    "blockerChecks": {
+                        "business": [BusinessBlocker.DEFAULT]
+                    }
+                },
                 "specialResolution": {
                     "legalTypes": ["CP"],
                     "blockerChecks": {
@@ -631,6 +637,12 @@ def get_allowable_filings_dict(is_authorization: bool = False):
                     "blockerChecks": {
                         "business": [BusinessBlocker.DEFAULT,
                                      BusinessBlocker.NOT_IN_GOOD_STANDING]
+                    }
+                },
+                "reviewImportedData": {
+                    "legalTypes": ["BC", "BEN", "CC", "ULC", "C", "CBEN", "CUL", "CCC"],
+                    "blockerChecks": {
+                        "business": [BusinessBlocker.DEFAULT]
                     }
                 },
                 "transition": {
