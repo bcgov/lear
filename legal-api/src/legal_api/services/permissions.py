@@ -54,6 +54,7 @@ class ListFilingsPermissionsAllowed(str, Enum):
     OFFICER_CHANGE_FILING = "OFFICER_CHANGE_FILING"
     REGISTRATION_FILING = "REGISTRATION_FILING"
     RESTORATION_REINSTATEMENT_FILING = "RESTORATION_REINSTATEMENT_FILING"
+    REVIEW_IMPORTED_DATA_FILING = "REVIEW_IMPORTED_DATA_FILING"
     SPECIAL_RESOLUTION_FILING = "SPECIAL_RESOLUTION_FILING"
     STAFF_FILINGS = "STAFF_FILINGS"
     TRANSITION_FILING = "TRANSITION_FILING"
@@ -196,6 +197,8 @@ class PermissionService:
                 ListFilingsPermissionsAllowed.RESTORATION_REINSTATEMENT_FILING.value,
             CoreFiling.FilingTypes.REGISTRATION.value:
                 ListFilingsPermissionsAllowed.REGISTRATION_FILING.value,
+            CoreFiling.FilingTypes.REVIEWIMPORTEDDATA.value:
+                ListFilingsPermissionsAllowed.REVIEW_IMPORTED_DATA_FILING.value,
             CoreFiling.FilingTypes.SPECIALRESOLUTION.value:
                 ListFilingsPermissionsAllowed.SPECIAL_RESOLUTION_FILING.value,
             CoreFiling.FilingTypes.TRANSITION.value:

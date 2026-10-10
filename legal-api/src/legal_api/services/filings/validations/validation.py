@@ -56,6 +56,7 @@ from .registrars_notation import validate as registrars_notation_validate
 from .registrars_order import validate as registrars_order_validate
 from .registration import validate as registration_validate
 from .restoration import validate as restoration_validate
+from .review_imported_data import validate as review_imported_data_validate
 from .schemas import validate_against_schema
 from .special_resolution import validate as special_resolution_validate
 from .transition import validate as transition_validate
@@ -200,6 +201,9 @@ def validate(business: Business,  # noqa: PLR0915, PLR0912, PLR0911
 
                 elif k == Filing.FILINGS["registration"].get("name"):
                     err = registration_validate(filing_json)
+
+                elif k == Filing.FILINGS["reviewImportedData"].get("name"):
+                    err = review_imported_data_validate(business,filing_json)
 
                 elif k == Filing.FILINGS["changeOfRegistration"].get("name"):
                     err = change_of_registration_validate(business, filing_json)

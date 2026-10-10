@@ -836,6 +836,12 @@ FILINGS: Final = {
             }
         }
     },
+    "reviewImportedData": {
+        "name": "reviewImportedData",
+        "title": "Review Imported Data",
+        "displayName": "Review Migrated Information",
+        "code": "NOFEE"
+    },
     "specialResolution": {
         "name": "specialResolution",
         "title": "Special Resolution",
