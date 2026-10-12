@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Correction filing."""
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from http import HTTPStatus
 from typing import Final
 
@@ -156,7 +156,7 @@ def _validate_corps_correction(business: Business, filing_dict, legal_type, msg)
         elif len(completing_parties) > 1:
             msg.append({"error": "Only one completing party is allowed.", "path": relationships_path})
 
-    if business.state == Business.State.HISTORICAL.value:
+    if business.state == Business.State.HISTORICAL:
         _validate_corps_correction_historical(business, filing_dict, msg)
     else:
         _validate_corps_correction_active(business, filing_dict, legal_type, msg)
@@ -189,8 +189,8 @@ def _validate_corps_correction_historical(business: Business, filing_dict, msg):
         elif len(custodian_parties) > 1:
             msg.append({"error": "Only one custodian is allowed.", "path": relationships_path})
         elif len(custodian_parties) == 1:
-            today = datetime.now(tz=UTC).date()
-            existing_custodian = PartyRole.get_party_roles(business.id, today, PartyRole.RoleTypes.CUSTODIAN.value)
+            # Use None end_date when correcting cessation date: skip comparison with existing value.
+            existing_custodian = PartyRole.get_party_roles(business.id, None, PartyRole.RoleTypes.CUSTODIAN.value)
             if not custodian_parties[0].get("entity", {}).get("identifier") and len(existing_custodian) > 0:
                 msg.append({
                     "error": "Custodian already exists for this business, cannot create another custodian.",

@@ -214,7 +214,8 @@ def test_validate_cod_relationships_unknown_identifier(session):
     party_id = _setup_existing_director(business)
 
     cod = _relationships_cod(party_id)
-    cod['relationships'][2]['entity']['identifier'] = str(party_id + 999)
+    entity_id = str(party_id + 999)
+    cod['relationships'][2]['entity']['identifier'] = entity_id
     filing = _build_filing(identifier, cod)
 
     err = validate(business, filing)
@@ -222,7 +223,7 @@ def test_validate_cod_relationships_unknown_identifier(session):
     assert err is not None
     assert err.code == HTTPStatus.BAD_REQUEST
     assert any(e['error'] == 'Relationship with this identifier is not valid for this filing.'
-               and e['path'] == '/filing/changeOfDirectors/relationships/2/entity/identifier'
+               and e['path'] == f'/filing/changeOfDirectors/relationships/2/entity/{entity_id}'
                for e in err.msg)
 
 

@@ -806,12 +806,11 @@ def validate_relationships( # noqa: PLR0913
     party_path = f"/filing/{filing_type}/relationships"
 
     # get relevant parties for the business
-    today = datetime.now(tz=UTC).date()
     party_roles: list[PartyRole] = []
     for role_type in role_types:
-        if roles := PartyRole.get_party_roles(business.id, today, role_type.value):
+        # Use None end_date when correcting cessation date: skip comparison with existing value.
+        if roles := PartyRole.get_party_roles(business.id, None, role_type.value):
             party_roles.extend(roles)
-
     party_ids = [str(party_role.party_id) for party_role in party_roles]
 
     # Check if party is a valid party of the given role
@@ -821,7 +820,7 @@ def validate_relationships( # noqa: PLR0913
         if identifier and not allow_edits:
             msg.append({"error": "Relationship edits are not allowed in this filing.", "path": f"{path}/entity"})
         elif identifier and identifier not in party_ids:
-            msg.append({"error": "Relationship with this identifier is not valid for this filing.", "path": f"{path}/entity/identifier"})
+            msg.append({"error": "Relationship with this identifier is not valid for this filing.", "path": f"{path}/entity/{identifier}"})
         elif not identifier and not allow_new:
             msg.append({"error": "New Relationships are not allowed in this filing.", "path": f"{path}/entity"})
 
