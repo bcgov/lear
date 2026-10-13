@@ -92,7 +92,7 @@ INVALID_SHARE_SERIES = {'has_rights_restrictions': False, 'has_series': True}
      VALID_OFFICES,
      INVALID_RELATIONSHIP_ID_MATCH,
      VALID_SHARE,
-     [{'error': 'Relationship with this identifier is not valid for this filing.', 'path': '/filing/transition/relationships/0/entity/{identifier}'}]),
+     [{'error': 'Relationship with this identifier is not valid for this filing.', 'path': '/filing/transition/relationships/0/entity/identifier'}]),
     ('Invalid_relationship_address',
      VALID_OFFICES,
      INVALID_RELATIONSHIP_ADDRESS,
@@ -168,6 +168,4 @@ def test_validate_transition(session, test_name, offices, relationship, share, e
     err = validate(business, filing)
     if err:
         print(test_name, err.msg)
-    if test_name == 'Invalid_relationship_wrong_id' and expected_errs:
-        expected_errs[0]["path"] = expected_errs[0]["path"].format(identifier=filing_relationship['entity']['identifier'])
     assert (not err and not expected_errs) or err.msg == expected_errs
