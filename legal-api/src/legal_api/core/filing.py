@@ -100,6 +100,7 @@ class Filing:  # pylint: disable=too-many-public-methods
         REGISTRATION = "registration"
         RESTORATION = "restoration"
         RESTORATIONAPPLICATION = "restorationApplication"
+        REVIEWIMPORTEDDATA = "reviewImportedData"
         SPECIALRESOLUTION = "specialResolution"
         TRANSITION = "transition"
         TRANSPARENCY_REGISTER = "transparencyRegister"
