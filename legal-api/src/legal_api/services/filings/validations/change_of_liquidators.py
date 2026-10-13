@@ -67,7 +67,7 @@ def validate(business: Business, filing_json: dict) -> Error | None:
             allowed_offices = ["liquidationRecordsOffice"]
             required_offices = ["liquidationRecordsOffice"]
 
-        msg.extend(validate_offices(filing_json, filing_type, allowed_offices, required_offices, False))
+        msg.extend(validate_offices(filing_json, filing_type, allowed_offices, required_offices, True))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
