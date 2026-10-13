@@ -1178,6 +1178,10 @@ def test_get_could_file(session, client, jwt, monkeypatch):
             "name": "registrarsOrder"
         },
         {
+            "displayName": "Review Migrated Information",
+            "name": "reviewImportedData"
+        },
+        {
             "displayName": "Post Restoration Transition Application",
             "name": "transition"
         },
