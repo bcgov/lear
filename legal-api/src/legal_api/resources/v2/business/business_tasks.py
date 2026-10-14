@@ -28,6 +28,7 @@ from requests import exceptions
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business, Filing
 from legal_api.services import check_warnings, namex
+from legal_api.services.authz import BusinessBlocker, business_blocker_check
 from legal_api.services.request_context import add_account_linking_key_header
 from legal_api.services.warnings.business.business_checks import BusinessWarningCodes, WarningType
 from legal_api.utils.auth import jwt
@@ -146,7 +147,9 @@ def _add_missing_info_task(business: Business, warnings: list, tasks: list, orde
         business.legal_type in Business.CORPS
         and not Filing.get_incomplete_filings_by_type(business.id, "reviewImportedData")
     ):
-        tasks.append(create_review_imported_data_todo(business, order, True))
+        # reviewImportedData is gated by BusinessBlocker.DEFAULT in authz, so disable the todo when the API would reject it
+        enabled = not business_blocker_check(business)[BusinessBlocker.DEFAULT]
+        tasks.append(create_review_imported_data_todo(business, order, enabled))
         order += 1
 
     return tasks, order
