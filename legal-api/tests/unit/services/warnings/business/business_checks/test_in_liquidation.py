@@ -21,7 +21,7 @@ from business_common.utils import datetime
 from business_model.models import Business
 from legal_api.services.warnings.business import check_business
 from legal_api.services.warnings.business.business_checks import WarningType, BusinessWarningCodes
-from tests.unit.models import factory_business
+from tests.unit.models import factory_business, factory_business_office
 
 FOUNDING_DATE = datetime(2023, 3, 3)
 IN_LIQUIDATION_DATE = datetime(2024, 6, 10, 0, 0, tzinfo=FixedOffsetTimezone(0))
@@ -56,6 +56,8 @@ def test_check_business(session, test_name, founding_date, in_liquidation_date, 
                                 founding_date=founding_date,
                                 in_liquidation_date=in_liquidation_date,
                                 last_lr_year=last_lr_year)
+    factory_business_office(business, 'registeredOffice')
+    factory_business_office(business, 'recordsOffice')
 
     if test_name != 'NOT_IN_LIQUIDATION':
         business.in_liquidation = True

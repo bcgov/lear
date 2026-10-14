@@ -82,6 +82,18 @@ from legal_api.services.warnings.business.business_checks.firms import check_add
          'NO_COMPLETING_PARTY_MAILING_ADDRESS_POSTAL_CODE', 'Postal code is required for completing party mailing address.'),
         ('SUCCESS', 'mailing', 'region', BusinessWarningReferers.COMPLETING_PARTY,
          None, None),
+
+        # corps referers: region required only on office delivery addresses
+        ('FAIL_NO_REGION', 'delivery', 'region', BusinessWarningReferers.REGISTERED_OFFICE,
+         'NO_REGISTERED_OFFICE_DELIVERY_ADDRESS_REGION', 'Region is required for registered office delivery address.'),
+        ('SUCCESS', 'mailing', 'region', BusinessWarningReferers.REGISTERED_OFFICE, None, None),
+        ('FAIL_NO_REGION', 'delivery', 'region', BusinessWarningReferers.RECORDS_OFFICE,
+         'NO_RECORDS_OFFICE_DELIVERY_ADDRESS_REGION', 'Region is required for records office delivery address.'),
+        ('SUCCESS', 'mailing', 'region', BusinessWarningReferers.RECORDS_OFFICE, None, None),
+        ('SUCCESS', 'delivery', 'region', BusinessWarningReferers.DIRECTOR, None, None),
+        ('SUCCESS', 'mailing', 'region', BusinessWarningReferers.DIRECTOR, None, None),
+        ('FAIL_NO_STREET', 'delivery', 'street', BusinessWarningReferers.DIRECTOR,
+         'NO_DIRECTOR_DELIVERY_ADDRESS_STREET', 'Street is required for director delivery address.'),
     ])
 def test_check_address(session, test_name, address_type, null_addr_field_name, referer, expected_code, expected_msg):
     """Assert that business address checks functions properly."""

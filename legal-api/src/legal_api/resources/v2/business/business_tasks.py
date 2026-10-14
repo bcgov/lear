@@ -80,7 +80,7 @@ def get_tasks(identifier):
     return jsonify(tasks=rv)
 
 
-def construct_task_list(business: Business):  # noqa: PLR0915
+def construct_task_list(business: Business):
     """
     Return all current pending tasks to do.
 
@@ -114,15 +114,7 @@ def construct_task_list(business: Business):  # noqa: PLR0915
     order = 1
 
     warnings = check_warnings(business)
-    if any(x["warningType"] == WarningType.MISSING_REQUIRED_BUSINESS_INFO for x in warnings):
-        # TODO remove compliance warning line when UI has been integrated to use warnings instead of complianceWarnings
-        business.compliance_warnings = warnings
-        business.warnings = warnings
-
-        # Checking for draft or pending conversion
-        if not Filing.get_incomplete_filings_by_type(business.id, "conversion"):
-            tasks.append(create_conversion_filing_todo(business, order, True))
-            order += 1
+    tasks, order = _add_missing_info_task(business, warnings, tasks, order)
 
     # Retrieve filings that are either incomplete, or drafts
     pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value,
@@ -221,6 +213,30 @@ def construct_task_list(business: Business):  # noqa: PLR0915
         order += 1
 
     return tasks
+
+
+def _add_missing_info_task(business: Business, warnings: list, tasks: list, order: int):
+    """Add the todo that lets the business fix missing required info (firms: conversion, corps: reviewImportedData)."""
+    if not any(x["warningType"] == WarningType.MISSING_REQUIRED_BUSINESS_INFO for x in warnings):
+        return tasks, order
+
+    # TODO remove compliance warning line when UI has been integrated to use warnings instead of complianceWarnings
+    business.compliance_warnings = warnings
+    business.warnings = warnings
+
+    if business.legal_type in (Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value):
+        # Checking for draft or pending conversion
+        if not Filing.get_incomplete_filings_by_type(business.id, "conversion"):
+            tasks.append(create_conversion_filing_todo(business, order, True))
+            order += 1
+    elif (
+        business.legal_type in Business.CORPS
+        and not Filing.get_incomplete_filings_by_type(business.id, "reviewImportedData")
+    ):
+        tasks.append(create_review_imported_data_todo(business, order, True))
+        order += 1
+
+    return tasks, order
 
 
 def add_tr_tasks(business: Business, tasks: list, order: int, pending_tr_type: str | None = None):
@@ -411,14 +427,14 @@ def create_incorporate_nr_todo(name_request, order, enabled):
     return todo
 
 
-def create_conversion_filing_todo(business, order, enabled):
-    """Return a to-do JSON object."""
+def create_filing_todo(business, filing_type, order, enabled):
+    """Return a to-do JSON object for a filing that has not been started."""
     todo = {
         "task": {
             "todo": {
                 "business": business.json(),
                 "header": {
-                    "name": "conversion",
+                    "name": filing_type,
                     "status": "NEW"
                 }
             }
@@ -427,24 +443,21 @@ def create_conversion_filing_todo(business, order, enabled):
         "enabled": enabled
     }
     return todo
+
+
+def create_conversion_filing_todo(business, order, enabled):
+    """Return a to-do JSON object for a firm conversion filing."""
+    return create_filing_todo(business, "conversion", order, enabled)
+
+
+def create_review_imported_data_todo(business, order, enabled):
+    """Return a to-do JSON object for a corps review imported data filing."""
+    return create_filing_todo(business, "reviewImportedData", order, enabled)
 
 
 def create_transition_todo(business, order, enabled):
     """Return a to-do JSON object for transition application filing."""
-    todo = {
-        "task": {
-            "todo": {
-                "business": business.json(),
-                "header": {
-                    "name": "transition",
-                    "status": "NEW"
-                }
-            }
-        },
-        "order": order,
-        "enabled": enabled
-    }
-    return todo
+    return create_filing_todo(business, "transition", order, enabled)
 
 
 def create_tr_todo(business: Business, order: int, enabled: bool,  # noqa: PLR0913

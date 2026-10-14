@@ -18,6 +18,7 @@ from typing import Final
 from business_model.models import Address, Business, Filing, Office, Party, PartyRole
 
 from . import (
+    OFFICE_REFERERS,
     WARNING_MESSAGE_BASE,
     BusinessWarningCodes,
     BusinessWarningReferers,
@@ -259,7 +260,7 @@ def check_address(address: Address,
                                                    address_type,
                                                    BusinessWarnings.NO_ADDRESS_POSTAL_CODE))
 
-    if (referer == BusinessWarningReferers.BUSINESS_OFFICE
+    if (referer in OFFICE_REFERERS
         and address_type == Address.DELIVERY
             and not address.region):
         result.append(get_address_business_warning(referer,

@@ -2424,6 +2424,23 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
             assert filing_types == expected
 
 
+@pytest.mark.parametrize('username, roles', [('staff', [STAFF_ROLE]), ('general', [BASIC_USER])])
+def test_allowed_filings_corps_missing_info_warnings(monkeypatch, app, session, jwt, username, roles):
+    """Assert corps with MISSING_REQUIRED_BUSINESS_INFO warnings can still file reviewImportedData but not correction."""
+    with jwt_request_context(app, jwt, roles=roles, username=username):
+        monkeypatch.setattr('legal_api.services.flags.value',
+                            lambda flag, _user, _account_id: '' if flag == 'enabled-specific-filings' else {})
+        monkeypatch.setattr('business_model.models.User.get_or_create_user_by_jwt', lambda _: None)
+        for legal_type in ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CCC', 'CUL']:
+            business = create_business(legal_type, Business.State.ACTIVE)
+            business.warnings = [{**MISSING_BUSINESS_INFO_WARNINGS[0], 'code': 'NO_REGISTERED_OFFICE',
+                                  'data': {'officeType': 'registeredOffice'}}]
+            filing_names = [x['name'] for x in get_allowed_filings(business, Business.State.ACTIVE, legal_type, jwt)]
+            assert 'reviewImportedData' in filing_names
+            assert 'correction' not in filing_names
+            assert 'dissolution' not in filing_names
+
+
 @pytest.mark.parametrize(
     'test_name,state,legal_types,username,roles,state_filing_types,state_filing_sub_types,expected',
     [
