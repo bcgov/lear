@@ -806,14 +806,13 @@ def validate_relationships( # noqa: PLR0913
     party_path = f"/filing/{filing_type}/relationships"
 
     # get relevant parties for the business
-    today = datetime.now(tz=UTC).date()
+    # Use None end_date when correcting cessation date: skip comparison with existing value.
+    today = datetime.now(tz=UTC).date() if filing_type != "correction" else None
     party_roles: list[PartyRole] = []
     for role_type in role_types:
         if roles := PartyRole.get_party_roles(business.id, today, role_type.value):
             party_roles.extend(roles)
-
     party_ids = [str(party_role.party_id) for party_role in party_roles]
-
     # Check if party is a valid party of the given role
     for index, relationship in enumerate(relationships):
         path = f"{party_path}/{index}"

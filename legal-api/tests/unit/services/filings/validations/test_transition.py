@@ -168,5 +168,4 @@ def test_validate_transition(session, test_name, offices, relationship, share, e
     err = validate(business, filing)
     if err:
         print(test_name, err.msg)
-
     assert (not err and not expected_errs) or err.msg == expected_errs
