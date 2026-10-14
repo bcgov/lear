@@ -49,9 +49,6 @@ class EventFilings(str, Enum):
     # CONVOTHER Annual Report
     CONVOTHER_OTANN = 'CONVOTHER_OTANN'
 
-    # Change of Name
-    FILE_OTNCN = 'FILE_OTNCN'
-
     # Change of Address
     FILE_APTRA = 'FILE_APTRA'
     FILE_NOERA = 'FILE_NOERA'
@@ -70,6 +67,9 @@ class EventFilings(str, Enum):
 
     # CONVOTHER Change of Directors
     CONVOTHER_OTCDR = 'CONVOTHER_OTCDR'
+
+    # Change of Name
+    FILE_OTNCN = 'FILE_OTNCN'
 
     # Consent Continuation Out
     FILE_CONTO = 'FILE_CONTO'
