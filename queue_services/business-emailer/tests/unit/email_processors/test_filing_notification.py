@@ -187,6 +187,32 @@ def test_bootstrap_notification_recipients(app, session, mock_pdfs, filing_type,
     assert (COMP_PARTY_EMAIL in email['recipients']) == expects_comp_party
 
 
+@pytest.mark.parametrize('status, submitter_roles, expects_optional_email', [
+    # staff amalgamation: Document Delivery client email gets every output (#35050)
+    ('PAID', 'staff', True),
+    ('COMPLETED', 'staff', True),
+    ('COMPLETED', 'public_user', False),
+    ('COMPLETED', None, False),
+])
+def test_amalgamation_staff_document_optional_email(app, session, mock_pdfs, status, submitter_roles,
+                                                    expects_optional_email):
+    """Assert that a staff-entered documentOptionalEmail is a recipient for amalgamation outputs."""
+    filing = prep_bootstrap_filing(session, 'amalgamationApplication', 'BC1234567', 'BC', status, LEGAL_NAME)
+    if status == 'PAID':
+        make_future_effective(filing)
+    filing_json = copy.deepcopy(filing.filing_json)
+    filing_json['filing']['header']['documentOptionalEmail'] = 'optional@email.com'
+    filing._filing_json = filing_json  # bypass the paid-filing lock for test setup
+    filing.submitter_roles = submitter_roles
+    filing.save()
+
+    email = process_filing(filing, 'amalgamationApplication', status)
+
+    assert CONTACT_POINT in email['recipients']
+    assert COMP_PARTY_EMAIL in email['recipients']
+    assert ('optional@email.com' in email['recipients']) == expects_optional_email
+
+
 @pytest.mark.parametrize('filing_type, filing_sub_type, status, expected_attachments', [
     ('amalgamationApplication', 'regular', 'PAID', [
         {'fileName': 'Amalgamation Application (Regular).pdf', 'content': 'pdf_content_0', 'order': '1'},
