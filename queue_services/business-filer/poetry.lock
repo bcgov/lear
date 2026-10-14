@@ -2814,7 +2814,7 @@ rpds-py = ">=0.7.0"
 
 [[package]]
 name = "registry_schemas"
-version = "2.18.74"
+version = "2.18.86"
 description = "A short description of the project"
 optional = false
 python-versions = ">=3.6"
