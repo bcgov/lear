@@ -153,6 +153,36 @@ def test_validate_offices_and_relationships(session):
     assert err is None
 
 
+@pytest.mark.parametrize(
+    "office_type,address_type",
+    [
+        ("registeredOffice", "deliveryAddress"),
+        ("registeredOffice", "mailingAddress"),
+        ("recordsOffice", "deliveryAddress"),
+        ("recordsOffice", "mailingAddress"),
+    ],
+)
+def test_validate_requires_bc_region_for_office_addresses(session, office_type, address_type):
+    """Require BC region for registered and records office mailing/delivery addresses."""
+    business = _setup_business()
+    office = _valid_office()
+    office[address_type]["addressRegion"] = "AB"
+    filing = _build_filing({"offices": {office_type: office}})
+
+    err = validate(business, filing)
+
+    if address_type == "deliveryAddress":
+        expected_path = f"/filing/reviewImportedData/offices/{office_type}"
+    else:
+        expected_path = f"/filing/reviewImportedData/offices/{office_type}/{address_type}/addressRegion"
+    assert err is not None
+    assert err.code == HTTPStatus.BAD_REQUEST
+    assert any(
+        item["error"] == "Address Region must be 'BC'." and item["path"] == expected_path
+        for item in err.msg
+    )
+
+
 def test_validate_rejects_unknown_director_identifier(session):
     """Assert a relationship identifier that is not an active director is rejected."""
     business = _setup_business()
