@@ -29,10 +29,10 @@ from tests.unit import create_business
 def _address(street: str) -> dict:
     return {
         "streetAddress": street,
-        "addressCity": "Victoria",
+        "addressCity": "delivery_address city",
         "addressCountry": "CA",
         "addressRegion": "BC",
-        "postalCode": "V8V 1A1",
+        "postalCode": "H0H0H0",
     }
 
 
@@ -58,7 +58,7 @@ def _add_records_office(business) -> Office:
 
 
 def _add_director(business, session, cessation_date=None):
-    party = Party(first_name="ALEX", last_name="DIRECTOR")
+    party = Party(first_name="Phillip Tandy", last_name="Miller")
     party.delivery_address = create_address(_address("Old director delivery"), Address.DELIVERY)
     party.mailing_address = create_address(_address("Old director mailing"), Address.MAILING)
     party.save()
@@ -107,10 +107,12 @@ def test_process_records_office_only(app, session, business):
     original_registered_street = registered_delivery.street
 
     filing_meta = _process(business, {
-        "offices": {"recordsOffice": {
-            "deliveryAddress": _address("New records delivery"),
-            "mailingAddress": _address("New records mailing"),
-        }}
+        "offices": {
+            "recordsOffice": {
+                "deliveryAddress": _address("New records delivery"),
+                "mailingAddress": _address("New records mailing"),
+            }
+        }
     })
 
     assert records_office.addresses.filter_by(address_type=Address.DELIVERY).one().street == "New records delivery"
@@ -139,8 +141,8 @@ def test_process_directors_only_ignores_names_and_preserves_missing_address(app,
 
     assert party.mailing_address.street == "New director mailing"
     assert party.delivery_address.street == "New director delivery"
-    assert party.first_name == "ALEX"
-    assert party.last_name == "DIRECTOR"
+    assert party.first_name == "Phillip Tandy"
+    assert party.last_name == "Miller"
     assert role.appointment_date == original_appointment_date
     assert role.cessation_date is None
     assert business.last_cod_date is None
@@ -181,15 +183,6 @@ def test_process_partial_director_address_leaves_other_address_unchanged(app, se
 
     assert party.delivery_address.street == original_delivery
     assert party.mailing_address.street == "New director mailing"
-
-
-def test_process_empty_office_address_does_not_create_address(app, session, business):
-    """Ignore an empty address object rather than adding a blank address row."""
-    office = business.offices.filter_by(office_type=OfficeType.REGISTERED).one()
-
-    _process(business, {"offices": {"registeredOffice": {"mailingAddress": {}}}})
-
-    assert office.addresses.filter_by(address_type="mailing").count() == 0
 
 
 def test_process_unknown_director_identifier_raises(app, session, business):

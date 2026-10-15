@@ -23,7 +23,7 @@ from business_filer.services.filer import process_filing
 from tests.unit import create_business, create_filing, create_party, create_party_role
 
 
-def test_process_filing_review_imported_data(app, session):
+def test_process_filing_review_imported_data_office_addresses(app, session):
     """Apply submitted office addresses and complete a Review Imported Data filing."""
     business = create_business("BC1234567", legal_type="BC", legal_name="Example Ltd.")
     filing_json = copy.deepcopy(FILING_TEMPLATE)
