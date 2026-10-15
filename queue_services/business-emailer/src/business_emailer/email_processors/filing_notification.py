@@ -77,11 +77,17 @@ def _get_additional_recipients(filing: Filing, token: str) -> str | None:
         "dissolution",
         "specialResolution"
     ]
+    is_staff_submitter = bool(filing.submitter_roles and UserRoles.staff in filing.submitter_roles)
     if filing.filing_type in submitter_recipient_filings:
-        if filing.submitter_roles and UserRoles.staff in filing.submitter_roles:
+        if is_staff_submitter:
             # when staff do filing documentOptionalEmail may contain completing party email
             return filing.filing_json["filing"]["header"].get("documentOptionalEmail")
         return get_user_email_from_auth(filing.filing_submitter.username, token)
+    if filing.filing_type == "amalgamationApplication" and is_staff_submitter:
+        # client completing party is already covered by get_recipients (party email);
+        # staff may instead enter the client email in Document Delivery (#35050)
+        return filing.filing_json["filing"]["header"].get("documentOptionalEmail")
+    return None
 
 
 def _get_attachments_and_extra_pdf_types(status: str, filing_type: str, filing: Filing, legal_type_key: str) -> tuple[list[str], list[str]]:
