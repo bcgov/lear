@@ -1345,6 +1345,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'noticeOfWithdrawal',
             'registrarsNotation',
             'registrarsOrder',
+            'reviewImportedData',
             'transparencyRegister'
         ]
         excluded_businesses = [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]
