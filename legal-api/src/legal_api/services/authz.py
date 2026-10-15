@@ -166,7 +166,7 @@ def has_any_roles(jwt: JwtManager, roles: list[str]) -> bool:
     return any(bool(jwt.validate_roles(request_ctx.current_user, [role])) for role in roles)
 
 
-def get_allowable_filings_dict(is_authorization: bool = False):
+def get_allowable_filings_dict(is_authorization: bool = False):  # noqa: PLR0912
     """Return dictionary containing rules for when filings are allowed."""
     # importing here to avoid circular dependencies
     # pylint: disable=import-outside-toplevel
@@ -707,6 +707,16 @@ def get_allowable_filings_dict(is_authorization: bool = False):
                 del allowable_filings_dict[user_type][Business.State.ACTIVE.value][filing_type][filing_sub_type]
             else:
                 del allowable_filings_dict[user_type][Business.State.ACTIVE.value][filing_type]
+
+    enabled_features = flags.value(
+        "enable-new-feature",
+        request_context.user,
+        request_context.account_id,
+    ) or []
+    if "reviewImportedData" not in enabled_features:
+        for user_type_dict in allowable_filings_dict.values():
+            for business_state_dict in user_type_dict.values():
+                business_state_dict.pop("reviewImportedData", None)
 
     # Remove some alteration blockers when authorization is not required
     if not is_authorization:

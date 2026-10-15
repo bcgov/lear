@@ -119,6 +119,23 @@ def test_validate_offices_only(session):
     assert err is None
 
 
+def test_validate_rejects_review_imported_data_when_feature_is_disabled(session, monkeypatch):
+    """Reject the filing when reviewImportedData is absent from the feature flag."""
+    business = _setup_business()
+    filing = _build_filing({
+        "offices": {
+            "registeredOffice": _valid_office(),
+        },
+    })
+    monkeypatch.setattr("legal_api.services.flags.value", lambda *args, **kwargs: [])
+
+    err = validate(business, filing)
+
+    assert err is not None
+    assert err.code == HTTPStatus.FORBIDDEN
+    assert err.msg == [{"error": "Review Imported Data filing is not enabled."}]
+
+
 def test_validate_relationships_only(session):
     """Assert a filing containing relationships only passes validation."""
     business = _setup_business()

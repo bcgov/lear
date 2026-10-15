@@ -1019,7 +1019,7 @@ def test_get_could_file(session, client, jwt, monkeypatch):
     monkeypatch.setattr(
         'legal_api.services.flags.value',
         lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
-        if flag == 'enabled-specific-filings' else {}
+        if flag == 'enabled-specific-filings' else ['reviewImportedData'] if flag == 'enable-new-feature' else {}
     )
     monkeypatch.setattr(
         'business_model.models.User.get_or_create_user_by_jwt',
