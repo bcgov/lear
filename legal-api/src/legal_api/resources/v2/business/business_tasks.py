@@ -28,6 +28,7 @@ from requests import exceptions
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business, Filing
 from legal_api.services import check_warnings, namex
+from legal_api.services.authz import BusinessBlocker, business_blocker_check
 from legal_api.services.request_context import add_account_linking_key_header
 from legal_api.services.warnings.business.business_checks import BusinessWarningCodes, WarningType
 from legal_api.utils.auth import jwt
@@ -80,7 +81,7 @@ def get_tasks(identifier):
     return jsonify(tasks=rv)
 
 
-def construct_task_list(business: Business):  # noqa: PLR0915
+def construct_task_list(business: Business):
     """
     Return all current pending tasks to do.
 
@@ -97,6 +98,94 @@ def construct_task_list(business: Business):  # noqa: PLR0915
 
         - Corporations must file one AR per year, on or after the anniversary of the founding date
     """
+    tasks = []
+    order = 1
+
+    warnings = check_warnings(business)
+    tasks, order = _add_missing_info_task(business, warnings, tasks, order)
+
+    # Retrieve filings that are either incomplete, or drafts
+    pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value,
+                                                                 Filing.Status.PENDING.value,
+                                                                 Filing.Status.PENDING_CORRECTION.value,
+                                                                 Filing.Status.ERROR.value])
+    # Create a todo item for each pending filing
+    pending_tr_type: str = None
+    for filing in pending_filings:
+        if filing.filing_type == "transparencyRegister":
+            pending_tr_type = filing.filing_sub_type
+
+        if not (task := _create_pending_filing_task(business, filing, order)):
+            return "pay_connection_error"
+        tasks.append(task)
+        order += 1
+
+    tasks, order = _add_ar_tasks(business, tasks, order, pending_filings)
+
+    tasks, order = add_tr_tasks(business, tasks, order, pending_tr_type)
+
+    tasks, order = _add_transition_task(business, warnings, tasks, order, pending_filings)
+
+    return tasks
+
+
+def _add_missing_info_task(business: Business, warnings: list, tasks: list, order: int):
+    """Add the todo that lets the business fix missing required info (firms: conversion, corps: reviewImportedData)."""
+    if not any(x["warningType"] == WarningType.MISSING_REQUIRED_BUSINESS_INFO for x in warnings):
+        return tasks, order
+
+    # TODO remove compliance warning line when UI has been integrated to use warnings instead of complianceWarnings
+    business.compliance_warnings = warnings
+    business.warnings = warnings
+
+    if business.legal_type in (Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value):
+        # Checking for draft or pending conversion
+        if not Filing.get_incomplete_filings_by_type(business.id, "conversion"):
+            tasks.append(create_conversion_filing_todo(business, order, True))
+            order += 1
+    elif (
+        business.legal_type in Business.CORPS
+        and not Filing.get_incomplete_filings_by_type(business.id, "reviewImportedData")
+    ):
+        # reviewImportedData is gated by BusinessBlocker.DEFAULT in authz, so disable the todo when the API would reject it
+        enabled = not business_blocker_check(business)[BusinessBlocker.DEFAULT]
+        tasks.append(create_review_imported_data_todo(business, order, enabled))
+        order += 1
+
+    return tasks, order
+
+
+def _create_pending_filing_task(business: Business, filing: Filing, order: int) -> dict | None:
+    """Return the task for a draft/pending filing, or None when pay-api could not be reached."""
+    filing_json = filing.json
+    if filing.payment_status_code == "CREATED" and filing.payment_token:
+        # get current pay details from pay-api
+        try:
+            headers = {
+                "Authorization": f"Bearer {jwt.get_token_auth_header()}",
+                "Content-Type": "application/json"
+            }
+            add_account_linking_key_header(headers)
+            pay_response = requests.get(
+                url=f'{current_app.config.get("PAYMENT_SVC_URL")}/{filing.payment_token}',
+                headers=headers
+            )
+            pay_details = {
+                "isPaymentActionRequired": pay_response.json().get("isPaymentActionRequired", False),
+                "paymentMethod": pay_response.json().get("paymentMethod", "")
+            }
+            filing_json["filing"]["header"].update(pay_details)
+
+        except (exceptions.ConnectionError, exceptions.Timeout) as err:
+            current_app.logger.error(
+                f"Payment connection failure for {business.identifier} task list. ", err)
+            return None
+
+    return {"task": filing_json, "order": order, "enabled": True}
+
+
+def _add_ar_tasks(business: Business, tasks: list, order: int, pending_filings: list):
+    """Add the Annual Report todos for every AR year that is due and not yet started."""
     # Legal types that never get AR todos. SP/GP don't file annual reports at all. The rest are
     # legacy/mainframe migrated legal types where annualReport filing is disabled/greyed out in the
     # UI - some of these were founded decades ago (for example,1940s), so without this exclusion they'd
@@ -110,117 +199,72 @@ def construct_task_list(business: Business):  # noqa: PLR0915
         "PFS",  # Pension Funded Society
         "SB",  # Society Branch
     ]
-    tasks = []
-    order = 1
-
-    warnings = check_warnings(business)
-    if any(x["warningType"] == WarningType.MISSING_REQUIRED_BUSINESS_INFO for x in warnings):
-        # TODO remove compliance warning line when UI has been integrated to use warnings instead of complianceWarnings
-        business.compliance_warnings = warnings
-        business.warnings = warnings
-
-        # Checking for draft or pending conversion
-        if not Filing.get_incomplete_filings_by_type(business.id, "conversion"):
-            tasks.append(create_conversion_filing_todo(business, order, True))
-            order += 1
-
-    # Retrieve filings that are either incomplete, or drafts
-    pending_filings = Filing.get_filings_by_status(business.id, [Filing.Status.DRAFT.value,
-                                                                 Filing.Status.PENDING.value,
-                                                                 Filing.Status.PENDING_CORRECTION.value,
-                                                                 Filing.Status.ERROR.value])
-    # Create a todo item for each pending filing
-    pending_tr_type: str = None
-    for filing in pending_filings:
-        if filing.filing_type == "transparencyRegister":
-            pending_tr_type = filing.filing_sub_type
-
-        filing_json = filing.json
-        if filing.payment_status_code == "CREATED" and filing.payment_token:
-            # get current pay details from pay-api
-            try:
-                headers = {
-                    "Authorization": f"Bearer {jwt.get_token_auth_header()}",
-                    "Content-Type": "application/json"
-                }
-                add_account_linking_key_header(headers)
-                pay_response = requests.get(
-                    url=f'{current_app.config.get("PAYMENT_SVC_URL")}/{filing.payment_token}',
-                    headers=headers
-                )
-                pay_details = {
-                    "isPaymentActionRequired": pay_response.json().get("isPaymentActionRequired", False),
-                    "paymentMethod": pay_response.json().get("paymentMethod", "")
-                }
-                filing_json["filing"]["header"].update(pay_details)
-
-            except (exceptions.ConnectionError, exceptions.Timeout) as err:
-                current_app.logger.error(
-                    f"Payment connection failure for {business.identifier} task list. ", err)
-                return "pay_connection_error"
-
-        task = {"task": filing_json, "order": order, "enabled": True}
-        tasks.append(task)
-        order += 1
-
     # Also skip AR todos when founding date is the COLIN year-1 sentinel/unknown - without this, a
     # sentinel founding_date of 0001-01-01 generates ~2000 AR todos and a multi-MB /tasks payload.
     unknown_founding_date = (
         not business.founding_date or business.founding_date.year <= 1
     )
     if (
-        business.legal_type not in entity_types_no_ar
-        and not business.in_liquidation
-        and not unknown_founding_date
+        business.legal_type in entity_types_no_ar
+        or business.in_liquidation
+        or unknown_founding_date
     ):
-        # If this is the first calendar year since incorporation, there is no previous ar year.
-        next_ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
+        return tasks, order
 
-        # Checking for pending ar
-        annual_report_filings = Filing.get_incomplete_filings_by_type(business.id, "annualReport")
-        if annual_report_filings:
-            # Consider each filing as each year and add to find next ar year
-            next_ar_year += len(annual_report_filings)
+    # If this is the first calendar year since incorporation, there is no previous ar year.
+    next_ar_year = (business.last_ar_year if business.last_ar_year else business.founding_date.year) + 1
 
+    # Checking for pending ar
+    annual_report_filings = Filing.get_incomplete_filings_by_type(business.id, "annualReport")
+    if annual_report_filings:
+        # Consider each filing as each year and add to find next ar year
+        next_ar_year += len(annual_report_filings)
+
+    ar_min_date, ar_max_date = business.get_ar_dates(next_ar_year)
+
+    start_year = next_ar_year
+    while next_ar_year <= datetime.now(UTC).year and ar_min_date <= datetime.now(UTC).date():
+        enabled = not pending_filings and ar_min_date.year == start_year
+        tasks.append(create_todo(business, next_ar_year, ar_min_date, ar_max_date, order, enabled))
+
+        # Include all ar's to todo from last ar filing
+        next_ar_year += 1
         ar_min_date, ar_max_date = business.get_ar_dates(next_ar_year)
-
-        start_year = next_ar_year
-        while next_ar_year <= datetime.now(UTC).year and ar_min_date <= datetime.now(UTC).date():
-            # while next_ar_year <= datetime.now(UTC).date():
-            enabled = not pending_filings and ar_min_date.year == start_year
-            tasks.append(create_todo(business, next_ar_year, ar_min_date, ar_max_date, order, enabled))
-
-            # Include all ar's to todo from last ar filing
-            next_ar_year += 1
-            ar_min_date, ar_max_date = business.get_ar_dates(next_ar_year)
-            order += 1
-
-    tasks, order = add_tr_tasks(business, tasks, order, pending_tr_type)
-
-    # Transition Application todo task appears below overdue Annual Reports before the restoration date causing the warning
-    # and it does not affect the 'enabled' status of other todo items.
-    if (
-        any(x["code"] == BusinessWarningCodes.TRANSITION_NOT_FILED.value for x in warnings) and
-        not Filing.get_incomplete_filings_by_type(business.id, "transition")
-    ):
-        # Gets all completed restorations of the business (most recent first)
-        restorations = Filing.get_filings_by_types(business.id, ["restoration", "restorationApplication"])
-        if not restorations:
-            # Should never get here
-            current_app.logger.error(f"Error - Business id: {business.id}. TRANSITION_NOT_FILED warning and no restoration filing on record.")
-            return tasks
-        # Use the first restoration in the list for the most recent completed restoration date
-        last_restoration_date = restorations[0].effective_date
-        last_ar_date = business.last_ar_date or business.founding_date
-        # Get the transition application todo order based on the ar tasks, last restoration date, and ar date information
-        transition_order, transition_enabled = _find_task_order_for_ta(tasks, order, last_restoration_date, last_ar_date)
-        # Bump all the task orders by one that are at and above transition_order
-        tasks = _bump_task_order(tasks, transition_order)
-        # Append the TA task at with order: transition_order. Disable if there are any incomplete filings
-        tasks.append(create_transition_todo(business, transition_order, (transition_enabled and not pending_filings)))
         order += 1
 
-    return tasks
+    return tasks, order
+
+
+def _add_transition_task(business: Business, warnings: list, tasks: list, order: int, pending_filings: list):
+    """Add the Transition Application todo when the business has a TRANSITION_NOT_FILED warning.
+
+    It appears below overdue Annual Reports before the restoration date causing the warning
+    and it does not affect the 'enabled' status of other todo items.
+    """
+    if (
+        not any(x["code"] == BusinessWarningCodes.TRANSITION_NOT_FILED.value for x in warnings) or
+        Filing.get_incomplete_filings_by_type(business.id, "transition")
+    ):
+        return tasks, order
+
+    # Gets all completed restorations of the business (most recent first)
+    restorations = Filing.get_filings_by_types(business.id, ["restoration", "restorationApplication"])
+    if not restorations:
+        # Should never get here
+        current_app.logger.error(f"Error - Business id: {business.id}. TRANSITION_NOT_FILED warning and no restoration filing on record.")
+        return tasks, order
+    # Use the first restoration in the list for the most recent completed restoration date
+    last_restoration_date = restorations[0].effective_date
+    last_ar_date = business.last_ar_date or business.founding_date
+    # Get the transition application todo order based on the ar tasks, last restoration date, and ar date information
+    transition_order, transition_enabled = _find_task_order_for_ta(tasks, order, last_restoration_date, last_ar_date)
+    # Bump all the task orders by one that are at and above transition_order
+    tasks = _bump_task_order(tasks, transition_order)
+    # Append the TA task at with order: transition_order. Disable if there are any incomplete filings
+    tasks.append(create_transition_todo(business, transition_order, (transition_enabled and not pending_filings)))
+    order += 1
+
+    return tasks, order
 
 
 def add_tr_tasks(business: Business, tasks: list, order: int, pending_tr_type: str | None = None):
@@ -411,14 +455,14 @@ def create_incorporate_nr_todo(name_request, order, enabled):
     return todo
 
 
-def create_conversion_filing_todo(business, order, enabled):
-    """Return a to-do JSON object."""
+def create_filing_todo(business, filing_type, order, enabled):
+    """Return a to-do JSON object for a filing that has not been started."""
     todo = {
         "task": {
             "todo": {
                 "business": business.json(),
                 "header": {
-                    "name": "conversion",
+                    "name": filing_type,
                     "status": "NEW"
                 }
             }
@@ -427,24 +471,21 @@ def create_conversion_filing_todo(business, order, enabled):
         "enabled": enabled
     }
     return todo
+
+
+def create_conversion_filing_todo(business, order, enabled):
+    """Return a to-do JSON object for a firm conversion filing."""
+    return create_filing_todo(business, "conversion", order, enabled)
+
+
+def create_review_imported_data_todo(business, order, enabled):
+    """Return a to-do JSON object for a corps review imported data filing."""
+    return create_filing_todo(business, "reviewImportedData", order, enabled)
 
 
 def create_transition_todo(business, order, enabled):
     """Return a to-do JSON object for transition application filing."""
-    todo = {
-        "task": {
-            "todo": {
-                "business": business.json(),
-                "header": {
-                    "name": "transition",
-                    "status": "NEW"
-                }
-            }
-        },
-        "order": order,
-        "enabled": enabled
-    }
-    return todo
+    return create_filing_todo(business, "transition", order, enabled)
 
 
 def create_tr_todo(business: Business, order: int, enabled: bool,  # noqa: PLR0913

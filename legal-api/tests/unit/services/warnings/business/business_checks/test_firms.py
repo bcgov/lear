@@ -82,6 +82,18 @@ from legal_api.services.warnings.business.business_checks.firms import check_add
          'NO_COMPLETING_PARTY_MAILING_ADDRESS_POSTAL_CODE', 'Postal code is required for completing party mailing address.'),
         ('SUCCESS', 'mailing', 'region', BusinessWarningReferers.COMPLETING_PARTY,
          None, None),
+
+        # corps referers: region required only on office delivery addresses
+        ('FAIL_NO_REGION', 'delivery', 'region', BusinessWarningReferers.REGISTERED_OFFICE,
+         'NO_REGISTERED_OFFICE_DELIVERY_ADDRESS_REGION', 'Region is required for registered office delivery address.'),
+        ('SUCCESS', 'mailing', 'region', BusinessWarningReferers.REGISTERED_OFFICE, None, None),
+        ('FAIL_NO_REGION', 'delivery', 'region', BusinessWarningReferers.RECORDS_OFFICE,
+         'NO_RECORDS_OFFICE_DELIVERY_ADDRESS_REGION', 'Region is required for records office delivery address.'),
+        ('SUCCESS', 'mailing', 'region', BusinessWarningReferers.RECORDS_OFFICE, None, None),
+        ('SUCCESS', 'delivery', 'region', BusinessWarningReferers.DIRECTOR, None, None),
+        ('SUCCESS', 'mailing', 'region', BusinessWarningReferers.DIRECTOR, None, None),
+        ('FAIL_NO_STREET', 'delivery', 'street', BusinessWarningReferers.DIRECTOR,
+         'NO_DIRECTOR_DELIVERY_ADDRESS_STREET', 'Street is required for director delivery address.'),
     ])
 def test_check_address(session, test_name, address_type, null_addr_field_name, referer, expected_code, expected_msg):
     """Assert that business address checks functions properly."""
@@ -102,6 +114,27 @@ def test_check_address(session, test_name, address_type, null_addr_field_name, r
         assert business_warning['message'] == expected_msg
     else:
         assert len(result) == 0
+
+
+@pytest.mark.parametrize(
+    'country, expected_codes',
+    [
+        ('CA', ['NO_BUSINESS_PARTY_MAILING_ADDRESS_POSTAL_CODE']),
+        ('Canada', ['NO_BUSINESS_PARTY_MAILING_ADDRESS_POSTAL_CODE']),
+        ('US', ['NO_BUSINESS_PARTY_MAILING_ADDRESS_POSTAL_CODE']),
+        ('HK', []),
+        ('Hong Kong', []),
+        ('AE', []),
+        ('Not A Country', ['NO_BUSINESS_PARTY_MAILING_ADDRESS_POSTAL_CODE']),
+        (None, ['NO_BUSINESS_PARTY_MAILING_ADDRESS_COUNTRY', 'NO_BUSINESS_PARTY_MAILING_ADDRESS_POSTAL_CODE']),
+    ])
+def test_check_address_postal_code_required_by_country(session, country, expected_codes):
+    """Assert a missing postal code is only flagged for countries that use postal codes (mirrors filing validation)."""
+    address = factory_address(address_type='mailing', country=country, postal_code=None)
+
+    result = check_address(address, 'mailing', BusinessWarningReferers.BUSINESS_PARTY)
+
+    assert [x['code'] for x in result] == expected_codes
 
 
 @pytest.mark.parametrize(

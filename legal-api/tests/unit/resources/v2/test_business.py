@@ -579,12 +579,12 @@ def test_get_business_with_allowed_filings(session, client, jwt):
     ('NO_WARNINGS_EXIST_NO_MISSING_DATA', 'SP', 'FM0000003', False, False),
     ('NO_WARNINGS_EXIST_NO_MISSING_DATA', 'GP', 'FM0000004', False, False),
     ('NO_WARNINGS_NON_FIRM', 'CP', 'CP7654321', True, False),
-    ('NO_WARNINGS_NON_FIRM', 'BEN', 'CP7654321', True, False),
-    ('NO_WARNINGS_NON_FIRM', 'BC', 'BC7654321', True, False),
+    ('WARNINGS_EXIST_MISSING_DATA_CORPS', 'BEN', 'BC7654321', True, True),
+    ('WARNINGS_EXIST_MISSING_DATA_CORPS', 'BC', 'BC7654321', True, True),
 ])
 def test_get_business_with_incomplete_info(session, client, jwt, test_name, legal_type, identifier, has_missing_business_info,
                                            missing_business_info_warning_expected):
-    """Assert that SP/GPs with missing business info is populating warnings list."""
+    """Assert that SP/GPs and corps with missing business info are populating warnings list."""
 
     if has_missing_business_info:
         business = factory_business(entity_type=legal_type, identifier=identifier)
