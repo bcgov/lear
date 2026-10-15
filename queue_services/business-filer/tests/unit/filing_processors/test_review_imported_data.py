@@ -49,13 +49,6 @@ def _process(business, payload: dict) -> FilingMeta:
     return filing_meta
 
 
-def _add_records_office(business) -> Office:
-    office = Office(office_type=OfficeType.RECORDS)
-    office.addresses.append(create_address(_address("Old records delivery"), Address.DELIVERY))
-    office.addresses.append(create_address(_address("Old records mailing"), Address.MAILING))
-    business.offices.append(office)
-    return office
-
 
 def _add_director(business, session, cessation_date=None):
     party = Party(first_name="Phillip Tandy", last_name="Miller")
@@ -100,8 +93,7 @@ def test_process_offices_only(app, session, business):
 
 
 def test_process_records_office_only(app, session, business):
-    """Update only the records office when it is the only office in the payload."""
-    records_office = _add_records_office(business)
+    """Create a missing records office without changing the registered office."""
     registered_office = business.offices.filter_by(office_type=OfficeType.REGISTERED).one()
     registered_delivery = registered_office.addresses.filter_by(address_type=Address.DELIVERY).one()
     original_registered_street = registered_delivery.street
@@ -115,6 +107,7 @@ def test_process_records_office_only(app, session, business):
         }
     })
 
+    records_office = business.offices.filter_by(office_type=OfficeType.RECORDS).one()
     assert records_office.addresses.filter_by(address_type=Address.DELIVERY).one().street == "New records delivery"
     assert records_office.addresses.filter_by(address_type=Address.MAILING).one().street == "New records mailing"
     assert registered_delivery.street == original_registered_street

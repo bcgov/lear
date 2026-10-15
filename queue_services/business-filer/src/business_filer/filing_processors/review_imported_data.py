@@ -38,35 +38,13 @@ from business_model.models import Business, Filing, PartyRole
 
 from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
-from business_filer.filing_processors.filing_components import (
-    create_address,
-    update_address,
+from business_filer.filing_processors.filing_components.offices import (
+    update_or_create_offices,
 )
 from business_filer.filing_processors.filing_components.relationships import (
     _str_to_int,
     update_relationship_addresses,
 )
-
-
-def _update_office(business: Business, office_type: str, office_info: dict) -> None:
-    """Update the supplied addresses for an existing office."""
-    office = business.offices.filter_by(office_type=office_type).one_or_none()
-    if not office:
-        raise QueueException(
-            f"Could not find {office_type} office for business {business.id}."
-        )
-
-    for address_key, address_info in office_info.items():
-        if not address_info:
-            continue
-
-        address_type = address_key.replace("Address", "")
-        address = office.addresses.filter_by(address_type=address_type).one_or_none()
-        if address:
-            update_address(address, address_info)
-        else:
-            address = create_address(address_info, address_type)
-            office.addresses.append(address)
 
 
 def _check_active_directors(business: Business, relationships: list[dict]) -> None:
@@ -106,9 +84,8 @@ def process(
     if relationships:
         _check_active_directors(business, relationships)
 
-    for office_type, office_info in offices.items():
-        _update_office(business, office_type, office_info)
     if offices:
+        update_or_create_offices(business, offices)
         changed_sections.append("offices")
 
     if relationships:
