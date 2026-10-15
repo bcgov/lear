@@ -42,7 +42,10 @@ from business_filer.filing_processors.filing_components import (
     create_address,
     update_address,
 )
-from business_filer.filing_processors.filing_components.relationships import update_relationship_addresses
+from business_filer.filing_processors.filing_components.relationships import (
+    _str_to_int,
+    update_relationship_addresses,
+)
 
 
 def _update_office(business: Business, office_type: str, office_info: dict) -> None:
@@ -66,6 +69,29 @@ def _update_office(business: Business, office_type: str, office_info: dict) -> N
             office.addresses.append(address)
 
 
+def _check_active_directors(business: Business, relationships: list[dict]) -> None:
+    """Ensure every relationship still references an active director.
+
+    Validation already checks this at submission, but a director may have been
+    ceased between submission and processing, so this guards that gap.
+    """
+    active_director_ids = {
+        role.party_id
+        for role in PartyRole.get_party_roles(
+            business.id,
+            datetime.now(UTC).date(),
+            PartyRole.RoleTypes.DIRECTOR.value,
+        )
+    }
+    for relationship in relationships:
+        identifier = relationship["entity"]["identifier"]
+        if _str_to_int(identifier) not in active_director_ids:
+            raise QueueException(
+                f"Could not find active director with identifier {identifier} "
+                f"for business {business.id}."
+            )
+
+
 def process(
     business: Business,
     filing_rec: Filing,
@@ -73,35 +99,17 @@ def process(
 ) -> None:
     """Apply supplied office and director address changes."""
     filing_json = filing_rec.filing_json["filing"]["reviewImportedData"]
-
     offices = filing_json.get("offices", {})
+    relationships = filing_json.get("relationships", [])
     changed_sections = []
 
-    relationships = filing_json.get("relationships", [])
     if relationships:
-        active_directors = PartyRole.get_party_roles(
-            business.id,
-            datetime.now(UTC).date(),
-            PartyRole.RoleTypes.DIRECTOR.value,
-        )
-        active_director_ids = {str(role.party_id) for role in active_directors}
-
-    for relationship in relationships:
-        identifier = (relationship.get("entity") or {}).get("identifier")
-        if not identifier:
-            raise QueueException(
-                f"Could not resolve director identifier for business {business.id}."
-            )
-        if str(identifier) not in active_director_ids:
-            raise QueueException(
-                f"Could not find active director with identifier {identifier} "
-                f"for business {business.id}."
-            )
+        _check_active_directors(business, relationships)
 
     for office_type, office_info in offices.items():
         _update_office(business, office_type, office_info)
-        if "offices" not in changed_sections:
-            changed_sections.append("offices")
+    if offices:
+        changed_sections.append("offices")
 
     if relationships:
         update_relationship_addresses(relationships, business)
