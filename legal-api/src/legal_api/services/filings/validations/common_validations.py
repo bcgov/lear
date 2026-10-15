@@ -36,17 +36,8 @@ from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, colin, doc_service, flags, namex
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.request_context import get_request_context
-from legal_api.services.utils import get_date, get_str
+from legal_api.services.utils import NO_POSTAL_CODE_COUNTRY_CODES, get_date, get_str
 from legal_api.utils.auth import jwt
-
-NO_POSTAL_CODE_COUNTRY_CODES = {
-    "AO", "AG", "AW", "BS", "BZ", "BJ", "BM", "BO", "BQ", "BW", "BF", "BI",
-    "CM", "CF", "TD", "KM", "CG", "CD", "CK", "CI", "CW", "DJ", "DM", "GQ",
-    "ER", "FJ", "TF", "GA", "GM", "GH", "GD", "GY", "HM", "HK",
-    "KI", "KP", "LY", "MO", "MW", "ML", "MR", "NR",
-    "AN", "NU", "QA", "RW", "KN", "ST", "SC", "SL", "SX", "SB", "SO", "SR", "SY",
-    "TL", "TG", "TK", "TO", "TT", "TV", "UG", "AE", "VU", "YE", "ZW"
-}
 
 # streetAddress, addressCity, and addressCountry no-leading/trailing-whitespace are enforced by
 # the schema (business-schemas address pattern). postalCode is not patterned (optional/nullable),

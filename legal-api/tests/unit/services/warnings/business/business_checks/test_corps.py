@@ -322,6 +322,22 @@ def test_check_directors_address_fields(session, address_type, null_field, expec
         assert result == []
 
 
+@pytest.mark.parametrize('country, expected_codes', [
+    ('CA', ['NO_DIRECTOR_MAILING_ADDRESS_POSTAL_CODE', 'NO_DIRECTOR_DELIVERY_ADDRESS_POSTAL_CODE']),
+    ('HK', []),
+])
+def test_check_directors_postal_code_required_by_country(session, country, expected_codes):
+    """Assert a director without a postal code is only flagged when their country uses postal codes."""
+    business = factory_business(identifier="BC1234567", entity_type="BC")
+    add_director(business,
+                 factory_address('mailing', country=country, postal_code=None),
+                 factory_address('delivery', country=country, postal_code=None))
+
+    result = check_directors(business)
+
+    assert [x['code'] for x in result] == expected_codes
+
+
 def test_check_directors_skips_ceased_directors_and_flags_each_active_one(session):
     """Assert ceased directors are ignored and each active director is reported with its own partyId."""
     business = factory_business(identifier="BC1234567", entity_type="BC")

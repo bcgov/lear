@@ -117,6 +117,27 @@ def test_check_address(session, test_name, address_type, null_addr_field_name, r
 
 
 @pytest.mark.parametrize(
+    'country, expected_codes',
+    [
+        ('CA', ['NO_BUSINESS_PARTY_MAILING_ADDRESS_POSTAL_CODE']),
+        ('Canada', ['NO_BUSINESS_PARTY_MAILING_ADDRESS_POSTAL_CODE']),
+        ('US', ['NO_BUSINESS_PARTY_MAILING_ADDRESS_POSTAL_CODE']),
+        ('HK', []),
+        ('Hong Kong', []),
+        ('AE', []),
+        ('Not A Country', ['NO_BUSINESS_PARTY_MAILING_ADDRESS_POSTAL_CODE']),
+        (None, ['NO_BUSINESS_PARTY_MAILING_ADDRESS_COUNTRY', 'NO_BUSINESS_PARTY_MAILING_ADDRESS_POSTAL_CODE']),
+    ])
+def test_check_address_postal_code_required_by_country(session, country, expected_codes):
+    """Assert a missing postal code is only flagged for countries that use postal codes (mirrors filing validation)."""
+    address = factory_address(address_type='mailing', country=country, postal_code=None)
+
+    result = check_address(address, 'mailing', BusinessWarningReferers.BUSINESS_PARTY)
+
+    assert [x['code'] for x in result] == expected_codes
+
+
+@pytest.mark.parametrize(
     'test_name, legal_type, role, party_type, expected_code, expected_msg',
     [
         # SP tests
