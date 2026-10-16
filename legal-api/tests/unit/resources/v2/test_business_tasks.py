@@ -26,6 +26,7 @@ import pytest
 from freezegun import freeze_time
 
 from business_model.models import Business
+from legal_api.services import flags
 from legal_api.services.authz import STAFF_ROLE
 from registry_schemas.example_data import ANNUAL_REPORT, FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
 from tests import integration_payment
@@ -640,6 +641,21 @@ def test_review_imported_data_task(session, client, jwt, test_name, legal_type, 
         assert not todos
     assert not any(x['task'].get('todo', {}).get('header', {}).get('name') == 'conversion'
                    for x in rv.json['tasks'] if legal_type != 'SP')
+
+
+def test_review_imported_data_task_feature_flag_off(session, client, jwt, monkeypatch):
+    """Assert no reviewImportedData todo (and no missing info warnings) when the filing is not in enable-new-feature."""
+    identifier = 'BC7654330'
+    factory_business(entity_type='BC', identifier=identifier)
+    flag_value = flags.value
+    monkeypatch.setattr('legal_api.services.flags.value',
+                        lambda flag, *args, **kwargs: [] if flag == 'enable-new-feature' else flag_value(flag, *args, **kwargs))
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert not any(x['task'].get('todo', {}).get('header', {}).get('name') == 'reviewImportedData'
+                   for x in rv.json['tasks'])
 
 
 @pytest.mark.parametrize('test_name, business_restored, transition_completed, transition_task_expected', [
