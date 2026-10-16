@@ -119,6 +119,23 @@ def test_validate_offices_only(session):
     assert err is None
 
 
+def test_validate_rejects_review_imported_data_when_feature_is_disabled(session, monkeypatch):
+    """Reject the filing when reviewImportedData is absent from the feature flag."""
+    business = _setup_business()
+    filing = _build_filing({
+        "offices": {
+            "registeredOffice": _valid_office(),
+        },
+    })
+    monkeypatch.setattr("legal_api.services.flags.value", lambda *args, **kwargs: [])
+
+    err = validate(business, filing)
+
+    assert err is not None
+    assert err.code == HTTPStatus.FORBIDDEN
+    assert err.msg == [{"error": "Review Imported Data filing is not enabled."}]
+
+
 def test_validate_relationships_only(session):
     """Assert a filing containing relationships only passes validation."""
     business = _setup_business()
@@ -151,6 +168,36 @@ def test_validate_offices_and_relationships(session):
     err = validate(business, filing)
 
     assert err is None
+
+
+@pytest.mark.parametrize(
+    "office_type,address_type",
+    [
+        ("registeredOffice", "deliveryAddress"),
+        ("registeredOffice", "mailingAddress"),
+        ("recordsOffice", "deliveryAddress"),
+        ("recordsOffice", "mailingAddress"),
+    ],
+)
+def test_validate_requires_bc_region_for_office_addresses(session, office_type, address_type):
+    """Require BC region for registered and records office mailing/delivery addresses."""
+    business = _setup_business()
+    office = _valid_office()
+    office[address_type]["addressRegion"] = "AB"
+    filing = _build_filing({"offices": {office_type: office}})
+
+    err = validate(business, filing)
+
+    if address_type == "deliveryAddress":
+        expected_path = f"/filing/reviewImportedData/offices/{office_type}"
+    else:
+        expected_path = f"/filing/reviewImportedData/offices/{office_type}/{address_type}/addressRegion"
+    assert err is not None
+    assert err.code == HTTPStatus.BAD_REQUEST
+    assert any(
+        item["error"] == "Address Region must be 'BC'." and item["path"] == expected_path
+        for item in err.msg
+    )
 
 
 def test_validate_rejects_unknown_director_identifier(session):

@@ -15,6 +15,7 @@
 from datetime import UTC, datetime
 from http import HTTPStatus
 
+import pycountry
 from flask_babel import _ as babel
 
 from business_model.models import Business, PartyRole
@@ -45,9 +46,11 @@ def validate(business: Business, imported_data: dict) -> Error:
                 filing_type,
                 allowed_types=["registeredOffice", "recordsOffice"],
                 required_types=[],
-                bc_req=False,
+                bc_req=True,
             )
         )
+
+        msg.extend(validate_office_mailing_addresses(filing_data["offices"], filing_type))
 
     if filing_data.get("relationships"):
         msg.extend(validate_relationship_addresses(imported_data))
@@ -57,6 +60,40 @@ def validate(business: Business, imported_data: dict) -> Error:
         return Error(HTTPStatus.BAD_REQUEST, msg)
 
     return None
+
+
+def validate_office_mailing_addresses(offices: dict, filing_type: str) -> list:
+    """Validate mailing address region and country requirements.
+
+    The shared validators only enforce the BC requirement for delivery
+    addresses, so explicitly validate the mailing address region and
+    country here.
+    """
+    msg = []
+
+    for office_type, office in offices.items():
+        if mailing_address := office.get("mailingAddress"):
+            mailing_address_path = (
+                f"/filing/{filing_type}/offices/{office_type}/mailingAddress"
+            )
+            if mailing_address.get("addressRegion") != "BC":
+                msg.append({
+                    "error": "Address Region must be 'BC'.",
+                    "path": f"{mailing_address_path}/addressRegion",
+                })
+            try:
+                country = pycountry.countries.search_fuzzy(
+                    mailing_address["addressCountry"]
+                )[0].alpha_2
+                if country != "CA":
+                    raise LookupError
+            except LookupError:
+                msg.append({
+                    "error": "Address Country must be 'CA'.",
+                    "path": f"{mailing_address_path}/addressCountry",
+                })
+
+    return msg
 
 
 def validate_relationship_addresses(imported_data: dict) -> list:
