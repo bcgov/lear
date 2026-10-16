@@ -14,6 +14,10 @@
 	],
 	"appPort": [
 	],
+	// host gcloud ADC (gcloud auth application-default login)
+	"mounts": [
+		"source=${localEnv:HOME}/.config/gcloud,target=/home/jovyan/.config/gcloud,type=bind"
+	],
 	"postCreateCommand": "pip install -r requirements.txt",
 }
 
