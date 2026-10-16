@@ -622,6 +622,23 @@ def test_get_business_with_incomplete_info(session, client, jwt, test_name, lega
         assert len(rv_json['business']['warnings']) == 0
 
 
+def test_get_business_corps_missing_info_feature_flag_off(session, client, jwt, monkeypatch):
+    """Assert corps missing info warnings are not returned when reviewImportedData is not in enable-new-feature."""
+    identifier = 'BC7654322'
+    business = factory_business(entity_type='BC', identifier=identifier)
+    business.no_dissolution = True
+    business.save()
+    flag_value = flags.value
+    monkeypatch.setattr('legal_api.services.flags.value',
+                        lambda flag, *args, **kwargs: [] if flag == 'enable-new-feature' else flag_value(flag, *args, **kwargs))
+
+    rv = client.get(f'/api/v2/businesses/{identifier}', headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['business']['warnings'] == []
+    assert rv.json['business']['complianceWarnings'] == []
+
+
 def test_get_business_with_court_orders(session, client, jwt):
     """Assert that the business info sets hasCourtOrders property."""
     identifier = 'CP7654321'

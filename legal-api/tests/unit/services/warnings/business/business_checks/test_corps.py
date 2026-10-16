@@ -367,3 +367,25 @@ def test_warnings_carry_their_own_data(session):
     assert [x['data'] for x in result] == [{'officeType': 'registeredOffice'}, {'officeType': 'recordsOffice'}]
     assert 'data' not in check_address(factory_address('mailing', make_null_field_name='street'), Address.MAILING,
                                        BusinessWarningReferers.REGISTERED_OFFICE)[0]
+
+
+@pytest.mark.parametrize("enabled_features, warnings_expected", [
+    (['reviewImportedData'], True),
+    ([], False),
+    (None, False),  # flag service unavailable
+])
+def test_check_business_missing_info_gated_by_feature_flag(session, monkeypatch, enabled_features, warnings_expected):
+    """Assert office/director warnings are emitted only while reviewImportedData is in enable-new-feature."""
+    business = factory_business(identifier="BC1234567", entity_type="BC")
+    add_director(business, factory_address('mailing', make_null_field_name='street'), factory_address('delivery'))
+    monkeypatch.setattr('legal_api.services.flags.value', lambda *args, **kwargs: enabled_features)
+
+    with patch('business_model.models.business.Business.is_pending_amalgamating_business', return_value=None):
+        result = check_business(business)
+
+    missing_info = [x for x in result if x['warningType'] == WarningType.MISSING_REQUIRED_BUSINESS_INFO]
+    if warnings_expected:
+        assert [x['code'] for x in missing_info] == ['NO_REGISTERED_OFFICE', 'NO_RECORDS_OFFICE',
+                                                     'NO_DIRECTOR_MAILING_ADDRESS_STREET']
+    else:
+        assert missing_info == []

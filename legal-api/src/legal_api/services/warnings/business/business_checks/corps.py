@@ -15,6 +15,8 @@
 """Business checks for corps."""
 
 from business_model.models import Address, Business, OfficeType, PartyRole
+from legal_api.services import flags
+from legal_api.services.request_context import get_request_context
 from legal_api.services.warnings.business.business_checks import (
     WARNING_MESSAGE_BASE,
     BusinessWarningCodes,
@@ -38,12 +40,22 @@ def check_business(business: Business, is_staff: bool = False) -> list:
     """Check business data."""
     result = []
 
-    result.extend(check_offices(business))
-    result.extend(check_directors(business))
+    if is_review_imported_data_enabled():
+        # missing address warnings are only actionable through the reviewImportedData filing (they block correction),
+        # so emit them only while that filing is enabled
+        result.extend(check_offices(business))
+        result.extend(check_directors(business))
     result.extend(check_amalgamating_business(business, is_staff))
     result.extend(check_transition_application(business))
 
     return result
+
+
+def is_review_imported_data_enabled() -> bool:
+    """Return True when the reviewImportedData filing is enabled by the enable-new-feature flag."""
+    request_context = get_request_context()
+    enabled_features = flags.value("enable-new-feature", request_context.user, request_context.account_id) or []
+    return "reviewImportedData" in enabled_features
 
 
 def _with_data(warnings: list, data: dict) -> list:
