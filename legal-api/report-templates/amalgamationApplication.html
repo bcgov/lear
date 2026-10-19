@@ -53,11 +53,18 @@
         <div class="separator mt-4"></div>
     {% endif %}
 
+    {% if business.legalType == 'CP' %}
+      [[amalgamation/cooperativeAssociationType.html]]
+      [[amalgamation/effectiveDate.html]]
+      [[amalgamation/amalgamatingCorp.html]]
+      [[incorporation-application/completingPartyCoop.html]]
+      [[common/addresses.html]]
+      [[common/directors.html]]
+    {% else %}
     [[amalgamation/effectiveDate.html]]
     [[amalgamation/approvalType.html]]
     [[amalgamation/amalgamatingCorp.html]]
     [[amalgamation/amalgamationStmt.html]]
-
     <div class="section-header mt-7 pt-4">NOTICE OF ARTICLES</div>
       <div class="container pt-4">
         [[amalgamation/amalgamationName.html]]
@@ -70,5 +77,6 @@
         [[common/resolutionDates.html]]
         [[common/shareStructure.html]]
     </div>
+    {% endif %}
   </body>
 </html>

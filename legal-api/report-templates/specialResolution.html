@@ -26,7 +26,7 @@
                 <div class="lbl-business-name">{{business.legalName}}</div>
          </div>
       </div>
-      {% if specialResolution is defined and specialResolution %}
+      {% if (specialResolution is defined and specialResolution) or (amalgamationApplication is defined and amalgamationApplication) %}
          [[common/businessDetails.html]]
       {% else %}
          [[correction/businessDetails.html]]

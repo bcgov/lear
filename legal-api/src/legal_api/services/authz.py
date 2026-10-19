@@ -202,7 +202,7 @@ def get_allowable_filings_dict(is_authorization: bool = False):  # noqa: PLR0912
                 "amalgamationApplication": {
                     "businessRequirement": BusinessRequirement.NO_RESTRICTION,
                     "regular": {
-                        "legalTypes": ["BEN", "BC", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
+                        "legalTypes": ["BEN", "BC", "ULC", "CC", "C", "CBEN", "CUL", "CCC", "CP"],
                         "blockerChecks": {
                             "business": [BusinessBlocker.DEFAULT,
                                          BusinessBlocker.NOT_IN_GOOD_STANDING,

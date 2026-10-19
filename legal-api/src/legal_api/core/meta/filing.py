@@ -153,6 +153,11 @@ FILINGS: Final = {
         "name": "amalgamationApplication",
         "additional": [
             {
+                "types": ["CP"],
+                "outputs": ["certificateOfAmalgamation", "certifiedRules", "certifiedMemorandum",
+                            "specialResolution"]
+            },
+            {
                 "types": ["BC", "BEN", "CC", "ULC"],
                 "outputs": ["noticeOfArticles", "certificateOfAmalgamation"]
             },
@@ -165,7 +170,8 @@ FILINGS: Final = {
                 "BEN": "AMALR",
                 "BC": "AMALR",
                 "ULC": "AMALR",
-                "CC": "AMALR"
+                "CC": "AMALR",
+                "CP": "OTAMA"
             }
         },
         "vertical": {

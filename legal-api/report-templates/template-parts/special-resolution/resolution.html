@@ -1,5 +1,6 @@
-<!-- Has both specialResolution and correction in one document. -->
-{% set filing_template = specialResolution or correction %}
+<!-- The resolution may live in its own section (specialResolution), inline on a coop
+     amalgamation (amalgamationApplication), or on a correction. -->
+{% set filing_template = specialResolution or amalgamationApplication or correction %}
 <div class="no-page-break">
 <div class="section-title mt-4">Special Resolution</div>
 </div>

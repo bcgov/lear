@@ -14,8 +14,18 @@
 """File processing rules and actions for the amalgamation application of a business."""
 import copy
 
-from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Filing
+from business_model.models import (
+    AmalgamatingBusiness,
+    Amalgamation,
+    Business,
+    Document,
+    DocumentType,
+    Filing,
+    Party,
+    Resolution,
+)
 from business_model.models.db import db
+from dateutil.parser import parse
 
 from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
@@ -65,6 +75,57 @@ def dissolve_amalgamating_business(business: Business, filing_rec: Filing):
     db.session.add(business)
 
 
+def _update_cooperative(amalgamation_filing: dict, business: Business, filing: Filing):
+    """Update the cooperative business with the cooperative specific information."""
+    if cooperative_obj := amalgamation_filing.get("cooperative"):
+        business.association_type = cooperative_obj.get("cooperativeAssociationType")
+        document = Document()
+        document.type = DocumentType.COOP_RULES.value
+        document.file_key = cooperative_obj.get("rulesFileKey")
+        document.business_id = business.id
+        document.filing_id = filing.id
+        business.documents.append(document)
+
+        document = Document()
+        document.type = DocumentType.COOP_MEMORANDUM.value
+        document.file_key = cooperative_obj.get("memorandumFileKey")
+        document.business_id = business.id
+        document.filing_id = filing.id
+        business.documents.append(document)
+
+    _create_special_resolution(amalgamation_filing, business, filing)
+
+    return business
+
+
+def _create_special_resolution(amalgamation_filing: dict, business: Business, filing_rec: Filing):
+    """Save the special resolution carried inline on a coop amalgamation."""
+    if not amalgamation_filing.get("resolution"):
+        return
+
+    resolution = Resolution(
+        resolution=amalgamation_filing.get("resolution"),
+        resolution_type=Resolution.ResolutionType.SPECIAL.value,
+        resolution_sub_type=filing_rec.filing_type
+    )
+    if signatory := amalgamation_filing.get("signatory"):
+        party = Party(
+            first_name=signatory.get("givenName", "").upper(),
+            last_name=signatory.get("familyName", "").upper(),
+            middle_initial=(signatory.get("additionalName", "") or "").upper(),
+            title="",
+            organization_name="",
+            email="",
+            identifier=""
+        )
+        resolution.party = party
+    if amalgamation_filing.get("resolutionDate"):
+        resolution.resolution_date = parse(amalgamation_filing.get("resolutionDate")).date()
+    if amalgamation_filing.get("signingDate"):
+        resolution.signing_date = parse(amalgamation_filing.get("signingDate")).date()
+    business.resolutions.append(resolution)
+
+
 def process(business: Business,  # noqa: PLR0912
             filing: dict,
             filing_rec: Filing,
@@ -111,6 +172,9 @@ def process(business: Business,  # noqa: PLR0912
     business = business_info.update_business_info(corp_num, business, business_info_obj, filing_rec)
     business.state = Business.State.ACTIVE
     business.amalgamation.append(amalgamation)
+
+    if business_info_obj["legalType"] == Business.LegalTypes.COOP.value:
+        business = _update_cooperative(amalgamation_filing, business, filing_rec)
 
     if nr_number := business_info_obj.get("nrNumber", None):
         filing_meta.amalgamation_application = {**filing_meta.amalgamation_application,
