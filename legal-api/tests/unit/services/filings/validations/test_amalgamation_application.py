@@ -1321,6 +1321,57 @@ def test_amalgamating_cc_to_cc(mocker, app, session, jwt,
 
 
 @pytest.mark.parametrize(
+    'test_status, ting_legal_type, expected_code, expected_msg',
+    [
+        ('FAIL_BC', Business.LegalTypes.COMP.value, HTTPStatus.BAD_REQUEST,
+         'A BC Unlimited Liability Company must amalgamate to form a new BC Unlimited Liability Company.'),
+        ('FAIL_BEN', Business.LegalTypes.BCOMP.value, HTTPStatus.BAD_REQUEST,
+         'A BC Unlimited Liability Company must amalgamate to form a new BC Unlimited Liability Company.'),
+        ('SUCCESS', Business.LegalTypes.BC_ULC_COMPANY.value, None, None),
+        ('SUCCESS_CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, None, None)
+    ]
+)
+def test_amalgamating_ulc_to_ulc(mocker, app, session, jwt,
+                                 test_status, ting_legal_type, expected_code, expected_msg):
+    """Assert a ULC resulting business requires a ULC amalgamating business."""
+    account_id = '123456'
+    filing = _get_amalg_template()
+    filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = 'ULC'
+    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
+        {
+            'role': AmalgamatingBusiness.Role.amalgamating.name,
+            'identifier': 'BC1234567'
+        },
+        {
+            'role': AmalgamatingBusiness.Role.amalgamating.name,
+            'identifier': 'BC7654321'
+        }
+    ]
+
+    def mock_find_by_identifier(identifier):
+        return Business(identifier=identifier, legal_type=ting_legal_type)
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
+                 return_value=False)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
+                 return_value=True)
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    # validate outcomes
+    if test_status.startswith('SUCCESS'):
+        assert not err
+    else:
+        assert expected_code == err.code
+        assert expected_msg == err.msg[0]['error']
+
+
+@pytest.mark.parametrize(
     'test_status, legal_type',
     [
         ('FAIL', Business.LegalTypes.BC_CCC.value),
