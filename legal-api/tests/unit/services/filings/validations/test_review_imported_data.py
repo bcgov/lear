@@ -180,7 +180,7 @@ def test_validate_offices_and_relationships(session):
     ],
 )
 def test_validate_requires_bc_region_for_office_addresses(session, office_type, address_type):
-    """Require BC region for registered and records office mailing/delivery addresses."""
+    """Require BC region for delivery addresses, but allow other regions for mailing addresses."""
     business = _setup_business()
     office = _valid_office()
     office[address_type]["addressRegion"] = "AB"
@@ -188,16 +188,16 @@ def test_validate_requires_bc_region_for_office_addresses(session, office_type, 
 
     err = validate(business, filing)
 
-    if address_type == "deliveryAddress":
-        expected_path = f"/filing/reviewImportedData/offices/{office_type}"
+    if address_type == "mailingAddress":
+        assert err is None
     else:
-        expected_path = f"/filing/reviewImportedData/offices/{office_type}/{address_type}/addressRegion"
-    assert err is not None
-    assert err.code == HTTPStatus.BAD_REQUEST
-    assert any(
-        item["error"] == "Address Region must be 'BC'." and item["path"] == expected_path
-        for item in err.msg
-    )
+        expected_path = f"/filing/reviewImportedData/offices/{office_type}"
+        assert err is not None
+        assert err.code == HTTPStatus.BAD_REQUEST
+        assert any(
+            item["error"] == "Address Region must be 'BC'." and item["path"] == expected_path
+            for item in err.msg
+        )
 
 
 def test_validate_rejects_unknown_director_identifier(session):
