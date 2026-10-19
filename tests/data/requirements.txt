@@ -7,11 +7,11 @@ matplotlib
 ipython-sql
 ipytest
 pytest
-gspread
-oauth2client
-df2gspread
 freezegun
 
 git+https://github.com/bcgov/lear.git#egg=legal_api&subdirectory=legal-api
-git+https://github.com/bcgov/business-schemas.git#egg=registry_schemas
-git+https://github.com/bcgov/lear.git#egg=colin_api&subdirectory=colin-api
+# colin_api removed: pins EOL cx_Oracle (no py3.13 wheels); only legacy notebooks
+# (Filing_Issues, colin_api_utils get_filing_type) imported it — current notebooks
+# call colin-api over HTTP instead.
+# gspread/oauth2client/df2gspread removed: Filing_Issues.ipynb-only, df2gspread is
+# a 2016 sdist that no longer builds cleanly.
