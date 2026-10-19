@@ -15,7 +15,6 @@
 from datetime import UTC, datetime
 from http import HTTPStatus
 
-import pycountry
 from flask_babel import _ as babel
 
 from business_model.models import Business, PartyRole
