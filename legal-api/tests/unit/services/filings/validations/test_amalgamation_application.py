@@ -1389,18 +1389,23 @@ def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt, test_status,
 
 
 @pytest.mark.parametrize(
-    'test_status, legal_type',
+    'test_status, legal_type, ting_legal_type',
     [
-        ('FAIL', Business.LegalTypes.COMP.value),
-        ('SUCCESS', Business.LegalTypes.BCOMP.value),
+        ('SUCCESS_BC_ADOPT_BC', Business.LegalTypes.COMP.value, Business.LegalTypes.COMP.value),
+        ('SUCCESS_BEN_ADOPT_BEN', Business.LegalTypes.BCOMP.value, Business.LegalTypes.BCOMP.value),
+        ('SUCCESS_BEN_ADOPT_BC', Business.LegalTypes.BCOMP.value, Business.LegalTypes.COMP.value),
+        ('SUCCESS_BC_ADOPT_BEN', Business.LegalTypes.COMP.value, Business.LegalTypes.BCOMP.value),
+        ('FAIL_BC_ADOPT_ULC', Business.LegalTypes.COMP.value, Business.LegalTypes.BC_ULC_COMPANY.value),
+        ('FAIL_ULC_ADOPT_BC', Business.LegalTypes.BC_ULC_COMPANY.value, Business.LegalTypes.COMP.value),
+        ('FAIL_CC_ADOPT_BEN', Business.LegalTypes.BC_CCC.value, Business.LegalTypes.BCOMP.value),
     ]
 )
-def test_regular_amalgamation_adoptable_name(mocker, app, session, jwt, test_status, legal_type):
-    """Assert valid regular amalgamation adoptable name."""
+def test_regular_amalgamation_adoptable_name(mocker, app, session, jwt, test_status, legal_type, ting_legal_type):
+    """Assert a BC or BEN resulting business may adopt a BC or BEN name; other type mismatches are rejected."""
     account_id = '123456'
     filing = _get_amalg_template()
     filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = legal_type
-    adoptable_name = f'Test adoptable name {legal_type}'
+    adoptable_name = f'Test adoptable name {ting_legal_type}'
     filing['filing']['amalgamationApplication']['nameRequest']['legalName'] = adoptable_name
     filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
         {
@@ -1416,7 +1421,7 @@ def test_regular_amalgamation_adoptable_name(mocker, app, session, jwt, test_sta
     def mock_find_by_identifier(identifier):
         return Business(identifier=identifier,
                         legal_name=adoptable_name,
-                        legal_type=Business.LegalTypes.BCOMP.value)
+                        legal_type=ting_legal_type)
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
                  return_value=[])
@@ -1430,11 +1435,12 @@ def test_regular_amalgamation_adoptable_name(mocker, app, session, jwt, test_sta
         err = validate(None, filing, account_id)
 
     # validate outcomes
-    if test_status == 'SUCCESS':
+    expected_msg = 'Adopt a name that have the same business type as the resulting business.'
+    if test_status.startswith('SUCCESS'):
         assert not err
     else:
         assert HTTPStatus.BAD_REQUEST == err.code
-        assert err.msg[0]['error'] == 'Adopt a name that have the same business type as the resulting business.'
+        assert next((x for x in err.msg if x['error'] == expected_msg), None)
 
 
 @pytest.mark.parametrize(

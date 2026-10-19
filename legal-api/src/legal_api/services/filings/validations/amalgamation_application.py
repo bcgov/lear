@@ -44,6 +44,12 @@ from legal_api.services.permissions import ListActionsPermissionsAllowed, Permis
 from legal_api.services.utils import get_str
 from legal_api.utils.auth import jwt
 
+# a BC or BEN resulting business may use the name (adopted or NR) of either type
+BC_BEN_LEGAL_TYPES: Final = [
+    Business.LegalTypes.COMP.value,
+    Business.LegalTypes.BCOMP.value,
+]
+
 # COLIN corps not loaded in LEAR that can amalgamate
 COLIN_AMALGAMATION_LEGAL_TYPES: Final = [
     Business.LegalTypes.COMP.value,
@@ -128,8 +134,7 @@ def _validate_name_request_section(amalgamation_json, amalgamation_type, legal_t
         }]
 
     # a BC or BEN resulting business may use an NR of either type
-    bc_ben_legal_types = [Business.LegalTypes.COMP.value, Business.LegalTypes.BCOMP.value]
-    accepted_legal_types = bc_ben_legal_types if legal_type in bc_ben_legal_types else None
+    accepted_legal_types = BC_BEN_LEGAL_TYPES if legal_type in BC_BEN_LEGAL_TYPES else None
     return validate_name_request(amalgamation_json, legal_type, filing_type,
                                  accepted_legal_types=accepted_legal_types)
 
@@ -169,6 +174,16 @@ def _augment_with_source_update_hint(errors: list, amalgamation_type: str) -> li
         error["error"] += (f" This data comes from the {role} business - its information must be "
                            "corrected outside of this filing before this amalgamation can be filed.")
     return errors
+
+
+def _is_name_adoptable(legal_type: str, ting_legal_type: str) -> bool:
+    """Return whether the resulting business may adopt the name of an amalgamating business of this type.
+
+    A BC or BEN resulting business may adopt a BC or BEN name (the resulting business type can be changed).
+    """
+    if legal_type in BC_BEN_LEGAL_TYPES:
+        return ting_legal_type in BC_BEN_LEGAL_TYPES
+    return legal_type == ting_legal_type
 
 
 def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
@@ -244,7 +259,7 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
 
         # aggregate bookkeeping (CC/ULC mixes, name adoption, type match) shared by LEAR and COLIN TINGs
         is_any_business[ting_legal_type] = True
-        if legal_type == ting_legal_type:
+        if _is_name_adoptable(legal_type, ting_legal_type):
             adoptable_names.append(ting_legal_name)
         if amalgamating_business_json["role"] in [AmalgamatingBusiness.Role.primary.name,
                                                   AmalgamatingBusiness.Role.holding.name]:
