@@ -590,7 +590,7 @@ def get_parties_and_addresses_query(corp_num):
 --             (cp.party_typ_cd = 'OFF'
 --                 and ((cp.end_event_id is null) or (cp.end_event_id is not null and cp.cessation_dt is not null)))
 --             or
-            (cp.party_typ_cd in ('DIR', 'LIQ', 'RCC', 'RCM'))
+            (cp.party_typ_cd in ('DIR', 'LIQ', 'RCC', 'RCM', 'INC', 'APP'))
         )
     --order by e.event_id
     order by cp_full_name, e.event_id
@@ -978,5 +978,4 @@ def get_corp_snapshot_filings_queries(config, corp_num):
         'out_data': get_out_data_query(corp_num),  # continuation/amalgamation out
         'cars_data': get_cars_data_query(corp_num),  # CARS (Corporate Annual Report System) between 2002 - 2004
     }
-
     return queries
