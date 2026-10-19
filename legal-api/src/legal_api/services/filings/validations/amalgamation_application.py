@@ -192,7 +192,8 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
         Business.LegalTypes.BCOMP.value: False,
         Business.LegalTypes.COMP.value: False,
         Business.LegalTypes.BC_CCC.value: False,
-        Business.LegalTypes.BC_ULC_COMPANY.value: False
+        Business.LegalTypes.BC_ULC_COMPANY.value: False,
+        Business.LegalTypes.ULC_CONTINUE_IN.value: False
     }
     is_any_expro_a = False
     is_any_foreign = False
@@ -356,6 +357,15 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
         msg.append({
             "error": ("An extra-Pro cannot amalgamate with anything to become "
                       "a BC Unlimited Liability Company or a BC Community Contribution Company."),
+            "path": amalgamating_businesses_path
+        })
+
+    if (legal_type == Business.LegalTypes.BC_ULC_COMPANY.value and
+            not is_any_business[Business.LegalTypes.BC_ULC_COMPANY.value] and
+            not is_any_business[Business.LegalTypes.ULC_CONTINUE_IN.value]):
+        msg.append({
+            "error": ("A BC Unlimited Liability Company must amalgamate to form "
+                      "a new BC Unlimited Liability Company."),
             "path": amalgamating_businesses_path
         })
 
