@@ -291,11 +291,11 @@ def test_bootstrap_bc_filing_attachments(session, config, filing_type, filing_su
 
 @pytest.mark.parametrize('status, expected_attachments', [
     ('PAID', [
-        {'fileName': 'Amalgamation Application (Regular).pdf', 'content': 'pdf_content_0', 'order': '1'},
+        {'fileName': 'Amalgamation Application.pdf', 'content': 'pdf_content_0', 'order': '1'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_5', 'order': '2'}
     ]),
     ('COMPLETED', [
-        {'fileName': 'Amalgamation Application (Regular).pdf', 'content': 'pdf_content_0', 'order': '1'},
+        {'fileName': 'Amalgamation Application.pdf', 'content': 'pdf_content_0', 'order': '1'},
         {'fileName': 'Certificate of Amalgamation.pdf', 'content': 'pdf_content_1', 'order': '2'},
         {'fileName': 'Certified Rules.pdf', 'content': 'pdf_content_2', 'order': '3'},
         {'fileName': 'Certified Memorandum.pdf', 'content': 'pdf_content_3', 'order': '4'},

@@ -18,7 +18,8 @@
             [[logo.html]]
           </td>
           <td>
-            {% if amalgamationApplication.type == 'regular' %}
+            {# coops have no short-form amalgamations, so the form type is not shown #}
+            {% if amalgamationApplication.type == 'regular' and business.legalType != 'CP' %}
               <div class="report-type">REGULAR FORM</div>
             {% elif amalgamationApplication.type == 'horizontal' %}
               <div class="report-type">HORIZONTAL SHORT FORM</div>

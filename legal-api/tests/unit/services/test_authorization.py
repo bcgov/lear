@@ -263,7 +263,7 @@ EXPECTED_DATA = {
     FilingKey.PUT_BACK_OFF: {'displayName': 'Correction - Put Back Off', 'feeCode': 'NOFEE', 'name': 'putBackOff'},
     FilingKey.PUT_BACK_ON: {'displayName': 'Correction - Put Back On', 'feeCode': 'NOFEE', 'name': 'putBackOn'},
     FilingKey.AMALGAMATION_REGULAR: {'name': 'amalgamationApplication', 'type': 'regular', 'displayName': 'Amalgamation Application (Regular)', 'feeCode': 'AMALR'},
-    FilingKey.AMALGAMATION_REGULAR_CP: {'name': 'amalgamationApplication', 'type': 'regular', 'displayName': 'Amalgamation Application (Regular)', 'feeCode': 'OTAMA'},
+    FilingKey.AMALGAMATION_REGULAR_CP: {'name': 'amalgamationApplication', 'type': 'regular', 'displayName': 'Amalgamation Application', 'feeCode': 'OTAMA'},
     FilingKey.AMALGAMATION_VERTICAL: {'name': 'amalgamationApplication', 'type': 'vertical', 'displayName': 'Amalgamation Application Short-form (Vertical)', 'feeCode': 'AMALV'},
     FilingKey.AMALGAMATION_HORIZONTAL: {'name': 'amalgamationApplication', 'type': 'horizontal', 'displayName': 'Amalgamation Application Short-form (Horizontal)', 'feeCode': 'AMALH'},
     FilingKey.NOTICE_OF_WITHDRAWAL: {'displayName': 'Notice of Withdrawal', 'feeCode': 'NWITH', 'name': 'noticeOfWithdrawal'},

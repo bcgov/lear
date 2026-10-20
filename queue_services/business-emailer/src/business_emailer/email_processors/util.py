@@ -87,7 +87,7 @@ FILING_TITLE_SHORT = {
 FILING_ATTACHMENTS = {
     "CP": {
         "amalgamationApplication": {
-            "attachments": ["Amalgamation Application (Regular)","Certificate of Amalgamation","Certified Rules","Certified Memorandum","Certified Special Resolution","Receipt"],
+            "attachments": ["Amalgamation Application","Certificate of Amalgamation","Certified Rules","Certified Memorandum","Certified Special Resolution","Receipt"],
             "extraPdfTypes": ["certificateOfAmalgamation","certifiedRules","certifiedMemorandum","specialResolution"],
         },
         "annualReport": {
