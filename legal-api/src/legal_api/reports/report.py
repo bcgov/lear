@@ -1482,7 +1482,15 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         if self._filing.filing_type == "specialResolution" or filing.get("specialResolution"):
             filing_source = "specialResolution"
         elif self._filing.filing_type == "amalgamationApplication":
-            filing_source = "amalgamationApplication"
+            # surface the inline resolution as its own section — shared template parts
+            # (businessDetails, resolution) resolve attributes on `specialResolution`
+            amalgamation_json = filing.get("amalgamationApplication", {})
+            filing["specialResolution"] = {
+                key: amalgamation_json[key]
+                for key in ("resolution", "resolutionDate", "signingDate", "signatory")
+                if key in amalgamation_json
+            }
+            filing_source = "specialResolution"
         else:
             filing_source = "correction"
         filing["header"]["displayName"] = display_name
