@@ -275,27 +275,27 @@ def validate_parties_delivery_address(incorporation_json: dict, legal_type: str,
 
     return None
 
-def validate_cooperative_documents(incorporation_json: dict):
+def validate_cooperative_documents(incorporation_json: dict, filing_type: str = "incorporationApplication"):
     """Return an error or warning message based on the cooperative documents validation rules.
 
     Rules:
         - The documents are provided.
         - Document IDs are unique.
     """
-    if not (cooperative := incorporation_json["filing"]["incorporationApplication"].get("cooperative")):
+    if not (cooperative := incorporation_json["filing"][filing_type].get("cooperative")):
         return [{
-            "error": babel("cooperative data is missing in incorporationApplication."),
-            "path": "/filing/incorporationApplication/cooperative"
+            "error": babel(f"cooperative data is missing in {filing_type}."),
+            "path": f"/filing/{filing_type}/cooperative"
         }]
 
     msg = []
 
     rules_file_key = cooperative["rulesFileKey"]
-    rules_file_key_path = "/filing/incorporationApplication/cooperative/rulesFileKey"
+    rules_file_key_path = f"/filing/{filing_type}/cooperative/rulesFileKey"
     msg.extend(validate_pdf(rules_file_key, rules_file_key_path))
 
     memorandum_file_key = cooperative["memorandumFileKey"]
-    memorandum_file_key_path = "/filing/incorporationApplication/cooperative/memorandumFileKey"
+    memorandum_file_key_path = f"/filing/{filing_type}/cooperative/memorandumFileKey"
     msg.extend(validate_pdf(memorandum_file_key, memorandum_file_key_path))
 
     return msg

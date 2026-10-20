@@ -20,6 +20,7 @@ from flask.globals import request_ctx
 from flask_babel import _ as babel
 
 from business_account import AccountService
+from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Filing, OfficeType, PartyRole
 from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, colin, flags
@@ -37,11 +38,18 @@ from legal_api.services.filings.validations.common_validations import (
     validate_share_structure,
 )
 from legal_api.services.filings.validations.incorporation_application import (
+    validate_coop_parties_mailing_address,
+    validate_cooperative_documents,
     validate_offices,
     validate_parties_delivery_address,
 )
+from legal_api.services.filings.validations.special_resolution import (
+    validate_resolution_content,
+    validate_signatory_name,
+    validate_signing_date,
+)
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
-from legal_api.services.utils import get_str
+from legal_api.services.utils import get_date, get_str
 from legal_api.utils.auth import jwt
 
 # a BC or BEN resulting business may use the name (adopted or NR) of either type
@@ -73,6 +81,12 @@ def validate(amalgamation_json: dict, account_id) -> Error | None:
         msg.append({"error": babel("Legal type is required."), "path": legal_type_path})
         return msg  # Cannot continue validation without legal_type
 
+    # (flags.value is None when the flag client is unavailable - treat as nothing enabled)
+    enabled_legal_types = (flags.value("supported-amalgamation-entities") or "").split()
+    if legal_type not in enabled_legal_types:
+        return Error(HTTPStatus.FORBIDDEN,
+                     [{"error": babel(f"{legal_type} is not enabled for amalgamation entities.")}])
+
     amalgamation_type = get_str(amalgamation_json, f"/filing/{filing_type}/type")
 
     msg.extend(_validate_name_request_section(amalgamation_json, amalgamation_type, legal_type, filing_type))
@@ -90,9 +104,14 @@ def validate(amalgamation_json: dict, account_id) -> Error | None:
                             )
         if err:
             return err
-    msg.extend(validate_party(amalgamation_json, amalgamation_type, filing_type))
+    msg.extend(validate_party(amalgamation_json, amalgamation_type, filing_type, legal_type))
     msg.extend(validate_parties_names(amalgamation_json, filing_type, legal_type))
     msg.extend(validate_parties_addresses(amalgamation_json, filing_type))
+
+    if legal_type == Business.LegalTypes.COOP.value:
+        msg.extend(validate_coop_parties_mailing_address(amalgamation_json, filing_type))
+        msg.extend(validate_cooperative_documents(amalgamation_json, filing_type))
+        msg.extend(validate_coop_resolution(amalgamation_json, filing_type))
 
     structural_errors = _structural_validation_errors(amalgamation_json, legal_type, filing_type)
     if amalgamation_type == Amalgamation.AmalgamationTypes.regular.name:
@@ -194,10 +213,6 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
         account_id) -> list:
     """Validate amalgamating businesses."""
     is_staff = jwt.validate_roles(request_ctx.current_user, [STAFF_ROLE])
-    enabled_filings = flags.value("supported-amalgamation-entities").split()
-    if legal_type not in enabled_filings:
-        return Error(HTTPStatus.FORBIDDEN,
-                     [{"error": babel(f"{legal_type} is not enabled for amalgamation entities.")}])
     msg = []
     amalgamating_businesses_json = amalgamation_json.get("filing", {}) \
                                                     .get(filing_type, {})\
@@ -208,7 +223,8 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
         Business.LegalTypes.COMP.value: False,
         Business.LegalTypes.BC_CCC.value: False,
         Business.LegalTypes.BC_ULC_COMPANY.value: False,
-        Business.LegalTypes.ULC_CONTINUE_IN.value: False
+        Business.LegalTypes.ULC_CONTINUE_IN.value: False,
+        Business.LegalTypes.COOP.value: False
     }
     is_any_expro_a = False
     is_any_foreign = False
@@ -360,6 +376,21 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
                                            is_any_foreign,
                                            is_any_expro_a,
                                            amalgamating_businesses_path))
+
+    if legal_type == Business.LegalTypes.COOP.value:
+        # a cooperative amalgamation must be made up solely of cooperatives
+        if (is_any_foreign or is_any_expro_a or
+                any(seen for ting_legal_type, seen in is_any_business.items()
+                    if ting_legal_type != Business.LegalTypes.COOP.value)):
+            msg.append({
+                "error": "A Cooperative Association can only amalgamate with other Cooperative Associations.",
+                "path": amalgamating_businesses_path
+            })
+    elif is_any_business[Business.LegalTypes.COOP.value]:
+        msg.append({
+            "error": "A Cooperative Association can only amalgamate to form a new Cooperative Association.",
+            "path": amalgamating_businesses_path
+        })
 
     if legal_type == Business.LegalTypes.BC_CCC.value and not is_any_business[Business.LegalTypes.BC_CCC.value]:
         msg.append({
@@ -824,7 +855,7 @@ def _has_pending_filing(amalgamating_business: Business):
                                               Filing.Status.PAID.value]))
 
 
-def validate_party(filing: dict, amalgamation_type, filing_type) -> list:
+def validate_party(filing: dict, amalgamation_type, filing_type, legal_type=None) -> list:
     """Validate party."""
     msg = []
     completing_parties = 0
@@ -849,14 +880,39 @@ def validate_party(filing: dict, amalgamation_type, filing_type) -> list:
         })
 
     party_path = f"/filing/{filing_type}/parties"
+    coop_minimum_directors: Final = 3
+    minimum_directors = coop_minimum_directors if legal_type == Business.LegalTypes.COOP.value else 1
     if (amalgamation_type == Amalgamation.AmalgamationTypes.regular.name and
-            (completing_parties < 1 or director_parties < 1)):
-        msg.append({"error": "At least one Director and a Completing Party is required.", "path": party_path})
+            (completing_parties < 1 or director_parties < minimum_directors)):
+        error = ("At least three Directors and a Completing Party are required."
+                 if minimum_directors == coop_minimum_directors
+                 else "At least one Director and a Completing Party is required.")
+        msg.append({"error": error, "path": party_path})
     elif (amalgamation_type in [Amalgamation.AmalgamationTypes.vertical.name,
                                 Amalgamation.AmalgamationTypes.horizontal.name] and
           completing_parties == 0):
         msg.append({"error": "A Completing Party is required.", "path": party_path})
 
+    return msg
+
+
+def validate_coop_resolution(filing: dict, filing_type) -> list:
+    """Validate the special resolution carried on a coop amalgamation (rendered as its own output).
+
+    Mirrors the specialResolution filing's rules, except the resolution date is not compared
+    against a founding date - the resulting cooperative does not exist yet.
+    """
+    msg = []
+    msg.extend(validate_resolution_content(filing, filing_type))
+
+    resolution_date_path = f"/filing/{filing_type}/resolutionDate"
+    if not (resolution_date := get_date(filing, resolution_date_path)):
+        msg.append({"error": babel("Resolution date is required."), "path": resolution_date_path})
+    elif resolution_date > LegislationDatetime.datenow():
+        msg.append({"error": babel("Resolution date cannot be in the future."), "path": resolution_date_path})
+
+    msg.extend(validate_signing_date(filing, filing_type))
+    msg.extend(validate_signatory_name(filing, filing_type))
     return msg
 
 

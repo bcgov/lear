@@ -167,6 +167,7 @@ class FilingKey(str, Enum):
     PUT_BACK_OFF = 'PUT_BACK_OFF'
     PUT_BACK_ON = 'PUT_BACK_ON'
     AMALGAMATION_REGULAR = 'AMALGAMATION_REGULAR'
+    AMALGAMATION_REGULAR_CP = 'AMALGAMATION_REGULAR_CP'
     AMALGAMATION_VERTICAL = 'AMALGAMATION_VERTICAL'
     AMALGAMATION_HORIZONTAL = 'AMALGAMATION_HORIZONTAL'
     NOTICE_OF_WITHDRAWAL = 'NOTICE_OF_WITHDRAWAL'
@@ -262,6 +263,7 @@ EXPECTED_DATA = {
     FilingKey.PUT_BACK_OFF: {'displayName': 'Correction - Put Back Off', 'feeCode': 'NOFEE', 'name': 'putBackOff'},
     FilingKey.PUT_BACK_ON: {'displayName': 'Correction - Put Back On', 'feeCode': 'NOFEE', 'name': 'putBackOn'},
     FilingKey.AMALGAMATION_REGULAR: {'name': 'amalgamationApplication', 'type': 'regular', 'displayName': 'Amalgamation Application (Regular)', 'feeCode': 'AMALR'},
+    FilingKey.AMALGAMATION_REGULAR_CP: {'name': 'amalgamationApplication', 'type': 'regular', 'displayName': 'Amalgamation Application', 'feeCode': 'OTAMA'},
     FilingKey.AMALGAMATION_VERTICAL: {'name': 'amalgamationApplication', 'type': 'vertical', 'displayName': 'Amalgamation Application Short-form (Vertical)', 'feeCode': 'AMALV'},
     FilingKey.AMALGAMATION_HORIZONTAL: {'name': 'amalgamationApplication', 'type': 'horizontal', 'displayName': 'Amalgamation Application Short-form (Horizontal)', 'feeCode': 'AMALH'},
     FilingKey.NOTICE_OF_WITHDRAWAL: {'displayName': 'Notice of Withdrawal', 'feeCode': 'NWITH', 'name': 'noticeOfWithdrawal'},
@@ -614,7 +616,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
     [
         # active business
         ('staff_active_cp', Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
-         ['adminFreeze', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'changeOfOfficers', 'correction', 'courtOrder',
+         ['adminFreeze', {'amalgamationApplication': ['regular']}, 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'changeOfOfficers', 'correction', 'courtOrder',
           {'dissolution': ['voluntary', 'administrative', 'delay']}, 'incorporationApplication',
           'registrarsNotation', 'registrarsOrder', 'specialResolution']),
         ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
@@ -1030,6 +1032,7 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
         # active business - staff user
         ('staff_active_cp', True, Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AMALGAMATION_REGULAR_CP,
                           FilingKey.AR_CP,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
@@ -1260,7 +1263,8 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
     [
         # no business - staff user
         ('staff_no_business_cp', False, Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
-         expected_lookup([FilingKey.IA_CP])),
+         expected_lookup([FilingKey.AMALGAMATION_REGULAR_CP,
+                          FilingKey.IA_CP])),
         ('staff_no_business_bc', False, Business.State.ACTIVE, ['BC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.AMALGAMATION_REGULAR,
                           FilingKey.AMALGAMATION_VERTICAL,
@@ -1372,6 +1376,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
         # active business - staff user
         ('staff_active_cp', True, Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AMALGAMATION_REGULAR_CP,
                           FilingKey.AR_CP,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
@@ -2238,6 +2243,7 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
         # active business - staff user
         ('staff_active_cp', Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AMALGAMATION_REGULAR_CP,
                           FilingKey.AR_CP,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
@@ -2450,6 +2456,7 @@ def test_allowed_filings_corps_missing_info_warnings(monkeypatch, app, session, 
          ['restoration', 'restoration', None, 'restoration'],
          ['limitedRestoration', 'limitedRestorationExtension', None, 'fullRestoration'],
          expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AMALGAMATION_REGULAR_CP,
                           FilingKey.AR_CP,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
