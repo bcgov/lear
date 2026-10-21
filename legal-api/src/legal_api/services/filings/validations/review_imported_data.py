@@ -45,7 +45,7 @@ def validate(business: Business, imported_data: dict) -> Error:
                 filing_type,
                 allowed_types=["registeredOffice", "recordsOffice"],
                 required_types=[],
-                bc_req=False,
+                bc_req=True,
             )
         )
 

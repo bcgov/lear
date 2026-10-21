@@ -513,7 +513,7 @@ class Filing:  # pylint: disable=too-many-public-methods
 
     @staticmethod
     def _has_no_outputs_except_receipt(filing) -> bool:
-        receipt_only_filings = [Filing.FilingTypes.CHANGEOFRECEIVERS.value]
+        receipt_only_filings = [Filing.FilingTypes.CHANGEOFRECEIVERS.value, Filing.FilingTypes.REVIEWIMPORTEDDATA.value]
         receipt_only_sub_filings = [
             (Filing.FilingTypes.CHANGEOFLIQUIDATORS.value, "liquidationReport"),
             (Filing.FilingTypes.DISSOLUTION.value, "delay")

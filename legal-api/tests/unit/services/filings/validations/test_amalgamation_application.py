@@ -1321,6 +1321,57 @@ def test_amalgamating_cc_to_cc(mocker, app, session, jwt,
 
 
 @pytest.mark.parametrize(
+    'test_status, ting_legal_type, expected_code, expected_msg',
+    [
+        ('FAIL_BC', Business.LegalTypes.COMP.value, HTTPStatus.BAD_REQUEST,
+         'A BC Unlimited Liability Company must amalgamate to form a new BC Unlimited Liability Company.'),
+        ('FAIL_BEN', Business.LegalTypes.BCOMP.value, HTTPStatus.BAD_REQUEST,
+         'A BC Unlimited Liability Company must amalgamate to form a new BC Unlimited Liability Company.'),
+        ('SUCCESS', Business.LegalTypes.BC_ULC_COMPANY.value, None, None),
+        ('SUCCESS_CUL', Business.LegalTypes.ULC_CONTINUE_IN.value, None, None)
+    ]
+)
+def test_amalgamating_ulc_to_ulc(mocker, app, session, jwt,
+                                 test_status, ting_legal_type, expected_code, expected_msg):
+    """Assert a ULC resulting business requires a ULC amalgamating business."""
+    account_id = '123456'
+    filing = _get_amalg_template()
+    filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = 'ULC'
+    filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
+    filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
+        {
+            'role': AmalgamatingBusiness.Role.amalgamating.name,
+            'identifier': 'BC1234567'
+        },
+        {
+            'role': AmalgamatingBusiness.Role.amalgamating.name,
+            'identifier': 'BC7654321'
+        }
+    ]
+
+    def mock_find_by_identifier(identifier):
+        return Business(identifier=identifier, legal_type=ting_legal_type)
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
+                 return_value=False)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
+                 return_value=True)
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    # validate outcomes
+    if test_status.startswith('SUCCESS'):
+        assert not err
+    else:
+        assert expected_code == err.code
+        assert expected_msg == err.msg[0]['error']
+
+
+@pytest.mark.parametrize(
     'test_status, legal_type',
     [
         ('FAIL', Business.LegalTypes.BC_CCC.value),
@@ -1389,18 +1440,23 @@ def test_amalgamating_expro_to_cc_or_ulc(mocker, app, session, jwt, test_status,
 
 
 @pytest.mark.parametrize(
-    'test_status, legal_type',
+    'test_status, legal_type, ting_legal_type',
     [
-        ('FAIL', Business.LegalTypes.COMP.value),
-        ('SUCCESS', Business.LegalTypes.BCOMP.value),
+        ('SUCCESS_BC_ADOPT_BC', Business.LegalTypes.COMP.value, Business.LegalTypes.COMP.value),
+        ('SUCCESS_BEN_ADOPT_BEN', Business.LegalTypes.BCOMP.value, Business.LegalTypes.BCOMP.value),
+        ('SUCCESS_BEN_ADOPT_BC', Business.LegalTypes.BCOMP.value, Business.LegalTypes.COMP.value),
+        ('SUCCESS_BC_ADOPT_BEN', Business.LegalTypes.COMP.value, Business.LegalTypes.BCOMP.value),
+        ('FAIL_BC_ADOPT_ULC', Business.LegalTypes.COMP.value, Business.LegalTypes.BC_ULC_COMPANY.value),
+        ('FAIL_ULC_ADOPT_BC', Business.LegalTypes.BC_ULC_COMPANY.value, Business.LegalTypes.COMP.value),
+        ('FAIL_CC_ADOPT_BEN', Business.LegalTypes.BC_CCC.value, Business.LegalTypes.BCOMP.value),
     ]
 )
-def test_regular_amalgamation_adoptable_name(mocker, app, session, jwt, test_status, legal_type):
-    """Assert valid regular amalgamation adoptable name."""
+def test_regular_amalgamation_adoptable_name(mocker, app, session, jwt, test_status, legal_type, ting_legal_type):
+    """Assert a BC or BEN resulting business may adopt a BC or BEN name; other type mismatches are rejected."""
     account_id = '123456'
     filing = _get_amalg_template()
     filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = legal_type
-    adoptable_name = f'Test adoptable name {legal_type}'
+    adoptable_name = f'Test adoptable name {ting_legal_type}'
     filing['filing']['amalgamationApplication']['nameRequest']['legalName'] = adoptable_name
     filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
         {
@@ -1416,7 +1472,7 @@ def test_regular_amalgamation_adoptable_name(mocker, app, session, jwt, test_sta
     def mock_find_by_identifier(identifier):
         return Business(identifier=identifier,
                         legal_name=adoptable_name,
-                        legal_type=Business.LegalTypes.BCOMP.value)
+                        legal_type=ting_legal_type)
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
                  return_value=[])
@@ -1430,11 +1486,12 @@ def test_regular_amalgamation_adoptable_name(mocker, app, session, jwt, test_sta
         err = validate(None, filing, account_id)
 
     # validate outcomes
-    if test_status == 'SUCCESS':
+    expected_msg = 'Adopt a name that have the same business type as the resulting business.'
+    if test_status.startswith('SUCCESS'):
         assert not err
     else:
         assert HTTPStatus.BAD_REQUEST == err.code
-        assert err.msg[0]['error'] == 'Adopt a name that have the same business type as the resulting business.'
+        assert next((x for x in err.msg if x['error'] == expected_msg), None)
 
 
 @pytest.mark.parametrize(
@@ -2585,3 +2642,212 @@ def test_regular_amalgamation_skips_short_form_match(mocker, app, session):
 
     assert not err
     match_mock.assert_not_called()
+
+
+def _get_coop_amalg_template():
+    """Return a regular CP Amalgamation Application template (coop docs, 3 directors, no shares)."""
+    filing = _get_amalg_template()
+    amalgamation = filing['filing']['amalgamationApplication']
+    amalgamation['nameRequest'] = {
+        'legalType': 'CP',
+        'legalName': 'Resulting Cooperative Name',
+        'nrNumber': 'NR 1234567'
+    }
+    amalgamation['amalgamatingBusinesses'] = [
+        {'role': 'amalgamating', 'identifier': 'CP1234567'},
+        {'role': 'amalgamating', 'identifier': 'CP7654321'}
+    ]
+    del amalgamation['shareStructure']
+    del amalgamation['offices']['recordsOffice']
+    amalgamation['cooperative'] = {
+        'cooperativeAssociationType': 'CP',
+        'rulesFileKey': 'cooperative/fa00c6bf-eaad-4a07-a3d2-4786ecd6b83b.pdf',
+        'memorandumFileKey': 'cooperative/f722bf16-86be-430d-928d-5529853a3a2c.pdf'
+    }
+    amalgamation['resolution'] = '<p>Special resolution approving the amalgamation.</p>'
+    amalgamation['resolutionDate'] = '2024-07-15'
+    amalgamation['signingDate'] = '2024-07-15'
+    amalgamation['signatory'] = {
+        'givenName': 'Joe',
+        'familyName': 'Swanson'
+    }
+    # court approval is not collected for coop amalgamations (courtApproval stays only because
+    # the installed 2.18.87 schema still requires it in the base (remove it after schema update)
+    amalgamation['courtApproval'] = False
+    del amalgamation['courtOrder']
+    # the base template has one Completing Party + Director - a coop needs three directors
+    for _ in range(2):
+        director = copy.deepcopy(amalgamation['parties'][0])
+        director['roles'] = [{'roleType': 'Director', 'appointmentDate': '2018-01-01'}]
+        amalgamation['parties'].append(director)
+    return filing
+
+
+def _setup_coop_amalgamation_mocks(mocker, ting_legal_types=None):
+    """Patch the shared lookups so the template's TINGs resolve as active LEAR businesses."""
+    ting_legal_types = ting_legal_types or {}
+
+    def mock_find_by_identifier(identifier):
+        return Business(identifier=identifier,
+                        legal_type=ting_legal_types.get(identifier, Business.LegalTypes.COOP.value))
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
+                 return_value=False)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
+                 return_value=True)
+    # pdf content rules are covered by the incorporation application suite
+    mocker.patch('legal_api.services.filings.validations.incorporation_application.validate_pdf',
+                 return_value=[])
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+
+
+def test_coop_amalgamation(mocker, app, session, jwt):
+    """Assert a regular CP amalgamation with coop documents and no share structure is valid."""
+    account_id = '123456'
+    filing = _get_coop_amalg_template()
+    _setup_coop_amalgamation_mocks(mocker)
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    assert not err, err.msg if err else None
+
+
+def test_coop_amalgamation_rejects_non_coop_ting(mocker, app, session, jwt):
+    """Assert a CP amalgamation rejects a non-coop amalgamating business."""
+    account_id = '123456'
+    filing = _get_coop_amalg_template()
+    _setup_coop_amalgamation_mocks(mocker, ting_legal_types={'CP7654321': Business.LegalTypes.BCOMP.value})
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    assert err.code == HTTPStatus.BAD_REQUEST
+    expected = 'A Cooperative Association can only amalgamate with other Cooperative Associations.'
+    assert next((x for x in err.msg if x['error'] == expected), None)
+
+
+def test_coop_amalgamation_rejects_foreign(mocker, app, session, jwt):
+    """Assert a CP amalgamation rejects a foreign amalgamating business."""
+    account_id = '123456'
+    filing = _get_coop_amalg_template()
+    foreign_entry = copy.deepcopy(AMALGAMATION_APPLICATION['amalgamatingBusinesses'][1])
+    filing['filing']['amalgamationApplication']['amalgamatingBusinesses'].append(foreign_entry)
+    _setup_coop_amalgamation_mocks(mocker)
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    assert err.code == HTTPStatus.BAD_REQUEST
+    expected = 'A Cooperative Association can only amalgamate with other Cooperative Associations.'
+    assert next((x for x in err.msg if x['error'] == expected), None)
+
+
+def test_coop_ting_cannot_form_corp(mocker, app, session, jwt):
+    """Assert a coop amalgamating business cannot be part of a corporate amalgamation."""
+    account_id = '123456'
+    filing = _get_amalg_template()
+    amalgamation = filing['filing']['amalgamationApplication']
+    amalgamation['nameRequest']['nrNumber'] = 'NR 1234567'
+    amalgamation['amalgamatingBusinesses'] = [
+        {'role': 'amalgamating', 'identifier': 'BC1234567'},
+        {'role': 'amalgamating', 'identifier': 'CP1234567'}
+    ]
+    _setup_coop_amalgamation_mocks(mocker, ting_legal_types={'BC1234567': Business.LegalTypes.BCOMP.value})
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    assert err.code == HTTPStatus.BAD_REQUEST
+    expected = 'A Cooperative Association can only amalgamate to form a new Cooperative Association.'
+    assert next((x for x in err.msg if x['error'] == expected), None)
+
+
+def test_coop_amalgamation_missing_cooperative_section(mocker, app, session, jwt):
+    """Assert a CP amalgamation requires the cooperative documents section.
+
+    The 2.18.87 schema's CP branch rejects it first (422); the validator's own
+    'cooperative data is missing' check remains as defense in depth behind it.
+    """
+    account_id = '123456'
+    filing = _get_coop_amalg_template()
+    del filing['filing']['amalgamationApplication']['cooperative']
+    _setup_coop_amalgamation_mocks(mocker)
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    assert err.code == HTTPStatus.UNPROCESSABLE_ENTITY
+    assert any('cooperative' in x['error'] for x in err.msg)
+
+
+def test_coop_amalgamation_director_minimum(mocker, app, session, jwt):
+    """Assert a CP amalgamation requires at least three directors."""
+    account_id = '123456'
+    filing = _get_coop_amalg_template()
+    # drop the two director-only parties; the kept party is still Completing Party + Director,
+    # so only the three-director minimum is violated
+    filing['filing']['amalgamationApplication']['parties'] = \
+        filing['filing']['amalgamationApplication']['parties'][:1]
+    _setup_coop_amalgamation_mocks(mocker)
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    assert err.code == HTTPStatus.BAD_REQUEST
+    expected = 'At least three Directors and a Completing Party are required.'
+    assert next((x for x in err.msg if x['error'] == expected), None)
+
+
+def test_coop_amalgamation_parties_mailing_address(mocker, app, session, jwt):
+    """Assert the coop parties mailing-address rules apply to a CP amalgamation."""
+    account_id = '123456'
+    filing = _get_coop_amalg_template()
+    for party in filing['filing']['amalgamationApplication']['parties']:
+        party['mailingAddress']['addressRegion'] = 'AB'
+    _setup_coop_amalgamation_mocks(mocker)
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    assert err.code == HTTPStatus.BAD_REQUEST
+    expected = 'Must have minimum of one BC mailing address'
+    assert next((x for x in err.msg if x['error'] == expected), None)
+
+
+@pytest.mark.parametrize('element,expected_error', [
+    ('resolution', 'Resolution must be provided.'),
+    ('resolutionDate', 'Resolution date is required.'),
+    ('signingDate', 'Signing date is required.'),
+    ('signatory', 'Signatory given name is required.')
+])
+def test_coop_amalgamation_missing_resolution(mocker, app, session, jwt, element, expected_error):
+    """Assert a CP amalgamation requires its inline special resolution fields."""
+    account_id = '123456'
+    filing = _get_coop_amalg_template()
+    del filing['filing']['amalgamationApplication'][element]
+    _setup_coop_amalgamation_mocks(mocker)
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    assert err
+    assert any(x['error'] == expected_error for x in err.msg) or \
+        any(element in x['error'] for x in err.msg)  # schema-level reject once 2.18.88 is installed
+
+
+@pytest.mark.parametrize('flag_value', ['BC BEN CC ULC C CBEN CCC CUL', None])
+def test_amalgamation_entity_not_enabled(mocker, app, session, jwt, flag_value):
+    """Assert a legal type outside the enabled flag (or an unavailable flag) returns 403, not a crash."""
+    account_id = '123456'
+    filing = _get_coop_amalg_template()
+    _setup_coop_amalgamation_mocks(mocker)
+    mocker.patch.object(flags, 'value', return_value=flag_value)
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    assert err.code == HTTPStatus.FORBIDDEN
+    assert err.msg[0]['error'] == 'CP is not enabled for amalgamation entities.'

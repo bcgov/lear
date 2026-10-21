@@ -203,7 +203,11 @@ def validate(business: Business,  # noqa: PLR0915, PLR0912, PLR0911
                     err = registration_validate(filing_json)
 
                 elif k == Filing.FILINGS["reviewImportedData"].get("name"):
-                    err = review_imported_data_validate(business,filing_json)
+                    enabled_features = flags.value("enable-new-feature", account_id=account_id) or []
+                    if "reviewImportedData" not in enabled_features:
+                        err = Error(HTTPStatus.FORBIDDEN, [{"error": "Review Imported Data filing is not enabled."}])
+                    else:
+                        err = review_imported_data_validate(business, filing_json)
 
                 elif k == Filing.FILINGS["changeOfRegistration"].get("name"):
                     err = change_of_registration_validate(business, filing_json)
