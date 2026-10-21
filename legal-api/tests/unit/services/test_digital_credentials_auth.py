@@ -61,13 +61,13 @@ def test_are_digital_credentials_allowed(mock_rule, mock_user, app, session, jwt
 
 
 @patch.object(DigitalCredentialsRulesService, 'are_digital_credentials_allowed', return_value=True)
-def test_are_digital_credentials_allowed_false_when_no_token(mock_rule, app, session, jwt):
+def test_are_digital_credentials_allowed_false_when_no_token(mock_rule, app, session, jwt, monkeypatch):
     with jwt_request_context(app, jwt, [PUBLIC_USER], token_json['username']):
         # build the request context from the real token first, then make the token resolve to no
         # user for the digital-credentials check. Setting this on app.app_ctx_globals_class (the
         # previous approach) made it a class attribute of flask.g that leaked into every later test.
         get_request_context()
-        g.jwt_oidc_token_info = {'idp_userid': None}
+        monkeypatch.setattr(g, 'jwt_oidc_token_info', {'idp_userid': None}, raising=False)
 
         business = create_business('SP', Business.State.ACTIVE)
         assert are_digital_credentials_allowed(business, jwt) is False
