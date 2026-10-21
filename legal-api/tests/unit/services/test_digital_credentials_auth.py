@@ -19,6 +19,7 @@ Test suite to ensure that auth functions for digital credentials are working as 
 from unittest.mock import MagicMock, patch
 
 import pytest
+from flask import g
 
 from business_model.models.business import Business
 from business_model.models.user import User
@@ -30,6 +31,7 @@ from legal_api.services.digital_credentials_auth import (
     are_digital_credentials_allowed,
     get_digital_credentials_preconditions,
 )
+from legal_api.services.request_context import get_request_context
 from tests.unit.services.utils import create_business, jwt_request_context
 
 token_json = {'username': 'test'}
@@ -48,7 +50,9 @@ def mock_flags():
         yield flags
 
 
-@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1))
+# stub user mirrors the test JWT claims (see helper_create_jwt_json_token_claims) so that
+# User._sync_from_jwt_token sees nothing to update and never writes the stub to the database
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1, sub='test-sub', username='test', firstname='Joe P', lastname='Swanson'))
 @patch.object(DigitalCredentialsRulesService, 'are_digital_credentials_allowed', return_value=True)
 def test_are_digital_credentials_allowed(mock_rule, mock_user, app, session, jwt):
     with jwt_request_context(app, jwt, [PUBLIC_USER], token_json['username']):
@@ -59,7 +63,11 @@ def test_are_digital_credentials_allowed(mock_rule, mock_user, app, session, jwt
 @patch.object(DigitalCredentialsRulesService, 'are_digital_credentials_allowed', return_value=True)
 def test_are_digital_credentials_allowed_false_when_no_token(mock_rule, app, session, jwt):
     with jwt_request_context(app, jwt, [PUBLIC_USER], token_json['username']):
-        app.app_ctx_globals_class.jwt_oidc_token_info = {'idp_userid': None}
+        # build the request context from the real token first, then make the token resolve to no
+        # user for the digital-credentials check. Setting this on app.app_ctx_globals_class (the
+        # previous approach) made it a class attribute of flask.g that leaked into every later test.
+        get_request_context()
+        g.jwt_oidc_token_info = {'idp_userid': None}
 
         business = create_business('SP', Business.State.ACTIVE)
         assert are_digital_credentials_allowed(business, jwt) is False
@@ -75,7 +83,7 @@ def test_are_digital_credentials_allowed_false_when_no_user(mock_rule, mock_jwt,
         assert are_digital_credentials_allowed(business, jwt) is False
 
 
-@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1))
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1, sub='test-sub', username='test', firstname='Joe P', lastname='Swanson'))
 @patch.object(DigitalCredentialsRulesService, 'are_digital_credentials_allowed', return_value=True)
 def test_are_digital_credentials_allowed_false_when_user_is_staff(mock_rule, mock_jwt, app, session, jwt):
     with jwt_request_context(app, jwt, [STAFF_ROLE], token_json['username']):
@@ -213,7 +221,7 @@ def test_resolve_allowed_business_types_malformed(mock_flags, app, bad_value):
 # ----------------------------------------------------------------------------
 
 
-@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1))
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1, sub='test-sub', username='test', firstname='Joe P', lastname='Swanson'))
 @patch.object(DigitalCredentialsRulesService, 'are_digital_credentials_allowed', return_value=True)
 def test_are_digital_credentials_allowed_passes_resolved_flag_to_rules(
     mock_rules, mock_user, mock_flags, app, session, jwt,
@@ -231,7 +239,7 @@ def test_are_digital_credentials_allowed_passes_resolved_flag_to_rules(
     assert args[-1] == ["SP", "BEN", "GP"]
 
 
-@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1))
+@patch('business_model.models.User.find_by_jwt_token', return_value=User(id=1, sub='test-sub', username='test', firstname='Joe P', lastname='Swanson'))
 @patch.object(DigitalCredentialsRulesService, 'are_digital_credentials_allowed', return_value=True)
 def test_are_digital_credentials_allowed_passes_empty_list_when_flag_off(
     mock_rules, mock_user, mock_flags, app, session, jwt,
