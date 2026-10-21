@@ -161,6 +161,38 @@ def database_service(request):
     request.addfinalizer(remove_container)
 
 
+@pytest.fixture(autouse=True)
+def clear_flask_cache(app):
+    """Empty the flask-caching SimpleCache between tests.
+
+    Results such as ``authz.get_account_products`` are cached for 10 minutes keyed by account id,
+    so without this a test inherits whatever products/roles an earlier test mocked for the same
+    account, and the outcome depends on test ordering.
+    """
+    from legal_api.services.cache import cache
+    cache.clear()
+    yield
+    cache.clear()
+
+
+@pytest.fixture(autouse=True)
+def clear_request_context_cache(app):
+    """Drop the per-request RequestContext cached on flask.g between tests.
+
+    The session-scoped ``app`` fixture keeps one app context pushed for the whole run, so Flask reuses
+    it for every test-client request and ``g`` persists across tests. ``get_request_context()`` caches
+    a RequestContext (holding a ``User`` row) on ``g``; once that test's transaction is rolled back the
+    User is detached and the next test that reads it fails with DetachedInstanceError. Only shows up
+    when test ordering changes (e.g. pytest-xdist), which is why it went unnoticed in serial runs.
+    """
+    from flask import g, has_app_context
+    if has_app_context():
+        g.pop("request_context", None)
+    yield
+    if has_app_context():
+        g.pop("request_context", None)
+
+
 @pytest.fixture(scope="session", autouse=True)
 def database_setup(database_service, app):
     """Start up database."""
@@ -169,9 +201,13 @@ def database_setup(database_service, app):
     upgrade() 
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='function', autouse=True)
 def session(database_setup):
     """Per-test DB session with SAVEPOINT-based isolation.
+
+    autouse: every test runs inside this rollback transaction, so a test that never requests
+    ``session`` can no longer commit rows (e.g. users created from the JWT) that leak into later
+    tests and change their outcome depending on ordering.
 
     Opens a dedicated connection with an outer transaction, starts a
     SAVEPOINT inside it, and re-issues a fresh SAVEPOINT every time one
@@ -185,6 +221,7 @@ def session(database_setup):
 
     options = dict(bind=connection, binds={})
     scoped = _db._make_scoped_session(options=options)
+    original_session = _db.session
     _db.session = scoped
 
     session = scoped()
@@ -208,6 +245,9 @@ def session(database_setup):
     scoped.close()
     transaction.rollback()
     connection.close()
+    # put the engine-bound session back: otherwise every later test that does not request this
+    # fixture keeps using a session bound to this (now closed) connection
+    _db.session = original_session
 
 
 
