@@ -790,7 +790,7 @@ def validate_relationships( # noqa: PLR0913
     role_types_for_colin_sync: list[PartyRole.RoleTypes] | None = None,
     min_date: date | None = None,
     min_date_reason: str | None = None,
-    new_only_min_date: bool = False
+    only_added_appointment_check: bool = False
 ) -> list:
     """Validate the relationships information."""
     msg = []
@@ -818,7 +818,8 @@ def validate_relationships( # noqa: PLR0913
 
         msg.extend(validate_relationship_entity_name(relationship, path))
         msg.extend(validate_relationship_roles(relationship, role_types, path, business,
-                                               min_date, min_date_reason, new_only_min_date))
+                                               min_date, min_date_reason,
+                                               only_added_appointment_check))
         # Below is for colin sync checking only (i.e. any relationship with Director roles)
         converted_sync_roles = [role.value.lower().replace(" ", "_") for role in role_types_for_colin_sync or []]
         if any(role for role in relationship["roles"] if role["roleType"].lower() in converted_sync_roles):
@@ -962,22 +963,25 @@ def validate_relationship_roles(relationship: dict,  # noqa: PLR0913
                                 business: Business,
                                 min_date: date | None = None,
                                 min_date_reason: str | None = None,
-                                new_only_min_date: bool = False) -> list:
+                                only_added_appointment_check: bool = False) -> list:
     """Validate relationship roles."""
     msg = []
     converted_allowed_roles = [role.value for role in allowed_roles]
     if not min_date:
         min_date = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
-    appointment_min_date = None if new_only_min_date and relationship.get("entity", {}).get("identifier") else min_date
 
-    # Appointment date bounds only apply to newly added relationships.
-    # Existing directors' historical appointment dates must not be re-validated
-    # against the current COD minimum date (mirrors validate_appointment_date behaviour
-    # for the legacy directors format which skips non-"appointed" directors).
-    actions = relationship.get("actions") or []
-    is_new = "ADDED" in actions
-    appointment_min_date = min_date if is_new else None
-    appointment_min_date_reason = min_date_reason if is_new else None
+    # When only_added_appointment_check is True (COD filings), skip the min_date check
+    # for existing directors' appointment dates — their historical dates may predate
+    # last_cod_date. Only newly ADDED directors are bounded by the COD min_date.
+    # For corrections and other filings (False), all appointment dates are validated.
+    if only_added_appointment_check:
+        actions = relationship.get("actions") or []
+        is_new = "ADDED" in actions
+        appointment_min_date = min_date if is_new else None
+        appointment_min_date_reason = min_date_reason if is_new else None
+    else:
+        appointment_min_date = min_date
+        appointment_min_date_reason = min_date_reason
 
     roles = relationship["roles"]
     for index, role in enumerate(roles):
