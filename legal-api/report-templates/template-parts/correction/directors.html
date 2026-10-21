@@ -23,6 +23,11 @@
                   <div class="mt-2 section-sub-title">{{ labelAdded() }}</div>
                 {% endif %}
                 {% if party.nameChanged %}
+                  {% if party.previousName is defined and party.previousName != '' %}
+                    <div class="director-former-name">
+                      (Formerly {{ party.previousName }})
+                    </div>
+                  {% endif %}
                   <span class="section-sub-title">{{ labelCorrected() }}</span>
                 {% endif %}
               </td>
