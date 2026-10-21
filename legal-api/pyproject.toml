@@ -190,7 +190,11 @@ markers = [
 ]
 
 [tool.coverage.run]
-branch = true
+# Line coverage only, measured with sys.monitoring (PEP 669): on Python 3.13 branch coverage forces
+# coverage.py back onto sys.settrace, which cost ~25% of total test wall-clock. The CI gate reads
+# line-rate; branch-rate was reported only.
+branch = false
+core = "sysmon"
 source = [
    "src/legal_api",
 ]
