@@ -316,6 +316,22 @@ def test_validate_cod_relationship_appointment_before_last_cod(session):
     }])
 
 
+def test_validate_cod_relationship_existing_director_appointment_before_last_cod(session):
+    """Assert an existing director's historical appointment date is not bounded by the last COD date."""
+    identifier = f'BC{random.randint(1000000, 9999999)}'
+    business = _setup_business(identifier)
+    business.last_cod_date = datetime.utcnow() - datedelta.datedelta(days=1)
+    business.save()
+    party_id = _setup_existing_director(business)
+
+    cod = _relationships_cod(party_id)
+    cod['relationships'] = cod['relationships'][1:]
+    cod['relationships'][0]['roles'][0]['cessationDate'] = LegislationDatetime.datenow().isoformat()
+    filing = _build_filing(identifier, cod)
+
+    assert validate(business, filing) is None
+
+
 def test_validate_cod_relationship_invalid_country(session):
     """Assert a non ISO-2 resolvable country is rejected."""
     identifier = f'BC{random.randint(1000000, 9999999)}'
