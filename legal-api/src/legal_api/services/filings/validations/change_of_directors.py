@@ -353,7 +353,7 @@ def validate_cod_relationships(business: Business, cod: dict) -> list:
                                       min_date=min_date,
                                       min_date_reason=(
                                           "the business founding date "
-                                          "or the most recent Change of Directors filing")))
+                                          "or the most recent Change of Directors filing"), new_only_min_date=True))
     msg.extend(validate_relationship_actions(cod))
     msg.extend(validate_relationship_cessation_dates(cod))
     msg.extend(validate_parties_countries(cod, "changeOfDirectors", "relationships"))
