@@ -790,7 +790,7 @@ def validate_relationships( # noqa: PLR0913
     role_types_for_colin_sync: list[PartyRole.RoleTypes] | None = None,
     min_date: date | None = None,
     min_date_reason: str | None = None,
-    only_added_appointment_check: bool = False
+    new_only_min_date: bool = False
 ) -> list:
     """Validate the relationships information."""
     msg = []
@@ -818,8 +818,7 @@ def validate_relationships( # noqa: PLR0913
 
         msg.extend(validate_relationship_entity_name(relationship, path))
         msg.extend(validate_relationship_roles(relationship, role_types, path, business,
-                                               min_date, min_date_reason,
-                                               only_added_appointment_check))
+                                               min_date, min_date_reason, new_only_min_date))
         # Below is for colin sync checking only (i.e. any relationship with Director roles)
         converted_sync_roles = [role.value.lower().replace(" ", "_") for role in role_types_for_colin_sync or []]
         if any(role for role in relationship["roles"] if role["roleType"].lower() in converted_sync_roles):
@@ -963,25 +962,13 @@ def validate_relationship_roles(relationship: dict,  # noqa: PLR0913
                                 business: Business,
                                 min_date: date | None = None,
                                 min_date_reason: str | None = None,
-                                only_added_appointment_check: bool = False) -> list:
+                                new_only_min_date: bool = False) -> list:
     """Validate relationship roles."""
     msg = []
     converted_allowed_roles = [role.value for role in allowed_roles]
     if not min_date:
         min_date = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
-
-    # When only_added_appointment_check is True (COD filings), skip the min_date check
-    # for existing directors' appointment dates — their historical dates may predate
-    # last_cod_date. Only newly ADDED directors are bounded by the COD min_date.
-    # For corrections and other filings (False), all appointment dates are validated.
-    if only_added_appointment_check:
-        actions = relationship.get("actions") or []
-        is_new = "ADDED" in actions
-        appointment_min_date = min_date if is_new else None
-        appointment_min_date_reason = min_date_reason if is_new else None
-    else:
-        appointment_min_date = min_date
-        appointment_min_date_reason = min_date_reason
+    appointment_min_date = None if new_only_min_date and relationship.get("entity", {}).get("identifier") else min_date
 
     roles = relationship["roles"]
     for index, role in enumerate(roles):
@@ -997,7 +984,7 @@ def validate_relationship_roles(relationship: dict,  # noqa: PLR0913
                                               f"{path}/roles/{index}/appointmentDate",
                                               "Appointment",
                                               appointment_min_date,
-                                              appointment_min_date_reason))
+                                              min_date_reason))
         msg.extend(_validate_relationship_date(cessation_date,
                                               f"{path}/roles/{index}/cessationDate",
                                               "Cessation",
@@ -1042,7 +1029,7 @@ def _compare_director_dates(appointment_date: date, cessation_date: date, path: 
 def _validate_relationship_date(date_value: date,
                                 path: str,
                                 error_name: str,
-                                min_date: date | None,
+                                min_date: date,
                                 min_date_reason: str | None = None) -> list:
     msg = []
     if date_value is None:
@@ -1055,7 +1042,7 @@ def _validate_relationship_date(date_value: date,
             "path": path
         })
 
-    if min_date is not None and date_value < min_date:
+    if min_date and date_value < min_date:
         reason = min_date_reason or "the business founding date"
         msg.append({
             "error": _(f"{error_name} date cannot be before {reason}."),
