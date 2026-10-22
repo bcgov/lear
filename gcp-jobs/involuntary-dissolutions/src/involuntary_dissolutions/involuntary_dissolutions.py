@@ -411,7 +411,7 @@ def check_run_schedule():
     return cron_valid_1, cron_valid_2, cron_valid_3
 
 
-def run(application: Flask):  # pylint: disable=redefined-outer-name
+def run(application: Flask):  # pylint: disable=redefined-outer-name  # pragma: no cover
     """Run the stage 1-3 methods for dissolving businesses."""
     if application is None:
         application = create_app()
@@ -445,7 +445,7 @@ def run(application: Flask):  # pylint: disable=redefined-outer-name
                 application.logger.debug("Exiting stage 3 of involuntary dissolution job.")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     application = create_app()
     try:
         run(application)

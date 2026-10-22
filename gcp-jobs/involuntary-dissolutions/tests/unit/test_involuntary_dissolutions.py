@@ -29,6 +29,7 @@ from involuntary_dissolutions.involuntary_dissolutions import (
     check_run_schedule,
     create_invountary_dissolution_filing,
     mark_eligible_batches_completed,
+    put_filing_on_queue,
     stage_1_process,
     stage_2_process,
     stage_3_process,
@@ -553,3 +554,20 @@ def test_stage_3_process(app, session, test_name, status, step, furnishing_statu
 
     assert batch_processing.status == status
     assert batch_processing.step == step
+
+
+def test_put_filing_on_queue_success(app):
+    """Assert that put_filing_on_queue publishes the filing message to the queue."""
+    with patch("involuntary_dissolutions.involuntary_dissolutions.gcp_queue") as mock_queue, \
+         patch("involuntary_dissolutions.involuntary_dissolutions.to_queue_message", return_value=b"msg") as mock_to_queue:
+        put_filing_on_queue(42, app)
+        mock_queue.publish.assert_called_once()
+        mock_to_queue.assert_called_once()
+
+
+def test_put_filing_on_queue_error(app):
+    """Assert that put_filing_on_queue logs the error instead of raising when publish fails."""
+    with patch("involuntary_dissolutions.involuntary_dissolutions.gcp_queue") as mock_queue:
+        mock_queue.publish.side_effect = Exception("queue unavailable")
+        # should not raise
+        put_filing_on_queue(42, app)
