@@ -25,6 +25,7 @@ from freezegun import freeze_time
 from business_common.core.filing import Filing as CoreFiling
 from business_model.models import Batch, BatchProcessing, Configuration, Filing, Furnishing
 from involuntary_dissolutions.involuntary_dissolutions import (
+    can_run_today,
     check_run_schedule,
     create_invountary_dissolution_filing,
     mark_eligible_batches_completed,
@@ -57,6 +58,14 @@ def test_check_run_schedule():
         assert cron_valid_1 is True
         assert cron_valid_2 is True
         assert cron_valid_3 is False
+
+
+@freeze_time("2024-06-04 01:02:03")
+def test_can_run_today():
+    """Assert can_run_today returns True/False based on whether cron matches today (America/Vancouver)."""
+    # 2024-06-04 is a Tuesday (weekday 1)
+    assert can_run_today("0 0 * * 2") is True   # Tuesday — matches
+    assert can_run_today("0 0 * * 3") is False  # Wednesday — does not match
 
 
 def test_create_invountary_dissolution_filing(app, session):
