@@ -20,7 +20,8 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
-from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Filing
+from business_model.models import AmalgamatingBusiness, Amalgamation, Business, Filing, Resolution
+from business_model.models.document import DocumentType
 from registry_schemas.example_data import AMALGAMATION_APPLICATION
 
 from business_filer.common.filing_message import FilingMessage
@@ -411,3 +412,101 @@ def test_amalgamating_business_without_identifier(app, session):
         with pytest.raises(QueueException) as excinfo:
             amalgamation_application.process(None, filing, filing_rec, FilingMeta())
     assert 'no identifier' in excinfo.value.error
+
+
+def test_coop_amalgamation_application_process(app, session, set_publish_mocks):
+    """Assert a CP amalgamation creates the coop TED with its association type and documents."""
+    filing_type = 'amalgamationApplication'
+    amalgamating_identifier_1 = f'CP{random.randint(1000000, 9999999)}'
+    amalgamating_identifier_2 = f'CP{random.randint(1000000, 9999999)}'
+    next_corp_num = f'CP{random.randint(1000000, 9999999)}'
+
+    amalgamating_business_1_id = create_entity(amalgamating_identifier_1, 'CP', 'amalgamating coop 1').id
+    amalgamating_business_2_id = create_entity(amalgamating_identifier_2, 'CP', 'amalgamating coop 2').id
+
+    filing = {'filing': {}}
+    filing['filing']['header'] = {'name': filing_type, 'date': '2019-04-08',
+                                  'certifiedBy': 'full name', 'email': 'no_one@never.get', 'filingId': 1}
+    filing['filing'][filing_type] = copy.deepcopy(AMALGAMATION_APPLICATION)
+    filing['filing'][filing_type]['amalgamatingBusinesses'] = [
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': amalgamating_identifier_1},
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': amalgamating_identifier_2}
+    ]
+    filing['filing'][filing_type]['nameRequest'] = {
+        'legalType': 'CP',
+        'legalName': 'Resulting Cooperative Name'
+    }
+    del filing['filing'][filing_type]['shareStructure']
+    del filing['filing'][filing_type]['nameTranslations']
+    del filing['filing'][filing_type]['offices']['recordsOffice']
+    filing['filing'][filing_type]['cooperative'] = {
+        'cooperativeAssociationType': 'CP',
+        'rulesFileKey': 'cooperative/fa00c6bf-eaad-4a07-a3d2-4786ecd6b83b.pdf',
+        'memorandumFileKey': 'cooperative/f722bf16-86be-430d-928d-5529853a3a2c.pdf'
+    }
+    filing['filing'][filing_type]['resolution'] = '<p>Special resolution approving the amalgamation.</p>'
+    filing['filing'][filing_type]['resolutionDate'] = '2024-07-15'
+    filing['filing'][filing_type]['signingDate'] = '2024-07-16'
+    filing['filing'][filing_type]['signatory'] = {
+        'givenName': 'Joe',
+        'familyName': 'Swanson'
+    }
+    # court approval is not collected for coop amalgamations
+    del filing['filing'][filing_type]['courtApproval']
+    del filing['filing'][filing_type]['courtOrder']
+
+    filing_rec = create_filing('123', filing)
+    effective_date = datetime.now(timezone.utc)
+    filing_rec.effective_date = effective_date
+    filing_rec.save()
+
+    filing_msg = FilingMessage(filing_identifier=filing_rec.id)
+    with patch.object(business_info, 'get_next_corp_num', return_value=next_corp_num) as corp_num_mock:
+        with patch.object(business_profile, 'update_business_profile', return_value=HTTPStatus.OK):
+            process_filing(filing_msg)
+
+    filing_rec = Filing.find_by_id(filing_rec.id)
+    business = Business.find_by_identifier(next_corp_num)
+
+    corp_num_mock.assert_called_with('CP')
+    assert filing_rec.business_id == business.id
+    assert filing_rec.status == Filing.Status.COMPLETED.value
+    assert business.legal_type == 'CP'
+    assert business.association_type == 'CP'
+    assert business.state == Business.State.ACTIVE
+    assert len(business.offices.all()) == 1
+    assert not business.share_classes.all()
+
+    documents = business.documents.all()
+    assert len(documents) == 2
+    cooperative = filing['filing'][filing_type]['cooperative']
+    for document in documents:
+        assert document.business_id == business.id
+        assert document.filing_id == filing_rec.id
+        if document.type == DocumentType.COOP_RULES.value:
+            assert document.file_key == cooperative['rulesFileKey']
+        else:
+            assert document.type == DocumentType.COOP_MEMORANDUM.value
+            assert document.file_key == cooperative['memorandumFileKey']
+
+    resolutions = business.resolutions.all()
+    assert len(resolutions) == 1
+    resolution = resolutions[0]
+    assert resolution.resolution == filing['filing'][filing_type]['resolution']
+    assert resolution.resolution_type == Resolution.ResolutionType.SPECIAL.value
+    assert resolution.resolution_sub_type == 'amalgamationApplication'
+    assert resolution.resolution_date.isoformat() == '2024-07-15'
+    assert resolution.signing_date.isoformat() == '2024-07-16'
+    assert resolution.party.first_name == 'JOE'
+    assert resolution.party.last_name == 'SWANSON'
+
+    amalgamation: Amalgamation = business.amalgamation[0]
+    assert amalgamation.amalgamation_type.name == Amalgamation.AmalgamationTypes.regular.name
+    amalgamating_businesses = amalgamation.amalgamating_businesses.all()
+    assert len(amalgamating_businesses) == 2
+    for amalgamating_business in amalgamating_businesses:
+        assert amalgamating_business.business_id in [amalgamating_business_1_id, amalgamating_business_2_id]
+        dissolved_business = Business.find_by_internal_id(amalgamating_business.business_id)
+        assert dissolved_business.state == Business.State.HISTORICAL
+        assert dissolved_business.state_filing_id == filing_rec.id
+        assert dissolved_business.dissolution_date == effective_date

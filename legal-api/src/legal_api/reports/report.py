@@ -209,6 +209,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             "amalgamation/amalgamationName",
             "amalgamation/amalgamationStmt",
             "amalgamation/approvalType",
+            "amalgamation/cooperativeAssociationType",
             "amalgamation/effectiveDate",
             "bc-annual-report/legalObligations",
             "common/certificateFooter",
@@ -956,9 +957,14 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             amalgamation.get("shareStructure", {}).get("resolutionDates", [])
         )
 
+        if cooperative := amalgamation.get("cooperative"):
+            cooperative["associationTypeName"] = \
+                ASSOCIATION_TYPE_DESC.get(cooperative.get("cooperativeAssociationType"), "")
+
         # Formatting addresses for registered and records office
-        self._format_address(filing["offices"]["registeredOffice"]["deliveryAddress"])
-        self._format_address(filing["offices"]["registeredOffice"]["mailingAddress"])
+        if "registeredOffice" in filing["offices"]:
+            self._format_address(filing["offices"]["registeredOffice"]["deliveryAddress"])
+            self._format_address(filing["offices"]["registeredOffice"]["mailingAddress"])
         if "recordsOffice" in filing["offices"]:
             self._format_address(filing["offices"]["recordsOffice"]["deliveryAddress"])
             self._format_address(filing["offices"]["recordsOffice"]["mailingAddress"])
@@ -1471,11 +1477,22 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         display_name = FILINGS.get(self._filing.filing_type, {}).get("displayName")
         if isinstance(display_name, dict):
             display_name = display_name.get(self._business.legal_type)
-        # coop dissolutions carry a specialResolution section alongside the dissolution filing, so
-        # source the resolution from it rather than defaulting to the (empty) correction section
-        filing_source = "specialResolution" \
-            if self._filing.filing_type == "specialResolution" or filing.get("specialResolution") \
-            else "correction"
+        # coop dissolutions carry a specialResolution section alongside the dissolution filing, and
+        # coop amalgamations carry the resolution inline
+        if self._filing.filing_type == "specialResolution" or filing.get("specialResolution"):
+            filing_source = "specialResolution"
+        elif self._filing.filing_type == "amalgamationApplication":
+            # surface the inline resolution as its own section — shared template parts
+            # (businessDetails, resolution) resolve attributes on `specialResolution`
+            amalgamation_json = filing.get("amalgamationApplication", {})
+            filing["specialResolution"] = {
+                key: amalgamation_json[key]
+                for key in ("resolution", "resolutionDate", "signingDate", "signatory")
+                if key in amalgamation_json
+            }
+            filing_source = "specialResolution"
+        else:
+            filing_source = "correction"
         filing["header"]["displayName"] = display_name
         resolution_date_str = filing.get(filing_source, {}).get("resolutionDate", None)
         signing_date_str = filing.get(filing_source, {}).get("signingDate", None)

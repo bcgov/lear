@@ -289,6 +289,45 @@ def test_bootstrap_bc_filing_attachments(session, config, filing_type, filing_su
         assert_attachment(attachment, expected['fileName'], expected['content'], expected['order'])
 
 
+@pytest.mark.parametrize('status, expected_attachments', [
+    ('PAID', [
+        {'fileName': 'Amalgamation Application.pdf', 'content': 'pdf_content_0', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_5', 'order': '2'}
+    ]),
+    ('COMPLETED', [
+        {'fileName': 'Amalgamation Application.pdf', 'content': 'pdf_content_0', 'order': '1'},
+        {'fileName': 'Certificate of Amalgamation.pdf', 'content': 'pdf_content_1', 'order': '2'},
+        {'fileName': 'Certified Rules.pdf', 'content': 'pdf_content_2', 'order': '3'},
+        {'fileName': 'Certified Memorandum.pdf', 'content': 'pdf_content_3', 'order': '4'},
+        {'fileName': 'Certified Special Resolution.pdf', 'content': 'pdf_content_4', 'order': '5'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_5', 'order': '6'}
+    ])
+])
+def test_bootstrap_cp_amalgamation_filing_attachments(session, config, status, expected_attachments):
+    """Assert a coop amalgamation email carries the coop documents, incl. the certified special resolution."""
+    filing_type = 'amalgamationApplication'
+    identifier = 'CP1234567'
+    filing = prep_bootstrap_filing(session, filing_type, identifier, 'CP', status, LEGAL_NAME, 'regular')
+    if status == 'PAID':
+        make_future_effective(filing)
+        identifier = filing.temp_reg
+    with requests_mock.Mocker() as m:
+        mock_filing_docs(m, config, identifier, filing, {
+            f'{filing_type}': b'pdf_content_0',
+            'certificateOfAmalgamation': b'pdf_content_1',
+            'certifiedRules': b'pdf_content_2',
+            'certifiedMemorandum': b'pdf_content_3',
+            'specialResolution': b'pdf_content_4',
+        }, receipt=b'pdf_content_5')
+        output = process_filing(filing, filing_type, status)
+
+    assert output is not None
+    attachments = output['content']['attachments']
+    assert len(attachments) == len(expected_attachments)
+    for attachment, expected in zip(attachments, expected_attachments):
+        assert_attachment(attachment, expected['fileName'], expected['content'], expected['order'])
+
+
 def test_bootstrap_cp_filing_attachments(session, config):
     """IA COMPLETED COOP: IncorporationApplication + Certificate + Certified Rules + Memorandum + Receipt."""
     identifier = 'CP1234567'

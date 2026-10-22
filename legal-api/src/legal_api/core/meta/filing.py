@@ -153,6 +153,11 @@ FILINGS: Final = {
         "name": "amalgamationApplication",
         "additional": [
             {
+                "types": ["CP"],
+                "outputs": ["certificateOfAmalgamation", "certifiedRules", "certifiedMemorandum",
+                            "specialResolution"]
+            },
+            {
                 "types": ["BC", "BEN", "CC", "ULC"],
                 "outputs": ["noticeOfArticles", "certificateOfAmalgamation"]
             },
@@ -160,12 +165,24 @@ FILINGS: Final = {
         "regular": {
             "name": "regularAmalgamation",
             "title": "Amalgamation Application (Regular)",
-            "displayName": "Amalgamation Application (Regular)",
+            "displayName": {
+                "BC": "Amalgamation Application (Regular)",
+                "BEN": "Amalgamation Application (Regular)",
+                "ULC": "Amalgamation Application (Regular)",
+                "CC": "Amalgamation Application (Regular)",
+                "C": "Amalgamation Application (Regular)",
+                "CBEN": "Amalgamation Application (Regular)",
+                "CUL": "Amalgamation Application (Regular)",
+                "CCC": "Amalgamation Application (Regular)",
+                # coops only have the regular form, so the form type is not shown
+                "CP": "Amalgamation Application",
+            },
             "codes": {
                 "BEN": "AMALR",
                 "BC": "AMALR",
                 "ULC": "AMALR",
-                "CC": "AMALR"
+                "CC": "AMALR",
+                "CP": "OTAMA"
             }
         },
         "vertical": {

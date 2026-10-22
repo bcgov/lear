@@ -32,7 +32,7 @@ from business_model.models import Business, Filing
 from legal_api import create_app
 from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, CONTACT_CENTRE_STAFF_ROLE , MAXIMUS_STAFF_ROLE, \
     PUBLIC_USER, STAFF_ROLE, SBC_STAFF_ROLE, \
-    authorized, is_allowed, get_allowed, get_allowed_filings, get_allowable_actions
+    authorized, is_allowed, get_allowed, get_allowed_filings, get_allowable_actions, get_allowable_filings_dict
 from legal_api.services.permissions import PermissionService
 from legal_api.services.warnings.business.business_checks import WarningType
 from registry_schemas.example_data import (
@@ -167,6 +167,7 @@ class FilingKey(str, Enum):
     PUT_BACK_OFF = 'PUT_BACK_OFF'
     PUT_BACK_ON = 'PUT_BACK_ON'
     AMALGAMATION_REGULAR = 'AMALGAMATION_REGULAR'
+    AMALGAMATION_REGULAR_CP = 'AMALGAMATION_REGULAR_CP'
     AMALGAMATION_VERTICAL = 'AMALGAMATION_VERTICAL'
     AMALGAMATION_HORIZONTAL = 'AMALGAMATION_HORIZONTAL'
     NOTICE_OF_WITHDRAWAL = 'NOTICE_OF_WITHDRAWAL'
@@ -262,6 +263,7 @@ EXPECTED_DATA = {
     FilingKey.PUT_BACK_OFF: {'displayName': 'Correction - Put Back Off', 'feeCode': 'NOFEE', 'name': 'putBackOff'},
     FilingKey.PUT_BACK_ON: {'displayName': 'Correction - Put Back On', 'feeCode': 'NOFEE', 'name': 'putBackOn'},
     FilingKey.AMALGAMATION_REGULAR: {'name': 'amalgamationApplication', 'type': 'regular', 'displayName': 'Amalgamation Application (Regular)', 'feeCode': 'AMALR'},
+    FilingKey.AMALGAMATION_REGULAR_CP: {'name': 'amalgamationApplication', 'type': 'regular', 'displayName': 'Amalgamation Application', 'feeCode': 'OTAMA'},
     FilingKey.AMALGAMATION_VERTICAL: {'name': 'amalgamationApplication', 'type': 'vertical', 'displayName': 'Amalgamation Application Short-form (Vertical)', 'feeCode': 'AMALV'},
     FilingKey.AMALGAMATION_HORIZONTAL: {'name': 'amalgamationApplication', 'type': 'horizontal', 'displayName': 'Amalgamation Application Short-form (Horizontal)', 'feeCode': 'AMALH'},
     FilingKey.NOTICE_OF_WITHDRAWAL: {'displayName': 'Notice of Withdrawal', 'feeCode': 'NWITH', 'name': 'noticeOfWithdrawal'},
@@ -614,7 +616,7 @@ def test_authorized_invalid_roles(monkeypatch, app, jwt):
     [
         # active business
         ('staff_active_cp', Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
-         ['adminFreeze', 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'changeOfOfficers', 'correction', 'courtOrder',
+         ['adminFreeze', {'amalgamationApplication': ['regular']}, 'annualReport', 'changeOfAddress', 'changeOfDirectors', 'changeOfOfficers', 'correction', 'courtOrder',
           {'dissolution': ['voluntary', 'administrative', 'delay']}, 'incorporationApplication',
           'registrarsNotation', 'registrarsOrder', 'specialResolution']),
         ('staff_active_corps', Business.State.ACTIVE, ['BC', 'BEN', 'CC', 'ULC'], 'staff', [STAFF_ROLE],
@@ -678,7 +680,7 @@ def test_get_allowed(monkeypatch, app, jwt, test_name, state, legal_types, usern
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
-            if flag == 'enabled-specific-filings' else {}
+            if flag == 'enabled-specific-filings' else ['reviewImportedData'] if flag == 'enable-new-feature' else {}
         )
         for legal_type in legal_types:
             filing_types = get_allowed(state, legal_type, jwt)
@@ -1016,7 +1018,7 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
-            if flag == 'enabled-specific-filings' else {}
+            if flag == 'enabled-specific-filings' else ['reviewImportedData'] if flag == 'enable-new-feature' else {}
         )
         for legal_type in legal_types:
             business = create_business(legal_type, state)
@@ -1030,6 +1032,7 @@ def test_is_allowed(monkeypatch, app, session, jwt, test_name, state, filing_typ
         # active business - staff user
         ('staff_active_cp', True, Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AMALGAMATION_REGULAR_CP,
                           FilingKey.AR_CP,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
@@ -1216,7 +1219,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
-            if flag == 'enabled-specific-filings' else {}
+            if flag == 'enabled-specific-filings' else ['reviewImportedData'] if flag == 'enable-new-feature' else {}
         )
         monkeypatch.setattr(
             'legal_api.services.flags.is_on',
@@ -1260,7 +1263,8 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
     [
         # no business - staff user
         ('staff_no_business_cp', False, Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
-         expected_lookup([FilingKey.IA_CP])),
+         expected_lookup([FilingKey.AMALGAMATION_REGULAR_CP,
+                          FilingKey.IA_CP])),
         ('staff_no_business_bc', False, Business.State.ACTIVE, ['BC'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.AMALGAMATION_REGULAR,
                           FilingKey.AMALGAMATION_VERTICAL,
@@ -1372,6 +1376,7 @@ def test_get_allowed_actions(monkeypatch, app, session, jwt, requests_mock,
         # active business - staff user
         ('staff_active_cp', True, Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AMALGAMATION_REGULAR_CP,
                           FilingKey.AR_CP,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
@@ -1545,7 +1550,7 @@ def test_get_allowed_filings(monkeypatch, app, session, jwt, test_name, business
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
-            if flag == 'enabled-specific-filings' else {}
+            if flag == 'enabled-specific-filings' else ['reviewImportedData'] if flag == 'enable-new-feature' else {}
         )
         monkeypatch.setattr(
             'business_model.models.User.get_or_create_user_by_jwt',
@@ -1888,7 +1893,7 @@ def test_get_allowed_filings_blocker_not_in_good_standing(monkeypatch, app, sess
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
-            if flag == 'enabled-specific-filings' else {}
+            if flag == 'enabled-specific-filings' else ['reviewImportedData'] if flag == 'enable-new-feature' else {}
         )
         monkeypatch.setattr(
             'business_model.models.User.get_or_create_user_by_jwt',
@@ -2238,6 +2243,7 @@ def test_allowed_filings_blocker_filing_amalgamations(monkeypatch, app, session,
         # active business - staff user
         ('staff_active_cp', Business.State.ACTIVE, ['CP'], 'staff', [STAFF_ROLE],
          expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AMALGAMATION_REGULAR_CP,
                           FilingKey.AR_CP,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
@@ -2410,7 +2416,7 @@ def test_allowed_filings_warnings(monkeypatch, app, session, jwt, test_name, sta
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
-            if flag == 'enabled-specific-filings' else {}
+            if flag == 'enabled-specific-filings' else ['reviewImportedData'] if flag == 'enable-new-feature' else {}
         )
         monkeypatch.setattr(
             'business_model.models.User.get_or_create_user_by_jwt',
@@ -2429,7 +2435,8 @@ def test_allowed_filings_corps_missing_info_warnings(monkeypatch, app, session, 
     """Assert corps with MISSING_REQUIRED_BUSINESS_INFO warnings can still file reviewImportedData but not correction."""
     with jwt_request_context(app, jwt, roles=roles, username=username):
         monkeypatch.setattr('legal_api.services.flags.value',
-                            lambda flag, _user, _account_id: '' if flag == 'enabled-specific-filings' else {})
+                            lambda flag, _user, _account_id: '' if flag == 'enabled-specific-filings'
+                            else ['reviewImportedData'] if flag == 'enable-new-feature' else {})
         monkeypatch.setattr('business_model.models.User.get_or_create_user_by_jwt', lambda _: None)
         for legal_type in ['BC', 'BEN', 'CC', 'ULC', 'C', 'CBEN', 'CCC', 'CUL']:
             business = create_business(legal_type, Business.State.ACTIVE)
@@ -2449,6 +2456,7 @@ def test_allowed_filings_corps_missing_info_warnings(monkeypatch, app, session, 
          ['restoration', 'restoration', None, 'restoration'],
          ['limitedRestoration', 'limitedRestorationExtension', None, 'fullRestoration'],
          expected_lookup([FilingKey.ADMN_FRZE,
+                          FilingKey.AMALGAMATION_REGULAR_CP,
                           FilingKey.AR_CP,
                           FilingKey.COA_CP,
                           FilingKey.COD_CP,
@@ -2789,7 +2797,7 @@ def test_allowed_filings_state_filing_check(monkeypatch, app, session, jwt, test
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
-            if flag == 'enabled-specific-filings' else {}
+            if flag == 'enabled-specific-filings' else ['reviewImportedData'] if flag == 'enable-new-feature' else {}
         )
         monkeypatch.setattr(
             'business_model.models.User.get_or_create_user_by_jwt',
@@ -3033,12 +3041,12 @@ def test_allowed_filings_completed_filing_check(monkeypatch, app, session, jwt, 
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
-            if flag == 'enabled-specific-filings' else {}
+            if flag == 'enabled-specific-filings' else ['reviewImportedData'] if flag == 'enable-new-feature' else {}
         )
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
-            if flag == 'enabled-specific-filings' else {}
+            if flag == 'enabled-specific-filings' else ['reviewImportedData'] if flag == 'enable-new-feature' else {}
         )
         monkeypatch.setattr(
             'business_model.models.User.get_or_create_user_by_jwt',
@@ -3216,7 +3224,7 @@ def test_get_allowed_filings_blocker_in_dissolution(monkeypatch, app, session, j
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
-            if flag == 'enabled-specific-filings' else {}
+            if flag == 'enabled-specific-filings' else ['reviewImportedData'] if flag == 'enable-new-feature' else {}
         )
         monkeypatch.setattr(
             'business_model.models.User.get_or_create_user_by_jwt',
@@ -3419,7 +3427,7 @@ def test_allowed_filings_notice_of_withdrawal(monkeypatch, app, session, jwt, te
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
-            if flag == 'enabled-specific-filings' else {}
+            if flag == 'enabled-specific-filings' else ['reviewImportedData'] if flag == 'enable-new-feature' else {}
         )
         monkeypatch.setattr(
             'business_model.models.User.get_or_create_user_by_jwt',
@@ -3515,7 +3523,7 @@ def test_allowed_filings_specific_disabled(monkeypatch, app, session, jwt,
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: enabled_filings
-            if flag == 'enabled-specific-filings' else {}
+            if flag == 'enabled-specific-filings' else ['reviewImportedData'] if flag == 'enable-new-feature' else {}
         )
         monkeypatch.setattr(
             'business_model.models.User.get_or_create_user_by_jwt',
@@ -3528,6 +3536,32 @@ def test_allowed_filings_specific_disabled(monkeypatch, app, session, jwt,
                                         state=state)
             allowed_filing_types = get_allowed_filings(business, state, legal_type, jwt)
             assert allowed_filing_types == expected
+
+
+@pytest.mark.parametrize(
+    'enabled_features, expected',
+    [
+        (['reviewImportedData'], True),
+        ([], False),
+    ],
+)
+def test_allowed_filings_review_imported_data_feature_flag(monkeypatch, app, jwt, enabled_features, expected):
+    """Assert that Review Imported Data is exposed only when its feature flag is enabled."""
+    with jwt_request_context(app, jwt, roles=[STAFF_ROLE], username='staff'):
+        monkeypatch.setattr(
+            'legal_api.services.flags.value',
+            lambda flag, _user, _account_id: enabled_features if flag == 'enable-new-feature' else '',
+        )
+        allowable_filings = get_allowable_filings_dict()
+
+    assert ('reviewImportedData' in allowable_filings['staff'][Business.State.ACTIVE]) is expected
+    assert ('reviewImportedData' in allowable_filings['general'][Business.State.ACTIVE]) is expected
+    if not expected:
+        assert all(
+            'reviewImportedData' not in business_state_dict
+            for user_type_dict in allowable_filings.values()
+            for business_state_dict in user_type_dict.values()
+        )
 
 
 @pytest.mark.parametrize(
@@ -3658,7 +3692,7 @@ def test_get_allowed_filings_blocker_max_delays(monkeypatch, app, session, jwt, 
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
-            if flag == 'enabled-specific-filings' else {}
+            if flag == 'enabled-specific-filings' else ['reviewImportedData'] if flag == 'enable-new-feature' else {}
         )
         monkeypatch.setattr(
             'business_model.models.User.get_or_create_user_by_jwt',
@@ -3795,7 +3829,7 @@ def test_get_allowed_filings_in_liquidation(monkeypatch, app, session, jwt, test
         monkeypatch.setattr(
             'legal_api.services.flags.value',
             lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
-            if flag == 'enabled-specific-filings' else {}
+            if flag == 'enabled-specific-filings' else ['reviewImportedData'] if flag == 'enable-new-feature' else {}
         )
         monkeypatch.setattr(
             'business_model.models.User.get_or_create_user_by_jwt',

@@ -139,7 +139,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'BEN': 'AMALR',
                     'BC': 'AMALR',
                     'ULC': 'AMALR',
-                    'CC': 'AMALR'
+                    'CC': 'AMALR',
+                    'CP': 'OTAMA'
                 },
             },
             'vertical': {

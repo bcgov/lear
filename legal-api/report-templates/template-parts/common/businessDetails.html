@@ -13,6 +13,8 @@
                  <div class="bold pt-2">Registration Date and Time:</div>
                 {% elif business.legalType in ['C', 'CCC', 'CUL', 'CBEN'] %}
                  <div class="bold pt-2">Recognition Date and Time:</div>
+                {% elif business.legalType == 'CP' and business.amalgamatedEntity %}
+                 <div class="bold pt-2">Recognition Date and Time:</div>
                 {% else %}
                  <div class="bold pt-2">Incorporation Date and Time:</div>
                 {% endif %}
