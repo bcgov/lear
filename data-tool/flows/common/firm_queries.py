@@ -175,14 +175,14 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             e.corp_num             as e_corp_num,
             e.event_type_cd        as e_event_type_cd,
             to_char(e.event_timerstamp, 'YYYY-MM-DD') as e_event_dt_str,
-            to_char(e.event_timerstamp, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as e_event_dts_pacific,
+            to_char(e.event_timerstamp, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Vancouver' as e_event_dts_pacific,
             to_char(e.trigger_dts, 'YYYY-MM-DD') as e_trigger_dt_str,
-            to_char(e.trigger_dts, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as e_trigger_dts_pacific,
+            to_char(e.trigger_dts, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Vancouver' as e_trigger_dts_pacific,
             -- filing
             f.event_id             as f_event_id,
             f.filing_type_cd       as f_filing_type_cd,
             to_char(f.effective_dt, 'YYYY-MM-DD') as f_effective_dt_str,
-            to_char(f.effective_dt, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as f_effective_dts_pacific,
+            to_char(f.effective_dt, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Vancouver' as f_effective_dts_pacific,
             f.withdrawn_event_id   as f_withdrawn_event_id,
             case
                 when e.event_type_cd = 'CONVFMRCP' and f.ods_type_cd is null THEN 'P'
@@ -198,7 +198,7 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             c.corp_num             as c_corp_num,
             c.corp_frozen_type_cd  as c_corp_frozen_type_cd,
             c.corp_type_cd         as c_corp_type_cd,
-            to_char(c.recognition_dts, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as c_recognition_dts_pacific,
+            to_char(c.recognition_dts, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Vancouver' as c_recognition_dts_pacific,
             c.bn_9                 as c_bn_9,
             c.bn_15                as c_bn_15,
             case 
@@ -223,7 +223,7 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             bd.start_event_id      as bd_start_event_id,
             bd.end_event_id        as bd_end_event_id,
             to_char(bd.business_start_date, 'YYYY-MM-DD') as bd_business_start_date_dt_str,
-            to_char(bd.business_start_date, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as bd_business_start_date_dts_pacific,
+            to_char(bd.business_start_date, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Vancouver' as bd_business_start_date_dts_pacific,
             bd.naics_code          as bd_naics_code,
             bd.description         as bd_description,
             -- ledger_text
@@ -236,7 +236,7 @@ def get_firm_event_filing_data_query(corp_num: str, event_id: int):
             u.first_name           as u_first_name,
             u.middle_name          as u_middle_name,
             u.email_addr           as u_email_addr,
-            to_char(u.event_timestmp, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Los_Angeles' as u_event_timestmp_dts_pacific            
+            to_char(u.event_timestmp, 'YYYY-MM-DD HH24:MI:SS')::timestamp AT time zone 'America/Vancouver' as u_event_timestmp_dts_pacific            
         from event e
                  left outer join filing f on e.event_id = f.event_id
                  left outer join corporation c on c.corp_num = e.corp_num
