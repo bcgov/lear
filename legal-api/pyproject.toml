@@ -54,6 +54,7 @@ google-cloud-datastore = "^2.20.2"
 hypothesis = "^6.131.0"
 pytest-mock = "^3.14.0"
 requests-mock = "^1.12.1"
+pytest-xdist = "^3.8.0"
 
 
 [build-system]
@@ -168,7 +169,10 @@ minversion = "2.0"
 testpaths = [
    "tests",
 ]
-addopts = "--cov=src/legal_api"
+# -n 4 / --dist loadfile: run test files across 4 pytest-xdist workers (each worker starts its own
+# testcontainers Postgres, so files never share a database). CI runners have 4 vCPUs. For a quick
+# local run of a single file or test, disable workers with: pytest -n 0 <path>
+addopts = "--cov=src/legal_api -n 4 --dist loadfile"
 python_files = [
    "test*.py"
 ]
@@ -186,7 +190,11 @@ markers = [
 ]
 
 [tool.coverage.run]
-branch = true
+# Line coverage only, measured with sys.monitoring (PEP 669): on Python 3.13 branch coverage forces
+# coverage.py back onto sys.settrace, which cost ~25% of total test wall-clock. The CI gate reads
+# line-rate; branch-rate was reported only.
+branch = false
+core = "sysmon"
 source = [
    "src/legal_api",
 ]
