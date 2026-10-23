@@ -10,7 +10,7 @@ requires-python = ">=3.13,<3.14"
 dependencies = [
     "flask (>=3.1.0,<4.0.0)",
     "python-dotenv (>=1.1.0,<2.0.0)",
-    "pytz (>=2025.1,<2026.0)",
+    "pytz (>=2026.2,<2027.0)",
     "python-dateutil>=2.9.0",
     "structured-logging @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/structured-logging",
     "business-registry-account @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-account",

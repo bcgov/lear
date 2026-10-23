@@ -42,7 +42,7 @@ def convert_to_json_datetime(thedate: datetime.datetime) -> str:
                                     thedate.minute,
                                     thedate.second)
         # treat date as naive date and add timezone by using localize function
-        thedate = timezone('US/Pacific').localize(thedate)
+        thedate = timezone('America/Vancouver').localize(thedate)
         # convert to utc time
         thedate = thedate.astimezone(timezone('UTC'))
         # return as string
@@ -61,7 +61,7 @@ def convert_to_pacific_time(thedate: str) -> str:
         except Exception:  # pylint: disable=broad-except;
             datetime_obj = datetime.datetime.strptime(thedate, '%Y-%m-%dT%H:%M:%S+00:00')
         datetime_utc = datetime_obj.replace(tzinfo=timezone('UTC'))
-        datetime_pst = datetime_utc.astimezone(timezone('US/Pacific'))
+        datetime_pst = datetime_utc.astimezone(timezone('America/Vancouver'))
         return datetime_pst.strftime('%Y-%m-%dT%H:%M:%S')
     except Exception as err:  # pylint: disable=broad-except; want to return None in all cases where convert failed
         current_app.logger.error(f'Tried to convert {thedate}, but failed: {err}')
