@@ -1,6 +1,6 @@
 [project]
 name = "business-registry-account"
-version = "0.1.1"
+version = "0.1.2"
 description = ""
 authors = [{name = "BC Business Registry"}]
 readme = "README.md"
@@ -9,7 +9,7 @@ dependencies = [
   "datedelta (>=1.4,<2.0)",
   "flask (>=3.1.0,<4.0.0)",
   "python-dotenv (>=1.1.0,<2.0.0)",
-  "pytz (>=2025.1,<2026.0)",
+  "pytz (>=2026.2,<2027.0)",
   "requests (>=2.32.3,<3.0.0)",
   # BCReg deps
   "flask-jwt-oidc (>=0.8.0,<1.0.0)"
