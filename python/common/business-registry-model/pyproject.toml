@@ -1,6 +1,6 @@
 [project]
 name = "business-model"
-version = "3.4.22"
+version = "3.4.23"
 description = ""
 authors = [
     {name = "thor",email = "1042854+thorwolpert@users.noreply.github.com"}
@@ -15,7 +15,7 @@ dependencies = [
     "pydantic (>=2.10.6,<3.0.0)",
     "pycountry (>=24.6.1,<25.0.0)",
     "datedelta (>=1.4,<2.0)",
-    "pytz (>=2025.1,<2026.0)",
+    "pytz (>=2026.2,<2027.0)",
     "flask-babel (>=4.0.0,<5.0.0)",
     "croniter (>=6.0.0,<7.0.0)",
     "flask-sqlalchemy (>=3.1.1,<4.0.0)",
