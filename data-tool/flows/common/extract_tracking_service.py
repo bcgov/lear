@@ -223,8 +223,8 @@ class ExtractTrackingService:
             with conn.begin():
                 if self.statement_timeout_ms:
                     conn.execute(
-                        text("SET LOCAL statement_timeout = :ms"),
-                        {'ms': int(self.statement_timeout_ms)}
+                        text("SELECT set_config('statement_timeout', :ms, true)"),
+                        {'ms': str(int(self.statement_timeout_ms))}
                     )
 
                 params = {
@@ -345,17 +345,17 @@ class ExtractTrackingService:
         set_clauses = [
             'processed_status = :status',
             'last_modified = NOW()',
-            'last_error = CASE WHEN :error IS NOT NULL THEN :error ELSE last_error END',
         ]
         params = {
             'status': status,
-            'error': error,
             'corp_num': corp_num,
             'flow_run_id': flow_run_id,
             'environment': self.data_load_env,
             'flow_name': self.flow_name
         }
-
+        if error is not None:
+                    set_clauses.append('last_error = :error')
+                    params['error'] = error
         if self.table_name == 'colin_tracking':
             set_clauses.append('frozen = :frozen')
             set_clauses.append('in_early_adopter = :in_early_adopter')

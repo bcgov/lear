@@ -1,7 +1,7 @@
 import contextlib
 import math
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from pathlib import Path
 
@@ -258,7 +258,7 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
     # load placeholder filings
     for i, data in enumerate(filings_data):
         f = data['filings']
-        transaction_id = load_data(conn, 'transaction', {'issued_at': datetime.utcnow().isoformat()}, versioned=False)
+        transaction_id = load_data(conn, 'transaction', {'issued_at': datetime.now(timezone.utc).isoformat()}, versioned=False)
         username = f['submitter_id']
         user_id = users_mapper.get(username)
         f['submitter_id'] = user_id
@@ -313,7 +313,7 @@ def load_placeholder_filings(conn: Connection, tombstone_data: dict, business_id
 
     # load epoch filing
     epoch_filing_data = build_epoch_filing(business_id)
-    transaction_id = load_data(conn, 'transaction', {'issued_at': datetime.utcnow().isoformat()}, versioned=False)
+    transaction_id = load_data(conn, 'transaction', {'issued_at': datetime.now(timezone.utc).isoformat()}, versioned=False)
     epoch_filing_data['transaction_id'] = transaction_id
     load_data(conn, 'filings', epoch_filing_data, versioned=False)
     
@@ -448,11 +448,11 @@ def update_auth(conn: Connection, config, corp_num: str, tombstone_data: dict, a
 @task(name='1-Migrate-Corp-Users-Task', cache_policy=NO_CACHE)
 def migrate_corp_users(colin_engine: Engine, lear_engine: Engine, corp_nums: list) -> dict:
     try:
-        print(f'👷 Start collecting and migrating users for {len(corp_nums)} corps: {", ".join(corp_nums[:5])}...')
+        print(f'👷 Start collecting and migrating users for {len(corp_nums)} corps: {", ".join(map(str, corp_nums[:5]))}...')
         raw_data = get_corp_users(colin_engine, corp_nums)
         clean_data = format_users_data(raw_data)
         users_mapper = load_corp_users(lear_engine, clean_data)
-        print(f'👷 Complete collecting and migrating users for {len(corp_nums)} corps: {", ".join(corp_nums[:5])}...')
+        print(f'👷 Complete collecting and migrating users for {len(corp_nums)} corps: {", ".join(map(str, corp_nums[:5]))}...')
     except Exception as e:
         print(f'❌ Error collecting and migrating users: {repr(e)}')
         raise e
@@ -596,7 +596,7 @@ def tombstone_flow():
                 print("No more corps available to claim")
                 break
 
-            print(f'👷 Start processing {len(corp_nums)} corps: {", ".join(corp_nums[:5])}...')
+            print(f'👷 Start processing {len(corp_nums)} corps: {", ".join(map(str, corp_nums[:5]))}...')
 
             try:
                 users_mapper = migrate_corp_users(colin_engine, lear_engine, corp_nums)
