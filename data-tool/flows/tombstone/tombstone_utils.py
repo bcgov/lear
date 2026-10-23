@@ -591,9 +591,13 @@ def get_expiry_date(effective_date_str: str) -> datetime:
     effective_date = effective_date.astimezone(pst)
     _date = effective_date.replace(hour=23, minute=59, second=0, microsecond=0)
     _date += datedelta.datedelta(months=6)
-    # Re-localize after month arithmetic so the UTC offset reflects the new date
-    # (handles DST transitions in historical data, and future BC permanent UTC-7)
-    _date = pst.normalize(_date)
+
+    # Setting legislation timezone again after adding 6 months to recalculate the UTC offset and DST info
+    _date = _date.astimezone(pst)
+
+    # Adjust day light savings. Handle DST +-1 hour changes
+    dst_offset_diff = effective_date.dst() - _date.dst()
+    _date += dst_offset_diff
 
     return _date.astimezone(pytz.timezone('GMT'))
 

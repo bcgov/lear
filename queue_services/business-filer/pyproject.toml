@@ -24,6 +24,7 @@ dependencies = [
     "gunicorn (>=23.0.0,<24.0.0)",
     "business-registry-account @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-account",
     "business-registry-common @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-common",
+    "pytz (>=2026.2)",
 ]
 
 [tool.poetry]
