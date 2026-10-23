@@ -223,23 +223,23 @@ INSPECTION_FIELDNAMES = [
 
 _ENTITY_READ_SQL = """
     SELECT id, business_identifier, name AS business_name
-    FROM entities
+    FROM auth.entities
     WHERE business_identifier IN :business_identifiers
     ORDER BY business_identifier, id
 """.strip()
 
 _CONTACT_READ_SQL = """
     SELECT cl.entity_id, c.id AS contact_id, c.email
-    FROM contact_links cl
-    JOIN contacts c ON c.id = cl.contact_id
+    FROM auth.contact_links cl
+    JOIN auth.contacts c ON c.id = cl.contact_id
     WHERE cl.entity_id IN :entity_ids
     ORDER BY cl.entity_id, c.id
 """.strip()
 
 _AFFILIATION_READ_SQL = """
     SELECT a.entity_id, a.org_id, o.name AS org_name
-    FROM affiliations a
-    LEFT JOIN orgs o ON o.id = a.org_id
+    FROM auth.affiliations a
+    LEFT JOIN auth.orgs o ON o.id = a.org_id
     WHERE a.entity_id IN :entity_ids
     ORDER BY a.entity_id, a.org_id
 """.strip()
@@ -247,7 +247,7 @@ _AFFILIATION_READ_SQL = """
 _INVITE_READ_SQL = """
     SELECT id, entity_id, type, invitation_status_code,
            sent_date, accepted_date, is_deleted, affiliation_id
-    FROM affiliation_invitations
+    FROM auth.affiliation_invitations
     WHERE entity_id IN :entity_ids
     ORDER BY entity_id, id
 """.strip()
@@ -1661,6 +1661,7 @@ def read_auth_states_for_candidates(
     invite_diagnostics_by_entity_id: dict[str, _AuthInviteAccumulator] = defaultdict(_AuthInviteAccumulator)
 
     with auth_engine.connect() as conn:
+        auth_statement = build_auth_entity_read_statement(candidates)
         entity_rows = _execute_fetchall(conn, build_auth_entity_read_statement(candidates))
         for row in entity_rows:
             entity_id = _row_value(row, 0, "id", "entity_id")
