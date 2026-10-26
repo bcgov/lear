@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "involuntary_dissolutions"
-version = "0.1.2"
+version = "0.1.3"
 description = ""
 authors = ["BrandonSharratt <brandon@daxiom.com>"]
 readme = "README.md"
