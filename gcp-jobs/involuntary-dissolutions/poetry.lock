@@ -320,7 +320,7 @@ sql-versioning = {git = "https://github.com/bcgov/lear.git", rev = "main", subdi
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/lear.git"
-reference = "HEAD"
+reference = "main"
 resolved_reference = "88124ee47ab75adea2d3bb365f3d22488cdddcb1"
 subdirectory = "python/common/business-registry-model"
 
@@ -345,7 +345,7 @@ requests = ">=2.32.3,<3.0.0"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/lear.git"
-reference = "HEAD"
+reference = "main"
 resolved_reference = "88124ee47ab75adea2d3bb365f3d22488cdddcb1"
 subdirectory = "python/common/business-registry-account"
 
@@ -368,34 +368,32 @@ pytz = ">=2026.2,<2027.0"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/lear.git"
-reference = "HEAD"
+reference = "main"
 resolved_reference = "88124ee47ab75adea2d3bb365f3d22488cdddcb1"
 subdirectory = "python/common/business-registry-common"
 
 [[package]]
 name = "business-registry-dissolution"
-version = "0.1.0"
+version = "0.1.3"
 description = ""
 optional = false
-python-versions = "^3.13"
+python-versions = ">=3.13,<3.14"
 groups = ["main"]
 files = []
 develop = false
 
 [package.dependencies]
-business-model = {git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-model"}
-business-registry-account = {git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-account"}
-business-registry-common = {git = "https://github.com/bcgov/lear.git", subdirectory = "python/common/business-registry-common"}
-datedelta = "^1.4"
-flask = "^3.1.0"
-flask-migrate = ">=4.1.0,<5.0.0"
-sqlalchemy = "^2.0.39"
+business-model = {git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "python/common/business-registry-model"}
+business-registry-account = {git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "python/common/business-registry-account"}
+business-registry-common = {git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "python/common/business-registry-common"}
+flask = ">=3.1.0,<4.0.0"
+python-dotenv = ">=1.1.0,<2.0.0"
 
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/lear.git"
-reference = "HEAD"
-resolved_reference = "f888b656fa266eb108880a467bf6728dc6efc171"
+reference = "main"
+resolved_reference = "88124ee47ab75adea2d3bb365f3d22488cdddcb1"
 subdirectory = "python/common/business-registry-dissolution"
 
 [[package]]
@@ -3453,4 +3451,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "~3.13.0"
-content-hash = "e2c6b357e1320c1972c941c9c3503a907b05ab8202d2cd3ced72c273122960f0"
+content-hash = "7ae0e996bda46d87dd8c270cece577febfe54b8deb77516319b2110c39454827"
