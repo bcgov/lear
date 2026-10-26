@@ -141,6 +141,9 @@ class _Config():  # pylint: disable=too-few-public-methods
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = os.getenv('SQLALCHEMY_TRACK_MODIFICATIONS', False)
 
+    CLOUDSQL_INSTANCE_CONNECTION_NAME = os.getenv('CLOUDSQL_INSTANCE_CONNECTION_NAME', '')
+    DATABASE_IP_TYPE = os.getenv('DATABASE_IP_TYPE', '')
+
     # POSTGRESQL LEAR DB
     DB_USER = os.getenv('DATABASE_USERNAME', '')
     DB_PASSWORD = os.getenv('DATABASE_PASSWORD', '')

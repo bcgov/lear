@@ -54,11 +54,20 @@ from tests.unit import create_business, create_filing
 COD = copy.deepcopy(CHANGE_OF_DIRECTORS)
 COD['directors'][0]['actions'] = ['appointed']
 COD['directors'][1]['actions'] = ['appointed']
+COD_CEASED = copy.deepcopy(CHANGE_OF_DIRECTORS)
+COD_CEASED['directors'][0]['actions'] = ['appointed']
+COD_CEASED['directors'][1]['actions'] = ['appointed']
+COD_CEASED['directors'][0]['cessationDate'] = '2019-01-01'
 
 CORRECTION_COD = copy.deepcopy(CORRECTION_COL)
 CORRECTION_COD['filing']['correction']['correctedFilingType'] = 'changeOfDirectors'
 CORRECTION_COD['filing']['correction']['relationships'][0]['roles'][0]['roleType'] = 'Director'
-CORRECTION_COD['filing']['correction']['relationships'][0]['roles'][0]['appointmentDate'] = '2026-07-30'
+CORRECTION_COD['filing']['correction']['relationships'][0]['roles'][0]['appointmentDate'] = '2018-01-01'
+CORRECTION_COD_CEASED = copy.deepcopy(CORRECTION_COL)
+CORRECTION_COD_CEASED['filing']['correction']['correctedFilingType'] = 'changeOfDirectors'
+CORRECTION_COD_CEASED['filing']['correction']['relationships'][0]['roles'][0]['roleType'] = 'Director'
+CORRECTION_COD_CEASED['filing']['correction']['relationships'][0]['roles'][0]['appointmentDate'] = '2018-01-01'
+CORRECTION_COD_CEASED['filing']['correction']['relationships'][0]['roles'][0]['cessationDate'] = '2019-01-31'
 
 
 def _assert_common_data(business: Business, filing: Filing):
@@ -104,6 +113,7 @@ def _get_filing(filing_type: str, data: dict, identifier = 'BC1234567', needs_te
     ('changeOfDirectors', COD, CORRECTION_COD, False),
     ('changeOfLiquidators', CHANGE_OF_LIQUIDATORS, CORRECTION_COL, True),
     ('changeOfReceivers', CHANGE_OF_RECEIVERS, CORRECTION_COR, True),
+    ('changeOfDirectors', COD_CEASED, CORRECTION_COD_CEASED, False),
 ])
 def test_process_correction_filing_with_relationships(app, session, mocker, filing_name, original_data, correction_data, expected_lear_only):
     """Assert that correction filings can be applied to the model correctly."""
@@ -156,5 +166,15 @@ def test_process_correction_filing_with_relationships(app, session, mocker, fili
             assert role.party.first_name == expected_given_name.upper()
             assert role.party.mailing_address.street == expected_mailing_street
             assert role.party.delivery_address.street == expected_delivery_street
-            if filing_name == 'changeOfDirectors':
+            if filing_name == 'changeOfDirectors' and correction_data['filing']['correction']['relationships'][0]['roles'][0].get('appointmentDate'):
                 assert role.appointment_date.date().isoformat() == correction_data['filing']['correction']['relationships'][0]['roles'][0]['appointmentDate']
+            if filing_name == 'changeOfDirectors' and correction_data['filing']['correction']['relationships'][0]['roles'][0].get('cessationDate'):
+                assert role.cessation_date
+                assert role.cessation_date.date().isoformat() == correction_data['filing']['correction']['relationships'][0]['roles'][0]['cessationDate']
+
+    final_filing = Filing.find_by_id(correction_filing_rec.id)
+    meta_data = final_filing.meta_data.get('correction', {})
+    if filing_name == "changeOfDirectors":
+        assert meta_data.get("hasNoa")
+    else:
+        assert "hasNoa" in meta_data and not meta_data.get("hasNoa")

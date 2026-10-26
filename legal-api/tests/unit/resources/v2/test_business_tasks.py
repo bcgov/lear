@@ -26,10 +26,11 @@ import pytest
 from freezegun import freeze_time
 
 from business_model.models import Business
+from legal_api.services import flags
 from legal_api.services.authz import STAFF_ROLE
 from registry_schemas.example_data import ANNUAL_REPORT, FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
 from tests import integration_payment
-from tests.unit.models import factory_business, factory_business_mailing_address, factory_completed_filing, factory_filing, factory_pending_filing
+from tests.unit.models import factory_business, factory_business_mailing_address, factory_business_office, factory_completed_filing, factory_filing, factory_pending_filing
 from tests.unit.services.utils import create_header
 from tests.unit.services.warnings import create_business
 
@@ -100,12 +101,14 @@ def test_get_tasks_no_filings(session, client, jwt):
 def test_get_tasks_sentinel_founding_date_skips_ar(session, client, jwt):
     """Assert COLIN year-1 sentinel founding date does not generate thousands of AR todos."""
     identifier = 'BC1234567'
-    factory_business(
+    business = factory_business(
         identifier,
         founding_date=datetime(1, 1, 1, 8, 0, 0, tzinfo=UTC),
         entity_type=Business.LegalTypes.COMP.value,
         state=Business.State.ACTIVE,
     )
+    factory_business_office(business, 'registeredOffice')
+    factory_business_office(business, 'recordsOffice')
 
     rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
     assert rv.status_code == HTTPStatus.OK
@@ -164,7 +167,9 @@ def test_get_tasks_next_year(session, client, jwt):
 def test_bcorps_get_tasks_no_filings(session, client, jwt):
     """Assert that to-do for the current year is returned when there are no filings."""
     identifier = 'CP7654321'
-    factory_business(identifier, datetime.now(), None, Business.LegalTypes.BCOMP.value)
+    business = factory_business(identifier, datetime.now(), None, Business.LegalTypes.BCOMP.value)
+    factory_business_office(business, 'registeredOffice')
+    factory_business_office(business, 'recordsOffice')
 
     rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
 
@@ -412,6 +417,8 @@ def test_construct_task_list_ta(app, session, client, jwt, test_name, identifier
 
     with patch('legal_api.services.warnings.business.business_checks.business.involuntary_dissolution_check', return_value=[]):
         business = factory_business(identifier, founding_date, last_ar_date, legal_type)
+        factory_business_office(business, 'registeredOffice')
+        factory_business_office(business, 'recordsOffice')
 
         if restored_date:
             filing = {'filing': {'header': {'name': 'restoration', 'date': restored_date.isoformat(), 'certifiedBy': 'test'}, 'restoration': {'type': 'fullRestoration'}}}
@@ -584,6 +591,72 @@ def test_conversion_filing_task(session, client, jwt, test_name, legal_type, ide
                                and x['task']['todo']['header']['status'] == 'NEW'
                                for x in rv_json['tasks'])
         assert not conversion_to_do
+
+@pytest.mark.parametrize(
+    'test_name, legal_type, identifier, has_missing_business_info, has_draft, has_other_draft, admin_freeze, '
+    'todo_expected, enabled_expected', [
+        ('TODO_MISSING_DATA', 'BC', 'BC7654321', True, False, False, False, True, True),
+        ('TODO_MISSING_DATA', 'BEN', 'BC7654322', True, False, False, False, True, True),
+        ('TODO_MISSING_DATA', 'ULC', 'BC7654323', True, False, False, False, True, True),
+        ('TODO_MISSING_DATA', 'CC', 'BC7654324', True, False, False, False, True, True),
+        ('TODO_MISSING_DATA', 'C', 'C7654325', True, False, False, False, True, True),
+        ('TODO_DISABLED_OTHER_DRAFT', 'BC', 'BC7654328', True, False, True, False, True, False),
+        ('TODO_DISABLED_ADMIN_FREEZE', 'BC', 'BC7654329', True, False, False, True, True, False),
+        ('NO_TODO_DRAFT_EXISTS', 'BC', 'BC7654326', True, True, False, False, False, None),
+        ('NO_TODO_NO_MISSING_DATA', 'BC', 'BC7654327', False, False, False, False, False, None),
+        ('NO_TODO_NON_CORP', 'CP', 'CP7654321', True, False, False, False, False, None),
+        ('NO_TODO_NON_CORP', 'SP', 'FM0000001', True, False, False, False, False, None),
+    ])
+def test_review_imported_data_task(session, client, jwt, test_name, legal_type, identifier, has_missing_business_info,
+                                   has_draft, has_other_draft, admin_freeze, todo_expected, enabled_expected):
+    """Assert the reviewImportedData todo shows up only for corps with missing business info and no draft.
+
+    The todo is disabled when the business has a default blocker (pending filing, admin freeze) since the API
+    would reject the filing.
+    """
+    business = factory_business(entity_type=legal_type, identifier=identifier, admin_freeze=admin_freeze)
+    if not has_missing_business_info:
+        factory_business_office(business, 'registeredOffice')
+        factory_business_office(business, 'recordsOffice')
+    if has_draft:
+        factory_filing(business, {'filing': {'header': {'name': 'reviewImportedData'}}},
+                       filing_type='reviewImportedData')
+    if has_other_draft:
+        factory_filing(business, {'filing': {'header': {'name': 'changeOfAddress'}}}, filing_type='changeOfAddress')
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    todos = [x for x in rv.json['tasks']
+             if x['task'].get('todo', {}).get('header', {}).get('name') == 'reviewImportedData']
+
+    if todo_expected:
+        assert len(todos) == 1
+        assert todos[0]['task']['todo']['header']['status'] == 'NEW'
+        assert todos[0]['enabled'] is enabled_expected
+        assert todos[0]['order'] == 1
+        assert any(x['warningType'] == 'MISSING_REQUIRED_BUSINESS_INFO'
+                   for x in todos[0]['task']['todo']['business']['warnings'])
+    else:
+        assert not todos
+    assert not any(x['task'].get('todo', {}).get('header', {}).get('name') == 'conversion'
+                   for x in rv.json['tasks'] if legal_type != 'SP')
+
+
+def test_review_imported_data_task_feature_flag_off(session, client, jwt, monkeypatch):
+    """Assert no reviewImportedData todo (and no missing info warnings) when the filing is not in enable-new-feature."""
+    identifier = 'BC7654330'
+    factory_business(entity_type='BC', identifier=identifier)
+    flag_value = flags.value
+    monkeypatch.setattr('legal_api.services.flags.value',
+                        lambda flag, *args, **kwargs: [] if flag == 'enable-new-feature' else flag_value(flag, *args, **kwargs))
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert not any(x['task'].get('todo', {}).get('header', {}).get('name') == 'reviewImportedData'
+                   for x in rv.json['tasks'])
+
 
 @pytest.mark.parametrize('test_name, business_restored, transition_completed, transition_task_expected', [
     ('Transition application needed but not completed', True, False, True),

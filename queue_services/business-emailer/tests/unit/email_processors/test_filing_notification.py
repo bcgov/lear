@@ -30,7 +30,7 @@ from registry_schemas.example_data import (
     INCORPORATION,
 )
 
-from tests.unit import (CONTACT_POINT, LEGAL_NAME, PARTY_EMAIL_1, PARTY_EMAIL_2,
+from tests.unit import (COMP_PARTY_EMAIL, CONTACT_POINT, LEGAL_NAME, PARTY_EMAIL_1, PARTY_EMAIL_2,
                         create_business, create_future_effective_filing,
                         prep_bootstrap_filing, prep_change_of_registration_filing, prep_correction_filing,
                         prep_incorp_filing, prep_maintenance_filing, prep_notice_of_withdraw_filing,
@@ -166,6 +166,53 @@ def test_bootstrap_notification_subject(app, session, mock_pdfs, filing_type, st
     assert mock_pdfs.call_args[0][2] == filing
 
 
+@pytest.mark.parametrize('filing_type, status, expects_comp_party', [
+    # amalgamation: completing party is shown in Document Delivery so gets every output (#35050)
+    ('amalgamationApplication', 'PAID', True),
+    ('amalgamationApplication', 'COMPLETED', True),
+    ('continuationIn', 'PAID', True),
+    ('continuationIn', 'COMPLETED', False),
+    ('incorporationApplication', 'PAID', False),
+    ('incorporationApplication', 'COMPLETED', False),
+])
+def test_bootstrap_notification_recipients(app, session, mock_pdfs, filing_type, status, expects_comp_party):
+    """Assert that bootstrap filings send to the contact point and (when applicable) the completing party."""
+    filing = prep_bootstrap_filing(session, filing_type, 'BC1234567', 'BC', status, LEGAL_NAME)
+    if status == 'PAID':
+        make_future_effective(filing)
+
+    email = process_filing(filing, filing_type, status)
+
+    assert CONTACT_POINT in email['recipients']
+    assert (COMP_PARTY_EMAIL in email['recipients']) == expects_comp_party
+
+
+@pytest.mark.parametrize('status, submitter_roles, expects_optional_email', [
+    # staff amalgamation: Document Delivery client email gets every output (#35050)
+    ('PAID', 'staff', True),
+    ('COMPLETED', 'staff', True),
+    ('COMPLETED', 'public_user', False),
+    ('COMPLETED', None, False),
+])
+def test_amalgamation_staff_document_optional_email(app, session, mock_pdfs, status, submitter_roles,
+                                                    expects_optional_email):
+    """Assert that a staff-entered documentOptionalEmail is a recipient for amalgamation outputs."""
+    filing = prep_bootstrap_filing(session, 'amalgamationApplication', 'BC1234567', 'BC', status, LEGAL_NAME)
+    if status == 'PAID':
+        make_future_effective(filing)
+    filing_json = copy.deepcopy(filing.filing_json)
+    filing_json['filing']['header']['documentOptionalEmail'] = 'optional@email.com'
+    filing._filing_json = filing_json  # bypass the paid-filing lock for test setup
+    filing.submitter_roles = submitter_roles
+    filing.save()
+
+    email = process_filing(filing, 'amalgamationApplication', status)
+
+    assert CONTACT_POINT in email['recipients']
+    assert COMP_PARTY_EMAIL in email['recipients']
+    assert ('optional@email.com' in email['recipients']) == expects_optional_email
+
+
 @pytest.mark.parametrize('filing_type, filing_sub_type, status, expected_attachments', [
     ('amalgamationApplication', 'regular', 'PAID', [
         {'fileName': 'Amalgamation Application (Regular).pdf', 'content': 'pdf_content_0', 'order': '1'},
@@ -233,6 +280,45 @@ def test_bootstrap_bc_filing_attachments(session, config, filing_type, filing_su
             'certificateOfContinuation': b'pdf_content_2',
             'certificateOfIncorporation': b'pdf_content_2',
         }, receipt=b'pdf_content_3')
+        output = process_filing(filing, filing_type, status)
+
+    assert output is not None
+    attachments = output['content']['attachments']
+    assert len(attachments) == len(expected_attachments)
+    for attachment, expected in zip(attachments, expected_attachments):
+        assert_attachment(attachment, expected['fileName'], expected['content'], expected['order'])
+
+
+@pytest.mark.parametrize('status, expected_attachments', [
+    ('PAID', [
+        {'fileName': 'Amalgamation Application.pdf', 'content': 'pdf_content_0', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_5', 'order': '2'}
+    ]),
+    ('COMPLETED', [
+        {'fileName': 'Amalgamation Application.pdf', 'content': 'pdf_content_0', 'order': '1'},
+        {'fileName': 'Certificate of Amalgamation.pdf', 'content': 'pdf_content_1', 'order': '2'},
+        {'fileName': 'Certified Rules.pdf', 'content': 'pdf_content_2', 'order': '3'},
+        {'fileName': 'Certified Memorandum.pdf', 'content': 'pdf_content_3', 'order': '4'},
+        {'fileName': 'Certified Special Resolution.pdf', 'content': 'pdf_content_4', 'order': '5'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_5', 'order': '6'}
+    ])
+])
+def test_bootstrap_cp_amalgamation_filing_attachments(session, config, status, expected_attachments):
+    """Assert a coop amalgamation email carries the coop documents, incl. the certified special resolution."""
+    filing_type = 'amalgamationApplication'
+    identifier = 'CP1234567'
+    filing = prep_bootstrap_filing(session, filing_type, identifier, 'CP', status, LEGAL_NAME, 'regular')
+    if status == 'PAID':
+        make_future_effective(filing)
+        identifier = filing.temp_reg
+    with requests_mock.Mocker() as m:
+        mock_filing_docs(m, config, identifier, filing, {
+            f'{filing_type}': b'pdf_content_0',
+            'certificateOfAmalgamation': b'pdf_content_1',
+            'certifiedRules': b'pdf_content_2',
+            'certifiedMemorandum': b'pdf_content_3',
+            'specialResolution': b'pdf_content_4',
+        }, receipt=b'pdf_content_5')
         output = process_filing(filing, filing_type, status)
 
     assert output is not None
@@ -1099,45 +1185,57 @@ def test_correction_filing_via_filing_notification(app, session, mock_pdfs,
         assert PARTY_EMAIL_1 in email['recipients']
 
 
-@pytest.mark.parametrize('orig_filing_type, legal_type, identifier, has_name_change, has_rule_change, expected_attachments', [
+@pytest.mark.parametrize('orig_filing_type, legal_type, identifier, has_name_change, has_rule_change, expected_attachments, has_noa', [
     ('incorporationApplication', 'BC', 'BC1234567', False, False, [
         {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Notice of Articles.pdf', 'content': 'pdf_content_noa', 'order': '2'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
-    ]),
+    ],
+    True),
+    ('incorporationApplication', 'BC', 'BC1234568', False, False, [
+        {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
+    ],
+    False),
     ('registration', 'SP', 'FM1234567', False, False, [
         {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Corrected Registration Statement.pdf', 'content': 'pdf_content_crs', 'order': '2'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
-    ]),
+    ],
+    False),
     ('registration', 'GP', 'FM1234567', False, False, [
         {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Corrected Registration Statement.pdf', 'content': 'pdf_content_crs', 'order': '2'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
-    ]),
+    ],
+    False),
     ('specialResolution', 'CP', 'CP1234567', False, False, [
         {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
-    ]),
+    ],
+    False),
     ('specialResolution', 'CP', 'CP1234567', True, False, [
         {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Certificate of Name Correction.pdf', 'content': 'pdf_content_con', 'order': '2'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
-    ]),
+    ],
+    False),
     ('specialResolution', 'CP', 'CP1234567', False, True, [
         {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Certified Rules.pdf', 'content': 'pdf_content_cr', 'order': '2'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '3'},
-    ]),
+    ],
+    False),
     ('specialResolution', 'CP', 'CP1234567', True, True, [
         {'fileName': 'Register Correction Application.pdf', 'content': 'pdf_content_filing', 'order': '1'},
         {'fileName': 'Certificate of Name Correction.pdf', 'content': 'pdf_content_con', 'order': '2'},
         {'fileName': 'Certified Rules.pdf', 'content': 'pdf_content_cr', 'order': '3'},
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '4'},
-    ]),
+    ],
+    False),
 ])
 def test_correction_filing_attachments(session, config, mock_recipients, mock_user_email,
-                                       orig_filing_type, legal_type, identifier, has_name_change, has_rule_change, expected_attachments):
+                                       orig_filing_type, legal_type, identifier, has_name_change, has_rule_change, expected_attachments, has_noa):
     """Assert correction filings add the correct attachments."""
     # Setup
     if orig_filing_type == 'specialResolution':
@@ -1148,6 +1246,8 @@ def test_correction_filing_attachments(session, config, mock_recipients, mock_us
     corrected_filing = prep_correction_filing(
         session, business, original_filing.id, orig_filing_type, 'COMPLETED',
         has_name_change=has_name_change, has_rule_change=has_rule_change)
+    if legal_type == "BC":
+        corrected_filing.meta_data["correction"]["hasNoa"] = has_noa
 
     # Test
     with requests_mock.Mocker() as m:

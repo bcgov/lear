@@ -13,9 +13,13 @@
 # limitations under the License.
 """Test Correction validations."""
 import copy
-import pytest
+from datetime import date, datetime
 from http import HTTPStatus
 
+import datedelta
+import pytest
+
+from business_model.models import Address, Business, PartyRole
 from legal_api.services.authz import STAFF_ROLE
 from legal_api.services.filings import validate
 from registry_schemas.example_data import (
@@ -26,16 +30,32 @@ from registry_schemas.example_data import (
     CORRECTION_AR,
     CORRECTION_COL,
     CORRECTION_COR,
+    DISSOLUTION,
     FILING_TEMPLATE)
 
-from tests.unit.models import factory_business, factory_business_mailing_address, factory_completed_filing, factory_filing
+from tests.unit.models import (
+    factory_business,
+    factory_business_mailing_address,
+    factory_completed_filing,
+    factory_filing,
+    factory_party_role
+)
 from tests.unit.services.utils import jwt_request_context
 
 
 CORRECTION_COD = copy.deepcopy(CORRECTION_COL)
 CORRECTION_COD['filing']['correction']['correctedFilingType'] = 'changeOfDirectors'
 CORRECTION_COD['filing']['correction']['relationships'][0]['roles'][0]['roleType'] = 'Director'
-
+CORRECTION_DISS = copy.deepcopy(CORRECTION_COL)
+CORRECTION_DISS['filing']['correction']['correctedFilingType'] = 'dissolution'
+CORRECTION_DISS['filing']['correction']['relationships'][0]['roles'][0]['roleType'] = 'Custodian'
+VALID_ADDRESS = {
+    'streetAddress': '123 A St',
+    'addressCity': 'Vancouver',
+    'addressRegion': 'BC',
+    'addressCountry': 'CA',
+    'postalCode': 'V5K0A1'
+}
 
 @pytest.mark.parametrize('test_name, legal_type, identifier, initial_filing, correction_filing', [
     ('AR', 'CP', 'CP1234567', ANNUAL_REPORT, CORRECTION_AR),
@@ -184,6 +204,40 @@ def test_correction__invalid_director_dates(session, app, jwt):
     assert err.msg[0]['error'] == 'Appointment date cannot be after cessation date.'
 
 
+@pytest.mark.parametrize('test_name, orig_cessation_dt, corr_cessation_dt', [
+    ('Correct later', '2025-10-01', '2025-11-01'),
+    ('Correct before', '2025-10-01', '2025-09-01'),
+])
+def test_correction_director_cessation_dates(session, app, jwt, test_name, orig_cessation_dt, corr_cessation_dt):
+    """Check that a correction of cessation date passes validation."""
+    # setup
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    factory_business_mailing_address(business)
+    filing_template = copy.deepcopy(FILING_TEMPLATE)
+    filing_template['filing']['header']['name'] = 'changeOfDirectors'
+    orig_dirs = copy.deepcopy(CHANGE_OF_DIRECTORS)
+    orig_dirs['directors'][0]['cessationDate'] = orig_cessation_dt
+    filing_template['filing']['changeOfDirectors'] = orig_dirs
+    corrected_filing = factory_completed_filing(business, filing_template)
+    party_id = _setup_existing_party(business, PartyRole.RoleTypes.DIRECTOR, orig_cessation_dt)
+
+    f = copy.deepcopy(CORRECTION_COD)
+    f['filing']['header']['identifier'] = identifier
+    f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    f['filing']['correction']['type'] = "STAFF"
+    
+    f['filing']['correction']['relationships'][0]['roles'][0]['appointmentDate'] = '2025-02-01'
+    f['filing']['correction']['relationships'][0]['roles'][0]['cessationDate'] = corr_cessation_dt
+    f['filing']['correction']['relationships'][0]['entity']['identifier'] = str(party_id)
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        err = validate(business, f)
+
+    # check that validation passed as expected
+    assert err is None
+
+
 @pytest.mark.parametrize("date_label", ["Appointment", "Cessation"])
 @pytest.mark.parametrize(
     "test_name, offset_days, earliest_allowed_offset, expected_error",
@@ -242,3 +296,70 @@ def test_validate_relationship_date(session, app, jwt, date_label, test_name, of
         assert err.msg[0]["error"] == expected_error.format(date_label=date_label)
     else:
         assert not err
+
+
+@pytest.mark.parametrize(
+    'test_name, email, expected_msg',
+    [
+        ('Valid', 'test@gmail.com', None),
+        ('Missing email', None, 'Custodian email is required.'),
+        ('Invalid', 'test 2@gmail.com', 'Custodian email cannot contain any whitespaces.'),
+    ]
+)
+def test_correction_custodian(session, app, jwt, test_name, email, expected_msg):
+    """Check that correction validation allows a custodian edit."""
+    # setup
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+
+    business.state = 'HISTORICAL'
+    factory_business_mailing_address(business)
+    filing_template = copy.deepcopy(FILING_TEMPLATE)
+    filing_template['filing']['header']['name'] = 'dissolution'
+    filing_template['filing']['business']['legalType'] = 'BC'
+    filing_template['filing']['dissolution'] = copy.deepcopy(DISSOLUTION)
+    filing_template['filing']['dissolution']['dissolutionType'] = 'voluntary'
+
+    corrected_filing = factory_completed_filing(business, filing_template)
+    party_id = _setup_existing_party(business, PartyRole.RoleTypes.CUSTODIAN)
+
+    f = copy.deepcopy(CORRECTION_DISS)
+    f['filing']['header']['identifier'] = identifier
+    f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    f['filing']['correction']['type'] = "STAFF"
+    f['filing']['correction']['relationships'][0]['entity']['identifier'] = str(party_id)
+    if email:
+        f['filing']['correction']['relationships'][0]['entity']['email'] = email
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        err = validate(business, f)
+
+    # check that validation failed as expected
+    if expected_msg:
+        assert err is not None
+        assert len(err.msg) == 1
+        assert err.msg[0]["error"] == expected_msg
+    else:
+        assert err is None
+
+
+def _setup_existing_party(business: Business, party_role: str, cessation_dt: str = None) -> int:
+    """Create an active party with optional cessation date for the business and return the party id."""
+    cess_date = date.fromisoformat(cessation_dt) if cessation_dt is not None else None
+    officer = {
+        'firstName': 'Joe',
+        'lastName': 'Swanson',
+        'middleInitial': 'P',
+        'partyType': 'person',
+        'organizationName': ''
+    }
+    role = factory_party_role(
+        Address.create_address(VALID_ADDRESS),
+        Address.create_address(VALID_ADDRESS),
+        officer,
+        (datetime.utcnow() - datedelta.datedelta(years=5)).date().isoformat(),
+        cess_date,
+        party_role)
+    business.party_roles.append(role)
+    business.save()
+    return role.party_id

@@ -36,17 +36,8 @@ from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, colin, doc_service, flags, namex
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.request_context import get_request_context
-from legal_api.services.utils import get_date, get_str
+from legal_api.services.utils import NO_POSTAL_CODE_COUNTRY_CODES, get_date, get_str
 from legal_api.utils.auth import jwt
-
-NO_POSTAL_CODE_COUNTRY_CODES = {
-    "AO", "AG", "AW", "BS", "BZ", "BJ", "BM", "BO", "BQ", "BW", "BF", "BI",
-    "CM", "CF", "TD", "KM", "CG", "CD", "CK", "CI", "CW", "DJ", "DM", "GQ",
-    "ER", "FJ", "TF", "GA", "GM", "GH", "GD", "GY", "HM", "HK",
-    "KI", "KP", "LY", "MO", "MW", "ML", "MR", "NR",
-    "AN", "NU", "QA", "RW", "KN", "ST", "SC", "SL", "SX", "SB", "SO", "SR", "SY",
-    "TL", "TG", "TK", "TO", "TT", "TV", "UG", "AE", "VU", "YE", "ZW"
-}
 
 # streetAddress, addressCity, and addressCountry no-leading/trailing-whitespace are enforced by
 # the schema (business-schemas address pattern). postalCode is not patterned (optional/nullable),
@@ -798,7 +789,8 @@ def validate_relationships( # noqa: PLR0913
     allow_edits: bool,
     role_types_for_colin_sync: list[PartyRole.RoleTypes] | None = None,
     min_date: date | None = None,
-    min_date_reason: str | None = None
+    min_date_reason: str | None = None,
+    new_only_min_date: bool = False
 ) -> list:
     """Validate the relationships information."""
     msg = []
@@ -806,14 +798,13 @@ def validate_relationships( # noqa: PLR0913
     party_path = f"/filing/{filing_type}/relationships"
 
     # get relevant parties for the business
-    today = datetime.now(tz=UTC).date()
+    # Use None end_date when correcting cessation date: skip comparison with existing value.
+    today = datetime.now(tz=UTC).date() if filing_type != "correction" else None
     party_roles: list[PartyRole] = []
     for role_type in role_types:
         if roles := PartyRole.get_party_roles(business.id, today, role_type.value):
             party_roles.extend(roles)
-
     party_ids = [str(party_role.party_id) for party_role in party_roles]
-
     # Check if party is a valid party of the given role
     for index, relationship in enumerate(relationships):
         path = f"{party_path}/{index}"
@@ -827,7 +818,7 @@ def validate_relationships( # noqa: PLR0913
 
         msg.extend(validate_relationship_entity_name(relationship, path))
         msg.extend(validate_relationship_roles(relationship, role_types, path, business,
-                                               min_date, min_date_reason))
+                                               min_date, min_date_reason, new_only_min_date))
         # Below is for colin sync checking only (i.e. any relationship with Director roles)
         converted_sync_roles = [role.value.lower().replace(" ", "_") for role in role_types_for_colin_sync or []]
         if any(role for role in relationship["roles"] if role["roleType"].lower() in converted_sync_roles):
@@ -970,12 +961,14 @@ def validate_relationship_roles(relationship: dict,  # noqa: PLR0913
                                 path: str,
                                 business: Business,
                                 min_date: date | None = None,
-                                min_date_reason: str | None = None) -> list:
+                                min_date_reason: str | None = None,
+                                new_only_min_date: bool = False) -> list:
     """Validate relationship roles."""
     msg = []
     converted_allowed_roles = [role.value for role in allowed_roles]
     if not min_date:
         min_date = LegislationDatetime.as_legislation_timezone(business.founding_date).date()
+    appointment_min_date = None if new_only_min_date and relationship.get("entity", {}).get("identifier") else min_date
 
     roles = relationship["roles"]
     for index, role in enumerate(roles):
@@ -990,7 +983,7 @@ def validate_relationship_roles(relationship: dict,  # noqa: PLR0913
         msg.extend(_validate_relationship_date(appointment_date,
                                               f"{path}/roles/{index}/appointmentDate",
                                               "Appointment",
-                                              min_date,
+                                              appointment_min_date,
                                               min_date_reason))
         msg.extend(_validate_relationship_date(cessation_date,
                                               f"{path}/roles/{index}/cessationDate",
@@ -1049,7 +1042,7 @@ def _validate_relationship_date(date_value: date,
             "path": path
         })
 
-    if date_value < min_date:
+    if min_date and date_value < min_date:
         reason = min_date_reason or "the business founding date"
         msg.append({
             "error": _(f"{error_name} date cannot be before {reason}."),
@@ -1059,11 +1052,12 @@ def _validate_relationship_date(date_value: date,
     return msg
 
 
-def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
+def validate_name_request(filing_json: dict,  # noqa: PLR0913 # pylint: disable=too-many-locals
                           legal_type: str,
                           filing_type: str,
                           accepted_request_types: list | None = None,
-                          filing_id: int | None = None) -> list:
+                          filing_id: int | None = None,
+                          accepted_legal_types: list | None = None) -> list:
     """Validate name request section."""
     nr_path = f"/filing/{filing_type}/nameRequest"
     nr_number_path = f"{nr_path}/nrNumber"
@@ -1076,12 +1070,11 @@ def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
     if not nr_number and not legal_name:
         if legal_type in Business.CORPS:
             return []  # It's numbered company
-        else:
-            # CP, SP, GP doesn't support numbered company
-            return [{"error": _("Legal name and nrNumber is missing in nameRequest."), "path": nr_path}]
-    elif nr_number and not legal_name:
+        # CP, SP, GP doesn't support numbered company
+        return [{"error": _("Legal name and nrNumber is missing in nameRequest."), "path": nr_path}]
+    if nr_number and not legal_name:
         return [{"error": _("Legal name is missing in nameRequest."), "path": legal_name_path}]
-    elif not nr_number and legal_name:
+    if not nr_number and legal_name:
         # expecting nrNumber when legalName provided
         return [{
             "error": _("nrNumber is missing for the legal name provided in nameRequest."),
@@ -1108,7 +1101,7 @@ def validate_name_request(filing_json: dict,  # pylint: disable=too-many-locals
 
     # ensure business type
     nr_legal_type = nr_response_json.get("legalType")
-    if legal_type != nr_legal_type:
+    if nr_legal_type not in (accepted_legal_types or [legal_type]):
         msg.append({"error": _("Name Request legal type is not same as the business legal type."),
                     "path": legal_type_path})
 

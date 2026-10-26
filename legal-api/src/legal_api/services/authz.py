@@ -166,7 +166,7 @@ def has_any_roles(jwt: JwtManager, roles: list[str]) -> bool:
     return any(bool(jwt.validate_roles(request_ctx.current_user, [role])) for role in roles)
 
 
-def get_allowable_filings_dict(is_authorization: bool = False):
+def get_allowable_filings_dict(is_authorization: bool = False):  # noqa: PLR0912
     """Return dictionary containing rules for when filings are allowed."""
     # importing here to avoid circular dependencies
     # pylint: disable=import-outside-toplevel
@@ -202,7 +202,7 @@ def get_allowable_filings_dict(is_authorization: bool = False):
                 "amalgamationApplication": {
                     "businessRequirement": BusinessRequirement.NO_RESTRICTION,
                     "regular": {
-                        "legalTypes": ["BEN", "BC", "ULC", "CC", "C", "CBEN", "CUL", "CCC"],
+                        "legalTypes": ["BEN", "BC", "ULC", "CC", "C", "CBEN", "CUL", "CCC", "CP"],
                         "blockerChecks": {
                             "business": [BusinessBlocker.DEFAULT,
                                          BusinessBlocker.NOT_IN_GOOD_STANDING,
@@ -413,6 +413,12 @@ def get_allowable_filings_dict(is_authorization: bool = False):
                     "legalTypes": ["SP", "GP"],
                     # only show filing when providing allowable filings not specific to a business
                     "businessRequirement": BusinessRequirement.NOT_EXIST
+                },
+                "reviewImportedData": {
+                    "legalTypes": ["BC", "BEN", "CC", "ULC", "C", "CBEN", "CUL", "CCC"],
+                    "blockerChecks": {
+                        "business": [BusinessBlocker.DEFAULT]
+                    }
                 },
                 "specialResolution": {
                     "legalTypes": ["CP"],
@@ -633,6 +639,12 @@ def get_allowable_filings_dict(is_authorization: bool = False):
                                      BusinessBlocker.NOT_IN_GOOD_STANDING]
                     }
                 },
+                "reviewImportedData": {
+                    "legalTypes": ["BC", "BEN", "CC", "ULC", "C", "CBEN", "CUL", "CCC"],
+                    "blockerChecks": {
+                        "business": [BusinessBlocker.DEFAULT]
+                    }
+                },
                 "transition": {
                     "legalTypes": ["BC", "BEN", "CC", "ULC", "C", "CBEN", "CUL", "CCC"],
                     "blockerChecks": {
@@ -695,6 +707,16 @@ def get_allowable_filings_dict(is_authorization: bool = False):
                 del allowable_filings_dict[user_type][Business.State.ACTIVE.value][filing_type][filing_sub_type]
             else:
                 del allowable_filings_dict[user_type][Business.State.ACTIVE.value][filing_type]
+
+    enabled_features = flags.value(
+        "enable-new-feature",
+        request_context.user,
+        request_context.account_id,
+    ) or []
+    if "reviewImportedData" not in enabled_features:
+        for user_type_dict in allowable_filings_dict.values():
+            for business_state_dict in user_type_dict.values():
+                business_state_dict.pop("reviewImportedData", None)
 
     # Remove some alteration blockers when authorization is not required
     if not is_authorization:

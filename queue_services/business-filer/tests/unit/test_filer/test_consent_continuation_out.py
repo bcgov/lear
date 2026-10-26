@@ -53,6 +53,8 @@ from business_filer.common.filing_message import FilingMessage
         ('DST_TO_STD', '2023-01-31T17:00:00-08:00', '2023-07-31T23:59:00-07:00'),
         ('STD_TO_STD', '2023-03-12T17:00:00-07:00', '2023-09-12T23:59:00-07:00'),
         # DST_TO_DST is not possible. Example: 2023-11-06 (starting day of DST) + 6 months = 2024-05-06 (in STD)
+        # BC no-fallback: after BC's DST change (tzdata 2026b+), America/Vancouver stays at -07 year-round
+        ('BC_NO_FALLBACK', '2026-06-01T17:00:00-07:00', '2026-12-01T23:59:00-07:00'),
     ]
 )
 def tests_filer_consent_continuation_out(app, session, mocker, test_name, effective_date, expiry_date):

@@ -36,7 +36,7 @@ class Resolution(db.Model, Versioned):  # pylint: disable=too-many-instance-attr
     id = db.Column(db.Integer, primary_key=True)
     resolution_date = db.Column('resolution_date', db.Date, nullable=False)
     resolution_type = db.Column('type', db.String(20), default=ResolutionType.SPECIAL, nullable=False)
-    resolution_sub_type = db.Column('sub_type', db.String(20))
+    resolution_sub_type = db.Column('sub_type', db.String(30))
     signing_party_id = db.Column('signing_party_id', db.Integer, db.ForeignKey('parties.id'))
     signing_date = db.Column('signing_date', db.Date)
     resolution = db.Column(db.Text)

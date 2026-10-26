@@ -15,6 +15,32 @@
 from datetime import date
 
 import dpath
+import pycountry
+
+# ISO-2 codes of countries that do not use postal codes; mirrors the frontend address rules.
+NO_POSTAL_CODE_COUNTRY_CODES = {
+    "AO", "AG", "AW", "BS", "BZ", "BJ", "BM", "BO", "BQ", "BW", "BF", "BI",
+    "CM", "CF", "TD", "KM", "CG", "CD", "CK", "CI", "CW", "DJ", "DM", "GQ",
+    "ER", "FJ", "TF", "GA", "GM", "GH", "GD", "GY", "HM", "HK",
+    "KI", "KP", "LY", "MO", "MW", "ML", "MR", "NR",
+    "AN", "NU", "QA", "RW", "KN", "ST", "SC", "SL", "SX", "SB", "SO", "SR", "SY",
+    "TL", "TG", "TK", "TO", "TT", "TV", "UG", "AE", "VU", "YE", "ZW"
+}
+
+
+def is_postal_code_required(country: str) -> bool:
+    """Return whether an address in ``country`` must carry a postal code.
+
+    Only countries that resolve to a code in NO_POSTAL_CODE_COUNTRY_CODES are exempt; a missing or
+    unrecognised country is treated as requiring one.
+    """
+    if not country:
+        return True
+    try:
+        country_code = pycountry.countries.search_fuzzy(country)[0].alpha_2
+    except LookupError:
+        return True
+    return country_code not in NO_POSTAL_CODE_COUNTRY_CODES
 
 
 def get_date(filing: dict, path: str) -> date:

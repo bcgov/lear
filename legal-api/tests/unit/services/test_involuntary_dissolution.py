@@ -293,10 +293,10 @@ def test_get_businesses_eligible_query_xpro_from_nwpta(session, test_name, juris
 
 
 @pytest.mark.parametrize(
-    'test_name, admin_freeze, eligible', {
+    'test_name, admin_freeze, eligible', [
         ('BUSINESS_NOT_ADMIN_FREEZE', False, True),
         ('BUSINESS_ADMIN_FREEZE', True, False)
-    }
+    ]
 )
 def test_exclude_admin_frozen_businesses(session, test_name, admin_freeze, eligible):
     """Assert service returns eligible business excluding admin frozen businesses"""

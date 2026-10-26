@@ -26,7 +26,7 @@ from .filing_components.correction import correct_business_data
 
 def process(correction_filing: Filing, filing: Dict, filing_meta: FilingMeta, business: Business):
     """Render the correction filing onto the business model objects."""
-    local_timezone = pytz.timezone('US/Pacific')
+    local_timezone = pytz.timezone('America/Vancouver')
 
     # link to original filing
     original_filing = Filing.find_by_id(filing['correction']['correctedFilingId'])

@@ -215,6 +215,15 @@ def prep_bootstrap_filing(session, filing_type, identifier, legal_type, option, 
             'rulesFileKey': 'rulekey1234',
             'memorandumFileKey': 'memkey1234'
         }
+        if filing_type == 'amalgamationApplication':
+            # the inline special resolution is schema-required for coop amalgamations
+            filing_template['filing'][filing_type]['resolution'] = '<p>Special resolution.</p>'
+            filing_template['filing'][filing_type]['resolutionDate'] = '2023-06-01'
+            filing_template['filing'][filing_type]['signingDate'] = '2023-06-01'
+            filing_template['filing'][filing_type]['signatory'] = {
+                'givenName': 'Joe',
+                'familyName': 'Swanson'
+            }
     temp_identifier = generate_temp_filing()
     filing_template['filing']['business']['identifier'] = temp_identifier
     filing = create_filing(token='1', filing_json=filing_template, bootstrap_id=temp_identifier)
@@ -422,8 +431,8 @@ def prep_correction_filing(session,
         del filing_template['filing']['correction']['rulesFileKey']
     if not has_memorandum_change:
         del filing_template['filing']['correction']['memorandumFileKey']
-
-    filing = create_filing(token='1', filing_json=filing_template, business_id=business.id)
+    meta_data = {"correction": {"hasNoa": False}}
+    filing = create_filing(token='1', filing_json=filing_template, business_id=business.id, meta_data=meta_data)
 
     filing.save()
     if status == 'COMPLETED':

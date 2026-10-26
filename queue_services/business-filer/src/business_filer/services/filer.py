@@ -74,6 +74,7 @@ from business_filer.filing_processors import (
     registrars_order,
     registration,
     restoration,
+    review_imported_data,
     special_resolution,
     transition,
     transparency_register,
@@ -250,6 +251,9 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
 
                 case "restoration":
                     restoration.process(business, filing, filing_submission, filing_meta)
+
+                case "reviewImportedData":
+                    review_imported_data.process(business, filing_submission, filing_meta)
 
                 case "specialResolution":
                     special_resolution.process(business, filing, filing_submission)

@@ -139,7 +139,8 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'BEN': 'AMALR',
                     'BC': 'AMALR',
                     'ULC': 'AMALR',
-                    'CC': 'AMALR'
+                    'CC': 'AMALR',
+                    'CP': 'OTAMA'
                 },
             },
             'vertical': {
@@ -653,6 +654,12 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
                     'CCC': 'RESXF'
                 }
             }
+        },
+        "reviewImportedData": {
+            "name": "reviewImportedData",
+            "title": "Review Imported Data",
+            "displayName": "Review Migrated Information",
+            "code": "NOFEE"
         },
         'specialResolution': {
             'name': 'specialResolution',
@@ -1339,6 +1346,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             'noticeOfWithdrawal',
             'registrarsNotation',
             'registrarsOrder',
+            'reviewImportedData',
             'transparencyRegister'
         ]
         excluded_businesses = [Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value]

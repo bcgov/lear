@@ -37,7 +37,7 @@
                 </div>
 
                 <div class="certify-clause-container">
-                    <div>I hereby certify that the following corporations were amalgamated under the name</div>
+                    <div>I hereby certify that the following {% if business.legalType == 'CP' %}co-operatives{% else %}corporations{% endif %} were amalgamated under the name</div>
                     <div class="company-name-header">{{ business.legalName }}</div>
                     <div class="certify-date">on {{ effective_date_time }}</div>
                     <div class="amalgamation-businesses">

@@ -90,12 +90,10 @@ def get_expiry_date(filing: Filing):
     effective_date = LegislationDatetime.as_legislation_timezone(filing.effective_date)
     _date = effective_date.replace(hour=23, minute=59, second=0, microsecond=0)
     _date += datedelta.datedelta(months=6)
-
-    # Setting legislation timezone again after adding 6 months to recalculate the UTC offset and DST info
-    _date = LegislationDatetime.as_legislation_timezone(_date)
-
-    # Adjust day light savings. Handle DST +-1 hour changes
-    dst_offset_diff = effective_date.dst() - _date.dst()
-    _date += dst_offset_diff
+    # Re-localize after month arithmetic: datedelta preserves the original UTC offset,
+    # but the expiry date may fall in a different DST period. Strip the stale offset
+    # and re-attach the correct Pacific offset for the expiry date.
+    _date = LegislationDatetime.as_legislation_timezone_from_date(_date.date())
+    _date = _date.replace(hour=23, minute=59, second=0, microsecond=0)
 
     return LegislationDatetime.as_utc_timezone(_date)

@@ -579,12 +579,12 @@ def test_get_business_with_allowed_filings(session, client, jwt):
     ('NO_WARNINGS_EXIST_NO_MISSING_DATA', 'SP', 'FM0000003', False, False),
     ('NO_WARNINGS_EXIST_NO_MISSING_DATA', 'GP', 'FM0000004', False, False),
     ('NO_WARNINGS_NON_FIRM', 'CP', 'CP7654321', True, False),
-    ('NO_WARNINGS_NON_FIRM', 'BEN', 'CP7654321', True, False),
-    ('NO_WARNINGS_NON_FIRM', 'BC', 'BC7654321', True, False),
+    ('WARNINGS_EXIST_MISSING_DATA_CORPS', 'BEN', 'BC7654321', True, True),
+    ('WARNINGS_EXIST_MISSING_DATA_CORPS', 'BC', 'BC7654321', True, True),
 ])
 def test_get_business_with_incomplete_info(session, client, jwt, test_name, legal_type, identifier, has_missing_business_info,
                                            missing_business_info_warning_expected):
-    """Assert that SP/GPs with missing business info is populating warnings list."""
+    """Assert that SP/GPs and corps with missing business info are populating warnings list."""
 
     if has_missing_business_info:
         business = factory_business(entity_type=legal_type, identifier=identifier)
@@ -620,6 +620,23 @@ def test_get_business_with_incomplete_info(session, client, jwt, test_name, lega
         # TODO remove complianceWarnings check when UI has been integrated to use warnings instead of complianceWarnings
         assert len(rv_json['business']['complianceWarnings']) == 0
         assert len(rv_json['business']['warnings']) == 0
+
+
+def test_get_business_corps_missing_info_feature_flag_off(session, client, jwt, monkeypatch):
+    """Assert corps missing info warnings are not returned when reviewImportedData is not in enable-new-feature."""
+    identifier = 'BC7654322'
+    business = factory_business(entity_type='BC', identifier=identifier)
+    business.no_dissolution = True
+    business.save()
+    flag_value = flags.value
+    monkeypatch.setattr('legal_api.services.flags.value',
+                        lambda flag, *args, **kwargs: [] if flag == 'enable-new-feature' else flag_value(flag, *args, **kwargs))
+
+    rv = client.get(f'/api/v2/businesses/{identifier}', headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['business']['warnings'] == []
+    assert rv.json['business']['complianceWarnings'] == []
 
 
 def test_get_business_with_court_orders(session, client, jwt):
@@ -1019,7 +1036,7 @@ def test_get_could_file(session, client, jwt, monkeypatch):
     monkeypatch.setattr(
         'legal_api.services.flags.value',
         lambda flag, _user, _account_id: "changeOfLiquidators.appointLiquidator,changeOfLiquidators.ceaseLiquidator,changeOfLiquidators.changeAddressLiquidator,changeOfLiquidators.intentToLiquidate,changeOfLiquidators.liquidationReport,changeOfReceivers.amendReceiver,changeOfReceivers.appointReceiver,changeOfReceivers.ceaseReceiver,changeOfReceivers.changeAddressReceiver,dissolution.delay,transition"
-        if flag == 'enabled-specific-filings' else {}
+        if flag == 'enabled-specific-filings' else ['reviewImportedData'] if flag == 'enable-new-feature' else {}
     )
     monkeypatch.setattr(
         'business_model.models.User.get_or_create_user_by_jwt',
@@ -1176,6 +1193,10 @@ def test_get_could_file(session, client, jwt, monkeypatch):
         {
             "displayName": "Registrar's Order",
             "name": "registrarsOrder"
+        },
+        {
+            "displayName": "Review Migrated Information",
+            "name": "reviewImportedData"
         },
         {
             "displayName": "Post Restoration Transition Application",

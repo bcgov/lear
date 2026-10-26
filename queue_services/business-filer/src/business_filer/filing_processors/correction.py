@@ -43,7 +43,7 @@ from business_filer.filing_processors.filing_components.correction import correc
 
 def process(correction_filing: Filing, filing: dict, filing_meta: FilingMeta, business: Business):
     """Render the correction filing onto the business model objects."""
-    local_timezone = pytz.timezone("US/Pacific")
+    local_timezone = pytz.timezone("America/Vancouver")
 
     # link to original filing
     original_filing = Filing.find_by_id(filing["correction"]["correctedFilingId"])
@@ -82,7 +82,7 @@ def process(correction_filing: Filing, filing: dict, filing_meta: FilingMeta, bu
 
     # check if empty correction and set commentOnly value in filing_meta
     if bool(dpath.get(filing, "/correction/commentOnly", default=None)):
-        filing_meta.correction = {**filing_meta.correction, "commentOnly": True}
+        filing_meta.correction = {**filing_meta.correction, "commentOnly": True, "hasNoa": False}
         return correction_filing
 
     # Skip all other data checks if commentOnly correction
