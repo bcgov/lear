@@ -54,12 +54,12 @@ from business_filer.filing_processors.filing_components import (
     update_address,
 )
 from business_filer.filing_processors.filing_components.relationships import (
-    RELATIONSHIP_ROLE_CONVERTER,
     cease_relationships,
     create_relationships,
     update_relationship_addresses,
     update_relationship_entity_info,
     update_relationships_appointment_date,
+    update_relationships_cessation_date
 )
 from business_filer.services.utils import is_same_str
 
@@ -371,7 +371,7 @@ def correct_corp_data(business: Business,
                             filing_meta.application_date)
 
         update_relationships_appointment_date(relationships, business, [PartyRole.RoleTypes.DIRECTOR.value])
-        _update_relationships_cessation_date(relationships, business, [PartyRole.RoleTypes.DIRECTOR.value])
+        update_relationships_cessation_date(relationships, business, [PartyRole.RoleTypes.DIRECTOR.value])
         update_relationship_addresses(relationships, business)
         update_relationship_entity_info(relationships, business)
         _set_lear_only(correction_filing, correction_filing_rec, relationships, business)
@@ -632,35 +632,3 @@ def _director_relationship_changed(relationships: list[dict], has_noa: bool) -> 
                 return True
 
     return False
-
-
-def _update_relationships_cessation_date(
-    relationships: list[dict],
-    business: Business,
-    allowed_roles: list[str]):
-    """Correct existing cessation date for the given parties for a business.
-    
-    Assumption: The structure has already been validated, upon submission.
-    """
-    def _get_info_by_role(roles: list[dict], role: str):
-        return next(
-            (role_info for role_info in roles
-            if RELATIONSHIP_ROLE_CONVERTER.get(role_info.get("roleType", "").lower(), "") == role and
-            role_info.get("cessationDate")),
-            None
-        )
-    if not relationships:
-        return
-    existing_relationships = [
-        relationship
-        for relationship in relationships
-        if relationship.get("entity", {}).get("identifier") is not None
-    ]
-    for relationship in existing_relationships:
-        party_id = int(relationship["entity"]["identifier"])
-        party_roles: list[PartyRole] = PartyRole.get_party_roles_by_party_id(business.id, party_id)
-        for party_role in party_roles:
-            if (party_role.role in allowed_roles
-                and (role_info := _get_info_by_role(relationship.get("roles", []), party_role.role))
-            ):
-                party_role.cessation_date = role_info.get("cessationDate")
