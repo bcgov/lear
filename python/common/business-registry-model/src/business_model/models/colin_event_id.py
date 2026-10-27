@@ -24,8 +24,8 @@ class ColinEventId(db.Model):  # pylint: disable=too-few-public-methods
 
     __tablename__ = 'colin_event_ids'
 
-    colin_event_id = db.Column('colin_event_id', db.Integer, unique=True, primary_key=True)
-    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'))
+    colin_event_id = db.Column('colin_event_id', db.Integer, primary_key=True)
+    filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'), index=True)
 
     def save(self):
         """Save the object to the database immediately."""
