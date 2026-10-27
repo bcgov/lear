@@ -223,8 +223,8 @@ class ExtractTrackingService:
             with conn.begin():
                 if self.statement_timeout_ms:
                     conn.execute(
-                        text("SET LOCAL statement_timeout = :ms"),
-                        {'ms': int(self.statement_timeout_ms)}
+                        text("SELECT set_config('statement_timeout', :ms, true)"),
+                        {'ms': str(int(self.statement_timeout_ms))}
                     )
 
                 params = {
@@ -345,7 +345,7 @@ class ExtractTrackingService:
         set_clauses = [
             'processed_status = :status',
             'last_modified = NOW()',
-            'last_error = CASE WHEN :error IS NOT NULL THEN :error ELSE last_error END',
+            'last_error = CASE WHEN CAST(:error AS TEXT) IS NOT NULL THEN CAST(:error AS TEXT) ELSE last_error END',
         ]
         params = {
             'status': status,
