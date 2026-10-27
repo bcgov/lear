@@ -345,7 +345,6 @@ class ExtractTrackingService:
         set_clauses = [
             'processed_status = :status',
             'last_modified = NOW()',
-            'last_error = CASE WHEN CAST(:error AS TEXT) IS NOT NULL THEN CAST(:error AS TEXT) ELSE last_error END',
         ]
         params = {
             'status': status,
