@@ -38,7 +38,7 @@ from registry_schemas.example_data import (
 from sqlalchemy.exc import IntegrityError
 
 from business_model.exceptions import BusinessException
-from business_model.models import Business, CourtOrder, Filing, User
+from business_model.models import Business, CourtOrder, Filing, User, UserRoles
 from business_model.models.db import VersioningProxy
 from tests import EPOCH_DATETIME
 from tests.conftest import not_raises
@@ -725,3 +725,105 @@ def test_submitter_info(session):
     filing.save()
 
     assert filing.id
+
+
+def test_base_transaction_id_round_trip(session):
+    """Assert that base_transaction_id persists and reloads from the db."""
+    b = factory_business('CP1234567')
+    transaction_id = VersioningProxy.get_transaction_id(session())
+
+    filing = factory_filing(b, ANNUAL_REPORT)
+    assert filing.base_transaction_id is None
+
+    filing.base_transaction_id = transaction_id
+    filing.save()
+    filing_id = filing.id
+
+    session.expire_all()
+    stored = Filing.find_by_id(filing_id)
+
+    assert stored.base_transaction_id == transaction_id
+
+
+def test_base_transaction_id_must_reference_a_transaction(session):
+    """Assert that base_transaction_id is enforced by the foreign key."""
+    b = factory_business('CP1234567')
+
+    filing = Filing()
+    filing.business_id = b.id
+    filing.filing_json = ANNUAL_REPORT
+    filing.base_transaction_id = 99999999
+
+    with pytest.raises(IntegrityError):
+        filing.save()
+
+
+def test_get_max_completed_transaction_id(session):
+    """Assert the watermark is the latest completed transaction for the business only."""
+    b = factory_business('CP1234567')
+    other = factory_business('CP7654321')
+
+    assert Filing.get_max_completed_transaction_id(b.id) is None
+
+    factory_filing(b, ANNUAL_REPORT)  # drafts never advance the watermark
+    assert Filing.get_max_completed_transaction_id(b.id) is None
+
+    first = factory_completed_filing(b, ANNUAL_REPORT)
+    second = factory_completed_filing(b, ANNUAL_REPORT)
+    factory_completed_filing(other, ANNUAL_REPORT)
+
+    assert second.transaction_id > first.transaction_id
+    assert Filing.get_max_completed_transaction_id(b.id) == second.transaction_id
+
+
+def test_get_max_completed_transaction_id_includes_tombstone(session):
+    """Assert TOMBSTONE filings advance the watermark."""
+    b = factory_business('CP1234567')
+    completed = factory_completed_filing(b, ANNUAL_REPORT)
+
+    tombstone = Filing()
+    tombstone.business_id = b.id
+    tombstone.filing_json = ANNUAL_REPORT
+    tombstone.transaction_id = VersioningProxy.get_transaction_id(session())
+    tombstone._status = Filing.Status.TOMBSTONE.value
+    tombstone.skip_status_listener = True
+    tombstone.save()
+
+    assert tombstone.transaction_id > completed.transaction_id
+    assert Filing.get_max_completed_transaction_id(b.id) == tombstone.transaction_id
+
+
+def test_get_completed_filings_after_transaction(session):
+    """Assert completed filings after a transaction are returned oldest first, drafts excluded."""
+    b = factory_business('CP1234567')
+    first = factory_completed_filing(b, ANNUAL_REPORT)
+    second = factory_completed_filing(b, ANNUAL_REPORT)
+    third = factory_completed_filing(b, ANNUAL_REPORT)
+    factory_filing(b, ANNUAL_REPORT)
+
+    after_first = Filing.get_completed_filings_after_transaction(b.id, first.transaction_id)
+    assert [f.id for f in after_first] == [second.id, third.id]
+
+    assert Filing.get_completed_filings_after_transaction(b.id, third.transaction_id) == []
+
+
+def test_draft_submitter_roles_round_trip(session):
+    """Assert submitter_roles stamped on a draft persists; unstamped drafts stay None."""
+    b = factory_business('CP1234567')
+
+    staff_draft = factory_filing(b, ANNUAL_REPORT)
+    staff_draft.submitter_roles = UserRoles.staff
+    staff_draft.save()
+    staff_draft_id = staff_draft.id
+
+    user_draft = factory_filing(b, ANNUAL_REPORT)
+    user_draft_id = user_draft.id
+
+    session.expire_all()
+
+    stored_staff = Filing.find_by_id(staff_draft_id)
+    assert stored_staff.status == Filing.Status.DRAFT.value
+    assert stored_staff.submitter_roles == UserRoles.staff.value
+
+    stored_user = Filing.find_by_id(user_draft_id)
+    assert stored_user.submitter_roles is None
