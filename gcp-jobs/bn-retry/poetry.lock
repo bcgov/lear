@@ -286,7 +286,7 @@ files = [
 
 [[package]]
 name = "business-model"
-version = "3.4.1"
+version = "3.4.23"
 description = ""
 optional = false
 python-versions = ">=3.13,<3.14"
@@ -305,15 +305,15 @@ flask-sqlalchemy = ">=3.1.1,<4.0.0"
 pg8000 = ">=1.31.2,<2.0.0"
 pycountry = ">=24.6.1,<25.0.0"
 pydantic = ">=2.10.6,<3.0.0"
-pytz = ">=2025.1,<2026.0"
-registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.74"}
+pytz = ">=2026.2,<2027.0"
+registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.88"}
 sql-versioning = {git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "python/common/sql-versioning-alt"}
 
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/lear.git"
 reference = "main"
-resolved_reference = "ab63e41cf55bbea31a66c4f12d608bd619eef05d"
+resolved_reference = "88124ee47ab75adea2d3bb365f3d22488cdddcb1"
 subdirectory = "python/common/business-registry-model"
 
 [[package]]
@@ -2411,14 +2411,14 @@ cli = ["click (>=5.0)"]
 
 [[package]]
 name = "pytz"
-version = "2025.2"
+version = "2026.5"
 description = "World timezone definitions, modern and historical"
 optional = false
 python-versions = "*"
 groups = ["main"]
 files = [
-    {file = "pytz-2025.2-py2.py3-none-any.whl", hash = "sha256:5ddf76296dd8c44c26eb8f4b6f35488f3ccbf6fbbd7adee0b7262d43f0ec2f00"},
-    {file = "pytz-2025.2.tar.gz", hash = "sha256:360b9e3dbb49a209c21ad61809c7fb453643e048b38924c765813546746e81c3"},
+    {file = "pytz-2026.5-py2.py3-none-any.whl", hash = "sha256:e658af3757f9e26a9d25dd2aff38335acd92bc9104f890a894b2c1ba28311b03"},
+    {file = "pytz-2026.5.tar.gz", hash = "sha256:fa23724b9c486543b9ff54a327ee7569ac83ade54bb9afd0fc18676620401c86"},
 ]
 
 [[package]]
@@ -2439,7 +2439,7 @@ rpds-py = ">=0.7.0"
 
 [[package]]
 name = "registry_schemas"
-version = "2.18.74"
+version = "2.18.88"
 description = "A short description of the project"
 optional = false
 python-versions = ">=3.6"
@@ -2457,8 +2457,8 @@ strict-rfc3339 = "*"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
-reference = "2.18.74"
-resolved_reference = "5abdc89a0f6eb06cbbac9ad66b580d7c76190ebc"
+reference = "2.18.88"
+resolved_reference = "b3fcbb2cfe42c1c536684156d6e5ae9394ef640f"
 
 [[package]]
 name = "requests"

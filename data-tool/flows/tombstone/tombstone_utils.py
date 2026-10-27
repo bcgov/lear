@@ -67,9 +67,9 @@ def format_address_data(address_data: dict, prefix: str) -> dict:
 
     street = address_data[f'{prefix}addr_line_1']
     street_additional_elements = []
-    if (line_2 := address_data[f'{prefix}addr_line_2']) and (line_2 := line_2.strip()):
+    if (line_2 := address_data[f'{prefix}addr_line_2']) and (line_2 := str(line_2).strip()):
         street_additional_elements.append(line_2)
-    if (line_3 := address_data[f'{prefix}addr_line_3']) and (line_3 := line_3.strip()):
+    if (line_3 := address_data[f'{prefix}addr_line_3']) and (line_3 := str(line_3).strip()):
         street_additional_elements.append(line_3)
     street_additional = ' '.join(street_additional_elements)
 
@@ -156,12 +156,12 @@ def format_parties_data(data: dict, config=None) -> list[dict]:
             continue
         party = copy.deepcopy(PARTY)
         party['parties']['cp_full_name'] = party_info['cp_full_name']
-        party['parties']['first_name'] = (party_info['cp_first_name'] or '').upper()
-        party['parties']['middle_initial'] = (party_info['cp_middle_name'] or '').upper()
-        party['parties']['last_name'] = (party_info['cp_last_name'] or '').upper()
+        party['parties']['first_name'] = (party_info['cp_first_name'] if isinstance(party_info['cp_first_name'], str) else '').upper()
+        party['parties']['middle_initial'] = (party_info['cp_middle_name'] if isinstance(party_info['cp_middle_name'], str) else '').upper()
+        party['parties']['last_name'] = (party_info['cp_last_name'] if isinstance(party_info['cp_last_name'], str) else '').upper()
         party['parties']['party_type'] = 'person' if party_info['cp_full_name'] else 'organization'
         party['parties']['title'] = ''
-        party['parties']['organization_name'] = (party_info['cp_business_name'] or '').upper()
+        party['parties']['organization_name'] = (party_info['cp_business_name'] if isinstance(party_info['cp_business_name'], str) else '').upper()
         party['parties']['email'] = ''
         party['parties']['identifier'] = ''
 
@@ -178,16 +178,24 @@ def format_parties_data(data: dict, config=None) -> list[dict]:
 
         appointment_date = None
         earliest_party_info = find_earliest_party(party_info, parties_data)
-        if appointment_date := earliest_party_info['cp_appointment_dt_str']:
+        appointment_date = earliest_party_info.get('cp_appointment_dt_str')
+        if isinstance(appointment_date, str) and appointment_date:
             appointment_date = appointment_date + ' 00:00:00+00:00'
+        else:
+            appointment_date = None
         party_role['appointment_date'] = appointment_date
 
         cessation_date = None
         if role_code in ('LIQ', 'RCM', 'RCC'):
-            if end_event_date := party_info['cp_end_event_dt_str']:
+            end_event_date = party_info.get('cp_end_event_dt_str')
+            if isinstance(end_event_date, str) and end_event_date:
                 cessation_date = end_event_date + ' 00:00:00+00:00'
-        elif cessation_date := party_info['cp_cessation_dt_str']:
+        else:
+            cessation_date = party_info.get('cp_cessation_dt_str')
+        if isinstance(cessation_date, str) and cessation_date:
             cessation_date = cessation_date + ' 00:00:00+00:00'
+        else:
+            cessation_date = None
         party_role['cessation_date'] = cessation_date
 
         formatted_party_roles.append(party_role)
@@ -470,12 +478,28 @@ def format_filings_data(data: dict, config=None) -> dict:
             filing_type = raw_filing_type
             filing_subtype = raw_filing_subtype
 
-        effective_date = x['ce_effective_dt_str'] or x['f_effective_dt_str'] or x['e_event_dt_str']
-        if filing_type == 'annualReport':
-            effective_date = x['f_period_end_dt_str']
+        effective_date_candidates = (
+            (x.get('f_period_end_dt_str'),)
+            if filing_type == 'annualReport'
+            else (x.get('ce_effective_dt_str'), x.get('f_effective_dt_str'), x.get('e_event_dt_str'))
+        )
+        effective_date = next(
+            (value.strip() for value in effective_date_candidates
+             if isinstance(value, str) and value.strip()),
+            None,
+        )
 
-        filing_date = x['ce_effective_dt_str'] or x['e_event_dt_str']
-        trigger_date = x['e_trigger_dt_str']
+        filing_date = next(
+            (value.strip() for value in (x.get('ce_effective_dt_str'), x.get('e_event_dt_str'))
+             if isinstance(value, str) and value.strip()),
+            None,
+        )
+        trigger_date = x.get('e_trigger_dt_str')
+        if not isinstance(trigger_date, str) or not trigger_date.strip():
+            trigger_date = None
+        else:
+            trigger_date = str(trigger_date).strip()
+
 
         filing_json, meta_data = build_filing_json_meta_data(raw_filing_type, filing_type, filing_subtype,
                                                              effective_date, x, data)
@@ -510,7 +534,7 @@ def format_filings_data(data: dict, config=None) -> dict:
         else:
             status = 'COMPLETED'
             completion_date = effective_date
-        is_electronic_filing = (x.get('f_ods_type_cd') or '').upper() == 'F'
+        is_electronic_filing = (x.get('f_ods_type_cd') if isinstance(x.get('f_ods_type_cd'), str) else '').upper() == 'F'
         paper_only = not (is_electronic_filing and use_source_paper_only and status == 'COMPLETED' and not hide_in_ledger)
         filing_body = {
             **filing_body,
@@ -525,7 +549,7 @@ def format_filings_data(data: dict, config=None) -> dict:
             'paper_only': paper_only,
             'status': status,
             'submitter_id': user_id,  # will be updated to real user_id when loading data into db
-            'submitter_roles': 'staff' if x.get('u_role_typ_cd') and x['u_role_typ_cd'].lower() == 'staff' else None
+            'submitter_roles': 'staff' if isinstance(x.get('u_role_typ_cd'), str) and x['u_role_typ_cd'].lower() == 'staff' else None
         }
 
         # conversion still need to populate create-new-business info
@@ -1007,7 +1031,7 @@ def build_filing_json_meta_data(raw_filing_type: str,
             'annualReportFilingYear': int(effective_date[:4]),
         }
     elif filing_type == 'dissolution':
-        dissolution_date = effective_date[:10]
+        dissolution_date = effective_date[:10] if isinstance(effective_date, str) else None
         meta_data['dissolution'] = {
             'dissolutionType': filing_subtype,
             'dissolutionDate':  dissolution_date,
@@ -1139,15 +1163,24 @@ def build_epoch_filing(business_id: int) -> dict:
 
 
 def get_username(data: dict) -> str:
-    first_name = data.get('u_first_name')
-    middle_name = data.get('u_middle_name')
-    last_name = data.get('u_last_name')
-
-    username = ' '.join([name for name in [first_name, middle_name, last_name] if name])
+    name_parts = [
+        str(name).strip()
+        for name in (
+            data.get('u_first_name'),
+            data.get('u_middle_name'),
+            data.get('u_last_name'),
+        )
+        if pd.notna(name) and str(name).strip()
+    ]
+    username = ' '.join(name_parts)
     if not username:
-        username = data.get('u_user_id')
+        user_id = data.get('u_user_id')
+        if pd.notna(user_id) and str(user_id).strip():
+            username = str(user_id).strip()
     if not username:
-        username = data.get('p_cc_holder_name')
+        cc_holder_name = data.get('p_cc_holder_name')
+        if pd.notna(cc_holder_name) and str(cc_holder_name).strip():
+            username = str(cc_holder_name).strip()
 
     return username
 
@@ -1224,7 +1257,16 @@ def update_versioning(conn: Connection,
 
 def format_value(value) -> str:
     if isinstance(value, dict):
-        return json.dumps(value)
+        def json_safe(item):
+                    if isinstance(item, dict):
+                        return {key: json_safe(nested_value) for key, nested_value in item.items()}
+                    if isinstance(item, (list, tuple)):
+                        return [json_safe(nested_value) for nested_value in item]
+                    if item is not None and pd.api.types.is_scalar(item) and pd.isna(item):
+                        return None
+                    return item
+        
+        return json.dumps(json_safe(value), allow_nan=False)
     return value
 
 

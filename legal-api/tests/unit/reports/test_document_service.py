@@ -508,3 +508,24 @@ def test_update_additional_filing_special_resolution(session):
     assert result['legalFilings'][1]['specialResolution'] == f'http://test/documents/specialResolution{drs_params}'
     assert result['affidavit'] == 'http://test/documents/affidavit'
     assert result['legalFilings'][0]['dissolution'] == 'http://test/documents/dissolution'
+
+def test_update_additional_filing_inline_special_resolution(session):
+    """Assert a FILING-2 record decorates the inline special resolution, not the certified rules."""
+    doc_service = DocumentService()
+    drs_params = '?reportType=FILING-2&drsId=DSR0000200002'
+    doc_list = {
+        'legalFilings': [
+            {'amalgamationApplication': 'http://test/documents/amalgamationApplication'},
+        ],
+        'certificateOfAmalgamation': 'http://test/documents/certificateOfAmalgamation',
+        'certifiedRules': 'http://test/documents/certifiedRules',
+        'certifiedMemorandum': 'http://test/documents/certifiedMemorandum',
+        'specialResolution': 'http://test/documents/specialResolution',
+    }
+
+    result = doc_service._update_additional_filing(doc_list, drs_params, 'FILING-2')
+
+    assert result['specialResolution'] == f'http://test/documents/specialResolution{drs_params}'
+    assert result['certifiedRules'] == 'http://test/documents/certifiedRules'
+    assert result['certifiedMemorandum'] == 'http://test/documents/certifiedMemorandum'
+    assert result['legalFilings'][0]['amalgamationApplication'] == 'http://test/documents/amalgamationApplication'
