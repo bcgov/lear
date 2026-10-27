@@ -59,7 +59,7 @@ from business_filer.filing_processors.filing_components.relationships import (
     update_relationship_addresses,
     update_relationship_entity_info,
     update_relationships_appointment_date,
-    update_relationships_cessation_date
+    update_relationships_cessation_date,
 )
 from business_filer.services.utils import is_same_str
 
