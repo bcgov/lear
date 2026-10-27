@@ -22,13 +22,14 @@ from legal_api.services.permissions import PermissionService
 import pytest
 from registry_schemas.example_data import CHANGE_OF_REGISTRATION_TEMPLATE, REGISTRATION
 
-from business_model.models import Business, User
+from business_model.models import Address, Business, Party, PartyRole, User
 from legal_api.services import NaicsService, NameXService, flags
 from legal_api.services.authz import BASIC_USER, STAFF_ROLE
 from legal_api.services.filings.validations.change_of_registration import validate
 
 from tests.unit.services.filings.validations import create_party, create_party_address
 from tests.unit.services.utils import jwt_request_context
+from tests.unit.models import factory_business
 
 
 now = datetime.now().strftime('%Y-%m-%d')
@@ -329,6 +330,88 @@ def test_change_of_registration_permission_checks(mock_is_officer_replace, mock_
     assert err
     assert err.code == HTTPStatus.FORBIDDEN
     assert 'DBA' in err.msg[0]['message']
+
+
+def _seed_sole_prop(identifier: str, dba: bool) -> Business:
+    """Create a sole proprietorship whose current proprietor is an organization (DBA) or a person."""
+    business = factory_business(identifier=identifier, entity_type=Business.LegalTypes.SOLE_PROP.value)
+    if dba:
+        party = Party(party_type=Party.PartyTypes.ORGANIZATION.value, organization_name='1200334 B.C. LTD.',
+                      identifier='BC1200334', email='joe@email.com')
+    else:
+        party = Party(party_type=Party.PartyTypes.PERSON.value, first_name='Joe', middle_initial='P',
+                      last_name='Swanson', email='joe@email.com')
+    # same addresses as the CHANGE_OF_REGISTRATION_TEMPLATE party so an untouched payload reads as unchanged
+    party.mailing_address = Address(street='mailing_address - address line one', city='mailing_address city',
+                                    region='BC', postal_code='H0H0H0', country='CA', street_additional='',
+                                    address_type=Address.MAILING)
+    party.delivery_address = Address(street='delivery_address - address line one', city='delivery_address city',
+                                     region='BC', postal_code='H0H0H0', country='CA', street_additional='',
+                                     address_type=Address.DELIVERY)
+    party.save()
+    business.party_roles.append(PartyRole(role=PartyRole.RoleTypes.PROPRIETOR.value,
+                                          appointment_date=datetime(2022, 1, 1),
+                                          party_id=party.id))
+    business.save()
+    return business
+
+
+@pytest.mark.parametrize(
+    'test_name, dba, roles, officer_changes, expect_forbidden', [
+        # an API client can omit officer.id (schema only requires partyType): the DBA proprietor must still be
+        # compared against the business, otherwise a BCSC user edits/replaces it where the UI never allows it
+        ('dba_idless_name_change', True, [BASIC_USER], {'organizationName': '120036 B.C. LTD.'}, True),
+        ('dba_idless_replace_by_identifier', True, [BASIC_USER], {'identifier': 'BC1200335'}, True),
+        ('dba_idless_email_change', True, [BASIC_USER], {'email': 'new@email.com'}, True),
+        ('dba_unknown_id_name_change', True, [BASIC_USER], {'id': 999999, 'organizationName': 'OTHER LTD.'}, True),
+        ('dba_idless_unchanged', True, [BASIC_USER], {}, False),
+        ('dba_staff_name_change', True, [STAFF_ROLE], {'organizationName': '120036 B.C. LTD.'}, False),
+        ('person_idless_name_change', False, [BASIC_USER], {'lastName': 'Griffin'}, False),
+    ]
+)
+@patch.object(flags, 'is_on', return_value=True)
+def test_change_of_registration_dba_proprietor_permission(mock_flags, app, session, jwt, test_name, dba, roles,
+                                                          officer_changes, expect_forbidden):
+    """Assert a DBA proprietor change needs FIRM_EDITABLE_DBA even when the payload party has no usable id."""
+    identifier = 'FM1234567'
+    business = _seed_sole_prop(identifier, dba)
+
+    filing = copy.deepcopy(DBA_CHANGE_OF_REGISTRATION if dba else SP_CHANGE_OF_REGISTRATION)
+    filing['filing']['business']['identifier'] = identifier
+    # the template carries a court order, which a client user is not permitted to add
+    filing['filing']['changeOfRegistration'].pop('courtOrder', None)
+    parties = filing['filing']['changeOfRegistration']['parties']
+    # completing party stays a person (matches the logged in client user); the proprietor is its own party
+    parties[0]['roles'] = [{'roleType': 'Completing Party', 'appointmentDate': '2022-01-01'}]
+    proprietor = copy.deepcopy(parties[0])
+    proprietor['roles'] = [{'roleType': 'Proprietor', 'appointmentDate': '2022-01-01'}]
+    if dba:
+        proprietor['officer'] = {'partyType': 'organization', 'organizationName': '1200334 B.C. LTD.',
+                                 'identifier': 'BC1200334', 'email': 'joe@email.com'}
+    else:
+        proprietor['officer'].pop('id')
+    proprietor['officer'].update(officer_changes)
+    parties.append(proprietor)
+
+    nr_res = copy.deepcopy(nr_response)
+    nr_res['legalType'] = 'SP'
+    login_source = 'IDIR' if STAFF_ROLE in roles else 'BCSC'
+    user = User(username='dba-test-user', firstname='Joe', middlename='P', lastname='Swanson',
+                sub='sub', iss='iss', idp_userid='123', login_source=login_source)
+    user.save()
+    extra_claims = {'firstname': 'Joe P', 'lastname': 'Swanson'}
+
+    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
+        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+            with jwt_request_context(app, jwt, roles, login_source=login_source, extra_claims=extra_claims):
+                err = validate(business, filing)
+
+    if expect_forbidden:
+        assert err
+        assert err.code == HTTPStatus.FORBIDDEN
+        assert 'DBA' in err.msg[0]['message']
+    else:
+        assert err is None, err.msg
 
 
 @pytest.mark.parametrize(
