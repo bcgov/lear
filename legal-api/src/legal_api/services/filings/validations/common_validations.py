@@ -1331,10 +1331,9 @@ def validate_effective_date(filing_json: dict) -> list:
 
     return msg
 
-def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_type) -> list: # noqa: PLR0912
+def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_type) -> list: # noqa: PLR0912, PLR0915
     """Find updated keys in the firm filing (replace, add, edit email, etc.)."""
     updated_keys = []
-    is_dba = False
     if business.legal_type == Business.LegalTypes.SOLE_PROP.value:
         role_type = PartyRole.RoleTypes.PROPRIETOR.value
     elif business.legal_type == Business.LegalTypes.PARTNERSHIP.value:
@@ -1345,6 +1344,12 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
     # Get business and existing parties from DB
     db_party_roles = PartyRole.get_parties_by_role(business.id, role_type)
     parties = filing_json["filing"][filing_type].get("parties", [])
+
+    # a sole proprietorship has a single proprietor: compare against it even when the payload party carries
+    # no (or an unknown) officer id, otherwise an id-less edit or a replacement of a DBA proprietor is never seen
+    current_proprietor = None
+    if role_type == PartyRole.RoleTypes.PROPRIETOR.value:
+        current_proprietor = next((role.party for role in db_party_roles if role.cessation_date is None), None)
 
     matched_db_parties = set()
 
@@ -1369,10 +1374,11 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
                     if matched_db_party:
                         matched_db_parties.add(role.party_id)
                         break
-       
+        if not matched_db_party:
+            matched_db_party = current_proprietor
+
         if matched_db_party:
-            if role_type == PartyRole.RoleTypes.PROPRIETOR.value and matched_db_party.organization_name:
-                is_dba = True
+            is_dba = role_type == PartyRole.RoleTypes.PROPRIETOR.value and bool(matched_db_party.organization_name)
             changes = {}
             # Email comparison
             if not is_same_str(email, matched_db_party.email):
@@ -1385,13 +1391,15 @@ def find_updated_keys_for_firms(business: Business, filing_json: dict, filing_ty
                     "firstName": matched_db_party.first_name,
                     "middleName": matched_db_party.middle_initial,
                     "lastName": matched_db_party.last_name,
-                    "organizationName": matched_db_party.organization_name
+                    "organizationName": matched_db_party.organization_name,
+                    "identifier": matched_db_party.identifier
                 }
             new_name = {
                 "firstName": officer.get("firstName"),
                 "middleName": officer.get("middleName"),
                 "lastName": officer.get("lastName"),
-                "organizationName": officer.get("organizationName")
+                "organizationName": officer.get("organizationName"),
+                "identifier": officer.get("identifier")
             }
           
             name_changed = is_name_changed(old_name, new_name)
@@ -1471,7 +1479,7 @@ def is_same_str(str1: str, str2: str) -> bool:
 
 def is_name_changed(name1: dict, name2: dict) -> bool:
    """Check if two names are different."""
-   name_keys = ["firstName", "middleName", "lastName", "organizationName"]
+   name_keys = ["firstName", "middleName", "lastName", "organizationName", "identifier"]
    return any(not is_same_str(name1.get(key), name2.get(key)) for key in name_keys)
 
 def is_address_changed(addr1: dict, addr2: dict) -> bool:

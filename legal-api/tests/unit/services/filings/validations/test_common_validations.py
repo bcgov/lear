@@ -457,6 +457,7 @@ def test_find_updated_keys_for_firms(mock_address, mock_party_role):
         'middle_initial': 'A',
         'last_name': 'Doe',
         'organization_name': '',
+        'identifier': None,
         'mailing_address_id': 1,
         'delivery_address_id': 1
     })()
@@ -467,6 +468,7 @@ def test_find_updated_keys_for_firms(mock_address, mock_party_role):
         'middle_initial': 'B',
         'last_name': 'Smith',
         'organization_name': '',
+        'identifier': None,
         'mailing_address_id': 2,
         'delivery_address_id': 2
     })()

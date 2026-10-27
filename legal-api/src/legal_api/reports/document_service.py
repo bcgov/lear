@@ -641,6 +641,11 @@ class DocumentService:
             if "specialResolution" in legal_filing:
                 legal_filing["specialResolution"] = legal_filing["specialResolution"] + drs_params
                 return doc_list
+        if report_type == ReportTypes.FILING_2.value and doc_list.get("specialResolution"):
+            # A special resolution carried inline on the filing (coop amalgamation) is an additional
+            # output rather than its own legal filing entry, and is also stored as FILING-2.
+            doc_list["specialResolution"] = doc_list["specialResolution"] + drs_params
+            return doc_list
         if doc_list.get("legalFilings"):
             legal_filing = doc_list["legalFilings"][0]
             filing_key = next(iter(legal_filing.keys()))
@@ -651,6 +656,9 @@ class DocumentService:
                             if (
                                 output != "noticeOfArticles" and
                                 not str(output).startswith("certificate") and
+                                # Static DRS documents (e.g. certifiedRules) are matched by
+                                # documentClass/documentType, never by report type.
+                                output not in FILING_DOCUMENTS and
                                 doc_list.get(output)
                             ):
                                 # A DRS record only maps to an output configured with the same

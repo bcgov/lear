@@ -349,13 +349,14 @@ class ExtractTrackingService:
         ]
         params = {
             'status': status,
-            'error': error,
             'corp_num': corp_num,
             'flow_run_id': flow_run_id,
             'environment': self.data_load_env,
             'flow_name': self.flow_name
         }
-
+        if error is not None:
+                    set_clauses.append('last_error = :error')
+                    params['error'] = error
         if self.table_name == 'colin_tracking':
             set_clauses.append('frozen = :frozen')
             set_clauses.append('in_early_adopter = :in_early_adopter')

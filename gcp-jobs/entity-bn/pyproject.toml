@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "entity-bn"
-version = "0.1.1"
+version = "0.1.2"
 description = ""
 authors = ["BrandonSharratt <brandon@daxiom.com>"]
 readme = "README.md"
@@ -15,6 +15,7 @@ python-dotenv = "^1.1.0"
 pandas = "^2.2.0"
 papermill = "^2.6.0"
 Flask = "^3.1.0"
+pytz = "^2026.5"
 structured-logging = {git = "https://github.com/bcgov/sbc-connect-common.git", rev = "main", subdirectory = "python/structured-logging"}
 cloud-sql-connector = {git = "https://github.com/bcgov/sbc-connect-common.git", rev = "main", subdirectory = "python/cloud-sql-connector"}
 
