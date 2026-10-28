@@ -1075,7 +1075,9 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
             pid = rv.json().get("id")
             filing.payment_token = pid
             filing.payment_status_code = rv.json().get("statusCode", "")
-            filing.payment_account = payment_account_id
+            # use the specified payment account from pay-api which would be vendor account for linked accounts
+            paying_account_id = (rv.json().get("paymentAccount") or {}).get("accountId") or payment_account_id
+            filing.payment_account = paying_account_id
             filing.submitter_roles = special_role
 
             filing.save()
