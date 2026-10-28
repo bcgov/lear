@@ -17,7 +17,7 @@ from enum import Enum
 from http import HTTPStatus
 from typing import Final
 
-from sqlalchemy import and_, desc, event, func, inspect, not_, or_, select
+from sqlalchemy import and_, desc, event, func, inspect, not_, or_, select, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
@@ -750,6 +750,20 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     }
 
     __tablename__ = 'filings'
+    # Partial indexes for the lookups that otherwise seq scan the table in prod; kept here so
+    # autogenerate matches migration a7d3e9f1c2b8 and does not drop them.
+    __table_args__ = (
+        db.Index('ix_filings_parent_filing_id', 'parent_filing_id',
+                 postgresql_where=text('parent_filing_id IS NOT NULL')),
+        db.Index('ix_filings_payment_id', 'payment_id',
+                 postgresql_where=text('payment_id IS NOT NULL')),
+        db.Index('ix_filings_colin_sync', 'transaction_id',
+                 postgresql_where=text("status = 'COMPLETED' AND source = 'LEAR'")),
+        db.Index('ix_filings_temp_reg', 'temp_reg',
+                 postgresql_where=text('temp_reg IS NOT NULL')),
+        db.Index('ix_filings_withdrawn_filing_id', 'withdrawn_filing_id',
+                 postgresql_where=text('withdrawn_filing_id IS NOT NULL')),
+    )
     # this mapper is used so that new and old versions of the service can be run simultaneously,
     # making rolling upgrades easier
     # This is used by SQLAlchemy to explicitly define which fields we're interested
