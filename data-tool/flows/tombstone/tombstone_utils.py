@@ -1061,11 +1061,11 @@ def build_filing_json_meta_data(raw_filing_type: str,
                 'roles': [{'roleType': 'applicant'}]
             })
             
-        filing_json['filing']['restoration'] = {
-            **filing_json['filing']['restoration'],
-            'type': filing_subtype,
-            **({'partyRoles': parties} if parties else {}),
-        }
+            filing_json['filing']['restoration'] = {
+                **filing_json['filing']['restoration'],
+                'type': filing_subtype,
+                **({'partyRoles': parties} if parties else {}),
+            }
        
     elif filing_type == 'alteration':
         meta_data['alteration'] = {}
