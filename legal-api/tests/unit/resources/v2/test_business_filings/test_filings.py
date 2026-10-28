@@ -1905,6 +1905,43 @@ def test_create_invoice_forwards_account_linking_key(session, requests_mock, cli
     assert pay_mock.last_request.headers.get('Account-Linking-Key') == 'test-linking-key'
 
 
+@pytest.mark.parametrize(
+    'test_name, pay_response_account, expected_payment_account',
+    [
+        ('use_payment_account_from_pay', {'accountId': '9999', 'accountName': 'Vendor Account'}, '9999'),
+        ('no_payment_account_fallsback_to_default', None, '12345'),
+    ]
+)
+def test_create_invoice_uses_paying_account(session, requests_mock, client, jwt,
+                                            test_name, pay_response_account, expected_payment_account):
+    """Assert that the account pay-api charged is stored as the payment account, falling back to the header."""
+    identifier = 'CP1234567'
+    coa = copy.deepcopy(FILING_HEADER)
+    coa['filing']['header']['name'] = 'changeOfAddress'
+    coa['filing']['changeOfAddress'] = CHANGE_OF_ADDRESS
+    coa['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'CA'
+    coa['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'CA'
+    coa['filing']['business']['identifier'] = identifier
+
+    b = factory_business(identifier, (datetime.now(UTC) - datedelta.YEAR), None, Business.LegalTypes.COOP.value)
+    factory_business_mailing_address(b)
+
+    pay_response = {'id': 22222, 'statusCode': 'COMPLETED', 'isPaymentActionRequired': False}
+    if pay_response_account:
+        pay_response['paymentAccount'] = pay_response_account
+    requests_mock.post(current_app.config.get('PAYMENT_SVC_URL'), json=pay_response, status_code=HTTPStatus.CREATED)
+    rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                     json=coa,
+                     headers=create_header(jwt, [STAFF_ROLE], identifier,
+                                           **{'accountID': '12345', 'Account-Linking-Key': 'test-linking-key'})
+                     )
+
+    assert rv.status_code == HTTPStatus.CREATED
+    filing = Filing.find_by_id(rv.json['filing']['header']['filingId'])
+    assert filing.payment_account == expected_payment_account
+    assert rv.json['filing']['header']['paymentAccount'] == expected_payment_account
+
+
 def test_rules_memorandum_in_sr(session, mocker, requests_mock, client, jwt, ):
     """Assert if both rules update in sr, and rules file key is provided"""
     mocker.patch('legal_api.services.filings.validations.alteration.validate_pdf',
