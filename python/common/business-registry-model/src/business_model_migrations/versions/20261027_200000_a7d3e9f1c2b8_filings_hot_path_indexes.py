@@ -3,17 +3,21 @@
 parent_filing_id (children lookup in Filing.json), payment_id (pay queue callback),
 colin_event_ids.filing_id (ColinEventId.get_by_filing_id), the COLIN sync paging order,
 temp_reg and withdrawn_filing_id. Built CONCURRENTLY so prod keeps serving while they build.
+A build that is interrupted (timeout, cancel) leaves an INVALID index behind which IF NOT EXISTS
+would then keep, so any invalid copy is dropped before each build. The same index set is
+declared on the models so autogenerate does not try to drop them.
 
 Revision ID: a7d3e9f1c2b8
-Revises: f1a8c35d92e4
+Revises: a9d4c27e81f3
 Create Date: 2026-10-27 20:00:00.000000
 
 """
 from alembic import op
+from sqlalchemy import text
 
 # revision identifiers, used by Alembic.
 revision = 'a7d3e9f1c2b8'
-down_revision = 'f1a8c35d92e4'
+down_revision = 'a9d4c27e81f3'
 branch_labels = None
 depends_on = None
 
@@ -35,10 +39,24 @@ INDEXES = [
 ANALYZE_TABLES = ['filings', 'colin_event_ids', 'businesses']
 
 
+def _drop_if_invalid(name: str):
+    """Drop a leftover invalid index so the CONCURRENTLY build below can redo it."""
+    invalid = op.get_bind().execute(
+        text(
+            'SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid '
+            'WHERE c.relname = :name AND NOT i.indisvalid'
+        ),
+        {'name': name},
+    ).scalar()
+    if invalid:
+        op.execute(f'DROP INDEX CONCURRENTLY IF EXISTS {name}')
+
+
 def upgrade():
     # CREATE INDEX CONCURRENTLY cannot run inside a transaction block.
     with op.get_context().autocommit_block():
         for name, table, column, where in INDEXES:
+            _drop_if_invalid(name)
             stmt = f'CREATE INDEX CONCURRENTLY IF NOT EXISTS {name} ON {table} ({column})'
             if where:
                 stmt += f' WHERE {where}'
