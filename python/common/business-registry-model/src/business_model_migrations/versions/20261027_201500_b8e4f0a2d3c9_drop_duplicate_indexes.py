@@ -11,6 +11,8 @@ Revises: a7d3e9f1c2b8
 Create Date: 2026-10-27 20:15:00.000000
 
 """
+from contextlib import contextmanager
+
 from alembic import op
 
 # revision identifiers, used by Alembic.
@@ -32,8 +34,16 @@ DUPLICATE_INDEXES = [
 ]
 
 
-def upgrade():
+@contextmanager
+def _outside_transaction():
+    """See a7d3e9f1c2b8: close the implicit pg8000 transaction before CONCURRENTLY statements."""
     with op.get_context().autocommit_block():
+        op.execute('COMMIT')
+        yield
+
+
+def upgrade():
+    with _outside_transaction():
         for name in DUPLICATE_INDEXES:
             op.execute(f'DROP INDEX CONCURRENTLY IF EXISTS {name}')
     op.execute('ALTER TABLE colin_event_ids DROP CONSTRAINT IF EXISTS colin_event_ids_colin_event_id_key')

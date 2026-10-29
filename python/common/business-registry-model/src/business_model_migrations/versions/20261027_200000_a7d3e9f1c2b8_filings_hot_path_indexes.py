@@ -12,6 +12,8 @@ Revises: a9d4c27e81f3
 Create Date: 2026-10-27 20:00:00.000000
 
 """
+from contextlib import contextmanager
+
 from alembic import op
 from sqlalchemy import text
 
@@ -39,6 +41,21 @@ INDEXES = [
 ANALYZE_TABLES = ['filings', 'colin_event_ids', 'businesses']
 
 
+@contextmanager
+def _outside_transaction():
+    """Run DDL that must not be inside a transaction block (CONCURRENTLY).
+
+    alembic's autocommit_block reads the current isolation level through a DBAPI cursor before
+    switching the connection to AUTOCOMMIT. On pg8000 (the driver the Cloud Run migration job
+    uses) that read opens an implicit transaction which autocommit does not close, so the
+    CONCURRENTLY statement still fails with 25001. Ending that block first makes the statements
+    run outside any transaction on both pg8000 and psycopg2.
+    """
+    with op.get_context().autocommit_block():
+        op.execute('COMMIT')
+        yield
+
+
 def _drop_if_invalid(name: str):
     """Drop a leftover invalid index so the CONCURRENTLY build below can redo it."""
     invalid = op.get_bind().execute(
@@ -53,8 +70,7 @@ def _drop_if_invalid(name: str):
 
 
 def upgrade():
-    # CREATE INDEX CONCURRENTLY cannot run inside a transaction block.
-    with op.get_context().autocommit_block():
+    with _outside_transaction():
         for name, table, column, where in INDEXES:
             _drop_if_invalid(name)
             stmt = f'CREATE INDEX CONCURRENTLY IF NOT EXISTS {name} ON {table} ({column})'
@@ -66,6 +82,6 @@ def upgrade():
 
 
 def downgrade():
-    with op.get_context().autocommit_block():
+    with _outside_transaction():
         for name, _table, _column, _where in reversed(INDEXES):
             op.execute(f'DROP INDEX CONCURRENTLY IF EXISTS {name}')
