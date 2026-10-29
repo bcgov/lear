@@ -1093,6 +1093,60 @@ def test_format_change_address_liquidator_data(session, mocker):
     assert filing_data['recordsOffice']['mailingAddress']['changed'] is True
     assert filing_data['recordsOffice']['deliveryAddress']['changed'] is True
 
+@pytest.mark.parametrize(
+    "agm_location, expected_location",
+    [
+        (
+            {"country": "CA", "city": "Calgary", "region": "AB"},
+            "Calgary, Alberta, Canada",
+        ),
+        (
+            {"country": "US", "city": "Seattle", "region": "WA"},
+            "Seattle, Washington, United States",
+        ),
+        (
+            {"country": "JP", "city": "Tokyo", "region": "TK"},
+            "Tokyo, TK, Japan",
+        ),
+        (
+            {"country": "JP", "city": "Tokyo"},
+            "Tokyo, Japan",
+        ),
+        (
+            {"country": "JP", "city": "Tokyo", "region": None},
+            "Tokyo, Japan",
+        ),
+        (
+            "Calgary, Alberta, Canada",
+            "Calgary, Alberta, Canada",
+        ),
+        (
+            "Tokyo, Japan",
+            "Tokyo, Japan",
+        ),
+    ],
+)
+def test_format_agm_location_change_data(session, agm_location, expected_location):
+    """Test formatting AGM location change data for both location formats."""
+    filing_template = copy.deepcopy(AGM_LOCATION_CHANGE)
+    filing_template["agmLocation"] = agm_location
+
+    report = create_report(
+        "BC1234567",
+        "BC",
+        "letterOfAgmLocationChange",
+        "agmLocationChange",
+        filing_template,
+    )
+
+    with patch(
+        "legal_api.reports.report.VersionedBusinessDetailsService.get_office_revision",
+        return_value={},
+    ):
+        filing_data = report._filing.filing_json["filing"]
+        report._format_agm_location_change_data(filing_data)
+
+    assert filing_data["location"] == expected_location
 # ---------------------------------------------------------------------------
 # Tests for Report._set_amalgamating_businesses
 # ---------------------------------------------------------------------------
