@@ -28,6 +28,7 @@ from freezegun import freeze_time
 from business_model.models import Business
 from legal_api.services import flags
 from legal_api.services.authz import STAFF_ROLE
+from legal_api.services.permissions import PermissionService
 from registry_schemas.example_data import ANNUAL_REPORT, FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
 from tests import integration_payment
 from tests.unit.models import factory_business, factory_business_mailing_address, factory_business_office, factory_completed_filing, factory_filing, factory_pending_filing
@@ -681,3 +682,189 @@ def test_transition_application_task(session, client, jwt, test_name, business_r
                                for x in rv_json['tasks'])
 
     assert has_transition_task == transition_task_expected
+
+
+DRAFT_REBASE_FEATURE = 'draftRebaseChecks'
+BYPASS_PERMISSION = 'FILE_OVER_EXISTING_DRAFT'
+
+
+def _mock_draft_rebase_flag(monkeypatch, enabled):
+    """Mock only the draftRebaseChecks value of enable-new-feature, delegating every other flag."""
+    flag_value = flags.value
+
+    def _value(flag, *args, **kwargs):
+        if flag == 'enable-new-feature':
+            features = [f for f in (flag_value(flag, *args, **kwargs) or []) if f != DRAFT_REBASE_FEATURE]
+            return features + [DRAFT_REBASE_FEATURE] if enabled else features
+        return flag_value(flag, *args, **kwargs)
+
+    monkeypatch.setattr('legal_api.services.flags.value', _value)
+
+
+def _create_task_filing(business, status, submitter_roles=None, base_transaction_id=None):
+    """Create a filing with the given status, submitter roles and base transaction."""
+    from tests.unit.models import AR_FILING
+
+    filing = factory_filing(business, copy.deepcopy(AR_FILING))
+    filing.skip_status_listener = True
+    filing._status = status
+    filing.submitter_roles = submitter_roles
+    filing.base_transaction_id = base_transaction_id
+    filing.save()
+    return filing
+
+
+def _filing_tasks(rv):
+    """Return only the tasks that wrap a filing (not todo items)."""
+    return [x for x in rv.json['tasks'] if 'filing' in x['task']]
+
+
+def _get_task_business(identifier='CP7654321'):
+    """Create a business to hang tasks off."""
+    business = factory_business(identifier, founding_date=datetime(2017, 2, 1))
+    factory_business_mailing_address(business)
+    return business
+
+
+@pytest.mark.parametrize('test_name, submitter_roles, expected', [
+    ('staff', 'staff', True),
+    ('system', 'system', True),
+    ('public_user', 'public_user', False),
+    ('null', None, False),
+])
+@pytest.mark.parametrize('status', ['DRAFT', 'PENDING', 'ERROR'])
+def test_get_tasks_filed_by_staff(session, client, jwt, monkeypatch, test_name, submitter_roles, expected, status):
+    """Assert that every filing task reports whether the filing was submitted by staff."""
+    _mock_draft_rebase_flag(monkeypatch, False)
+    identifier = 'CP7654321'
+    business = _get_task_business(identifier)
+    filing = _create_task_filing(business, status, submitter_roles)
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    tasks = [x for x in _filing_tasks(rv) if x['task']['filing']['header']['filingId'] == filing.id]
+    assert len(tasks) == 1
+    assert tasks[0]['filedByStaff'] is expected
+
+
+@pytest.mark.parametrize('test_name, base_offset, expected', [
+    ('base_equals_watermark', 0, False),
+    ('base_behind_watermark', -1, True),
+])
+def test_get_tasks_draft_has_intervening_changes(session, client, jwt, monkeypatch, test_name, base_offset,
+                                                 expected):
+    """Assert that a draft task reports whether a filing completed after the draft's base transaction."""
+    from business_model.models import Filing
+
+    _mock_draft_rebase_flag(monkeypatch, False)
+    identifier = 'CP7654321'
+    business = _get_task_business(identifier)
+    completed_1 = factory_completed_filing(business, copy.deepcopy(ANNUAL_REPORT),
+                                           filing_date=datetime(2019, 8, 5, 7, 7, 58, 272362))
+    completed_2 = factory_completed_filing(business, copy.deepcopy(ANNUAL_REPORT),
+                                           filing_date=datetime(2019, 9, 5, 7, 7, 58, 272362))
+    watermark = Filing.get_max_completed_transaction_id(business.id)
+    assert completed_2.transaction_id > completed_1.transaction_id
+    assert watermark == completed_2.transaction_id
+    base = completed_2.transaction_id if base_offset == 0 else completed_1.transaction_id
+    draft = _create_task_filing(business, 'DRAFT', 'public_user', base)
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    tasks = [x for x in _filing_tasks(rv) if x['task']['filing']['header']['filingId'] == draft.id]
+    assert len(tasks) == 1
+    assert tasks[0]['draftHasInterveningChanges'] is expected
+
+
+def test_get_tasks_draft_has_intervening_changes_null_without_base(session, client, jwt, monkeypatch):
+    """Assert that the draft staleness is null when the draft has no base transaction."""
+    _mock_draft_rebase_flag(monkeypatch, False)
+    identifier = 'CP7654321'
+    business = _get_task_business(identifier)
+    factory_completed_filing(business, copy.deepcopy(ANNUAL_REPORT),
+                             filing_date=datetime(2019, 8, 5, 7, 7, 58, 272362))
+    draft = _create_task_filing(business, 'DRAFT', 'public_user', None)
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    tasks = [x for x in _filing_tasks(rv) if x['task']['filing']['header']['filingId'] == draft.id]
+    assert len(tasks) == 1
+    assert 'draftHasInterveningChanges' in tasks[0]
+    assert tasks[0]['draftHasInterveningChanges'] is None
+
+
+def test_get_tasks_draft_has_intervening_changes_null_without_watermark(session, client, jwt, monkeypatch):
+    """Assert that the draft staleness is null when the business has no completed filing."""
+    _mock_draft_rebase_flag(monkeypatch, False)
+    identifier = 'CP7654321'
+    business = _get_task_business(identifier)
+    draft = _create_task_filing(business, 'DRAFT', 'public_user', None)
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    tasks = [x for x in _filing_tasks(rv) if x['task']['filing']['header']['filingId'] == draft.id]
+    assert len(tasks) == 1
+    assert tasks[0]['draftHasInterveningChanges'] is None
+
+
+@pytest.mark.parametrize('status', ['PENDING', 'ERROR'])
+def test_get_tasks_non_draft_has_no_intervening_changes_key(session, client, jwt, monkeypatch, status):
+    """Assert that non-draft filing tasks never carry draftHasInterveningChanges."""
+    _mock_draft_rebase_flag(monkeypatch, False)
+    identifier = 'CP7654321'
+    business = _get_task_business(identifier)
+    _create_task_filing(business, status, 'staff')
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    tasks = _filing_tasks(rv)
+    assert len(tasks) == 1
+    assert 'draftHasInterveningChanges' not in tasks[0]
+
+
+@pytest.mark.parametrize('test_name, flag_on, permissions, draft_roles, expect_draft_enabled', [
+    ('locked_out', True, [], 'staff', False),
+    ('locked_out_system_draft', True, [], 'system', False),
+    ('permission_holder_enabled', True, [BYPASS_PERMISSION], 'staff', True),
+    ('flag_off_no_lockout', False, [], 'staff', True),
+    ('no_staff_draft_no_lockout', True, [], 'public_user', True),
+    ('null_submitter_no_lockout', True, [], None, True),
+])
+def test_get_tasks_staff_draft_lockout(session, client, jwt, monkeypatch, test_name, flag_on, permissions,
+                                       draft_roles, expect_draft_enabled):
+    """Assert that a staff-filed draft locks drafts for callers without the bypass permission."""
+    _mock_draft_rebase_flag(monkeypatch, flag_on)
+    identifier = 'CP7654321'
+    business = _get_task_business(identifier)
+    staff_draft = _create_task_filing(business, 'DRAFT', draft_roles)
+    own_draft = _create_task_filing(business, 'DRAFT', 'public_user')
+
+    with patch.object(PermissionService, 'get_authorized_permissions_for_user', return_value=permissions):
+        rv = client.get(f'/api/v2/businesses/{identifier}/tasks',
+                        headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    by_id = {x['task']['filing']['header']['filingId']: x for x in _filing_tasks(rv)}
+    assert by_id[staff_draft.id]['enabled'] is expect_draft_enabled
+    assert by_id[own_draft.id]['enabled'] is expect_draft_enabled
+
+
+@pytest.mark.parametrize('status', ['PENDING', 'ERROR'])
+def test_get_tasks_staff_draft_lockout_keeps_payment_tasks_enabled(session, client, jwt, monkeypatch, status):
+    """Assert that the lockout disables drafts but leaves PENDING and ERROR filing tasks enabled."""
+    _mock_draft_rebase_flag(monkeypatch, True)
+    identifier = 'CP7654321'
+    business = _get_task_business(identifier)
+    draft = _create_task_filing(business, 'DRAFT', 'staff')
+    other = _create_task_filing(business, status, 'public_user')
+
+    with patch.object(PermissionService, 'get_authorized_permissions_for_user', return_value=[]):
+        rv = client.get(f'/api/v2/businesses/{identifier}/tasks',
+                        headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    by_id = {x['task']['filing']['header']['filingId']: x for x in _filing_tasks(rv)}
+    assert by_id[draft.id]['enabled'] is False
+    assert by_id[other.id]['enabled'] is True

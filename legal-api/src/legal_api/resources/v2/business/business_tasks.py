@@ -26,9 +26,15 @@ from flask_cors import cross_origin
 from requests import exceptions
 
 from business_common.utils.legislation_datetime import LegislationDatetime
-from business_model.models import Business, Filing
+from business_model.models import Business, Filing, UserRoles
 from legal_api.services import check_warnings, namex
-from legal_api.services.authz import BusinessBlocker, business_blocker_check
+from legal_api.services.authz import (
+    FILE_OVER_EXISTING_DRAFT_PERMISSION,
+    BusinessBlocker,
+    business_blocker_check,
+    is_draft_rebase_checks_enabled,
+)
+from legal_api.services.permissions import PermissionService
 from legal_api.services.request_context import add_account_linking_key_header
 from legal_api.services.warnings.business.business_checks import BusinessWarningCodes, WarningType
 from legal_api.utils.auth import jwt
@@ -109,13 +115,30 @@ def construct_task_list(business: Business):
                                                                  Filing.Status.PENDING.value,
                                                                  Filing.Status.PENDING_CORRECTION.value,
                                                                  Filing.Status.ERROR.value])
+    has_draft_filing = any(filing.status == Filing.Status.DRAFT.value for filing in pending_filings)
+
+    # lockout: while a staff-filed draft is in progress, users without the bypass
+    # permission cannot open any draft task, including their own draft
+    user_locked_out = False
+    if has_draft_filing and is_draft_rebase_checks_enabled():
+        staff_draft_exists = any(_is_staff_filed(filing) for filing in pending_filings
+                                 if filing.status == Filing.Status.DRAFT.value)
+        has_bypass_permission = FILE_OVER_EXISTING_DRAFT_PERMISSION in \
+            (PermissionService.get_authorized_permissions_for_user() or [])
+        user_locked_out = staff_draft_exists and not has_bypass_permission
+
+    watermark_transaction_id = Filing.get_max_completed_transaction_id(business.id) if has_draft_filing else None
+
     # Create a todo item for each pending filing
     pending_tr_type: str = None
     for filing in pending_filings:
         if filing.filing_type == "transparencyRegister":
             pending_tr_type = filing.filing_sub_type
 
-        if not (task := _create_pending_filing_task(business, filing, order)):
+        # the lockout only blocks opening drafts; payment actions on submitted filings stay enabled
+        task_enabled = not (user_locked_out and filing.status == Filing.Status.DRAFT.value)
+        if not (task := _create_pending_filing_task(business, filing, order,
+                                                    task_enabled, watermark_transaction_id)):
             return "pay_connection_error"
         tasks.append(task)
         order += 1
@@ -155,7 +178,13 @@ def _add_missing_info_task(business: Business, warnings: list, tasks: list, orde
     return tasks, order
 
 
-def _create_pending_filing_task(business: Business, filing: Filing, order: int) -> dict | None:
+def _is_staff_filed(filing: Filing) -> bool:
+    """Return whether the filing was submitted by staff (NULL submitter_roles means user-filed)."""
+    return filing.submitter_roles in [UserRoles.staff.value, UserRoles.system.value]
+
+
+def _create_pending_filing_task(business: Business, filing: Filing, order: int,
+                                enabled: bool = True, watermark_transaction_id: int | None = None) -> dict | None:
     """Return the task for a draft/pending filing, or None when pay-api could not be reached."""
     filing_json = filing.json
     if filing.payment_status_code == "CREATED" and filing.payment_token:
@@ -181,7 +210,13 @@ def _create_pending_filing_task(business: Business, filing: Filing, order: int) 
                 f"Payment connection failure for {business.identifier} task list. ", err)
             return None
 
-    return {"task": filing_json, "order": order, "enabled": True}
+    task = {"task": filing_json, "order": order, "enabled": enabled, "filedByStaff": _is_staff_filed(filing)}
+    if filing.status == Filing.Status.DRAFT.value:
+        # derived staleness: a filing completed under this draft; null when the base is unknown
+        task["draftHasInterveningChanges"] = \
+            None if (filing.base_transaction_id is None or watermark_transaction_id is None) \
+            else filing.base_transaction_id < watermark_transaction_id
+    return task
 
 
 def _add_ar_tasks(business: Business, tasks: list, order: int, pending_filings: list):

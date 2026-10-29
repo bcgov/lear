@@ -15,6 +15,7 @@
 """This provides the service for getting business details as of a filing."""
 # pylint: disable=singleton-comparison ; pylint does not recognize sqlalchemy ==
 from datetime import datetime
+from types import SimpleNamespace
 from typing import Final
 
 import pycountry
@@ -210,6 +211,60 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
         company_profile_json["resolutions"] = \
             VersionedBusinessDetailsService.get_resolution_dates_revision(filing.transaction_id, business_id)
         return company_profile_json
+
+    @staticmethod
+    def get_company_details_at_transaction(transaction_id, business_id) -> dict:
+        """Consolidate the business's versioned data as of the given transaction id."""
+        return {
+            "business":
+                VersionedBusinessDetailsService.get_business_revision_at_transaction(transaction_id, business_id),
+            "parties":
+                VersionedBusinessDetailsService.get_party_roles_at_transaction(transaction_id, business_id),
+            "offices":
+                VersionedBusinessDetailsService.get_office_revision(None, transaction_id, business_id),
+            "shareClasses":
+                VersionedBusinessDetailsService.get_share_class_revision(transaction_id, business_id),
+            "nameTranslations":
+                VersionedBusinessDetailsService.get_name_translations_revision(transaction_id, business_id),
+            "resolutions":
+                VersionedBusinessDetailsService.get_resolution_dates_revision(transaction_id, business_id)
+        }
+
+    @staticmethod
+    def get_business_revision_at_transaction(transaction_id, business_id) -> dict:
+        """Return the business info as of the given transaction id."""
+        business = Business.find_by_internal_id(business_id)
+        business_version = VersioningProxy.version_class(db.session(), Business)
+        business_revision = db.session.query(business_version) \
+            .filter(business_version.transaction_id <= transaction_id) \
+            .filter(business_version.operation_type != OPERATION_TYPE_DELETE) \
+            .filter(business_version.id == business_id) \
+            .filter(or_(business_version.end_transaction_id == None,
+                        business_version.end_transaction_id > transaction_id)) \
+            .order_by(business_version.transaction_id).one_or_none()
+
+        business_json = VersionedBusinessDetailsService.business_revision_json(business_revision, business.json())
+        if business_revision:
+            business_json["state"] = business_revision.state
+        return business_json
+
+    @staticmethod
+    def get_party_roles_at_transaction(transaction_id, business_id) -> list:
+        """Consolidate all active party roles (all role types) as of the given transaction id."""
+        # the *_revision_json helpers only dereference .transaction_id from the filing they are given
+        txn_shim = SimpleNamespace(transaction_id=transaction_id)
+        party_role_version = VersioningProxy.version_class(db.session(), PartyRole)
+        versioned_party_roles = db.session.query(party_role_version) \
+            .filter(party_role_version.transaction_id <= transaction_id) \
+            .filter(party_role_version.operation_type != OPERATION_TYPE_DELETE) \
+            .filter(party_role_version.business_id == business_id) \
+            .filter(or_(party_role_version.end_transaction_id == None,
+                        party_role_version.end_transaction_id > transaction_id)) \
+            .order_by(party_role_version.transaction_id).all()
+
+        return [VersionedBusinessDetailsService.party_role_revision_json(txn_shim, party_role, False)
+                for party_role in versioned_party_roles
+                if party_role.cessation_date is None]
 
     @staticmethod
     def get_business_revision(filing, business) -> dict:
