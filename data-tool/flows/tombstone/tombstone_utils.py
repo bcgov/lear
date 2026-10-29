@@ -140,6 +140,8 @@ def format_parties_data(data: dict, config=None) -> list[dict]:
         'RCC': 'custodian',
         'RCM': 'receiver',
         'LIQ': 'liquidator',
+        'INC': 'incorporator',
+        'APP': 'applicant'
         # Additional roles can be added here in the future
     }
 
@@ -1047,10 +1049,24 @@ def build_filing_json_meta_data(raw_filing_type: str,
             filing_json['filing']['restoration'] = {
                 'expiry': expiry_date,
             }
-        filing_json['filing']['restoration'] = {
-            **filing_json['filing']['restoration'],
-            'type': filing_subtype,
-        }
+            parties = []
+            for p in (data.get('parties') or []):
+                if p.get('cp_party_typ_cd') != 'APP' or p.get('cp_start_event_id') != filing_data['e_event_id']:
+                    continue
+                officer = {
+                    'firstName': (p.get('cp_first_name') or '')
+                }
+            parties.append({
+                'officer' : officer,
+                'roles': [{'roleType': 'applicant'}]
+            })
+            
+            filing_json['filing']['restoration'] = {
+                **filing_json['filing']['restoration'],
+                'type': filing_subtype,
+                **({'partyRoles': parties} if parties else {}),
+            }
+       
     elif filing_type == 'alteration':
         meta_data['alteration'] = {}
         if (event_file_type := filing_data['event_file_type']) in LEGAL_TYPE_CHANGE_FILINGS.keys():
@@ -1099,7 +1115,6 @@ def build_filing_json_meta_data(raw_filing_type: str,
 
     # populate court order info in meta_data if available
     update_court_order(meta_data, data, filing_data)
-
     # TODO: populate meta_data for correction to display correct filing name
 
     return filing_json, meta_data
