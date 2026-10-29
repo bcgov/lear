@@ -51,17 +51,69 @@ CORP_PROCESSING_ACCOUNTS_BASE = """
         AND COALESCE(NULLIF(account_ids, ''), NULL) IS NOT NULL
 """
 
+# @contextmanager
+# def replica_role(conn: Connection):
+#     try:
+#         conn.execute(text("SET session_replication_role = 'replica';"))
+#         yield
+#         conn.commit()
+#     except Exception as e:
+#         conn.rollback()
+#         print(f'DB operations rollback due to error:\n {e}')
+#         raise e
+
+
 @contextmanager
 def replica_role(conn: Connection):
     try:
-        conn.execute(text("SET session_replication_role = 'replica';"))
-        yield
-        conn.commit()
-    except Exception as e:
-        conn.rollback()
-        print(f'DB operations rollback due to error:\n {e}')
-        raise e
+        conn.execute(text(
+            "SET max_parallel_workers_per_gather = 0"
+        ))
+        conn.execute(text("SELECT set_replica_mode();"))
 
+        role = conn.execute(
+            text("SELECT current_setting('session_replication_role')")
+        ).scalar_one()
+
+        if role != "replica":
+            raise RuntimeError(
+                f"Failed to enable replica mode; current role is '{role}'"
+            )
+
+        print(f"Session replication role set to: {role}")
+
+        yield conn
+
+    except Exception as exc:
+        conn.rollback()
+        print(f"Database operation failed: {exc}")
+        raise
+
+    else:
+        conn.commit()
+
+    finally:
+        try:
+            conn.execute(text("SELECT set_origin_mode();"))
+            role = conn.execute(
+                text("SELECT current_setting('session_replication_role')")
+            ).scalar_one()
+
+            if role != "origin":
+                raise RuntimeError(
+                    f"Failed to restore origin mode; current role is '{role}'"
+                )
+
+            conn.commit()
+            conn.execute(text(
+                "RESET max_parallel_workers_per_gather"
+            ))
+            conn.commit()
+            print("Session replication role restored to: origin")
+
+        except Exception as exc:
+            conn.rollback()
+            print(f"Failed to restore replica role: {exc}")
 
 @task(cache_policy=NO_CACHE)
 def get_selected_corps(db_engine: Engine, config):
@@ -218,6 +270,39 @@ def get_affiliation_targets(config, colin_engine: Engine, identifiers: List[str]
 
 @task(cache_policy=NO_CACHE)
 def lear_delete_non_versioned(conn: Connection, business_ids: list):
+    succeeded = 0
+    failed = 0
+
+    def run_query(plan: dict) -> dict:
+        nonlocal failed
+        try:
+            result = execute_query.submit(conn, plan).result()
+            if not isinstance(result, dict):
+                raise TypeError(
+                    f"execute_query for {plan.get('source')} returned "
+                    f"{type(result).__name__}, expected dict"
+                )
+            return result
+        except Exception as exc:
+            failed += 1
+            print(f"Failed querying {plan.get('source')}: {exc!r}")
+            return {}
+
+    def run_delete(table: str, ids: list) -> None:
+        nonlocal succeeded, failed
+
+        ids = filter_none(ids if isinstance(ids, list) else [])
+        if not ids:
+            print(f'Skip deleting {table} due to empty ID list')
+            return
+
+        try:
+            execute_delete_plan.submit(conn, table, ids).result()
+            succeeded += 1
+        except Exception as exc:
+            failed += 1
+            print(f'Failed deleting {table}: {exc!r}')
+
     # first query
     query_plans_one = [
         {
@@ -252,210 +337,191 @@ def lear_delete_non_versioned(conn: Connection, business_ids: list):
         },
     ]
 
-    query_futures_one = []
-    for plan in query_plans_one:
-        query_futures_one.append(
-            execute_query.submit(conn, plan)
-        )
-
+    
     results_one = {}
-    for future in query_futures_one:
-        result = future.result()
-        results_one.update(result)
+    for plan in query_plans_one:
+        delete_plans = run_query(plan)
+        print(
+            f"Delete plans for {len(delete_plans)} tables from "
+            f"{plan.get('source')}: {list(delete_plans.keys())}"
+        )
+        for table, ids in delete_plans.items():
+            results_one.setdefault(table, []).extend(
+                ids if isinstance(ids, list) else []
+            )
 
-    # second second
+    # second query
     query_plans_two = [
         {
             'source': 'addresses',
-            'params': {'office_id': results_one['offices']},
+            'params': {'office_id': results_one.get('offices', [])},
         },
         {
             'source': 'parties',
             'columns': ['delivery_address_id', 'mailing_address_id'],
-            'params': {'id': results_one['parties']},
+            'params': {'id': results_one.get('parties', [])},
             'targets': ['addresses', 'addresses'],
         },
         {
             'source': 'share_series',
-            'params': {'share_class_id': results_one['share_classes']},
+            'params': {'share_class_id': results_one.get('share_classes', [])},
         },
         {
             'source': 'amalgamating_businesses',
-            'params': { 'amalgamation_id': results_one['amalgamations']},
+            'params': {'amalgamation_id': results_one.get('amalgamations', [])},
         },
         {
             'source': 'offices_held',
-            'params': {'party_role_id': results_one['party_roles']},
+            'params': {'party_role_id': results_one.get('party_roles', [])},
         }
     ]
 
-    query_futures_two = []
+    second_delete_plans = []
     for plan in query_plans_two:
-        query_futures_two.append(
-            execute_query.submit(conn, plan)
+        delete_plans = run_query(plan)
+        print(
+            f"Delete plans for {len(delete_plans)} tables from "
+            f"{plan.get('source')}: {list(delete_plans.keys())}"
         )
+        second_delete_plans.append(delete_plans)
 
-    delete_futures = []
-    # delete for first query results
+    # Execute every query first, then delete serially. The shared SQLAlchemy
+    # connection must not be used by concurrent Prefect tasks.
     for table, ids in results_one.items():
-        delete_futures.append(
-            execute_delete_plan.submit(conn, table, ids)
-        )
-    # delete for second query results
-    for future in query_futures_two:
-        delete_plans = future.result()
-        for table, ids in delete_plans.items():
-            delete_futures.append(
-                execute_delete_plan.submit(conn, table, ids)
-            )
+        run_delete(table, ids)
 
-    wait(delete_futures)
-    succeeded = sum(1 for f in delete_futures if f.state.is_completed())
-    failed = len(delete_futures) - succeeded
-    print(f'Lear delete (non-versioned) complete for this round. Succeeded: {succeeded}. Failed: {failed}')
+    for delete_plans in second_delete_plans:
+        for table, ids in delete_plans.items():
+            run_delete(table, ids)
+
+    print(
+        'Lear delete (non-versioned) complete for this round. '
+        f'Succeeded: {succeeded}. Failed: {failed}'
+    )
 
 
 @task(cache_policy=NO_CACHE)
 def lear_delete_versioned(conn: Connection, business_ids: list):
+    succeeded = 0
+    failed = 0
+
+    def run_query(plan: dict) -> dict:
+        nonlocal failed
+        try:
+            result = execute_query.submit(conn, plan).result()
+            if not isinstance(result, dict):
+                raise TypeError(
+                    f"execute_query for {plan.get('source')} returned "
+                    f"{type(result).__name__}, expected dict"
+                )
+            return result
+        except Exception as exc:
+            failed += 1
+            print(f"Failed querying {plan.get('source')}: {exc!r}")
+            return {}
+
+    def run_delete(table: str, ids: list) -> None:
+        nonlocal succeeded, failed
+
+        ids = filter_none(ids if isinstance(ids, list) else [])
+        if not ids:
+            print(f'Skip deleting {table} due to empty ID list')
+            return
+
+        try:
+            execute_delete_plan.submit(conn, table, ids).result()
+            succeeded += 1
+        except Exception as exc:
+            failed += 1
+            print(f'Failed deleting {table}: {exc!r}')
+
     # filing, transaction
-            filings_transaction_future = execute_query.submit(conn, {
-                'source': 'filings',
-                'columns': ['id', 'transaction_id'],
-                'params': {'business_id': business_ids},
-                'targets': ['filings', 'transaction'],
-            })
+    plans = run_query({
+        'source': 'filings',
+        'columns': ['id', 'transaction_id'],
+        'params': {'business_id': business_ids},
+        'targets': ['filings', 'transaction'],
+    })
 
-            plans = filings_transaction_future.result()
+    filing_ids = plans.get('filings', [])
+    transaction_ids = plans.get('transaction', [])
 
-            filing_ids = plans['filings']
-            transaction_ids = plans['transaction']
+    query_plans = [
+        # based on transaction_id
+        {'source': 'addresses_version', 'params': {'transaction_id': transaction_ids}},
+        {'source': 'aliases_version', 'params': {'transaction_id': transaction_ids}},
+        {'source': 'amalgamating_businesses_version', 'params': {'transaction_id': transaction_ids}},
+        {'source': 'amalgamations_version', 'params': {'transaction_id': transaction_ids}},
+        {'source': 'documents_version', 'params': {'transaction_id': transaction_ids}},
+        {'source': 'jurisdictions_version', 'params': {'transaction_id': transaction_ids}},
+        {'source': 'offices_version', 'params': {'transaction_id': transaction_ids}},
+        {'source': 'parties_version', 'params': {'transaction_id': transaction_ids}},
+        {'source': 'party_roles_version', 'params': {'transaction_id': transaction_ids}},
+        {'source': 'resolutions_version', 'params': {'transaction_id': transaction_ids}},
+        {'source': 'share_classes_version', 'params': {'transaction_id': transaction_ids}},
+        {'source': 'share_series_version', 'params': {'transaction_id': transaction_ids}},
+        {'source': 'offices_held_version', 'params': {'transaction_id': transaction_ids}},
+        # based on others
+        {
+            'source': 'batch_processing',
+            'columns': ['id'],
+            'params': {'business_id': business_ids},
+            'targets': ['batch_processing'],
+        },
+        {
+            'source': 'batch_processing',
+            'columns': ['batch_id'],
+            'params': {'business_id': business_ids},
+            'targets': ['batches'],
+        },
+        {'source': 'comments', 'params': {'filing_id': filing_ids}},
+        {'source': 'furnishings', 'params': {'business_id': business_ids}},
+        # some Comment records saved by legal-api are linked directly by business_id
+        {'source': 'comments', 'params': {'business_id': business_ids}},
+        {'source': 'consent_continuation_outs', 'params': {'filing_id': filing_ids}},
+    ]
 
-            query_plans = [
-                # based on transaction_id
-                {
-                    'source': 'addresses_version',
-                    'params': {'transaction_id': transaction_ids},
-                },
-                {
-                    'source': 'aliases_version',
-                    'params': {'transaction_id': transaction_ids},
-                },
-                {
-                    'source': 'amalgamating_businesses_version',
-                    'params': {'transaction_id': transaction_ids},
-                },
-                {
-                    'source': 'amalgamations_version',
-                    'params': {'transaction_id': transaction_ids},
-                },
-                {
-                    'source': 'documents_version',
-                    'params': {'transaction_id': transaction_ids},
-                },
-                {
-                    'source': 'jurisdictions_version',
-                    'params': {'transaction_id': transaction_ids},
-                },
-                {
-                    'source': 'offices_version',
-                    'params': {'transaction_id': transaction_ids},
-                },
-                {
-                    'source': 'parties_version',
-                    'params': {'transaction_id': transaction_ids},
-                },
-                {
-                    'source': 'party_roles_version',
-                    'params': {'transaction_id': transaction_ids},
-                },
-                {
-                    'source': 'resolutions_version',
-                    'params': {'transaction_id': transaction_ids},
-                },
-                {
-                    'source': 'share_classes_version',
-                    'params': {'transaction_id': transaction_ids},
-                },
-                {
-                    'source': 'share_series_version',
-                    'params': {'transaction_id': transaction_ids},
-                },
-                {
-                    'source': 'offices_held_version',
-                    'params': {'transaction_id': transaction_ids},
-                },
-                # based on others
-                {
-                    'source': 'batch_processing',
-                    'columns': ['id', 'batch_id'],
-                    'params': {'business_id': business_ids},
-                    'targets': ['batch_processing', 'batches'],
-                },
-                {
-                    'source': 'colin_event_ids',
-                    'columns': ['colin_event_id'],
-                    'params': {'filing_id': filing_ids},
-                },
-                {
-                    'source': 'comments',
-                    'params': {'filing_id': filing_ids},
-                },
-                {
-                    'source': 'furnishings',
-                    'params': {'business_id': business_ids},
-                },
-                # there're some Comment records saved by legal-api directly instead of filer
-                # some of them are linked via business_id
-                {
-                    'source': 'comments',
-                    'params': {'business_id': business_ids},
-                },
-                {
-                    'source': 'consent_continuation_outs',
-                    'params': {'filing_id': filing_ids},
-                },
-            ]
+    # Execute every query and delete serially. The shared SQLAlchemy connection
+    # must not be used by concurrent Prefect tasks.
+    for plan in query_plans:
+        delete_plans = run_query(plan)
+        print(
+            f"Delete plans for {len(delete_plans)} tables from "
+            f"{plan.get('source')}: {list(delete_plans.keys())}"
+        )
+        for table, ids in delete_plans.items():
+            run_delete(table, ids)
 
-            query_futures = []
-            for plan in query_plans:
-                query_futures.append(
-                    execute_query.submit(conn, plan)
-                )
+    tables_and_ids = [
+        ('businesses', business_ids),
+        ('businesses_version', business_ids),
+        ('filings', filing_ids),
+        ('transaction', transaction_ids),
+    ]
+    for table, ids in tables_and_ids:
+        run_delete(table, ids)
 
-            delete_futures = []
-            for future in query_futures:
-                delete_plans = future.result()
-                for table, ids in delete_plans.items():
-                    delete_futures.append(
-                        execute_delete_plan.submit(conn, table, ids)
-                    )
-
-            # the rest of tables
-            tables_and_ids = [
-                ('businesses', business_ids),
-                ('businesses_version', business_ids),
-                ('filings', filing_ids),
-                ('transaction', transaction_ids)
-            ]
-            for table, ids in tables_and_ids:
-                delete_futures.append(
-                    execute_delete_plan.submit(conn, table, ids)
-                )
-
-            wait(delete_futures)
-            succeeded = sum(1 for f in delete_futures if f.state.is_completed())
-            failed = len(delete_futures) - succeeded
-            print(f'Lear delete (versioned) complete for this round. Succeeded: {succeeded}. Failed: {failed}')
+    print(
+        'Lear delete (versioned) complete for this round. '
+        f'Succeeded: {succeeded}. Failed: {failed}'
+    )
 
 
 @task(cache_policy=NO_CACHE)
 def lear_delete(db_engine: Engine, business_ids: list):
+    if not business_ids:
+        print("Skip LEAR delete due to empty business ID list")
+        return
+
     with db_engine.connect() as conn:
         with replica_role(conn):
-            # no overlaps between versioned & non-versioned records
             versioned = lear_delete_versioned.submit(conn, business_ids)
+            versioned.result()
+            print(f"Completed LEAR versioned delete for {len(business_ids)} business IDs")
+
             non_versioned = lear_delete_non_versioned.submit(conn, business_ids)
-            wait([versioned, non_versioned])
+            non_versioned.result()
+            print(f"Completed LEAR non-versioned delete for {len(business_ids)} business IDs")
 
 
 @task(cache_policy=NO_CACHE)
@@ -920,12 +986,14 @@ def batch_delete_flow():
             if not business_ids:
                 break
             print(f'🚀 Running round {cnt} to delete {len(business_ids)} busiesses...')
+            print(f'👷 Identifiers to delete: {identifiers}')
 
             # If business has lear filings save them to demigrated filings table
             if config.SAVE_DEMIGRATED_LEAR_FILINGS:
                 insert_demigrated_filings(lear_engine, colin_engine, business_ids, identifiers)
 
             futures = []
+
             futures.append(lear_delete.submit(lear_engine, business_ids))
 
             if config.DELETE_AUTH_RECORDS:
