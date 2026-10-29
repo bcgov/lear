@@ -1148,6 +1148,22 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             json_submission['filing']['header']['isCorrected'] = self.is_corrected
             json_submission['filing']['header']['isCorrectionPending'] = self.is_correction_pending
 
+            if self.filing_type == 'correction':
+                header = json_submission['filing']['header']
+                correction = json_submission.get('filing', {}).get('correction', {})
+
+                if corrected_filing_type := correction.get('correctedFilingType'):
+                    header['correctedFilingType'] = corrected_filing_type
+
+                    corrected_filing_id = correction.get('correctedFilingId')
+                    if (
+                        corrected_filing_id
+                        and corrected_filing_type in Filing.FILING_SUB_TYPE_KEYS
+                        and (original := Filing.find_by_id(corrected_filing_id))
+                        and (sub_type := original.filing_sub_type)
+                    ):
+                        header['correctedFilingSubType'] = sub_type
+
             return json_submission
         except Exception as err:
             raise KeyError from err
