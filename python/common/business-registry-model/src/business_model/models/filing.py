@@ -17,7 +17,7 @@ from enum import Enum
 from http import HTTPStatus
 from typing import Final
 
-from sqlalchemy import and_, desc, event, func, inspect, not_, or_, select
+from sqlalchemy import and_, desc, event, func, inspect, not_, or_, select, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import backref
@@ -750,6 +750,20 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     }
 
     __tablename__ = 'filings'
+    # Partial indexes for the lookups that otherwise seq scan the table in prod; kept here so
+    # autogenerate matches migration a7d3e9f1c2b8 and does not drop them.
+    __table_args__ = (
+        db.Index('ix_filings_parent_filing_id', 'parent_filing_id',
+                 postgresql_where=text('parent_filing_id IS NOT NULL')),
+        db.Index('ix_filings_payment_id', 'payment_id',
+                 postgresql_where=text('payment_id IS NOT NULL')),
+        db.Index('ix_filings_colin_sync', 'transaction_id',
+                 postgresql_where=text("status = 'COMPLETED' AND source = 'LEAR'")),
+        db.Index('ix_filings_temp_reg', 'temp_reg',
+                 postgresql_where=text('temp_reg IS NOT NULL')),
+        db.Index('ix_filings_withdrawn_filing_id', 'withdrawn_filing_id',
+                 postgresql_where=text('withdrawn_filing_id IS NOT NULL')),
+    )
     # this mapper is used so that new and old versions of the service can be run simultaneously,
     # making rolling upgrades easier
     # This is used by SQLAlchemy to explicitly define which fields we're interested
@@ -774,6 +788,7 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             '_payment_token',
             '_source',
             '_status',
+            'base_transaction_id',
             'business_id',
             'colin_only',
             'deletion_locked',
@@ -828,6 +843,9 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
     # # relationships
     transaction_id = db.Column('transaction_id', db.BigInteger,
                                db.ForeignKey('transaction.id'))
+    # transaction the business data was at when this draft was created/last rebased
+    base_transaction_id = db.Column('base_transaction_id', db.BigInteger,
+                                    db.ForeignKey('transaction.id'))
     business_id = db.Column('business_id', db.Integer,
                             db.ForeignKey('businesses.id'))
     temp_reg = db.Column('temp_reg', db.String(10),
@@ -1391,6 +1409,24 @@ class Filing(db.Model):  # pylint: disable=too-many-instance-attributes,too-many
             query = query.filter(Filing.transaction_id < filing.transaction_id)
 
         return query.order_by(Filing.transaction_id.desc()).first()
+
+    @staticmethod
+    def get_max_completed_transaction_id(business_id: int):
+        """Return the transaction id of the business's most recent completed filing (the watermark)."""
+        return db.session.query(func.max(Filing.transaction_id)). \
+            filter(Filing.business_id == business_id). \
+            filter(Filing._status.in_([Filing.Status.COMPLETED.value, Filing.Status.TOMBSTONE.value])). \
+            scalar()
+
+    @staticmethod
+    def get_completed_filings_after_transaction(business_id: int, transaction_id: int):
+        """Return completed filings whose transaction id is greater than the given one, oldest first."""
+        return db.session.query(Filing). \
+            filter(Filing.business_id == business_id). \
+            filter(Filing._status.in_([Filing.Status.COMPLETED.value, Filing.Status.TOMBSTONE.value])). \
+            filter(Filing.transaction_id > transaction_id). \
+            order_by(Filing.transaction_id). \
+            all()
 
     @staticmethod
     def has_completed_filing(business_id: int, filing_type: str) -> bool:
