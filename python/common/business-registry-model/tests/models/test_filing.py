@@ -30,7 +30,9 @@ from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
     ANNUAL_REPORT,
     CHANGE_OF_DIRECTORS,
+    CHANGE_OF_LIQUIDATORS,
     CORRECTION_AR,
+    CORRECTION_COL,
     COURT_ORDER,
     FILING_HEADER,
     SPECIAL_RESOLUTION,
@@ -827,3 +829,57 @@ def test_draft_submitter_roles_round_trip(session):
 
     stored_user = Filing.find_by_id(user_draft_id)
     assert stored_user.submitter_roles is None
+
+
+@pytest.mark.parametrize(
+    'test_name, corrected_filing_type, invalid_id, expected_subtype',
+    [
+        (
+            'with_subtype',
+            'changeOfLiquidators',
+            False,
+            'intentToLiquidate'
+        ),
+        (
+            'without_subtype',
+            'annualReport',
+            False,
+            None
+        ),
+        (
+            'missing_original_filing',
+            'changeOfLiquidators',
+            True,
+            None
+        )
+    ]
+)
+def test_filing_json_includes_corrected_filing_types(
+    session, test_name, corrected_filing_type, invalid_id, expected_subtype
+):
+    """Assert correctedFilingType and correctedFilingSubType in header."""
+    b = factory_business('CP1234567')
+
+    if corrected_filing_type == 'changeOfLiquidators':
+        original_payload = copy.deepcopy(FILING_HEADER)
+        original_payload['filing']['header']['name'] = 'changeOfLiquidators'
+        original_payload['filing']['changeOfLiquidators'] = copy.deepcopy(CHANGE_OF_LIQUIDATORS)
+    else:
+        original_payload = copy.deepcopy(ANNUAL_REPORT)
+
+    original_filing = factory_completed_filing(b, original_payload)
+    target_filing_id = 99999999 if invalid_id else original_filing.id
+
+    correction_payload = copy.deepcopy(CORRECTION_COL)
+    correction_payload['filing']['correction']['correctedFilingId'] = target_filing_id
+    correction_payload['filing']['correction']['correctedFilingType'] = corrected_filing_type
+
+    correction_filing = factory_filing(b, correction_payload)
+    header = correction_filing.json['filing']['header']
+
+    assert header.get('correctedFilingType') == corrected_filing_type
+
+    if expected_subtype:
+        assert header.get('correctedFilingSubType') == expected_subtype
+    else:
+        assert 'correctedFilingSubType' not in header
