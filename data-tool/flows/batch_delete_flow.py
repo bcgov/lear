@@ -51,18 +51,6 @@ CORP_PROCESSING_ACCOUNTS_BASE = """
         AND COALESCE(NULLIF(account_ids, ''), NULL) IS NOT NULL
 """
 
-# @contextmanager
-# def replica_role(conn: Connection):
-#     try:
-#         conn.execute(text("SET session_replication_role = 'replica';"))
-#         yield
-#         conn.commit()
-#     except Exception as e:
-#         conn.rollback()
-#         print(f'DB operations rollback due to error:\n {e}')
-#         raise e
-
-
 @contextmanager
 def replica_role(conn: Connection):
     try:
@@ -447,39 +435,90 @@ def lear_delete_versioned(conn: Connection, business_ids: list):
     transaction_ids = plans.get('transaction', [])
 
     query_plans = [
-        # based on transaction_id
-        {'source': 'addresses_version', 'params': {'transaction_id': transaction_ids}},
-        {'source': 'aliases_version', 'params': {'transaction_id': transaction_ids}},
-        {'source': 'amalgamating_businesses_version', 'params': {'transaction_id': transaction_ids}},
-        {'source': 'amalgamations_version', 'params': {'transaction_id': transaction_ids}},
-        {'source': 'documents_version', 'params': {'transaction_id': transaction_ids}},
-        {'source': 'jurisdictions_version', 'params': {'transaction_id': transaction_ids}},
-        {'source': 'offices_version', 'params': {'transaction_id': transaction_ids}},
-        {'source': 'parties_version', 'params': {'transaction_id': transaction_ids}},
-        {'source': 'party_roles_version', 'params': {'transaction_id': transaction_ids}},
-        {'source': 'resolutions_version', 'params': {'transaction_id': transaction_ids}},
-        {'source': 'share_classes_version', 'params': {'transaction_id': transaction_ids}},
-        {'source': 'share_series_version', 'params': {'transaction_id': transaction_ids}},
-        {'source': 'offices_held_version', 'params': {'transaction_id': transaction_ids}},
-        # based on others
-        {
-            'source': 'batch_processing',
-            'columns': ['id'],
-            'params': {'business_id': business_ids},
-            'targets': ['batch_processing'],
-        },
-        {
-            'source': 'batch_processing',
-            'columns': ['batch_id'],
-            'params': {'business_id': business_ids},
-            'targets': ['batches'],
-        },
-        {'source': 'comments', 'params': {'filing_id': filing_ids}},
-        {'source': 'furnishings', 'params': {'business_id': business_ids}},
-        # some Comment records saved by legal-api are linked directly by business_id
-        {'source': 'comments', 'params': {'business_id': business_ids}},
-        {'source': 'consent_continuation_outs', 'params': {'filing_id': filing_ids}},
-    ]
+                # based on transaction_id
+                {
+                    'source': 'addresses_version',
+                    'params': {'transaction_id': transaction_ids},
+                },
+                {
+                    'source': 'aliases_version',
+                    'params': {'transaction_id': transaction_ids},
+                },
+                {
+                    'source': 'amalgamating_businesses_version',
+                    'params': {'transaction_id': transaction_ids},
+                },
+                {
+                    'source': 'amalgamations_version',
+                    'params': {'transaction_id': transaction_ids},
+                },
+                {
+                    'source': 'documents_version',
+                    'params': {'transaction_id': transaction_ids},
+                },
+                {
+                    'source': 'jurisdictions_version',
+                    'params': {'transaction_id': transaction_ids},
+                },
+                {
+                    'source': 'offices_version',
+                    'params': {'transaction_id': transaction_ids},
+                },
+                {
+                    'source': 'parties_version',
+                    'params': {'transaction_id': transaction_ids},
+                },
+                {
+                    'source': 'party_roles_version',
+                    'params': {'transaction_id': transaction_ids},
+                },
+                {
+                    'source': 'resolutions_version',
+                    'params': {'transaction_id': transaction_ids},
+                },
+                {
+                    'source': 'share_classes_version',
+                    'params': {'transaction_id': transaction_ids},
+                },
+                {
+                    'source': 'share_series_version',
+                    'params': {'transaction_id': transaction_ids},
+                },
+                {
+                    'source': 'offices_held_version',
+                    'params': {'transaction_id': transaction_ids},
+                },
+                # based on others
+                {
+                    'source': 'batch_processing',
+                    'columns': ['id', 'batch_id'],
+                    'params': {'business_id': business_ids},
+                    'targets': ['batch_processing', 'batches'],
+                },
+                {
+                    'source': 'colin_event_ids',
+                    'columns': ['colin_event_id'],
+                    'params': {'filing_id': filing_ids},
+                },
+                {
+                    'source': 'comments',
+                    'params': {'filing_id': filing_ids},
+                },
+                {
+                    'source': 'furnishings',
+                    'params': {'business_id': business_ids},
+                },
+                # there're some Comment records saved by legal-api directly instead of filer
+                # some of them are linked via business_id
+                {
+                    'source': 'comments',
+                    'params': {'business_id': business_ids},
+                },
+                {
+                    'source': 'consent_continuation_outs',
+                    'params': {'filing_id': filing_ids},
+                },
+            ]
 
     # Execute every query and delete serially. The shared SQLAlchemy connection
     # must not be used by concurrent Prefect tasks.
