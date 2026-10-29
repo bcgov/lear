@@ -30,7 +30,7 @@ from flask_babel import _
 from flask_cors import cross_origin
 from flask_pydantic import validate as pydantic_validate
 from html_sanitizer import Sanitizer
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from requests import exceptions
 from werkzeug.local import LocalProxy
 
@@ -68,7 +68,8 @@ from legal_api.services import (
     flags,
     namex,
 )
-from legal_api.services.authz import is_allowed
+from legal_api.services.authz import business_blocker_check, is_allowed, is_draft_rebase_checks_enabled
+from legal_api.services.draft_rebase import DraftRebaseService
 from legal_api.services.event_publisher import publish_to_queue
 from legal_api.services.filings import validate
 from legal_api.services.permissions import PermissionService
@@ -83,6 +84,7 @@ class QueryModel(BaseModel):
 
     draft: bool | None = None
     only_validate: bool | None = None
+    base_transaction_id: int | None = Field(None, alias="baseTransactionId")
 
 
 FilingT = TypeVar("FilingT")
@@ -121,6 +123,26 @@ def get_filings(identifier: str, filing_id: int | None = None):
     return ListFilingResource.get_ledger_listing(identifier, jwt)
 
 
+@bp.route("/<string:identifier>/filings/<int:filing_id>/changes", methods=["GET"])
+@cross_origin()
+@jwt.requires_auth
+def get_filing_changes(identifier: str, filing_id: int):
+    """Return the changes/conflict report for a draft filing (rebase support)."""
+    business, filing = ListFilingResource.get_business_and_filing(identifier, filing_id)
+    if not business or not filing:
+        return jsonify({"message": f"Filing {filing_id} for {identifier} not found"}), HTTPStatus.NOT_FOUND
+
+    if not authorized(identifier, jwt, action=["view"]):
+        return jsonify({
+            "message": f"You are not authorized to view filing {identifier}."
+            }), HTTPStatus.UNAUTHORIZED
+
+    if filing.status != Filing.Status.DRAFT.value:
+        return jsonify({"message": "A changes report is only available for draft filings."}), HTTPStatus.BAD_REQUEST
+
+    return jsonify(DraftRebaseService.get_changes_report(business, filing)), HTTPStatus.OK
+
+
 @bp.route("/<string:identifier>/filings", methods=["POST"])
 @bp.route("/<string:identifier>/filings/<int:filing_id>", methods=["POST", "PUT"])
 @cross_origin()
@@ -146,6 +168,19 @@ def saving_filings(body: FilingModel,  # noqa: PLR0911, PLR0912
     if response:
         return response, response_code
 
+    # draft rebase guard: an explicit baseTransactionId must still match the business's watermark
+    rebase_transaction_id = None
+    if query.base_transaction_id is not None and business:
+        current_transaction_id = Filing.get_max_completed_transaction_id(business.id)
+        if query.base_transaction_id != current_transaction_id:
+            return jsonify({
+                "errors": [{"message": "A filing was completed after this draft's base transaction. "
+                                       "Reload the draft and resolve the changes before saving."}],
+                "baseTransactionId": query.base_transaction_id,
+                "currentTransactionId": current_transaction_id
+            }), HTTPStatus.CONFLICT
+        rebase_transaction_id = query.base_transaction_id
+
     # get header params
     payment_account_id = request.headers.get("account-id",
                                              request.headers.get("accountId", None))
@@ -158,6 +193,11 @@ def saving_filings(body: FilingModel,  # noqa: PLR0911, PLR0912
         else:
             business_validate = business
         err = validate(business_validate, json_input, payment_account_id, filing_id=filing_id)
+        if not err and business and is_draft_rebase_checks_enabled() and \
+                (stale_errors := DraftRebaseService.validate_no_stale_ids(business, json_input)):
+            # stale-id guard: the filer dereferences these ids in place after payment
+            json_input["errors"] = stale_errors
+            return jsonify(json_input), HTTPStatus.BAD_REQUEST
         if err or query.only_validate:
             if err:
                 json_input["errors"] = err.msg
@@ -167,7 +207,8 @@ def saving_filings(body: FilingModel,  # noqa: PLR0911, PLR0912
     # save filing, if it's draft only then bail
     user = User.get_or_create_user_by_jwt(g.jwt_oidc_token_info)
     try:
-        business, filing, err_msg, err_code = ListFilingResource.save_filing(request, identifier, user, filing)
+        business, filing, err_msg, err_code = ListFilingResource.save_filing(
+            request, identifier, user, filing, rebase_transaction_id)
         if err_msg or query.draft:
             reply = filing.json if filing else json_input
             reply["errors"] = [err_msg, ]
@@ -218,6 +259,12 @@ def delete_filings(identifier, filing_id=None):
     err_message, err_code = ListFilingResource.is_filing_locked_from_deletion(business, filing)
     if err_code:
         return jsonify({"message": _(err_message)}), err_code
+
+    if ListFilingResource.draft_ownership_mismatch(business, filing):
+        return jsonify({
+            "message": _("Not Allowed - This draft can only be deleted by its submitter for:") + identifier,
+            "errorCode": "DRAFT_FILING_VIEW_ONLY"
+        }), HTTPStatus.FORBIDDEN
 
     if filing.filing_type == Filing.FILINGS["noticeOfWithdrawal"]["name"]:
         ListFilingResource.unlink_now_and_withdrawn_filing(filing)
@@ -615,12 +662,36 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
                 }), \
                 HTTPStatus.UNAUTHORIZED
         if not is_allowed(business, state, filing_type, legal_type, jwt, filing_sub_type, filing):
+            blockers = [blocker_type.value
+                        for blocker_type, is_blocked in business_blocker_check(business).items()
+                        if is_blocked]
             return jsonify({
-                "message": f"Not Allowed - You are not allowed to submit this type of filing for {identifier}."
+                "message": f"Not Allowed - You are not allowed to submit this type of filing for {identifier}.",
+                "blockers": blockers
+                }), \
+                HTTPStatus.FORBIDDEN
+
+        if ListFilingResource.draft_ownership_mismatch(business, filing):
+            return jsonify({
+                "message": f"Not Allowed - This draft can only be modified by its submitter for {identifier}.",
+                "errorCode": "DRAFT_FILING_VIEW_ONLY"
                 }), \
                 HTTPStatus.FORBIDDEN
 
         return None, None
+
+    @staticmethod
+    def draft_ownership_mismatch(business: Business | None, filing: Filing | None) -> bool:
+        """Return True when a staff caller targets a user-filed draft or vice versa (bootstraps excluded)."""
+        if not business or not filing or filing.status != Filing.Status.DRAFT.value \
+                or not is_draft_rebase_checks_enabled():
+            return False
+        if filing.submitter_roles is None:
+            # pre-feature drafts never recorded a submitter side; either side may modify them
+            return False
+        is_staff_caller = ListFilingResource._current_user_special_role() in [UserRoles.staff, UserRoles.system]
+        is_staff_draft = filing.submitter_roles in [UserRoles.staff.value, UserRoles.system.value]
+        return is_staff_caller != is_staff_draft
 
     @staticmethod
     def is_before_epoch_filing(filing_json: dict, business: Business):
@@ -682,7 +753,9 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
     def save_filing(client_request: LocalProxy,  # noqa: PLR0912
                     business_identifier: str,
                     user: User,
-                    filing: Filing = None) -> tuple[Business | RegistrationBootstrap, Filing, dict, int]:
+                    filing: Filing = None,
+                    rebase_transaction_id: int | None = None
+                    ) -> tuple[Business | RegistrationBootstrap, Filing, dict, int]:
         """Save the filing to the ledger.
 
         If not successful, a dict of errors is returned.
@@ -722,8 +795,17 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
             if not filing:
                 filing = Filing()
                 filing.business_id = business.id
+                filing.base_transaction_id = Filing.get_max_completed_transaction_id(business.id)
+                filing.submitter_roles = ListFilingResource._current_user_special_role()
+            elif filing.base_transaction_id is None and filing.status == Filing.Status.DRAFT.value:
+                # pre-anchor draft: freeze the best approximation now, before this save
+                # resets filing_date (which the fallback anchors on) and it drifts forward
+                filing.base_transaction_id = \
+                    DraftRebaseService.fallback_base_transaction_id(business, filing)
 
         try:
+            if rebase_transaction_id is not None:
+                filing.base_transaction_id = rebase_transaction_id
             filing.submitter_id = user.id
             filing.filing_json = ListFilingResource.sanitize_html_fields(json_input)
             filing.source = filing.filing_json["filing"]["header"].get("source", Filing.Source.LEAR.value)
@@ -750,6 +832,18 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
             return None, None, {"error": err.error}, err.status_code
 
         return business or bootstrap, filing, None, None
+
+    @staticmethod
+    def _current_user_special_role() -> str:
+        """Return the submitter side of the current user: staff, system, or public_user.
+
+        NULL submitter_roles is reserved for pre-feature drafts, which either side may modify.
+        """
+        if jwt.validate_roles(request_ctx.current_user, [STAFF_ROLE]):
+            return UserRoles.staff
+        if jwt.validate_roles(request_ctx.current_user, [SYSTEM_ROLE]):
+            return UserRoles.system
+        return UserRoles.public_user
 
     @staticmethod
     def _hide_in_ledger(filing: Filing) -> bool:
@@ -1078,7 +1172,10 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
             # use the specified payment account from pay-api which would be vendor account for linked accounts
             paying_account_id = (rv.json().get("paymentAccount") or {}).get("accountId") or payment_account_id
             filing.payment_account = paying_account_id
-            filing.submitter_roles = special_role
+            if special_role:
+                # public users keep the submitter side stamped at draft creation; writing
+                # None here would un-own the draft if the payment is later cancelled
+                filing.submitter_roles = special_role
 
             filing.save()
             return {"isPaymentActionRequired": rv.json().get("isPaymentActionRequired", False)}, HTTPStatus.CREATED
