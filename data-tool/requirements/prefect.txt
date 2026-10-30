@@ -1,5 +1,4 @@
 prefect==3.8.8
 prefect[dask]
-fastapi==0.139.0
 importlib-metadata
 griffe

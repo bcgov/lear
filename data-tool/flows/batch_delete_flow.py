@@ -15,14 +15,16 @@ from sqlalchemy.engine import Engine
 
 businesses_cnt_query = """
 SELECT COUNT(*) FROM businesses
-WHERE 1 = 1 
+WHERE 1 = 1
+AND identifier in ('BC1113730')
 AND legal_type IN ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE', 'BEN', 'CP')
 AND legal_name LIKE '%' || :corp_name_suffix
 """
 
 identifiers_query = """
 SELECT id, identifier FROM businesses
-WHERE 1 = 1 
+WHERE 1 = 1
+AND identifier in ('BC1113730')
 AND legal_type IN ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE', 'BEN', 'CP')
 AND legal_name LIKE '%' || :corp_name_suffix
 LIMIT :batch_size
@@ -256,40 +258,38 @@ def get_affiliation_targets(config, colin_engine: Engine, identifiers: List[str]
     return targets
 
 
+def run_delete_query(conn: Connection, plan: dict, stats: dict) -> dict:
+    try:
+        result = execute_query.submit(conn, plan).result()
+        if not isinstance(result, dict):
+            raise TypeError(
+                f"execute_query for {plan.get('source')} returned "
+                f"{type(result).__name__}, expected dict"
+            )
+        return result
+    except Exception as exc:
+        stats['failed'] += 1
+        print(f"Failed querying {plan.get('source')}: {exc!r}")
+        return {}
+
+
+def run_delete_table(conn: Connection, table: str, ids: list, stats: dict) -> None:
+    ids = filter_none(ids if isinstance(ids, list) else [])
+    if not ids:
+        print(f'Skip deleting {table} due to empty ID list')
+        return
+
+    try:
+        execute_delete_plan.submit(conn, table, ids).result()
+        stats['succeeded'] += 1
+    except Exception as exc:
+        stats['failed'] += 1
+        print(f'Failed deleting {table}: {exc!r}')
+
+
 @task(cache_policy=NO_CACHE)
 def lear_delete_non_versioned(conn: Connection, business_ids: list):
-    succeeded = 0
-    failed = 0
-
-    def run_query(plan: dict) -> dict:
-        nonlocal failed
-        try:
-            result = execute_query.submit(conn, plan).result()
-            if not isinstance(result, dict):
-                raise TypeError(
-                    f"execute_query for {plan.get('source')} returned "
-                    f"{type(result).__name__}, expected dict"
-                )
-            return result
-        except Exception as exc:
-            failed += 1
-            print(f"Failed querying {plan.get('source')}: {exc!r}")
-            return {}
-
-    def run_delete(table: str, ids: list) -> None:
-        nonlocal succeeded, failed
-
-        ids = filter_none(ids if isinstance(ids, list) else [])
-        if not ids:
-            print(f'Skip deleting {table} due to empty ID list')
-            return
-
-        try:
-            execute_delete_plan.submit(conn, table, ids).result()
-            succeeded += 1
-        except Exception as exc:
-            failed += 1
-            print(f'Failed deleting {table}: {exc!r}')
+    stats = {'succeeded': 0, 'failed': 0}
 
     # first query
     query_plans_one = [
@@ -328,7 +328,7 @@ def lear_delete_non_versioned(conn: Connection, business_ids: list):
     
     results_one = {}
     for plan in query_plans_one:
-        delete_plans = run_query(plan)
+        delete_plans = run_delete_query(conn, plan, stats)
         print(
             f"Delete plans for {len(delete_plans)} tables from "
             f"{plan.get('source')}: {list(delete_plans.keys())}"
@@ -366,7 +366,7 @@ def lear_delete_non_versioned(conn: Connection, business_ids: list):
 
     second_delete_plans = []
     for plan in query_plans_two:
-        delete_plans = run_query(plan)
+        delete_plans = run_delete_query(conn, plan, stats)
         print(
             f"Delete plans for {len(delete_plans)} tables from "
             f"{plan.get('source')}: {list(delete_plans.keys())}"
@@ -376,60 +376,29 @@ def lear_delete_non_versioned(conn: Connection, business_ids: list):
     # Execute every query first, then delete serially. The shared SQLAlchemy
     # connection must not be used by concurrent Prefect tasks.
     for table, ids in results_one.items():
-        run_delete(table, ids)
+        run_delete_table(conn, table, ids, stats)
 
     for delete_plans in second_delete_plans:
         for table, ids in delete_plans.items():
-            run_delete(table, ids)
+            run_delete_table(conn, table, ids, stats)
 
     print(
         'Lear delete (non-versioned) complete for this round. '
-        f'Succeeded: {succeeded}. Failed: {failed}'
+        f'Succeeded: {stats["succeeded"]}. Failed: {stats["failed"]}'
     )
 
 
 @task(cache_policy=NO_CACHE)
 def lear_delete_versioned(conn: Connection, business_ids: list):
-    succeeded = 0
-    failed = 0
-
-    def run_query(plan: dict) -> dict:
-        nonlocal failed
-        try:
-            result = execute_query.submit(conn, plan).result()
-            if not isinstance(result, dict):
-                raise TypeError(
-                    f"execute_query for {plan.get('source')} returned "
-                    f"{type(result).__name__}, expected dict"
-                )
-            return result
-        except Exception as exc:
-            failed += 1
-            print(f"Failed querying {plan.get('source')}: {exc!r}")
-            return {}
-
-    def run_delete(table: str, ids: list) -> None:
-        nonlocal succeeded, failed
-
-        ids = filter_none(ids if isinstance(ids, list) else [])
-        if not ids:
-            print(f'Skip deleting {table} due to empty ID list')
-            return
-
-        try:
-            execute_delete_plan.submit(conn, table, ids).result()
-            succeeded += 1
-        except Exception as exc:
-            failed += 1
-            print(f'Failed deleting {table}: {exc!r}')
+    stats = {'succeeded': 0, 'failed': 0}
 
     # filing, transaction
-    plans = run_query({
+    plans = run_delete_query(conn, {
         'source': 'filings',
         'columns': ['id', 'transaction_id'],
         'params': {'business_id': business_ids},
         'targets': ['filings', 'transaction'],
-    })
+    }, stats)
 
     filing_ids = plans.get('filings', [])
     transaction_ids = plans.get('transaction', [])
@@ -523,13 +492,13 @@ def lear_delete_versioned(conn: Connection, business_ids: list):
     # Execute every query and delete serially. The shared SQLAlchemy connection
     # must not be used by concurrent Prefect tasks.
     for plan in query_plans:
-        delete_plans = run_query(plan)
+        delete_plans = run_delete_query(conn, plan, stats)
         print(
             f"Delete plans for {len(delete_plans)} tables from "
             f"{plan.get('source')}: {list(delete_plans.keys())}"
         )
         for table, ids in delete_plans.items():
-            run_delete(table, ids)
+            run_delete_table(conn, table, ids, stats)
 
     tables_and_ids = [
         ('businesses', business_ids),
@@ -538,11 +507,11 @@ def lear_delete_versioned(conn: Connection, business_ids: list):
         ('transaction', transaction_ids),
     ]
     for table, ids in tables_and_ids:
-        run_delete(table, ids)
+        run_delete_table(conn, table, ids, stats)
 
     print(
         'Lear delete (versioned) complete for this round. '
-        f'Succeeded: {succeeded}. Failed: {failed}'
+        f'Succeeded: {stats["succeeded"]}. Failed: {stats["failed"]}'
     )
 
 
@@ -571,6 +540,8 @@ def auth_delete(db_engine: Engine, identifiers: list):
                 'source': 'entities',
                 'params':{'business_identifier': identifiers},
             })
+
+            print(f'👷 I am here: querying entities for {len(identifiers)} identifiers')
 
             plan = entities_future.result()
 
