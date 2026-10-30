@@ -8,8 +8,7 @@
                 {% if completingParty.officer.partyType == 'organization' %}
                   <span class="capitalize-text">{{ completingParty.officer.organizationName }}</span>
                 {% else %}
-                  <span class="capitalize-text">{{ completingParty.officer.lastName }}</span>
-                  {% if completingParty.officer.firstName or completingParty.officer.middleName %},{% endif %}
+                  <span class="capitalize-text">{{ completingParty.officer.lastName }}</span>{%- if completingParty.officer.firstName or completingParty.officer.middleName %},{% endif %}
                   {% if completingParty.officer.firstName %}
                     <span class="capitalize-text">{{ completingParty.officer.firstName }}</span>
                   {% endif %}
