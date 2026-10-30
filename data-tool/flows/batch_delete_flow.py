@@ -541,8 +541,6 @@ def auth_delete(db_engine: Engine, identifiers: list):
                 'params':{'business_identifier': identifiers},
             })
 
-            print(f'👷 I am here: querying entities for {len(identifiers)} identifiers')
-
             plan = entities_future.result()
 
             entity_ids = plan['entities']
