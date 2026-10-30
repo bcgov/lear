@@ -15,6 +15,7 @@
 from http import HTTPStatus
 from typing import Final
 
+import pycountry
 from flask_babel import _ as babel
 
 from business_common.utils.legislation_datetime import LegislationDatetime
@@ -55,7 +56,47 @@ def validate(business: Business, filing: dict) -> Error | None:
     # A non-empty reason (at least one non-whitespace character) is enforced by the schema
     # (business-schemas agm_location_change reason pattern).
 
+    # Support both the legacy string location and the structured location object.
+    agm_location = filing.get("filing", {}).get("agmLocationChange", {}).get("agmLocation", {})
+
+    if isinstance(agm_location, dict):
+        msg.extend(_validate_agm_location(agm_location))
+
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
 
     return None
+
+
+def _validate_agm_location(agm_location: dict) -> list[dict]:
+    """Validate a structured AGM location."""
+    msg = []
+    agm_location_path: Final = "/filing/agmLocationChange/agmLocation"
+    country_code = (agm_location.get("country") or "").upper()
+    region = (agm_location.get("region") or "").upper()
+
+    country_path = f"{agm_location_path}/country"
+    region_path = f"{agm_location_path}/region"
+
+    country = pycountry.countries.get(alpha_2=country_code)
+
+    if not country:
+        msg.append({
+            "error": babel("Invalid country."),
+            "path": country_path,
+        })
+    elif country_code in ("CA", "US"):
+        if not region:
+            msg.append({
+                "error": babel("Region is required."),
+                "path": region_path,
+            })
+        elif not pycountry.subdivisions.get(
+            code=f"{country_code}-{region}"
+        ):
+            msg.append({
+                "error": babel("Invalid region."),
+                "path": region_path,
+            })
+
+    return msg

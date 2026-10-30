@@ -31,6 +31,23 @@ SCHEMA_REJECTED = 'SCHEMA_REJECTED'
 # Set far enough in the past that founding date never becomes the binding floor
 OLD_FOUNDING_DATE = datetime.utcnow().replace(year=datetime.utcnow().year - 10)
 
+def _build_agm_location_change_filing():
+    """Build a filing payload for AGM Location Change validation tests."""
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['agmLocationChange'] = copy.deepcopy(AGM_LOCATION_CHANGE)
+    filing['filing']['header']['name'] = 'agmLocationChange'
+    filing['filing']['agmLocationChange']['year'] = str(LegislationDatetime.now().year)
+    return filing
+
+
+def _enable_agm_location_change(monkeypatch):
+    """Enable AGM Location Change for validation tests."""
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL"
+        if flag == 'supported-agm-location-change-entities' else default
+    )
+
 
 @pytest.mark.parametrize(
     'test_name, expected_code, message',
@@ -45,14 +62,9 @@ OLD_FOUNDING_DATE = datetime.utcnow().replace(year=datetime.utcnow().year - 10)
 )
 def test_validate_agm_year(session, mocker, test_name, expected_code, message, monkeypatch):
     """Assert validate agm year for an established business (founding date well outside the lookback window)."""
-    monkeypatch.setattr(
-        'legal_api.services.flags.value',
-        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL"  if flag == 'supported-agm-location-change-entities' else default
-    )
+    _enable_agm_location_change(monkeypatch)
     business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=OLD_FOUNDING_DATE)
-    filing = copy.deepcopy(FILING_HEADER)
-    filing['filing']['agmLocationChange'] = copy.deepcopy(AGM_LOCATION_CHANGE)
-    filing['filing']['header']['name'] = 'agmLocationChange'
+    filing = _build_agm_location_change_filing()
 
     current_year = LegislationDatetime.now().year
     expected_min = current_year - 2
@@ -99,17 +111,12 @@ def test_validate_agm_year_founding_date_floor(
     session, mocker, test_name, founding_years_ago, year_offset_from_now, monkeypatch
 ):
     """Assert AGM year cannot be set to a year before the business's founding year."""
-    monkeypatch.setattr(
-        'legal_api.services.flags.value',
-        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL" if flag == 'supported-agm-location-change-entities' else default
-    )
+    _enable_agm_location_change(monkeypatch)
     current_year = LegislationDatetime.now().year
     founding_date = datetime.utcnow().replace(year=current_year - founding_years_ago)
     business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=founding_date)
 
-    filing = copy.deepcopy(FILING_HEADER)
-    filing['filing']['agmLocationChange'] = copy.deepcopy(AGM_LOCATION_CHANGE)
-    filing['filing']['header']['name'] = 'agmLocationChange'
+    filing = _build_agm_location_change_filing()
     filing['filing']['agmLocationChange']['year'] = str(current_year + year_offset_from_now)
 
     err = validate(business, filing)
@@ -137,15 +144,9 @@ def test_validate_agm_year_founding_date_floor(
 )
 def test_validate_agm_reason(session, mocker, test_name, reason, expected_code, message, monkeypatch):
     """Assert validate agm reason"""
-    monkeypatch.setattr(
-        'legal_api.services.flags.value',
-        lambda flag, default=None: "BC BEN CC ULC C CBEN CCC CUL" if flag == 'supported-agm-location-change-entities' else default
-    )
+    _enable_agm_location_change(monkeypatch)
     business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=OLD_FOUNDING_DATE)
-    filing = copy.deepcopy(FILING_HEADER)
-    filing['filing']['agmLocationChange'] = copy.deepcopy(AGM_LOCATION_CHANGE)
-    filing['filing']['header']['name'] = 'agmLocationChange'
-    filing['filing']['agmLocationChange']['year'] = str(LegislationDatetime.now().year)
+    filing = _build_agm_location_change_filing()
 
     filing['filing']['agmLocationChange']['reason'] = reason
 
@@ -160,3 +161,115 @@ def test_validate_agm_reason(session, mocker, test_name, reason, expected_code, 
         assert message == err.msg[0]['error']
     else:
         assert not err
+
+
+@pytest.mark.parametrize(
+    'test_name, agm_location, expected_error, expected_path',
+    [
+        (
+            'VALID_CANADIAN_PROVINCE',
+            {'country': 'CA', 'city': 'Calgary', 'region': 'AB'},
+            None,
+            None,
+        ),
+        (
+            'VALID_US_STATE',
+            {'country': 'US', 'city': 'Seattle', 'region': 'WA'},
+            None,
+            None,
+        ),
+        (
+            'LOWERCASE_COUNTRY_AND_REGION',
+            {'country': 'ca', 'city': 'Calgary', 'region': 'ab'},
+            None,
+            None,
+        ),
+        (
+            'INVALID_COUNTRY',
+            {'country': 'ZZ', 'city': 'Tokyo'},
+            'Invalid country.',
+            '/filing/agmLocationChange/agmLocation/country',
+        ),
+        (
+            'INVALID_CANADIAN_PROVINCE',
+            {'country': 'CA', 'city': 'Calgary', 'region': 'XX'},
+            'Invalid region.',
+            '/filing/agmLocationChange/agmLocation/region',
+        ),
+        (
+            'INVALID_US_STATE',
+            {'country': 'US', 'city': 'Seattle', 'region': 'XX'},
+            'Invalid region.',
+            '/filing/agmLocationChange/agmLocation/region',
+        ),
+        (
+            'CANADA_WITHOUT_REGION',
+            {'country': 'CA', 'city': 'Toronto'},
+            'Region is required.',
+            '/filing/agmLocationChange/agmLocation/region',
+        ),
+        (
+            'US_WITHOUT_REGION',
+            {'country': 'US', 'city': 'Seattle'},
+            'Region is required.',
+            '/filing/agmLocationChange/agmLocation/region',
+        ),
+        (
+            'OTHER_COUNTRY_WITH_FREE_TEXT_REGION',
+            {'country': 'JP', 'city': 'Tokyo', 'region': 'TK'},
+            None,
+            None,
+        ),
+        (
+            'OTHER_COUNTRY_WITHOUT_REGION',
+            {'country': 'JP', 'city': 'Tokyo'},
+            None,
+            None,
+        ),
+        (
+            'OTHER_COUNTRY_WITH_NULL_REGION',
+            {'country': 'JP', 'city': 'Tokyo', 'region': None},
+            None,
+            None,
+        ),
+    ]
+)
+def test_validate_agm_location(
+    session, mocker, monkeypatch, test_name, agm_location, expected_error, expected_path
+):
+    """Assert validation of structured AGM locations."""
+    _enable_agm_location_change(monkeypatch)
+    business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=OLD_FOUNDING_DATE)
+    filing = _build_agm_location_change_filing()
+    filing['filing']['agmLocationChange']['agmLocation'] = agm_location
+
+    err = validate(business, filing)
+
+    if expected_error:
+        assert err is not None
+        assert err.code == HTTPStatus.BAD_REQUEST
+        assert any(
+            item['error'] == expected_error and item['path'] == expected_path
+            for item in err.msg
+        )
+    else:
+        assert not err
+
+
+@pytest.mark.parametrize(
+    'agm_location',
+    [
+        'Calgary, Alberta, Canada',
+        'Tokyo, Japan',
+    ]
+)
+def test_validate_agm_location_legacy_string(session, mocker, monkeypatch, agm_location):
+    """Assert legacy string AGM locations remain valid."""
+    _enable_agm_location_change(monkeypatch)
+    business = factory_business(identifier='BC1234567', entity_type='BC', founding_date=OLD_FOUNDING_DATE)
+    filing = _build_agm_location_change_filing()
+    filing['filing']['agmLocationChange']['agmLocation'] = agm_location
+
+    err = validate(business, filing)
+
+    assert not err

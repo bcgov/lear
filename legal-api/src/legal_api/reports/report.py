@@ -883,9 +883,33 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             self._format_address(filing["offices"]["registeredOffice"]["mailingAddress"])
 
     def _format_agm_location_change_data(self, filing):
-        filing["agm_year"] = self._filing.filing_json["filing"].get("agmLocationChange", {}).get("year", "")
+        agm_location = filing.get("agmLocationChange", {}).get("agmLocation", "")
 
-        filing["location"] = self._filing.filing_json["filing"].get("agmLocationChange", {}).get("agmLocation", "")
+        if isinstance(agm_location, dict):
+            country_code = agm_location.get("country", "")
+            country = pycountry.countries.get(alpha_2=country_code)
+            region_code = agm_location.get("region")
+            region = None
+
+            if region_code:
+                if country_code in ("CA", "US"):
+                    subdivision = pycountry.subdivisions.get(
+                        code=f"{country_code}-{region_code}"
+                    )
+                    region = subdivision.name if subdivision else region_code
+                else:
+                    region = region_code
+
+            location_parts = [
+                agm_location.get("city"),
+                region,
+                country.name if country else country_code,
+            ]
+            filing["location"] = ", ".join(part for part in location_parts if part)
+        else:
+            filing["location"] = agm_location
+
+        filing["agm_year"] = filing.get("agmLocationChange", {}).get("year", "")
 
         filing["offices"] = VersionedBusinessDetailsService.\
             get_office_revision(self._filing.id, self._filing.transaction_id, self._business.id)
