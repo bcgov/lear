@@ -11,7 +11,7 @@ set -euo pipefail
 
 # -- Connection ----------------------------------------------------------------
 PGHOST="${PGHOST:-localhost}"        # or ‑‑host
-PGPORT="${PGPORT:-5434}"             # or ‑‑port
+PGPORT="${PGPORT:-5432}"             # or ‑‑port
 PGUSER="${PGUSER:-postgres}"        # or ‑‑user
 PGDATABASE="${PGDATABASE:-colin-mig-corps-test}"     # or ‑‑dbname
 # Optional PostgreSQL client binary directory. Leave empty to use PATH.
