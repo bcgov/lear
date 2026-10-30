@@ -1208,6 +1208,31 @@ $$;
 alter function significant_decimal_places
     owner to postgres;
 
+-- helper functions to switch to replica mode and flipback to origin
+-- Function to switch to replica mode
+CREATE OR REPLACE FUNCTION set_replica_mode()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, pg_temp
+AS $$
+BEGIN
+    SET session_replication_role = 'replica';
+END;
+$$;
+
+-- Function to restore origin mode
+CREATE OR REPLACE FUNCTION set_origin_mode()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, pg_temp
+AS $$
+BEGIN
+    SET session_replication_role = 'origin';
+END;
+$$;
+
 
 CREATE TABLE IF NOT EXISTS email_domain_groups (
     email_domain VARCHAR(255) PRIMARY KEY,
