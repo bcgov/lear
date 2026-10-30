@@ -1661,7 +1661,6 @@ def read_auth_states_for_candidates(
     invite_diagnostics_by_entity_id: dict[str, _AuthInviteAccumulator] = defaultdict(_AuthInviteAccumulator)
 
     with auth_engine.connect() as conn:
-        auth_statement = build_auth_entity_read_statement(candidates)
         entity_rows = _execute_fetchall(conn, build_auth_entity_read_statement(candidates))
         for row in entity_rows:
             entity_id = _row_value(row, 0, "id", "entity_id")

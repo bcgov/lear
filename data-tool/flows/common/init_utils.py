@@ -98,7 +98,6 @@ def lear_init(config):
 @task(cache_policy=NO_CACHE)
 def auth_init(config):
     try:
-        # engine = create_engine(config.SQLALCHEMY_DATABASE_URI_AUTH)
         engine = create_engine(
                     "postgresql+pg8000://", creator=lambda: get_colin_mig_conn_auth(config)
                 )
