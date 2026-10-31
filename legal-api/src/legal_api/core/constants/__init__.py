@@ -1,4 +1,4 @@
-# Copyright © 2021 Province of British Columbia
+# Copyright © 2026 Province of British Columbia
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,5 +13,15 @@
 # limitations under the License.
 """This has the common strings and values used across the core domain."""
 from typing import Final
+from .designations import (
+    ABBREVIATIONS as DESIGNATION_ABBREVIATIONS,
+    DESIGNATION_RULES,
+)
 
 REDACTED_STAFF_SUBMITTER: Final = "Registry Staff"
+
+__all__ = (
+    "DESIGNATION_ABBREVIATIONS",
+    "DESIGNATION_RULES",
+    "REDACTED_STAFF_SUBMITTER",
+)
