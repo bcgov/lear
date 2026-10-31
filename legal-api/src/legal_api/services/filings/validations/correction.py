@@ -296,7 +296,7 @@ def _validate_name_request_correction(business: Business, filing_dict: dict):
             "path": f"{nr_path}/legalType",
         })
 
-    msg.extend(_validate_legal_name_designation_unchanged(business, new_legal_name))
+    msg.extend(validate_legal_name_designation_unchanged(business, new_legal_name))
 
     return msg
 
@@ -653,7 +653,7 @@ def _get_current_designation(
     return None
 
 
-def _validate_legal_name_designation_unchanged(
+def validate_legal_name_designation_unchanged(
     business: Business,
     new_legal_name: Optional[str],
     err_path: str = "/filing/correction/nameRequest/legalName",
