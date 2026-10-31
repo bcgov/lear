@@ -42,6 +42,7 @@ def test_valid_special_resolution_correction(session, app, jwt):
     correction_data = copy.deepcopy(FILING_HEADER)
     correction_data['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
     correction_data['filing']['header']['name'] = 'correction'
+    del correction_data['filing']['correction']['nameRequest']
     f = copy.deepcopy(correction_data)
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
@@ -89,6 +90,7 @@ def test_parties_special_resolution_correction(session, app, jwt, test_name, leg
     correction_data['filing']['correction'] = copy.deepcopy(CORRECTION_CP_SPECIAL_RESOLUTION)
     correction_data['filing']['header']['name'] = 'correction'
     del correction_data['filing']['correction']['rulesFileKey']
+    del correction_data['filing']['correction']['nameRequest']
 
     f = copy.deepcopy(correction_data)
     f['filing']['header']['identifier'] = identifier
@@ -121,4 +123,4 @@ def test_parties_special_resolution_correction(session, app, jwt, test_name, leg
         assert HTTPStatus.BAD_REQUEST == err.code
         assert lists_are_equal(err.msg, err_msg)
     else:
-        assert None is err
+        assert err is None

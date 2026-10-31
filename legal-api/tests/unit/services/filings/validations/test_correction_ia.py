@@ -133,14 +133,12 @@ def test_valid_ia_correction_allows_legal_name_typo_correction_without_nr(sessio
     assert err is None
 
 
-@pytest.mark.parametrize('new_name, legal_type, nr_legal_type, nr_type, err_msg', [
-    ('legal_name-BC1234568', 'CP', 'CP', 'BECV', None),
-    ('legal_name-BC1234567_Changed', 'BEN', 'CP', 'BECV',
-     'Name Request legal type is not same as the business legal type.'),
-    ('nr_not_approved', 'BEN', 'CP', 'BECV', 'Name Request is not approved.')
+@pytest.mark.parametrize('new_name, legal_type', [
+    ('legal_name-BC1234568', 'CP'),
+    ('legal_name-BC1234567_Changed', 'BEN')
 ])
-def test_nr_correction(session, app, jwt, new_name, legal_type, nr_legal_type, nr_type, err_msg):
-    """Test that a valid NR correction passes validation."""
+def test_nr_correction_not_allowed(session, app, jwt, new_name, legal_type):
+    """Test that a valid NR fails correction validation."""
     # setup
     identifier = 'BC1234567'
     business = factory_business(identifier, entity_type=legal_type)
@@ -160,29 +158,13 @@ def test_nr_correction(session, app, jwt, new_name, legal_type, nr_legal_type, n
     f['filing']['business']['legalType'] = legal_type
     del f['filing']['correction']['commentOnly']
 
-    nr_response_json = {
-        'state': 'INPROGRESS' if new_name == 'nr_not_approved' else 'APPROVED',
-        'expirationDate': '',
-        'legalType': nr_legal_type,
-        'names': [{
-            'name': new_name,
-            'state': 'INPROGRESS' if new_name == 'nr_not_approved' else 'APPROVED',
-            'consumptionDate': ''
-        }]
-    }
-    nr_response = MockResponse(nr_response_json)
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        if err := validate(business, f):
+            print(err.msg)
 
-    with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
-        with jwt_request_context(app, jwt, [STAFF_ROLE]):
-            if err := validate(business, f):
-                print(err.msg)
-
-    if not err_msg:
-        assert None is err
-    else:
-        assert err
-        assert HTTPStatus.BAD_REQUEST == err.code
-        assert err.msg[0]['error'] == err_msg
+    assert err
+    assert HTTPStatus.BAD_REQUEST == err.code
+    assert err.msg[0]['error'] == 'nrNumber not allowed when correcting legal name'
 
 
 @pytest.mark.parametrize('test_name, legal_type, correction_type, err_msg', [
@@ -209,7 +191,7 @@ def test_nr_correction(session, app, jwt, new_name, legal_type, nr_legal_type, n
     ('no_roles', 'CC', 'STAFF', None),
 ])
 def test_parties_correction(session, app, jwt, test_name, legal_type, correction_type, err_msg):
-    """Test that a valid NR correction passes validation."""
+    """Test that parties correction passes validation."""
     # setup
     identifier = 'BC1234567'
     business = factory_business(identifier, entity_type=legal_type)
@@ -224,11 +206,9 @@ def test_parties_correction(session, app, jwt, test_name, legal_type, correction
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
     f['filing']['correction']['type'] = correction_type
 
-    f['filing']['correction']['nameRequest']['nrNumber'] = identifier
-    f['filing']['correction']['nameRequest']['legalName'] = 'test'
-    f['filing']['correction']['nameRequest']['legalType'] = legal_type
     f['filing']['business']['legalType'] = legal_type
     del f['filing']['correction']['commentOnly']
+    del f['filing']['correction']['nameRequest']
 
     if test_name == 'no_roles':
         f['filing']['correction']['parties'][0]['roles'] = []
@@ -242,24 +222,11 @@ def test_parties_correction(session, app, jwt, test_name, legal_type, correction
         if correction_type == 'STAFF':
             del f['filing']['correction']['parties'][0]['roles'][0]  # completing party
 
-    nr_response_json = {
-        'state': 'APPROVED',
-        'expirationDate': '',
-        'legalType': legal_type,
-        'names': [{
-            'name': 'test',
-            'state': 'APPROVED',
-            'consumptionDate': ''
-        }]
-    }
-    nr_response = MockResponse(nr_response_json)
-
     roles = [BASIC_USER] if correction_type == 'CLIENT' else [STAFF_ROLE]
 
-    with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
-        with jwt_request_context(app, jwt, roles):
-            if err := validate(business, f):
-                print(err.msg)
+    with jwt_request_context(app, jwt, roles):
+        if err := validate(business, f):
+            print(err.msg)
 
     if err_msg:
         assert err

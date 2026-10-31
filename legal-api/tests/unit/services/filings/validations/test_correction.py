@@ -22,6 +22,7 @@ import pytest
 from business_model.models import Address, Business, PartyRole
 from legal_api.services.authz import STAFF_ROLE
 from legal_api.services.filings import validate
+from legal_api.services.filings.validations.correction import _validate_name_request_correction
 from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CHANGE_OF_DIRECTORS,
@@ -31,7 +32,9 @@ from registry_schemas.example_data import (
     CORRECTION_COL,
     CORRECTION_COR,
     DISSOLUTION,
-    FILING_TEMPLATE)
+    FILING_TEMPLATE,
+    INCORPORATION_FILING_TEMPLATE
+    )
 
 from tests.unit.models import (
     factory_business,
@@ -363,3 +366,328 @@ def _setup_existing_party(business: Business, party_role: str, cessation_dt: str
     business.party_roles.append(role)
     business.save()
     return role.party_id
+
+
+CORRECTION_NAME_REQUEST_ONLY = {
+    'filing': {
+        'header': {
+            'name': 'correction',
+            'date': '2024-01-01',
+            'authorizationReceived': True
+        },
+        "business": {},
+        'correction': {
+            "comment": "Test comment",
+            'nameRequest': {
+                'legalType': 'BC',
+                'legalName': 'legal name change - BC1234567 INC.',
+            },
+        },
+    }
+}
+
+
+@pytest.mark.parametrize(
+    'test_name, legal_type, current_name, submitted_name',
+    [
+        # Standard corporate suffix variations
+        ('exact match unchanged', 'BC', 'ACME HOLDINGS INC.', 'ACME HOLDINGS INC.'),
+        ('case-insensitive unchanged', 'BC', 'ACME HOLDINGS INC.', 'acme holdings inc.'),
+        ('name changed, same designation', 'BC', 'ACME HOLDINGS INC.', 'SUMMIT LOGISTICS INC.'),
+        ('abbreviation - dropped dot', 'BC', 'ACME HOLDINGS INC.', 'SUMMIT LOGISTICS INC'),
+        ('abbreviation - added dot', 'BC', 'ACME HOLDINGS LTD', 'PACIFIC TRADING LTD.'),
+        ('word designation preserved', 'BC', 'ACME TRADING LIMITED', 'PACIFIC TRADING LIMITED'),
+        ('french designation preserved', 'BC', 'ACME SERVICES INCORPOREE', 'SUMMIT SERVICES INCORPOREE'),
+        ('internal spacing normalized', 'BC', 'ACME HOLDINGS LTD.', '  SUMMIT   ENTERPRISES   LTD.  '),
+        
+        # Numbered company preservation
+        ('numbered company preserved', 'BC', '1234567 B.C. LTD.', '1234567 B.C. LTD.'),
+        ('numbered company dropped trailing dot', 'BC', '1234567 B.C. LTD.', '1234567 B.C. LTD'),
+
+        # Non-prefix entities: Cooperatives (can be anywhere except prefix)
+        ('coop designation in middle', 'CP', 'COASTAL COOPERATIVE SERVICES', 'VALLEY COOPERATIVE SERVICES'),
+        ('coop designation at end', 'CP', 'COASTAL COMMUNITY CO-OP', 'VALLEY COMMUNITY CO-OP'),
+        ('coop dot tolerance', 'CP', 'COASTAL COMMUNITY CO-OP.', 'VALLEY COMMUNITY CO-OP'),
+
+        # Non-prefix entities: Societies
+        ('society non-prefix preserved', 'S', 'HOPE COMMUNITY FOUNDATION', 'VALLEY COMMUNITY FOUNDATION'),
+        ('society abbreviation with dot tolerance', 'S', 'PACIFIC WRITERS ASSN.', 'COASTAL WRITERS ASSN'),
+
+        # Rule = none (unconstrained name changes)
+        ('sole proprietorship free form', 'SP', 'JOHN SMITH CONSULTING', 'JOHN SMITH ENTERPRISES'),
+        ('general partnership free form', 'GP', 'DOE AND PARTNERS', 'DOE AND ASSOCIATES'),
+
+        ('embedded designation inside word', 'BC', 'ORIGINAL LOGISTICS INC.', 'ZINC RESOURCE DRILLING INC.'),
+        ('whitespace does not cause false max-length failure', 'BC', 'ACME HOLDINGS INC.', f'   {"A" * 140} INC.   '),
+    ]
+)
+def test_legal_name_correction_valid_variations(
+    session, app, jwt, test_name, legal_type, current_name, submitted_name
+):
+    """Test that valid name corrections with preserved designations pass validation."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type=legal_type)
+    business.legal_name = current_name
+
+    initial_filing_name = 'registration' if legal_type in ('SP', 'GP') else 'incorporationApplication'
+    
+    filing_template = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_template['filing']['header']['name'] = initial_filing_name
+    filing_template['filing']['business']['legalType'] = legal_type
+
+    corrected_filing = factory_completed_filing(business, filing_template)
+
+    f = copy.deepcopy(CORRECTION_NAME_REQUEST_ONLY)
+    f['filing']['header']['identifier'] = identifier
+    f['filing']['business']['legalName'] = current_name
+    f['filing']['business']['legalType'] = legal_type
+    f['filing']['business']['identifier'] = identifier
+    f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    f['filing']['correction']['correctedFilingType'] = initial_filing_name
+    f['filing']['correction']['type'] = "STAFF"
+    f['filing']['correction']['nameRequest'] = {
+        'legalName': submitted_name,
+        'legalType': legal_type
+    }
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        err = validate(business, f)
+
+    assert err is None
+
+
+@pytest.mark.parametrize(
+    'test_name, legal_type, current_name, name_request_dict, expected_error, expected_path',
+    [
+        (
+            'missing legalName - whitespace',
+            'BC',
+            'ACME HOLDINGS INC.',
+            {'legalName': '   ', 'legalType': 'BC'},
+            'Company name is required.',
+            '/filing/correction/nameRequest/legalName',
+        ),
+        (
+            'missing legalName - None',
+            'BC',
+            'ACME HOLDINGS INC.',
+            {'legalName': None, 'legalType': 'BC'},
+            'Company name is required.',
+            '/filing/correction/nameRequest/legalName',
+        ),
+        (
+            'exceeds maximum length (155 for corps)',
+            'BC',
+            'ACME HOLDINGS INC.',
+            {'legalName': f'{"A" * 153} INC.', 'legalType': 'BC'},
+            'Company name cannot exceed 155 characters.',
+            '/filing/correction/nameRequest/legalName',
+        ),
+        (
+            'exceeds maximum length (150 for firms)',
+            'SP',
+            'OLD TRADING CO',
+            {'legalName': f'{"A" * 148} CO', 'legalType': 'SP'},
+            'Company name cannot exceed 150 characters.',
+            '/filing/correction/nameRequest/legalName',
+        ),
+        (
+            'designation changed (swapped INC to LTD)',
+            'BC',
+            'ACME HOLDINGS INC.',
+            {'legalName': 'SUMMIT HOLDINGS LTD.', 'legalType': 'BC'},
+            "Company name must contain the designation 'INC.'.",
+            '/filing/correction/nameRequest/legalName',
+        ),
+        (
+            'designation omitted entirely (corps)',
+            'BC',
+            'ACME HOLDINGS INC.',
+            {'legalName': 'SUMMIT HOLDINGS', 'legalType': 'BC'},
+            "Company name must contain the designation 'INC.'.",
+            '/filing/correction/nameRequest/legalName',
+        ),
+        (
+            'designation omitted entirely (cooperative)',
+            'CP',
+            'COASTAL COOPERATIVE SERVICES',
+            {'legalName': 'VALLEY ENTERPRISES', 'legalType': 'CP'},
+            "Company name must contain the designation 'COOPERATIVE'.",
+            '/filing/correction/nameRequest/legalName',
+        ),
+        (
+            'designation as prefix (corps must end with designation)',
+            'BC',
+            'ACME HOLDINGS INC.',
+            {'legalName': 'INC. SUMMIT HOLDINGS', 'legalType': 'BC'},
+            "Company name must end with the designation 'INC.'.",
+            '/filing/correction/nameRequest/legalName',
+        ),
+        (
+            'designation in middle (corps must end with designation)',
+            'BC',
+            'ACME HOLDINGS INC.',
+            {'legalName': 'SUMMIT INC. HOLDINGS', 'legalType': 'BC'},
+            "Company name must end with the designation 'INC.'.",
+            '/filing/correction/nameRequest/legalName',
+        ),
+        (
+            'cooperative designation as prefix',
+            'CP',
+            'COASTAL COOPERATIVE SERVICES',
+            {'legalName': 'COOPERATIVE COASTAL SERVICES', 'legalType': 'CP'},
+            "Company name cannot start with the designation 'COOPERATIVE'.",
+            '/filing/correction/nameRequest/legalName',
+        ),
+        (
+            'cooperative abbreviation designation as prefix',
+            'CP',
+            'COASTAL CO-OP SERVICES',
+            {'legalName': 'CO-OP COASTAL SERVICES', 'legalType': 'CP'},
+            "Company name cannot start with the designation 'CO-OP.'.",
+            '/filing/correction/nameRequest/legalName',
+        ),
+        (
+            'cooperative designation omitted entirely',
+            'CP',
+            'COASTAL COOPERATIVE SERVICES',
+            {'legalName': 'VALLEY ENTERPRISES', 'legalType': 'CP'},
+            "Company name must contain the designation 'COOPERATIVE'.",
+            '/filing/correction/nameRequest/legalName',
+        ),
+        (
+            'non-abbreviated word with invalid trailing period',
+            'BC',
+            'ACME TRADING LIMITED',
+            {'legalName': 'SUMMIT TRADING LIMITED.', 'legalType': 'BC'},
+            "Company name must contain the designation 'LIMITED'.",
+            '/filing/correction/nameRequest/legalName',
+        ),
+        (
+            'multiple designations',
+            'BC',
+            'ACME HOLDINGS INC.',
+            {'legalName': 'ACME CORP. LOGISTICS INC.', 'legalType': 'BC'},
+            'A company name cannot contain multiple designations.',
+            '/filing/correction/nameRequest/legalName',
+        ),
+        (
+            'both current and extra designation (extra in middle)',
+            'BC',
+            'ACME HOLDINGS INC.',
+            {'legalName': 'SUMMIT CORP. ENTERPRISES INC.', 'legalType': 'BC'},
+            'A company name cannot contain multiple designations.',
+            '/filing/correction/nameRequest/legalName',
+        ),
+        (
+            'nrNumber not permitted',
+            'BC',
+            'ACME HOLDINGS INC.',
+            {'legalName': 'ACME TRADING INC.', 'legalType': 'BC', 'nrNumber': 'NR 1234567'},
+            'nrNumber not allowed when correcting legal name',
+            '/filing/correction/nameRequest/nrNumber',
+        ),
+        (
+            'legal type change attempted',
+            'BC',
+            'ACME HOLDINGS INC.',
+            {'legalName': 'ACME TRADING INC.', 'legalType': 'BEN'},
+            'Legal type is not correctable',
+            '/filing/correction/nameRequest/legalType',
+        ),
+    ]
+)
+def test_legal_name_correction_invalid_submissions(
+    session, app, jwt, test_name, legal_type, current_name, name_request_dict, expected_error, expected_path
+):
+    """Test rejection of invalid name corrections."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type=legal_type)
+    business.legal_name = current_name
+
+    initial_filing_name = 'registration' if legal_type in ('SP', 'GP') else 'incorporationApplication'
+    
+    filing_template = copy.deepcopy(INCORPORATION_FILING_TEMPLATE)
+    filing_template['filing']['header']['name'] = initial_filing_name
+    filing_template['filing']['business']['legalType'] = legal_type
+
+    corrected_filing = factory_completed_filing(business, filing_template)
+
+    f = copy.deepcopy(CORRECTION_NAME_REQUEST_ONLY)
+    f['filing']['header']['identifier'] = identifier
+    f['filing']['business']['legalName'] = current_name
+    f['filing']['business']['legalType'] = legal_type
+    f['filing']['business']['identifier'] = identifier
+    f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    f['filing']['correction']['correctedFilingType'] = initial_filing_name
+    f['filing']['correction']['type'] = "STAFF"
+    f['filing']['correction']['nameRequest'] = name_request_dict
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        err = validate(business, f)
+    
+    assert err is not None
+    assert err.code == HTTPStatus.BAD_REQUEST
+    assert any(
+        e['error'] == expected_error and e['path'] == expected_path
+        for e in err.msg
+    )
+
+
+def test_name_request_block_omitted_passes(session, app, jwt):
+    """Test that a correction omitting the nameRequest block passes without triggering name validation."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    business.legal_name = 'EXISTING NAME INC.'
+    business.save()
+    factory_business_mailing_address(business)
+
+    filing_template = copy.deepcopy(FILING_TEMPLATE)
+    filing_template['filing']['header']['name'] = 'changeOfDirectors'
+    filing_template['filing']['changeOfDirectors'] = CHANGE_OF_DIRECTORS
+    corrected_filing = factory_completed_filing(business, filing_template)
+
+    f = copy.deepcopy(CORRECTION_COD)
+    f['filing']['header']['identifier'] = identifier
+    f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    f['filing']['correction']['type'] = 'STAFF'
+    f['filing']['correction'].pop('nameRequest', None)
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        err = validate(business, f)
+
+    assert err is None
+
+
+def test_legal_name_correction_existing_db_name_lacks_designation(session, app, jwt):
+    """Ensure correction fails cleanly if existing registered business lacks a valid designation."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    # Corrupt or legacy legal name missing INC/LTD/CORP etc.
+    business.legal_name = 'LEGACY COMPANY WITHOUT SUFFIX'
+    business.save()
+    factory_business_mailing_address(business)
+
+    filing_template = copy.deepcopy(FILING_TEMPLATE)
+    filing_template['filing']['header']['name'] = 'changeOfDirectors'
+    filing_template['filing']['changeOfDirectors'] = CHANGE_OF_DIRECTORS
+    corrected_filing = factory_completed_filing(business, filing_template)
+
+    f = copy.deepcopy(CORRECTION_COD)
+    f['filing']['header']['identifier'] = identifier
+    f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    f['filing']['correction']['type'] = 'STAFF'
+    f['filing']['correction']['nameRequest'] = {
+        'legalName': 'NEW COMPANY INC.',
+        'legalType': 'BC'
+    }
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        err = validate(business, f)
+
+    assert err is not None
+    assert err.code == HTTPStatus.BAD_REQUEST
+    assert any(
+        e['error'] == 'Legal name edits are disabled: existing designation could not be verified.'
+        for e in err.msg
+    )

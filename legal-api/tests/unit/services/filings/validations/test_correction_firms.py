@@ -35,6 +35,8 @@ GP_CORRECTION_REGISTRATION_APPLICATION = copy.deepcopy(CORRECTION_REGISTRATION)
 GP_CORRECTION_REGISTRATION_APPLICATION['filing']['correction']['legalType'] = 'GP'
 GP_CORRECTION_REGISTRATION_APPLICATION['filing']['business']['legalType'] = 'GP'
 GP_CORRECTION_REGISTRATION_APPLICATION['filing']['correction']['type'] = 'CLIENT'
+# nrNumber not allowed in nameRequest when correcting a company name
+del GP_CORRECTION_REGISTRATION_APPLICATION['filing']['correction']['nameRequest']['nrNumber']
 
 SP_CORRECTION_REGISTRATION_APPLICATION = copy.deepcopy(CORRECTION_REGISTRATION)
 SP_CORRECTION_REGISTRATION_APPLICATION['filing']['correction']['type'] = 'CLIENT'
@@ -54,16 +56,8 @@ SP_CORRECTION_REGISTRATION_APPLICATION['filing']['correction']['parties'][0]['ro
     }
 ]
 del SP_CORRECTION_REGISTRATION_APPLICATION['filing']['correction']['parties'][1]
-
-nr_response = {
-    'state': 'APPROVED',
-    'expirationDate': '',
-    'names': [{
-        'name': CORRECTION_REGISTRATION['filing']['correction']['nameRequest']['legalName'],
-        'state': 'APPROVED',
-        'consumptionDate': ''
-    }]
-}
+# nrNumber not allowed in nameRequest when correcting a company name
+del SP_CORRECTION_REGISTRATION_APPLICATION['filing']['correction']['nameRequest']['nrNumber']
 
 naics_response = {
     'code': CORRECTION_REGISTRATION['filing']['correction']['business']['naics']['naicsCode'],
@@ -92,13 +86,10 @@ def test_valid_firms_correction(app, session, jwt, test_name, filing):
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
     f['filing']['correction']['correctedFilingType'] = 'changeOfRegistration'
 
-    nr_res = copy.deepcopy(nr_response)
-    nr_res['legalType'] = legal_type
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
-        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            with jwt_request_context(app, jwt, [BASIC_USER]):
-                if err := validate(business, f):
-                    print(err.msg)
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        with jwt_request_context(app, jwt, [BASIC_USER]):
+            if err := validate(business, f):
+                print(err.msg)
 
     # check that validation passed
     assert None is err
@@ -125,13 +116,10 @@ def test_firms_correction_invalid_parties(app, session, jwt, test_name, filing, 
     f['filing']['correction']['correctedFilingType'] = 'changeOfRegistration'
 
     del f['filing']['correction']['parties'][0]['roles'][0]
-    nr_res = copy.deepcopy(nr_response)
-    nr_res['legalType'] = legal_type
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
-        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            with jwt_request_context(app, jwt, [BASIC_USER]):
-                if err := validate(business, f):
-                    print(err.msg)
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        with jwt_request_context(app, jwt, [BASIC_USER]):
+            if err := validate(business, f):
+                print(err.msg)
 
     # check that validation passed
     assert err
@@ -201,13 +189,10 @@ def test_firms_correction_naics(app, session, jwt, test_name, filing, existing_n
     else:
         del f['filing']['correction']['business']['naics']['naicsDescription']
 
-    nr_res = copy.deepcopy(nr_response)
-    nr_res['legalType'] = legal_type
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
-        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            with jwt_request_context(app, jwt, [BASIC_USER]):
-                if err := validate(business, f):
-                    print(err.msg)
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        with jwt_request_context(app, jwt, [BASIC_USER]):
+            if err := validate(business, f):
+                print(err.msg)
 
     # check for expected validation resultsn
     if expected_msg:
@@ -258,12 +243,9 @@ def test_firms_correction_start_date(app, session, jwt, test_name, filing, usern
     f['filing']['correction']['correctedFilingType'] = 'changeOfRegistration'
     f['filing']['correction']['startDate'] = start_date.strftime('%Y-%m-%d')
 
-    nr_res = copy.deepcopy(nr_response)
-    nr_res['legalType'] = legal_type
-    with patch.object(NameXService, 'query_nr_number', return_value=MockResponse(nr_res)):
-        with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-            with jwt_request_context(app, jwt, roles):
-                err = validate(business, f)
+    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
+        with jwt_request_context(app, jwt, roles):
+            err = validate(business, f)
 
     if is_valid:
         assert not err
