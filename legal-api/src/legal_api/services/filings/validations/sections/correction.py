@@ -18,6 +18,7 @@ from business_model.models import Business
 from legal_api.services.filings.validations.correction import (
     validate_legal_name_designation_unchanged,
 )
+
 from . import register_section_validator
 
 

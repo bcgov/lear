@@ -80,13 +80,7 @@ def test_validate_sections_unsupported_section(app, session, client, jwt):
     identifier = "BC1234567"
     factory_business(identifier, entity_type="BC")
 
-    with (
-        patch("legal_api.services.authorized", return_value=True),
-        patch(
-            "legal_api.services.filings.validations.sections.validate_section",
-            return_value=(None, False),
-        ),
-    ):
+    with (patch("legal_api.services.authorized", return_value=True)):
         rv = client.post(
             ENDPOINT_PATH.format(identifier=identifier),
             headers=create_header(jwt, [STAFF_ROLE], identifier),

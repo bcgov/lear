@@ -18,21 +18,23 @@
     Enables UI to send lightweight validation checks without having to construct the whole filing payload.
 """
 
-from typing import Callable, Optional
+from collections.abc import Callable
+from typing import Optional
+
 from business_model.models import Business
 
 SectionValidatorFn = Callable[
-    [Business, str, dict, Optional[str]],
+    [Business, str, dict, str | None],
     list[dict]
 ]
 
-SECTION_VALIDATORS: dict[tuple[str, Optional[str], str], SectionValidatorFn] = {}
+SECTION_VALIDATORS: dict[tuple[str, str | None, str], SectionValidatorFn] = {}
 
 
 def register_section_validator(
     filing_type: str,
     section: str,
-    filing_sub_type: Optional[str] = None,
+    filing_sub_type: str | None = None,
 ):
     """Decorator to register a validator function for a filing type and section."""
     def decorator(fn: SectionValidatorFn) -> SectionValidatorFn:
@@ -49,8 +51,8 @@ def validate_section(
     filing_type: str,
     section: str,
     data: dict,
-    filing_sub_type: Optional[str] = None,
-) -> tuple[Optional[list[dict]], bool]:
+    filing_sub_type: str | None = None,
+) -> tuple[list[dict] | None, bool]:
     """Validate data to the appropriate section validator.
 
     Returns:
@@ -69,4 +71,4 @@ def validate_section(
     return validator_fn(business, filing_type, data, filing_sub_type), True
 
 
-from . import correction  # noqa: F401, E402
+from . import correction

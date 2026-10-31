@@ -17,6 +17,7 @@
     Enables UI to send lightweight validation checks without having to construct the whole filing payload.
 """
 from http import HTTPStatus
+
 from flask import jsonify, request
 from flask_babel import _
 from flask_cors import cross_origin
@@ -25,8 +26,8 @@ from business_model.models import (
     Business,
 )
 from legal_api.resources.v2.business.bp import bp
-from legal_api.services.filings.validations.sections import validate_section
 from legal_api.services import authorized
+from legal_api.services.filings.validations.sections import validate_section
 from legal_api.utils.auth import jwt
 
 

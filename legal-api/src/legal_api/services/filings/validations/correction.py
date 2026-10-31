@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Correction filing."""
+import re
 from datetime import timedelta
 from http import HTTPStatus
-from typing import Final, Optional
-import re
+from typing import Final
 
 from dateutil.relativedelta import relativedelta
 from flask.globals import request_ctx
@@ -23,9 +23,8 @@ from flask_babel import _
 
 from business_model.models import Business, CourtOrder, Filing, Jurisdiction, PartyRole
 from business_model.models.types.filings import DissolutionSubTypes, FilingTypes
-
-from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
 from legal_api.core.constants import DESIGNATION_ABBREVIATIONS, DESIGNATION_RULES
+from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
 from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, SYSTEM_ROLE, NaicsService
 from legal_api.services.filings.validations.alteration import validate_type_change
@@ -275,7 +274,7 @@ def _validate_share_structure_correction(filing_dict, filing_type, business: Bus
 
 def _validate_name_request_correction(business: Business, filing_dict: dict):
     msg = []
-    nr_path = f"/filing/correction/nameRequest"
+    nr_path = "/filing/correction/nameRequest"
     name_request_dict = filing_dict.get("filing", {}).get("correction", {}).get("nameRequest", {})
 
     if not name_request_dict:
@@ -595,7 +594,7 @@ def _pattern_for_designation(item: str) -> str:
 
     base_text = trimmed.rstrip(".")
     is_abbreviation = any(
-        abbr.strip().rstrip(".").upper() == base_text.upper() 
+        abbr.strip().rstrip(".").upper() == base_text.upper()
         for abbr in DESIGNATION_ABBREVIATIONS
     )
 
@@ -620,7 +619,7 @@ def _build_anywhere_pattern(pattern: str) -> str:
     return rf"(?:^|\s)(?:{pattern})(?:\s|$)"
 
 
-def _normalize_name(name: Optional[str]) -> str:
+def _normalize_name(name: str | None) -> str:
     """Normalize whitespaces in name."""
     return " ".join((name or "").strip().split())
 
@@ -629,7 +628,7 @@ def _get_current_designation(
     name: str,
     rule: str,
     allowed: tuple[str, ...],
-) -> Optional[str]:
+) -> str | None:
     """Extract the designation in a business legal name."""
     clean_name = _normalize_name(name)
     if rule == "none" or not allowed or not clean_name:
@@ -653,9 +652,9 @@ def _get_current_designation(
     return None
 
 
-def validate_legal_name_designation_unchanged(
+def validate_legal_name_designation_unchanged( # noqa: PLR0911, PLR0912
     business: Business,
-    new_legal_name: Optional[str],
+    new_legal_name: str | None,
     err_path: str = "/filing/correction/nameRequest/legalName",
 ) -> list[dict]:
     """Validate that the submitted legal name preserves the business's existing designation."""

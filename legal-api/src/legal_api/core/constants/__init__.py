@@ -13,8 +13,11 @@
 # limitations under the License.
 """This has the common strings and values used across the core domain."""
 from typing import Final
+
 from .designations import (
     ABBREVIATIONS as DESIGNATION_ABBREVIATIONS,
+)
+from .designations import (
     DESIGNATION_RULES,
 )
 

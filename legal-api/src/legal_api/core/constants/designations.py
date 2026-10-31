@@ -22,7 +22,8 @@
 """
 # Ref: https://github.com/bcgov/namerequest/blob/f94717bcb8bebc6284489abb290b1c231c064513/app/src/list-data/designations.ts
 
-from typing import Final, TypedDict, Literal
+from typing import Final, Literal, TypedDict
+
 from business_model.models import Business
 
 LegalTypes = Business.LegalTypes
