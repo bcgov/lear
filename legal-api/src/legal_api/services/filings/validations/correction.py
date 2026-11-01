@@ -671,12 +671,7 @@ def validate_legal_name_designation_unchanged( # noqa: PLR0911, PLR0912
         })
         return msg
 
-    max_len = 150 if legal_type in (
-        Business.LegalTypes.SOLE_PROP.value,
-        Business.LegalTypes.PARTNERSHIP.value,
-        "SP",
-        "GP",
-    ) else 155
+    max_len = 150 if business.is_firm else 155
     if len(clean_new_name) > max_len:
         msg.append({
             "error": _(
