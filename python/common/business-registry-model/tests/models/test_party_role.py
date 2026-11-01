@@ -468,3 +468,118 @@ def test_get_party_roles_by_class_type(session, class_type, expected_roles):
 
     assert len(result) == len(expected_roles)
     assert found_roles == expected_roles
+
+
+def test_party_role_meta(session):
+    """Assert that any data can be set in the meta property"""
+    identifier = "CP1234567"
+    business = factory_business(identifier)
+    member = Party(
+        first_name="Connor",
+        last_name="Horton",
+        middle_initial="",
+        title="VP",
+    )
+    member.save()
+    # sanity check
+    assert member.id
+
+    party_role_1_meta = {
+        "random": "data",
+        "anything": {
+            "nested": {
+                "again": "data"
+            }
+        }
+    }
+    party_role_1 = PartyRole(
+        role=PartyRole.RoleTypes.DIRECTOR.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id,
+        meta=party_role_1_meta
+    )
+    party_role_1.save()
+
+    party_role_2_meta = {
+        "appointmentMethod": "court",
+        "courtOrderNumber": 1234567
+    }
+    party_role_2 = PartyRole(
+        role=PartyRole.RoleTypes.OFFICER.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id,
+        meta=party_role_2_meta
+    )
+    party_role_2.save()
+
+    party_role_3 = PartyRole(
+        role=PartyRole.RoleTypes.RECEIVER.value,
+        appointment_date=datetime.datetime(2017, 5, 17),
+        cessation_date=None,
+        party_id=member.id,
+        business_id=business.id
+    )
+    party_role_3.save()
+
+    assert party_role_1.meta is not None
+    assert party_role_2.meta is not None
+    assert party_role_3.meta is None
+
+    assert party_role_1.json ==  {
+        "appointmentDate": "2017-05-17",
+        "cessationDate": None,
+        "meta": {
+            "anything": {
+                "nested": {
+                    "again": "data",
+                },
+            },
+            "random": "data",
+        },
+        "officer": {
+            "email": None,
+            "firstName": "Connor",
+            "id": 14,
+            "lastName": "Horton",
+            "partyType": "person",
+        },
+        "role": "director",
+        "title": "VP"
+    }
+    
+    assert party_role_2.json ==  {
+        "appointmentDate": "2017-05-17",
+        "cessationDate": None,
+        "meta": {
+            "appointmentMethod": "court",
+            "courtOrderNumber": 1234567,
+        },
+        "officer": {
+            "email": None,
+            "firstName": "Connor",
+            "id": 14,
+            "lastName": "Horton",
+            "partyType": "person",
+        },
+        "role": "officer",
+        "title": "VP"
+    }
+    
+    assert party_role_3.json == {
+        "appointmentDate": "2017-05-17",
+        "cessationDate": None,
+        "officer": {
+            "email": None,
+            "firstName": "Connor",
+            "id": 14,
+            "lastName": "Horton",
+            "partyType": "person",
+        },
+        "role": "receiver",
+        "title": "VP"
+    }
+          
