@@ -17,18 +17,14 @@ from typing import Final
 from .designations import (
     ABBREVIATIONS as DESIGNATION_ABBREVIATIONS,
 )
-from .designations import (
-    DESIGNATION_RULES,
-    DesignationRules,
-    DesignationRule
-)
+from .designations import DESIGNATION_RULES, DesignationRule, DesignationRules
 
 REDACTED_STAFF_SUBMITTER: Final = "Registry Staff"
 
 __all__ = (
     "DESIGNATION_ABBREVIATIONS",
     "DESIGNATION_RULES",
-    "DesignationRules",
-    "DesignationRule",
     "REDACTED_STAFF_SUBMITTER",
+    "DesignationRule",
+    "DesignationRules",
 )

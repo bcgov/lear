@@ -23,7 +23,7 @@ from flask_babel import _
 
 from business_model.models import Business, CourtOrder, Filing, Jurisdiction, PartyRole
 from business_model.models.types.filings import DissolutionSubTypes, FilingTypes
-from legal_api.core.constants import DESIGNATION_ABBREVIATIONS, DESIGNATION_RULES, DesignationRules, DesignationRule
+from legal_api.core.constants import DESIGNATION_ABBREVIATIONS, DESIGNATION_RULES, DesignationRule, DesignationRules
 from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
 from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, SYSTEM_ROLE, NaicsService
@@ -32,6 +32,7 @@ from legal_api.services.filings.validations.common_validations import (
     is_same_str,
     validate_court_order,
     validate_foreign_jurisdiction,
+    validate_name_request,
     validate_offices_addresses,
     validate_out_date,
     validate_parties_addresses,
@@ -115,12 +116,13 @@ def _validate_type_specific_props(business: Business, filing: dict, msg: list):
     elif business.legal_type in Business.CORPS:
         _validate_corps_correction(business, filing, business.legal_type, msg)
     elif business.legal_type == Business.LegalTypes.COOP.value:
-        _validate_special_resolution_correction(filing, business, msg)
+        _validate_special_resolution_correction(filing, business.legal_type, msg)
 
 
 def _validate_firms_correction(business: Business, filing, legal_type, msg):
     filing_type = "correction"
-    msg.extend(_validate_name_request_correction(business, filing))
+    if filing.get("filing", {}).get("correction", {}).get("nameRequest", {}).get("nrNumber", None):
+        msg.extend(validate_name_request(filing, legal_type, filing_type))
     if filing.get("filing", {}).get("correction", {}).get("parties", None):
         msg.extend(validate_party(filing, legal_type))
     if filing.get("filing", {}).get("correction", {}).get("offices", None):
@@ -221,7 +223,15 @@ def _validate_corps_correction_historical(business: Business, filing_dict, msg):
 
 def _validate_corps_correction_active(business: Business, filing_dict, legal_type, msg):
     filing_type = "correction"
-    msg.extend(_validate_name_request_correction(business, filing_dict))
+    if new_legal_type := filing_dict.get("filing", {}).get("correction", {}).get("newLegalType"):
+        if business.legal_type == new_legal_type:
+            # This is not a valid type change
+            path = "/filing/correction/newLegalType"
+            msg.append({"error": _("New legal type must be different from current legal type."), "path": path})
+        else:
+            msg.extend(validate_type_change(filing_dict, business, "/filing/correction/newLegalType"))
+
+    msg.extend(_validate_name_request_corps(business, filing_dict, new_legal_type, filing_type))
 
     if filing_dict.get("filing", {}).get("correction", {}).get("offices", None):
         msg.extend(validate_corp_offices(filing_dict, legal_type, filing_type))
@@ -265,30 +275,35 @@ def _validate_share_structure_correction(filing_dict, filing_type, business: Bus
 
     return msg
 
-def _validate_name_request_correction(business: Business, filing_dict: dict):
+def _validate_name_request_corps(business: Business, filing_dict: dict, new_legal_type: str, filing_type: str):
     msg = []
-    nr_path = "/filing/correction/nameRequest"
-    name_request_dict = filing_dict.get("filing", {}).get("correction", {}).get("nameRequest", {})
+    name_request_dict = filing_dict.get("filing", {}).get(filing_type, {}).get("nameRequest", {})
 
     if not name_request_dict:
         return msg
-
+    
+    nr_legal_name_path = f"/filing/{filing_type}/nameRequest/legalName"
     new_legal_name = name_request_dict.get("legalName")
-    submitted_legal_type = name_request_dict.get("legalType")
-    current_legal_type = business.legal_type
+    
+    if name_request_dict.get("nrNumber", None):
+        msg.extend(validate_name_request(filing_dict, new_legal_type or business.legal_type, filing_type))
+    elif new_legal_type:
+        valid_names = [business.legal_name]
+        if new_numbered_name := Business.generate_numbered_legal_name(new_legal_type, business.identifier):
+            # if existing legal_name is a numbered name and if type has changed
+            # then the legal name get updated according to the new legal type
+            valid_names.append(new_numbered_name)
 
-    if name_request_dict.get("nrNumber"):
-        msg.append({
-            "error": _("nrNumber not allowed when correcting legal name"),
-            "path": f"{nr_path}/nrNumber",
-        })
-    if submitted_legal_type and submitted_legal_type != current_legal_type:
-        msg.append({
-            "error": _("Legal type is not correctable"),
-            "path": f"{nr_path}/legalType",
-        })
-
-    msg.extend(validate_legal_name_designation_unchanged(business, new_legal_name))
+        if new_legal_name and new_legal_name not in valid_names:
+            msg.append({"error": _("Unexpected legal name."), "path": nr_legal_name_path})
+    else:
+        msg.extend(
+            validate_legal_name_designation_unchanged(
+                business,
+                new_legal_name,
+                err_path=nr_legal_name_path,
+            )
+        )
 
     return msg
 
@@ -417,10 +432,11 @@ def _validate_out_correction(filing_dict, filing_type, business):
     return msg
 
 
-def _validate_special_resolution_correction(filing_dict, business, msg):
+def _validate_special_resolution_correction(filing_dict, legal_type, msg):
     filing_type = "correction"
 
-    msg.extend(_validate_name_request_correction(business, filing_dict))
+    if filing_dict.get("filing", {}).get(filing_type, {}).get("nameRequest", {}).get("nrNumber", None):
+        msg.extend(validate_name_request(filing_dict, legal_type, filing_type))
     if filing_dict.get("filing", {}).get(filing_type, {}).get("resolution", None):
         msg.extend(validate_resolution_content(filing_dict, filing_type))
     if filing_dict.get("filing", {}).get(filing_type, {}).get("signingDate", None):
@@ -434,7 +450,7 @@ def _validate_special_resolution_correction(filing_dict, business, msg):
     if filing_dict.get("filing", {}).get(filing_type, {}).get("memorandumFileKey", None):
         msg.extend(memorandum_change_validation(filing_dict))
     if is_special_resolution_correction_by_filing_json(filing_dict.get("filing", {})):
-        _validate_roles_parties_correction(filing_dict, business.legal_type, filing_type, msg)
+        _validate_roles_parties_correction(filing_dict, legal_type, filing_type, msg)
 
 
 def _validate_roles_parties_correction(filing_dict, legal_type, filing_type, msg):

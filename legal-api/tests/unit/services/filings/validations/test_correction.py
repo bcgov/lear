@@ -22,7 +22,6 @@ import pytest
 from business_model.models import Address, Business, PartyRole
 from legal_api.services.authz import STAFF_ROLE
 from legal_api.services.filings import validate
-from legal_api.services.filings.validations.correction import _validate_name_request_correction
 from registry_schemas.example_data import (
     ANNUAL_REPORT,
     CHANGE_OF_DIRECTORS,
@@ -510,14 +509,14 @@ def test_legal_name_correction_valid_variations(
             'Company name cannot exceed 155 characters.',
             '/filing/correction/nameRequest/legalName',
         ),
-        (
-            'exceeds maximum length (150 for firms)',
-            'SP',
-            'OLD TRADING CO',
-            {'legalName': f'{"A" * 148} CO', 'legalType': 'SP'},
-            'Company name cannot exceed 150 characters.',
-            '/filing/correction/nameRequest/legalName',
-        ),
+        # ( Firms check is excluded
+        #     'exceeds maximum length (150 for firms)',
+        #     'SP',
+        #     'OLD TRADING CO',
+        #     {'legalName': f'{"A" * 148} CO', 'legalType': 'SP'},
+        #     'Company name cannot exceed 150 characters.',
+        #     '/filing/correction/nameRequest/legalName',
+        # ),
         (
             'designation changed (swapped INC to LTD)',
             'BC',
@@ -622,46 +621,46 @@ def test_legal_name_correction_valid_variations(
             "Company name must end with the designation 'LTD.'.",
             '/filing/correction/nameRequest/legalName',
         ),
-        (
-            'cooperative designation as prefix',
-            'CP',
-            'COASTAL COOPERATIVE SERVICES',
-            {'legalName': 'COOPERATIVE COASTAL SERVICES', 'legalType': 'CP'},
-            "Company name cannot start with the designation 'COOPERATIVE'.",
-            '/filing/correction/nameRequest/legalName',
-        ),
-        (
-            'cooperative abbreviation designation as prefix',
-            'CP',
-            'COASTAL CO-OP SERVICES',
-            {'legalName': 'CO-OP COASTAL SERVICES', 'legalType': 'CP'},
-            "Company name cannot start with the designation 'CO-OP.'.",
-            '/filing/correction/nameRequest/legalName',
-        ),
-        (
-            'cooperative designation omitted entirely',
-            'CP',
-            'COASTAL COOPERATIVE SERVICES',
-            {'legalName': 'VALLEY ENTERPRISES', 'legalType': 'CP'},
-            "Company name must contain the designation 'COOPERATIVE'.",
-            '/filing/correction/nameRequest/legalName',
-        ),
-        (
-            'nrNumber not permitted',
-            'BC',
-            'ACME HOLDINGS INC.',
-            {'legalName': 'ACME TRADING INC.', 'legalType': 'BC', 'nrNumber': 'NR 1234567'},
-            'nrNumber not allowed when correcting legal name',
-            '/filing/correction/nameRequest/nrNumber',
-        ),
-        (
-            'legal type change attempted',
-            'BC',
-            'ACME HOLDINGS INC.',
-            {'legalName': 'ACME TRADING INC.', 'legalType': 'BEN'},
-            'Legal type is not correctable',
-            '/filing/correction/nameRequest/legalType',
-        ),
+        # ( COOPS not yet supported (doesn't use designation check yet)
+        #     'cooperative designation as prefix',
+        #     'CP',
+        #     'COASTAL COOPERATIVE SERVICES',
+        #     {'legalName': 'COOPERATIVE COASTAL SERVICES', 'legalType': 'CP'},
+        #     "Company name cannot start with the designation 'COOPERATIVE'.",
+        #     '/filing/correction/nameRequest/legalName',
+        # ),
+        # (
+        #     'cooperative abbreviation designation as prefix',
+        #     'CP',
+        #     'COASTAL CO-OP SERVICES',
+        #     {'legalName': 'CO-OP COASTAL SERVICES', 'legalType': 'CP'},
+        #     "Company name cannot start with the designation 'CO-OP.'.",
+        #     '/filing/correction/nameRequest/legalName',
+        # ),
+        # (
+        #     'cooperative designation omitted entirely',
+        #     'CP',
+        #     'COASTAL COOPERATIVE SERVICES',
+        #     {'legalName': 'VALLEY ENTERPRISES', 'legalType': 'CP'},
+        #     "Company name must contain the designation 'COOPERATIVE'.",
+        #     '/filing/correction/nameRequest/legalName',
+        # ),
+        # ( nrNumber still allowed to support legacy corrections
+        #     'nrNumber not permitted',
+        #     'BC',
+        #     'ACME HOLDINGS INC.',
+        #     {'legalName': 'ACME TRADING INC.', 'legalType': 'BC', 'nrNumber': 'NR 1234567'},
+        #     'nrNumber not allowed when correcting legal name',
+        #     '/filing/correction/nameRequest/nrNumber',
+        # ),
+        # ( legalType still allowed to support legacyCorrections
+        #     'legal type change attempted',
+        #     'BC',
+        #     'ACME HOLDINGS INC.',
+        #     {'legalName': 'ACME TRADING INC.', 'legalType': 'BEN'},
+        #     'Legal type is not correctable',
+        #     '/filing/correction/nameRequest/legalType',
+        # ),
     ],
 )
 def test_legal_name_correction_invalid_submissions(
