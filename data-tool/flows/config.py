@@ -144,6 +144,9 @@ class _Config():  # pylint: disable=too-few-public-methods
     CLOUDSQL_INSTANCE_CONNECTION_NAME = os.getenv('CLOUDSQL_INSTANCE_CONNECTION_NAME', '')
     DATABASE_IP_TYPE = os.getenv('DATABASE_IP_TYPE', '')
 
+    CLOUDSQL_INSTANCE_CONNECTION_NAME_AUTH = os.getenv('CLOUDSQL_INSTANCE_CONNECTION_NAME_AUTH', '')
+    DATABASE_IP_TYPE_AUTH = os.getenv('DATABASE_IP_TYPE_AUTH', '')
+    
     # POSTGRESQL LEAR DB
     DB_USER = os.getenv('DATABASE_USERNAME', '')
     DB_PASSWORD = os.getenv('DATABASE_PASSWORD', '')
