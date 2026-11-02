@@ -1,7 +1,6 @@
 from config import get_named_config
 from prefect import task
 from prefect.cache_policies import NO_CACHE
-from cloud_sql_connector import DBConfig, getconn
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 import oracledb
@@ -21,28 +20,6 @@ def check_postgres_connection(db_engine: Engine):
         if not res:
             raise ValueError("Failed to retrieve the current database name.")
         print(f'✅ Connected to Postgres database: {res}')
-
-@task(cache_policy=NO_CACHE)
-def get_colin_mig_conn(config):
-    config = DBConfig(
-        instance_name=config.CLOUDSQL_INSTANCE_CONNECTION_NAME,
-        database=config.DB_NAME,
-        user=config.DB_USER,
-        ip_type=config.DATABASE_IP_TYPE,
-        schema="public"
-    )
-    return getconn(config)
-
-@task(cache_policy=NO_CACHE)
-def get_colin_mig_conn_auth(config):
-    config = DBConfig(
-        instance_name=config.CLOUDSQL_INSTANCE_CONNECTION_NAME_AUTH,
-        database=config.DB_NAME_AUTH,
-        user=config.DB_USER_AUTH,
-        ip_type=config.DATABASE_IP_TYPE_AUTH,
-        schema="auth"
-    )
-    return getconn(config)
 
 @task(cache_policy=NO_CACHE)
 def colin_extract_init(config):
@@ -78,29 +55,28 @@ def colin_oracle_init(config):
 def lear_init(config):
     try:
         engine = create_engine(
-                "postgresql+pg8000://", creator=lambda: get_colin_mig_conn(config)
-            )
+            config.SQLALCHEMY_DATABASE_URI,
+            **config.SQLALCHEMY_ENGINE_OPTIONS
+        )
         check_postgres_connection(engine)
         return engine
     except Exception as e:
         raise Exception('Failed to create engine for LEAR DB') from e
-    # try:
-    #     engine = create_engine(
-    #         config.SQLALCHEMY_DATABASE_URI,
-    #         **config.SQLALCHEMY_ENGINE_OPTIONS
-    #     )
-    #     check_postgres_connection(engine)
-    #     return engine
-    # except Exception as e:
-    #     raise Exception('Failed to create engine for LEAR DB') from e
+    try:
+        engine = create_engine(
+            config.SQLALCHEMY_DATABASE_URI,
+            **config.SQLALCHEMY_ENGINE_OPTIONS
+        )
+        check_postgres_connection(engine)
+        return engine
+    except Exception as e:
+        raise Exception('Failed to create engine for LEAR DB') from e
 
 
 @task(cache_policy=NO_CACHE)
 def auth_init(config):
     try:
-        engine = create_engine(
-                    "postgresql+pg8000://", creator=lambda: get_colin_mig_conn_auth(config)
-                )
+        engine = create_engine(config.SQLALCHEMY_DATABASE_URI_AUTH)
         check_postgres_connection(engine)
         return engine
     except Exception as e:
