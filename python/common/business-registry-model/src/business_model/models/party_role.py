@@ -14,11 +14,13 @@
 """This module holds data for party roles in a business."""
 from __future__ import annotations
 
+import copy
 from datetime import datetime
 from enum import Enum
 
 from sql_versioning import Versioned
 from sqlalchemy import Date, cast, or_
+from sqlalchemy.dialects.postgresql import JSONB
 
 from .db import db
 from .party import (
@@ -60,6 +62,9 @@ class PartyRole(db.Model, Versioned):
     role = db.Column('role', db.String(30), default=RoleTypes.DIRECTOR)
     appointment_date = db.Column('appointment_date', db.DateTime(timezone=True))
     cessation_date = db.Column('cessation_date', db.DateTime(timezone=True))
+    
+    # arbitrary data related to the role (eg: Liquidator method of appointment)
+    meta = db.Column('meta', JSONB, nullable=True)
 
     business_id = db.Column('business_id', db.Integer, db.ForeignKey('businesses.id'))
     filing_id = db.Column('filing_id', db.Integer, db.ForeignKey('filings.id'))
@@ -88,6 +93,9 @@ class PartyRole(db.Model, Versioned):
 
         if self.party_class_type:
             party['roleClass'] = self.party_class_type.name
+        
+        if self.meta:
+            party['meta'] = copy.deepcopy(self.meta)
 
         return party
 
