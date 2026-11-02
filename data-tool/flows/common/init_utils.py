@@ -62,15 +62,6 @@ def lear_init(config):
         return engine
     except Exception as e:
         raise Exception('Failed to create engine for LEAR DB') from e
-    try:
-        engine = create_engine(
-            config.SQLALCHEMY_DATABASE_URI,
-            **config.SQLALCHEMY_ENGINE_OPTIONS
-        )
-        check_postgres_connection(engine)
-        return engine
-    except Exception as e:
-        raise Exception('Failed to create engine for LEAR DB') from e
 
 
 @task(cache_policy=NO_CACHE)
@@ -81,3 +72,4 @@ def auth_init(config):
         return engine
     except Exception as e:
         raise Exception('Failed to create engine for AUTH DB') from e
+    
