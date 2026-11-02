@@ -108,6 +108,52 @@ def test_relationship_to_director_id_cast():
     assert "id" not in relationship_to_director(relationship)["officer"]
 
 
+def test_relationship_to_director_optional_entity_fields_passthrough():
+    """Assert the shared entity mapping carries the optional entity fields onto the officer."""
+    relationship = copy.deepcopy(PERSON_RELATIONSHIP)
+    relationship["entity"].update({
+        "additionalName": "Patrick",
+        "alternateName": "JP",
+        "businessIdentifier": "BC1234567",
+    })
+
+    officer = relationship_to_director(relationship)["officer"]
+
+    assert officer["middleName"] == "Patrick"
+    assert officer["alternateName"] == "JP"
+    assert officer["identifier"] == "BC1234567"
+
+
+def test_relationship_to_director_business_ui_shape():
+    """Assert a business-ui payload (empty-string optionals, roleClass, actions) maps cleanly."""
+    relationship = {
+        "entity": {
+            "identifier": "",
+            "givenName": "Glenn",
+            "middleInitial": "",
+            "familyName": "Quagmire",
+            "businessName": "",
+            "alternateName": "",
+            "email": "",
+        },
+        "deliveryAddress": copy.deepcopy(DELIVERY_ADDRESS),
+        "mailingAddress": copy.deepcopy(MAILING_ADDRESS),
+        "roles": [{"roleType": "Director", "roleClass": "DIRECTOR", "appointmentDate": "2024-01-01"}],
+        "actions": ["ADDED"],
+    }
+
+    director = relationship_to_director(relationship)
+
+    assert director["officer"] == {
+        "firstName": "Glenn",
+        "middleInitial": "",
+        "lastName": "Quagmire",
+        "partyType": "person",
+    }
+    assert director["actions"] == ["appointed"]
+    assert director["appointmentDate"] == "2024-01-01"
+
+
 def test_relationship_to_director_multi_role_lifts_director_dates():
     """Assert the Director role's dates are lifted when other roles are present."""
     relationship = copy.deepcopy(PERSON_RELATIONSHIP)
