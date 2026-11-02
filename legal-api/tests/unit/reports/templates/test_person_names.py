@@ -101,6 +101,8 @@ PARTS = {
     "/template-parts/incorporation-application/completingPartyCoop.html": lambda p: {
         "parties": _people("Completing Party")},
     "/template-parts/incorporation-application/incorporator.html": lambda p: {"parties": _people("Incorporator")},
+    "/template-parts/receivers/receivers.html": lambda p: {
+        "newReceivers": p, "ceasedReceivers": p, "currentReceivers": p, "effective_date": "January 1, 2026"},
     "/template-parts/registration-statement/party.html": lambda p: {"parties": _people("Partner")},
     "/template-parts/registration/party.html": lambda p: {
         "registration": {"nameRequest": {"legalType": "GP"}, "parties": _people("Partner")}},
