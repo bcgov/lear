@@ -354,6 +354,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         section = filing.get(filing_type) or {}
         if filing_type in PARTY_SHAPE_FILING_TYPES and party_key(section) == RELATIONSHIPS_KEY:
             section["parties"] = get_parties(section)
+            for party in section["parties"]:
+                # common/directors.html renders officer.middleName; business-ui sends the middle name as middleInitial
+                officer = party["officer"]
+                officer["middleName"] = officer.get("middleName") or officer.get("middleInitial") or ""
 
     def _format_par_value(self, filing):
         if share_classes := filing.get("shareClasses"):

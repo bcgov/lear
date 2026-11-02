@@ -372,6 +372,18 @@ def test_get_recipients_parties_take_precedence_over_relationships(app):
     assert 'rel@example.com' not in result
 
 
+def test_get_recipients_correction_relationships_unchanged(app):
+    """Assert a relationships-shaped correction (outside the party-shape filings) adds no party emails."""
+    filing_json = _make_filing_json('correction')
+    filing_json['filing']['correction']['relationships'] = [
+        _relationship('custodian@example.com', 'Custodian'),
+        _relationship('comp@example.com', 'Completing Party'),
+    ]
+    with app.app_context():
+        result = get_recipients('COMPLETED', filing_json, None, 'correction')
+    assert result == CONTACT_POINT
+
+
 def test_get_recipients_missing_contact_point_coalesced_to_empty_string(app):
     """Assert that a missing contactPoint email is coalesced to an empty string (not None)."""
     filing_json = _make_filing_json(

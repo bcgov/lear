@@ -488,6 +488,7 @@ def test_format_continuation_in_data_party_shapes(session, test_name, template):
     assert filing['parties'] is filing['continuationIn']['parties']
     assert filing['parties'][0]['officer']['firstName'] == 'Joe'
     assert filing['parties'][0]['officer']['lastName'] == 'Swanson'
+    assert filing['parties'][0]['officer']['middleName'] == 'P'  # the directors template reads middleName
     assert [r['roleType'] for r in filing['parties'][0]['roles']] == ['Completing Party', 'Director']
     assert filing['parties'][0]['deliveryAddress']['addressCountry'] == 'Canada'  # _format_directors ran
     # the stored filing json keeps the submitted shape

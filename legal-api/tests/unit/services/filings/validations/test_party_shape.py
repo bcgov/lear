@@ -136,6 +136,23 @@ def test_validate_relationship_items_person_with_business_name():
     assert 'businessName should not be set' in errs[0]['error']
 
 
+@pytest.mark.parametrize('length, valid', [(150, True), (151, False)])
+def test_validate_relationship_items_business_name_length(length, valid):
+    """Assert businessName is capped at the legacy organization name length."""
+    section = copy.deepcopy(CONTINUATION_IN_RELATIONSHIPS)
+    section['relationships'][1]['entity'] = {'businessName': 'X' * length}
+
+    errs = validate_relationship_items(_filing(section), FILING_TYPE)
+
+    if valid:
+        assert errs == []
+    else:
+        assert errs == [{
+            'error': 'businessName cannot be longer than 150 characters.',
+            'path': f'{RELATIONSHIPS_PATH}/1/entity/businessName'
+        }]
+
+
 @pytest.mark.parametrize(
     'legacy_path, expected_path',
     [

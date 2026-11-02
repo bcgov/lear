@@ -31,6 +31,9 @@ from business_common.utils.relationship_party import (
 from legal_api.errors import Error
 from legal_api.services.filings.validations.common_validations import validate_relationship_entity_name
 
+# The relationship organization schema has no length cap; the legacy officer schema and Party column are 150.
+BUSINESS_NAME_MAX_LENGTH = 150
+
 # Ordered: specific officer fields first, then the generic officer -> entity prefix.
 OFFICER_PATH_REWRITES = (
     ("/officer/firstName", "/entity/givenName"),
@@ -67,7 +70,8 @@ def validate_relationship_items(filing_json: dict, filing_type: str) -> list:
     """Validate the relationship-only rules on the submitted shape.
 
     Every role needs an appointmentDate (the legacy party role schema required it and the filer
-    reads it by key), and the entity name fields must match the entity type.
+    reads it by key), the entity name fields must match the entity type, and businessName must fit
+    the legacy organization name limit the relationship schema does not enforce.
     """
     msg = []
     relationships_path = f"/filing/{filing_type}/{RELATIONSHIPS_KEY}"
@@ -79,6 +83,9 @@ def validate_relationship_items(filing_json: dict, filing_type: str) -> list:
                 msg.append({"error": "appointmentDate is required.",
                             "path": f"{path}/roles/{role_index}/appointmentDate"})
         msg.extend(validate_relationship_entity_name(relationship, path))
+        if len(relationship.get("entity", {}).get("businessName") or "") > BUSINESS_NAME_MAX_LENGTH:
+            msg.append({"error": f"businessName cannot be longer than {BUSINESS_NAME_MAX_LENGTH} characters.",
+                        "path": f"{path}/entity/businessName"})
     return msg
 
 
