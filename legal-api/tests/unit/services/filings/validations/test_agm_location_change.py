@@ -232,6 +232,18 @@ def test_validate_agm_reason(session, mocker, test_name, reason, expected_code, 
             None,
             None,
         ),
+        (
+            'BRITISH_COLUMBIA_NOT_ALLOWED',
+            {'country': 'CA', 'city': 'Vancouver', 'region': 'BC'},
+            'Region should not be BC.',
+            '/filing/agmLocationChange/agmLocation/region',
+        ),
+        (
+            'LOWERCASE_BC_NOT_ALLOWED',
+            {'country': 'CA', 'city': 'Vancouver', 'region': 'bc'},
+            'Region should not be BC.',
+            '/filing/agmLocationChange/agmLocation/region',
+        ),
     ]
 )
 def test_validate_agm_location(

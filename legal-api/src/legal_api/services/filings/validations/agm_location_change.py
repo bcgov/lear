@@ -91,6 +91,11 @@ def _validate_agm_location(agm_location: dict) -> list[dict]:
                 "error": babel("Region is required."),
                 "path": region_path,
             })
+        elif country_code == "CA" and region == "BC":
+            msg.append({
+                "error": babel("Region should not be BC."),
+                "path": region_path,
+            })
         elif not pycountry.subdivisions.get(
             code=f"{country_code}-{region}"
         ):
