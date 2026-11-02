@@ -23,6 +23,17 @@ def check_postgres_connection(db_engine: Engine):
         print(f'✅ Connected to Postgres database: {res}')
 
 @task(cache_policy=NO_CACHE)
+def get_colin_mig_conn_auth(config):
+    config = DBConfig(
+        instance_name=config.CLOUDSQL_INSTANCE_CONNECTION_NAME_AUTH,
+        database=config.DB_NAME_AUTH,
+        user=config.DB_USER_AUTH,
+        ip_type=config.DATABASE_IP_TYPE_AUTH,
+        schema="auth"
+    )
+    return getconn(config)
+
+@task(cache_policy=NO_CACHE)
 def get_colin_mig_conn(config):
     config = DBConfig(
         instance_name=config.CLOUDSQL_INSTANCE_CONNECTION_NAME,
@@ -87,7 +98,9 @@ def lear_init(config):
 @task(cache_policy=NO_CACHE)
 def auth_init(config):
     try:
-        engine = create_engine(config.SQLALCHEMY_DATABASE_URI_AUTH)
+        engine = create_engine(
+                    "postgresql+pg8000://", creator=lambda: get_colin_mig_conn_auth(config)
+                )
         check_postgres_connection(engine)
         return engine
     except Exception as e:

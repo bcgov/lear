@@ -132,7 +132,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     DB_NAME_COLIN_MIGR = os.getenv('DATABASE_NAME_COLIN_MIGR', '')
     DB_HOST_COLIN_MIGR = os.getenv('DATABASE_HOST_COLIN_MIGR', '')
     DB_PORT_COLIN_MIGR = os.getenv('DATABASE_PORT_COLIN_MIGR', '5432')
-    SQLALCHEMY_DATABASE_URI_COLIN_MIGR = 'postgresql://{user}:{password}@{host}:{port}/{name}'.format(
+    SQLALCHEMY_DATABASE_URI_COLIN_MIGR = 'postgresql+pg8000://{user}:{password}@{host}:{port}/{name}'.format(
         user=DB_USER_COLIN_MIGR,
         password=DB_PASSWORD_COLIN_MIGR,
         host=DB_HOST_COLIN_MIGR,
@@ -143,6 +143,9 @@ class _Config():  # pylint: disable=too-few-public-methods
 
     CLOUDSQL_INSTANCE_CONNECTION_NAME = os.getenv('CLOUDSQL_INSTANCE_CONNECTION_NAME', '')
     DATABASE_IP_TYPE = os.getenv('DATABASE_IP_TYPE', '')
+
+    CLOUDSQL_INSTANCE_CONNECTION_NAME_AUTH = os.getenv('CLOUDSQL_INSTANCE_CONNECTION_NAME_AUTH', '')
+    DATABASE_IP_TYPE_AUTH = os.getenv('DATABASE_IP_TYPE_AUTH', '')
 
     # POSTGRESQL LEAR DB
     DB_USER = os.getenv('DATABASE_USERNAME', '')
