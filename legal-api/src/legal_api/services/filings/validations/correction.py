@@ -23,7 +23,7 @@ from flask_babel import _
 
 from business_model.models import Business, CourtOrder, Filing, Jurisdiction, PartyRole
 from business_model.models.types.filings import DissolutionSubTypes, FilingTypes
-from legal_api.core.constants import DESIGNATION_ABBREVIATIONS, DESIGNATION_RULES
+from legal_api.core.constants import DESIGNATION_ABBREVIATIONS, DESIGNATION_RULES, DesignationRules, DesignationRule
 from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
 from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, SYSTEM_ROLE, NaicsService
@@ -221,13 +221,6 @@ def _validate_corps_correction_historical(business: Business, filing_dict, msg):
 
 def _validate_corps_correction_active(business: Business, filing_dict, legal_type, msg):
     filing_type = "correction"
-    if new_legal_type := filing_dict.get("filing", {}).get("correction", {}).get("newLegalType"):
-        if business.legal_type == new_legal_type:
-            # This is not a valid type change
-            path = "/filing/correction/newLegalType"
-            msg.append({"error": _("New legal type must be different from current legal type."), "path": path})
-        else:
-            msg.extend(validate_type_change(filing_dict, business, "/filing/correction/newLegalType"))
     msg.extend(_validate_name_request_correction(business, filing_dict))
 
     if filing_dict.get("filing", {}).get("correction", {}).get("offices", None):
@@ -591,7 +584,6 @@ def _pattern_for_designation(item: str) -> str:
     regardless of whether the input or the set contains a trailing dot.
     """
     trimmed = item.strip()
-
     base_text = trimmed.rstrip(".")
     is_abbreviation = any(
         abbr.strip().rstrip(".").upper() == base_text.upper()
@@ -599,24 +591,27 @@ def _pattern_for_designation(item: str) -> str:
     )
 
     if is_abbreviation:
-        return rf"{re.escape(base_text)}\.?"
+        return rf"\b{re.escape(base_text)}\.?(?!\w)"
+    
+    if trimmed.endswith("."):
+        return rf"\b{re.escape(base_text)}\.(?!\w)"
 
-    return re.escape(trimmed)
+    return rf"\b{re.escape(trimmed)}\b"
 
 
 def _build_suffix_pattern(pattern: str) -> str:
-    """Matches text followed by space and the designation strictly at the end."""
-    return rf"\S+\s+{pattern}$"
+    """Matches text followed by space/punctuation and the designation strictly at the end."""
+    return rf"(?:^|[\s,]+){pattern}\s*$"
 
 
 def _build_non_prefix_pattern(pattern: str) -> str:
-    """Matches text followed by space and the designation (cannot be first word)."""
-    return rf"\S+\s+{pattern}(?:\s+|$)"
+    """Matches text where designation is NOT the first word."""
+    return rf"\S+[\s,]+{pattern}(?:[\s,]+|$)"
 
 
 def _build_anywhere_pattern(pattern: str) -> str:
-    """Matches a standalone designation anywhere in the string (surrounded by whitespace or end of string)."""
-    return rf"(?:^|\s)(?:{pattern})(?:\s|$)"
+    """Matches a standalone designation anywhere in the string."""
+    return rf"(?:^|[\s,(]){pattern}(?:[\s,.)]|$)"
 
 
 def _normalize_name(name: str | None) -> str:
@@ -634,7 +629,6 @@ def _get_current_designation(
     if rule == "none" or not allowed or not clean_name:
         return None
 
-    # Sort longest first to avoid partial matches (e.g., 'LTD.' before 'B.C. LTD.')
     sorted_allowed = sorted(allowed, key=len, reverse=True)
 
     if rule == "suffix":
@@ -652,140 +646,114 @@ def _get_current_designation(
     return None
 
 
-def validate_legal_name_designation_unchanged( # noqa: PLR0911, PLR0912
+def _validate_name_length(clean_name: str, is_firm: bool) -> str | None:
+    """Validate that the normalized name does not exceed statutory length limits."""
+    max_len = 150 if is_firm else 155
+    if len(clean_name) > max_len:
+        return _("Company name cannot exceed %(max_len)d characters.", max_len=max_len)
+    return None
+
+
+def _validate_designation_position(
+    clean_new_name: str,
+    rule: DesignationRule,
+    current_designation: str,
+) -> str | None:
+    """Validate that the new name satisfies the designation position rule."""
+    current_pattern = _pattern_for_designation(current_designation)
+
+    if rule == "suffix":
+        if not re.search(_build_suffix_pattern(current_pattern), clean_new_name, re.IGNORECASE):
+            return _(
+                "Company name must end with the designation '%(designation)s'.",
+                designation=current_designation,
+            )
+
+    elif rule == "non_prefix":
+        if re.search(rf"^{current_pattern}(?:[\s,]+|$)", clean_new_name, re.IGNORECASE):
+            return _(
+                "Company name cannot start with the designation '%(designation)s'.",
+                designation=current_designation,
+            )
+        if not re.search(_build_non_prefix_pattern(current_pattern), clean_new_name, re.IGNORECASE):
+            return _(
+                "Company name must contain the designation '%(designation)s'.",
+                designation=current_designation,
+            )
+
+    return None
+
+
+def _validate_markers(
+    clean_new_name: str,
+    current_legal_name: str,
+    rules: DesignationRules,
+) -> list[str]:
+    """Verify that any statutory markers present in the current name are preserved."""
+    errors = []
+    for marker_group in rules.get("markers", ()):
+        had_marker = any(
+            re.search(_build_anywhere_pattern(_pattern_for_designation(m)), current_legal_name, re.IGNORECASE)
+            for m in marker_group
+        )
+        has_marker = any(
+            re.search(_build_anywhere_pattern(_pattern_for_designation(m)), clean_new_name, re.IGNORECASE)
+            for m in marker_group
+        )
+        if had_marker and not has_marker:
+            marker_label = " or ".join(f"'{m}'" for m in marker_group)
+            errors.append(
+                _("Company name must contain %(marker_label)s.", marker_label=marker_label)
+            )
+    return errors
+
+
+def _validate_designation_rules(
+    clean_new_name: str,
+    current_legal_name: str,
+    legal_type: str,
+) -> list[str]:
+    """Verify that the new name conforms to the designation and marker rules for the entity type."""
+    rules = DESIGNATION_RULES.get(legal_type)
+    if not rules:
+        return [
+            _("Legal name edits are disabled: no designation rules are configured for this business type.")
+        ]
+
+    rule = rules.get("rule", "none")
+    allowed = rules.get("allowed", ())
+    if rule == "none" or not allowed:
+        return []
+
+    current_designation = _get_current_designation(current_legal_name, rule, allowed)
+    if not current_designation:
+        return [
+            _("Legal name edits are disabled: existing designation could not be verified.")
+        ]
+
+    if position_error := _validate_designation_position(clean_new_name, rule, current_designation):
+        return [position_error]
+
+    return _validate_markers(clean_new_name, current_legal_name, rules)
+
+
+def validate_legal_name_designation_unchanged(
     business: Business,
     new_legal_name: str | None,
     err_path: str = "/filing/correction/nameRequest/legalName",
 ) -> list[dict]:
     """Validate that the submitted legal name preserves the business's existing designation."""
-    msg = []
-
     clean_new_name = _normalize_name(new_legal_name)
     current_legal_name = _normalize_name(business.legal_name)
-    legal_type = business.legal_type
 
     if not clean_new_name:
-        msg.append({
-            "error": _("Company name is required."),
-            "path": err_path,
-        })
-        return msg
+        return [{"error": _("Company name is required."), "path": err_path}]
 
-    max_len = 150 if business.is_firm else 155
-    if len(clean_new_name) > max_len:
-        msg.append({
-            "error": _(
-                "Company name cannot exceed %(max_len)d characters.",
-                max_len=max_len,
-            ),
-            "path": err_path,
-        })
-        return msg
+    if length_error := _validate_name_length(clean_new_name, business.is_firm):
+        return [{"error": length_error, "path": err_path}]
 
     if clean_new_name.upper() == current_legal_name.upper():
-        return msg
+        return []
 
-    rules = DESIGNATION_RULES.get(legal_type)
-
-    if not rules:
-        msg.append({
-            "error": _(
-                "Legal name edits are disabled: no designation rules are configured for this business type."
-            ),
-            "path": err_path,
-        })
-        return msg
-
-    rule = rules["rule"]
-    allowed = rules["allowed"]
-
-    # No checks with rule 'none' or empty allowed list
-    if rule == "none" or not allowed:
-        return msg
-
-    current_designation = _get_current_designation(current_legal_name, rule, allowed)
-    if not current_designation:
-        msg.append({
-            "error": _(
-                "Legal name edits are disabled: existing designation could not be verified."
-            ),
-            "path": err_path,
-        })
-        return msg
-
-    current_pattern = _pattern_for_designation(current_designation)
-
-    # Check designation position rules
-    if rule == "suffix":
-        if not re.search(_build_suffix_pattern(current_pattern), clean_new_name, re.IGNORECASE):
-            # Check if designation was included but not as the suffix
-            if re.search(_build_anywhere_pattern(current_pattern), clean_new_name, re.IGNORECASE):
-                msg.append({
-                    "error": _(
-                        "Company name must end with the designation '%(designation)s'.",
-                        designation=current_designation,
-                    ),
-                    "path": err_path,
-                })
-            else:
-                msg.append({
-                    "error": _(
-                        "Company name must contain the designation '%(designation)s'.",
-                        designation=current_designation,
-                    ),
-                    "path": err_path,
-                })
-            return msg
-
-    elif rule == "non_prefix":
-        # Check if designation was included but as the prefix
-        if re.search(rf"^{current_pattern}(?:\s+|$)", clean_new_name, re.IGNORECASE):
-            msg.append({
-                "error": _(
-                    "Company name cannot start with the designation '%(designation)s'.",
-                    designation=current_designation,
-                ),
-                "path": err_path,
-            })
-            return msg
-
-        if not re.search(_build_non_prefix_pattern(current_pattern), clean_new_name, re.IGNORECASE):
-            msg.append({
-                "error": _(
-                    "Company name must contain the designation '%(designation)s'.",
-                    designation=current_designation,
-                ),
-                "path": err_path,
-            })
-            return msg
-
-    # Check for duplicate/conflicting designations
-    if rule == "suffix":
-        sanitized_name = re.sub(
-            rf"\s+{current_pattern}$",
-            "",
-            clean_new_name,
-            count=1,
-            flags=re.IGNORECASE,
-        ).strip()
-    else:
-        sanitized_name = re.sub(
-            rf"(?:^|\s){current_pattern}(?:\s|$)",
-            " ",
-            clean_new_name,
-            count=1,
-            flags=re.IGNORECASE,
-        ).strip()
-
-    clean_sanitized_name = _normalize_name(sanitized_name)
-    sorted_allowed = sorted(allowed, key=len, reverse=True)
-    all_designations_pattern = "|".join(_pattern_for_designation(item) for item in sorted_allowed)
-    any_designation_regex = _build_anywhere_pattern(all_designations_pattern)
-
-    if re.search(any_designation_regex, clean_sanitized_name, re.IGNORECASE):
-        msg.append({
-            "error": _("A company name cannot contain multiple designations."),
-            "path": err_path,
-        })
-
-    return msg
+    errors = _validate_designation_rules(clean_new_name, current_legal_name, business.legal_type)
+    return [{"error": err, "path": err_path} for err in errors]

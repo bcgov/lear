@@ -19,6 +19,8 @@ from .designations import (
 )
 from .designations import (
     DESIGNATION_RULES,
+    DesignationRules,
+    DesignationRule
 )
 
 REDACTED_STAFF_SUBMITTER: Final = "Registry Staff"
@@ -26,5 +28,7 @@ REDACTED_STAFF_SUBMITTER: Final = "Registry Staff"
 __all__ = (
     "DESIGNATION_ABBREVIATIONS",
     "DESIGNATION_RULES",
+    "DesignationRules",
+    "DesignationRule",
     "REDACTED_STAFF_SUBMITTER",
 )
