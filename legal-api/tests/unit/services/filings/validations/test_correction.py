@@ -621,6 +621,14 @@ def test_legal_name_correction_valid_variations(
             "Company name must end with the designation 'LTD.'.",
             '/filing/correction/nameRequest/legalName',
         ),
+        (
+            'name includes only the designation',
+            'BC',
+            'CLEANING MAGIC LTD.',
+            {'legalName': 'LTD.', 'legalType': 'BC'},
+            "Company name must end with the designation 'LTD.'.",
+            '/filing/correction/nameRequest/legalName',
+        ),
         # ( COOPS not yet supported (doesn't use designation check yet)
         #     'cooperative designation as prefix',
         #     'CP',

@@ -617,7 +617,7 @@ def _pattern_for_designation(item: str) -> str:
 
 def _build_suffix_pattern(pattern: str) -> str:
     """Matches text followed by space/punctuation and the designation strictly at the end."""
-    return rf"(?:^|[\s,]+){pattern}\s*$"
+    return rf"\S+[\s,]+{pattern}\s*$"
 
 
 def _build_non_prefix_pattern(pattern: str) -> str:
