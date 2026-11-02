@@ -72,4 +72,3 @@ def auth_init(config):
         return engine
     except Exception as e:
         raise Exception('Failed to create engine for AUTH DB') from e
-    
