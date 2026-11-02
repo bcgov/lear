@@ -6,7 +6,7 @@
       <td class="col-33">
         <div class="section-sub-title">
           <span class="capitalize-text">{{ director.officer.lastName }}</span>
-          {% if director.officer.firstName or director.officer.middleInitial %},{% endif %}
+          {%- if director.officer.firstName or director.officer.middleInitial %},{% endif %}
           {% if director.officer.firstName %}
           <span class="capitalize-text">{{ director.officer.firstName }}</span>
           {% endif %}
@@ -65,7 +65,7 @@
       <td class="col-33">
         <div class="section-sub-title">
           <span class="capitalize-text">{{ director.officer.lastName }}</span>
-          {% if director.officer.firstName or director.officer.middleInitial %},{% endif %}
+          {%- if director.officer.firstName or director.officer.middleInitial %},{% endif %}
           {% if director.officer.firstName %}
           <span class="capitalize-text">{{ director.officer.firstName }}</span>
           {% endif %}
@@ -125,7 +125,7 @@
         <td class="col-33">
           <div class="section-sub-title">
             <span class="capitalize-text">{{ director.officer.lastName }}</span>
-            {% if director.officer.firstName or director.officer.middleInitial %},{% endif %}
+            {%- if director.officer.firstName or director.officer.middleInitial %},{% endif %}
             {% if director.officer.firstName %}
               <span class="capitalize-text">{{ director.officer.firstName }}</span>
             {% endif %}

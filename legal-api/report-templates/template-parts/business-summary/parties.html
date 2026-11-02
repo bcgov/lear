@@ -20,7 +20,7 @@
                   <span class="upper-text">{{ party.officer.organizationName }}</span>
                 {% else %}
                   <span class="capitalize-text">{{ party.officer.lastName }}</span>
-                  {% if party.officer.firstName or party.officer.middleInitial %},{% endif %}
+                  {%- if party.officer.firstName or party.officer.middleInitial %},{% endif %}
                   {% if party.officer.firstName %}
                     <span class="capitalize-text">{{ party.officer.firstName }}</span>
                   {% endif %}
