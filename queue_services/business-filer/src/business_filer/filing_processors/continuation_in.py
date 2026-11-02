@@ -15,6 +15,7 @@
 import copy
 
 from business_common.utils import LegislationDatetime
+from business_common.utils.relationship_party import get_parties
 from business_model.models import Business, Document, DocumentType, Filing, Jurisdiction
 
 from business_filer.exceptions import QueueException
@@ -132,7 +133,7 @@ def process(business: Business,  # noqa: PLR0912
     if offices := continuation_in.get("offices"):
         update_offices(business, offices)
 
-    if parties := continuation_in.get("parties"):
+    if parties := get_parties(continuation_in):  # legacy parties or converted relationships
         update_parties(business, parties, filing_rec)
 
     if share_structure := continuation_in.get("shareStructure"):

@@ -34,19 +34,14 @@
 """The Unit Tests for the Incorporation filing."""
 
 import copy
-import random
 from datetime import datetime, timezone, timezone
-from unittest.mock import patch
 
 import pytest
-from business_model.models import Business, Filing
-from business_model.models.colin_event_id import ColinEventId
-from business_model.models.document import DocumentType
-from registry_schemas.example_data import CONTINUATION_IN_FILING_TEMPLATE
+from business_model.models import Business, Filing, PartyRole
+from registry_schemas.example_data import CONTINUATION_IN_FILING_TEMPLATE, CONTINUATION_IN_RELATIONSHIPS
 
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors import continuation_in
-from business_filer.filing_processors.filing_components import business_info
 from tests.unit import create_filing
 
 
@@ -79,3 +74,49 @@ def test_continuation_in_filing_process(app, session, requests_mock, legal_type,
     assert mock_bearer_token.call_count == 1
     assert mock_get_next_corp_num.called
     assert mock_get_next_corp_num.call_count == 1
+
+
+def _relationships_filing() -> dict:
+    """Return the continuationIn filing template with the relationships-shaped example section."""
+    filing = copy.deepcopy(CONTINUATION_IN_FILING_TEMPLATE)
+    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN_RELATIONSHIPS)
+    return filing
+
+
+@pytest.mark.parametrize('test_name, filing, party_key, expected_directors, expected_filing_roles', [
+    ('PARTIES', copy.deepcopy(CONTINUATION_IN_FILING_TEMPLATE), 'parties', ['SWANSON'],
+     ['completing_party', 'incorporator']),
+    ('RELATIONSHIPS', _relationships_filing(), 'relationships', ['SWANSON', 'QUAGMIRE'], ['completing_party']),
+])
+def test_continuation_in_party_shapes(app, session, requests_mock, test_name, filing, party_key, expected_directors,
+                                      expected_filing_roles):
+    """Assert both party shapes create the same party rows and the stored filing keeps its shape."""
+    requests_mock.post(f'{app.config["ACCOUNT_SVC_AUTH_URL"]}', json={'access_token': 'fake-token'})
+    requests_mock.post(f'{app.config["COLIN_API"]}/businesses/BC', json={'corpNum': 1095})
+
+    effective_date = datetime.now(timezone.utc)
+    filing_rec = create_filing('123', filing)  # saved so the jurisdiction row can reference it
+    filing_rec.effective_date = effective_date
+    filing_meta = FilingMeta(application_date=effective_date)
+
+    business, filing_rec, filing_meta = continuation_in.process(None, filing, filing_rec, filing_meta)
+    business.save()
+
+    directors = sorted(business.party_roles.all(), key=lambda role: role.party.last_name)
+    assert [role.role for role in directors] == [PartyRole.RoleTypes.DIRECTOR.value] * len(expected_directors)
+    assert sorted(role.party.last_name for role in directors) == sorted(expected_directors)
+    assert all(role.appointment_date.date().isoformat() == '2018-01-01' for role in directors)
+    assert all(role.cessation_date is None for role in directors)
+    assert all(role.party.delivery_address and role.party.mailing_address for role in directors)
+
+    joe = next(role.party for role in directors if role.party.last_name == 'SWANSON')
+    assert joe.first_name == 'JOE'
+    assert joe.middle_initial == 'P'
+    assert joe.party_type == 'person'
+    assert joe.email == 'joe@email.com'
+
+    assert sorted(role.role for role in filing_rec.filing_party_roles) == sorted(expected_filing_roles)
+
+    stored = filing_rec.filing_json['filing']['continuationIn']
+    assert party_key in stored
+    assert ('parties' in stored) == (party_key == 'parties')

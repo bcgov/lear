@@ -25,6 +25,8 @@ from legal_api.services.authz import COLIN_SVC_ROLE
 from registry_schemas.example_data import (
     AMALGAMATION_APPLICATION,
     ANNUAL_REPORT,
+    CONTINUATION_IN,
+    CONTINUATION_IN_RELATIONSHIPS,
     CORRECTION_AR,
     CORRECTION_COL,
     CORRECTION_COR,
@@ -444,3 +446,43 @@ def test_get_completed_filings_for_colin_cod_relationships(session, client, jwt)
 
     # the stored filing json still carries the submitted relationships shape
     assert 'relationships' in cod_filing.filing_json['filing']['changeOfDirectors']
+
+
+def test_get_completed_filings_for_colin_continuation_in_party_shapes(session, client, jwt):
+    """Assert a relationships-shaped continuationIn is down-converted to parties and a legacy one is untouched."""
+    identifier = 'C7654321'
+    b = factory_business(identifier=identifier, entity_type=Business.LegalTypes.BCOMP_CONTINUE_IN.value)
+    factory_business_mailing_address(b)
+
+    def _continuation_in_filing(section):
+        filing_json = copy.deepcopy(FILING_HEADER)
+        filing_json['filing']['header']['name'] = 'continuationIn'
+        filing_json['filing']['business']['identifier'] = identifier
+        filing_json['filing']['business']['legalType'] = Business.LegalTypes.BCOMP_CONTINUE_IN.value
+        filing_json['filing']['continuationIn'] = copy.deepcopy(section)
+        return factory_completed_filing(b, filing_json)
+
+    relationships_filing = _continuation_in_filing(CONTINUATION_IN_RELATIONSHIPS)
+    parties_filing = _continuation_in_filing(CONTINUATION_IN)
+
+    rv = client.get('/api/v2/businesses/internal/filings', headers=create_header(jwt, [COLIN_SVC_ROLE]))
+
+    assert rv.status_code == HTTPStatus.OK
+    by_id = {f['filingId']: f['filing']['continuationIn'] for f in rv.json['filings']}
+
+    converted = by_id[relationships_filing.id]
+    assert 'relationships' not in converted
+    assert [p['officer']['lastName'] for p in converted['parties']] == ['Swanson', 'Quagmire']
+    assert converted['parties'][0]['officer']['firstName'] == 'Joe'
+    assert converted['parties'][0]['officer']['partyType'] == 'person'
+    assert converted['parties'][0]['roles'] == [
+        {'roleType': 'Completing Party', 'appointmentDate': '2018-01-01', 'cessationDate': None},
+        {'roleType': 'Director', 'appointmentDate': '2018-01-01', 'cessationDate': None},
+    ]
+    assert converted['parties'][1]['mailingAddress'] == CONTINUATION_IN_RELATIONSHIPS['relationships'][1]['mailingAddress']
+
+    assert by_id[parties_filing.id]['parties'] == CONTINUATION_IN['parties']
+
+    # the stored filing json keeps the submitted shape
+    assert 'relationships' in relationships_filing.filing_json['filing']['continuationIn']
+    assert 'parties' not in relationships_filing.filing_json['filing']['continuationIn']
