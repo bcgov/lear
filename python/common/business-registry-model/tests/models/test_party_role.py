@@ -543,7 +543,7 @@ def test_party_role_meta(session):
         "officer": {
             "email": None,
             "firstName": "Connor",
-            "id": 14,
+            "id": member.id,
             "lastName": "Horton",
             "partyType": "person",
         },
@@ -561,7 +561,7 @@ def test_party_role_meta(session):
         "officer": {
             "email": None,
             "firstName": "Connor",
-            "id": 14,
+            "id": member.id,
             "lastName": "Horton",
             "partyType": "person",
         },
@@ -575,7 +575,7 @@ def test_party_role_meta(session):
         "officer": {
             "email": None,
             "firstName": "Connor",
-            "id": 14,
+            "id": member.id,
             "lastName": "Horton",
             "partyType": "person",
         },
