@@ -223,10 +223,10 @@ def test_parties_correction(session, app, jwt, test_name, legal_type, correction
     f['filing']['header']['identifier'] = identifier
     f['filing']['correction']['correctedFilingId'] = corrected_filing.id
     f['filing']['correction']['type'] = correction_type
+
     f['filing']['correction']['nameRequest']['nrNumber'] = identifier
     f['filing']['correction']['nameRequest']['legalName'] = 'test'
     f['filing']['correction']['nameRequest']['legalType'] = legal_type
-
     f['filing']['business']['legalType'] = legal_type
     del f['filing']['correction']['commentOnly']
 
@@ -465,6 +465,170 @@ def test_correction_resolution_date(session, app, jwt, test_name, has_rights_or_
         assert any(expected_msg[0]['error'] in e['error'] for e in err.msg)
     else:
         assert err is None
+
+
+@pytest.mark.parametrize(
+    'use_nr, new_name, legal_type, new_legal_type, nr_type, mock_directors, should_pass, num_errors', [
+    (False, '', 'BEN', 'BEN', '', True, False, 1),
+    (False, '', 'BEN', 'BC', '', True, True, 0),
+    (False, '', 'BEN', 'ULC', '', True, False, 1),
+    (False, '', 'BEN', 'CC', '', True, True, 1),
+    (False, '', 'BEN', 'CP', '', True, False, 1),
+    (False, '', 'BEN', 'C', '', True, False, 1),
+    (False, '', 'BEN', 'CBEN', '', True, False, 1),
+    (False, '', 'BEN', 'CUL', '', True, False, 1),
+    (False, '', 'BEN', 'CCC', '', True, False, 1),
+
+    (False, '', 'BC', 'BC', '', True, False, 1),
+    (False, '', 'BC', 'BEN', '', True, True, 0),
+    (False, '', 'BC', 'ULC', '', True, True, 0),
+    (False, '', 'BC', 'CC', '', True, True, 0),
+    (False, '', 'BC', 'CP', '', True, False, 1),
+    (False, '', 'BC', 'C', '', True, False, 1),
+    (False, '', 'BC', 'CBEN', '', True, False, 1),
+    (False, '', 'BC', 'CUL', '', True, False, 1),
+    (False, '', 'BC', 'CCC', '', True, False, 1),
+
+    (False, '', 'ULC', 'ULC', '', True, False, 1),
+    (False, '', 'ULC', 'BC', '', True, True, 0),
+    (False, '', 'ULC', 'BEN', '', True, True, 0),
+    (False, '', 'ULC', 'CC', '', True, False, 1),
+    (False, '', 'ULC', 'CP', '', True, False, 1),
+    (False, '', 'ULC', 'C', '', True, False, 1),
+    (False, '', 'ULC', 'CBEN', '', True, False, 1),
+    (False, '', 'ULC', 'CUL', '', True, False, 1),
+    (False, '', 'ULC', 'CCC', '', True, False, 1),
+
+    (False, '', 'CC', 'CC', '', True, False, 1),
+    (False, '', 'CC', 'BEN', '', True, False, 1),
+    (False, '', 'CC', 'BC', '', True, False, 1),
+    (False, '', 'CC', 'ULC', '', True, False, 1),
+    (False, '', 'CC', 'CP', '', True, False, 1),
+    (False, '', 'CC', 'C', '', True, False, 1),
+    (False, '', 'CC', 'CBEN', '', True, False, 1),
+    (False, '', 'CC', 'CUL', '', True, False, 1),
+    (False, '', 'CC', 'CCC', '', True, False, 1),
+
+    (False, '', 'CBEN', 'CBEN', '', True, False, 1),
+    (False, '', 'CBEN', 'C', '', True, True, 0),
+    (False, '', 'CBEN', 'CUL', '', True, False, 1),
+    (False, '', 'CBEN', 'CCC', '', True, True, 1),
+    (False, '', 'CBEN', 'BEN', '', True, False, 1),
+    (False, '', 'CBEN', 'BC', '', True, False, 1),
+    (False, '', 'CBEN', 'ULC', '', True, False, 1),
+    (False, '', 'CBEN', 'CC', '', True, False, 1),
+    (False, '', 'CBEN', 'CP', '', True, False, 1),
+
+    (False, '', 'C', 'C', '', True, False, 1),
+    (False, '', 'C', 'CBEN', '', True, True, 0),
+    (False, '', 'C', 'CUL', '', True, True, 0),
+    (False, '', 'C', 'CCC', '', True, True, 0),
+    (False, '', 'C', 'BC', '', True, False, 1),
+    (False, '', 'C', 'BEN', '', True, False, 1),
+    (False, '', 'C', 'ULC', '', True, False, 1),
+    (False, '', 'C', 'CC', '', True, False, 1),
+    (False, '', 'C', 'CP', '', True, False, 1),
+
+    (False, '', 'CUL', 'CUL', '', True, False, 1),
+    (False, '', 'CUL', 'C', '', True, True, 0),
+    (False, '', 'CUL', 'CBEN', '', True, True, 0),
+    (False, '', 'CUL', 'CCC', '', True, False, 1),
+    (False, '', 'CUL', 'ULC', '', True, False, 1),
+    (False, '', 'CUL', 'BC', '', True, False, 1),
+    (False, '', 'CUL', 'BEN', '', True, False, 1),
+    (False, '', 'CUL', 'CC', '', True, False, 1),
+    (False, '', 'CUL', 'CP', '', True, False, 1),
+
+    (False, '', 'CCC', 'CCC', '', True, False, 1),
+    (False, '', 'CCC', 'CBEN', '', True, False, 1),
+    (False, '', 'CCC', 'C', '', True, False, 1),
+    (False, '', 'CCC', 'CUL', '', True, False, 1),
+    (False, '', 'CCC', 'CC', '', True, False, 1),
+    (False, '', 'CCC', 'BEN', '', True, False, 1),
+    (False, '', 'CCC', 'BC', '', True, False, 1),
+    (False, '', 'CCC', 'ULC', '', True, False, 1),
+    (False, '', 'CCC', 'CP', '', True, False, 1),
+
+    # check minimum directors validation
+    (False, '', 'BC', 'CC', '', False, False, 1),
+    (False, '', 'CBEN', 'CCC', '', False, False, 1)
+])
+@patch('business_model.models.PartyRole.get_parties_by_role')
+def test_new_legal_type(mock_get_parties, session, app, jwt, use_nr, new_name, legal_type, new_legal_type, nr_type, mock_directors, should_pass, num_errors):
+    """Test that a valid Alteration without NR correction passes validation."""
+    # setup
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type=legal_type)
+
+    corrected_filing = factory_completed_filing(business, INCORPORATION_APPLICATION)
+
+    filing = copy.deepcopy(CORRECTION)
+    filing['filing']['header']['identifier'] = identifier
+    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    del filing['filing']['correction']['commentOnly']
+
+    filing['filing']['correction']['newLegalType'] = new_legal_type
+
+    class MockDirector:
+        def __init__(self, cessation_date=None):
+            self.cessation_date = cessation_date
+
+    def create_mock_directors(count=3):
+        """Return a list of mock directors for tests."""
+        return [MockDirector() for _ in range(count)]  
+
+    # mock directors
+    if mock_directors:
+        mock_get_parties.return_value = create_mock_directors(3)
+    else:
+        mock_get_parties.return_value = []
+
+    if use_nr:
+        filing['filing']['business']['identifier'] = identifier
+        filing['filing']['business']['legalName'] = 'legal_name-BC1234567'
+        filing['filing']['business']['legalType'] = legal_type
+
+        filing['filing']['correction']['nameRequest']['nrNumber'] = identifier
+        filing['filing']['correction']['nameRequest']['legalName'] = new_name
+        filing['filing']['correction']['nameRequest']['legalType'] = new_legal_type
+
+        nr_json = {
+            "state": "APPROVED",
+            "expirationDate": "",
+            "requestTypeCd": nr_type,
+            "names": [{
+                "name": new_name,
+                "state": "APPROVED",
+                "consumptionDate": ""
+            }],
+            "legalType": new_legal_type
+        }
+
+        nr_response = MockResponse(nr_json)
+        with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
+            with jwt_request_context(app, jwt, [BASIC_USER]):
+                err = validate(business, filing)
+    else:
+        del filing['filing']['correction']['nameRequest']
+        with jwt_request_context(app, jwt, [BASIC_USER]):
+            err = validate(business, filing)
+
+    if err:
+        print(err.msg)
+
+    if should_pass:
+        # check that validation passed
+        assert None is err
+    else:
+        # check that validation failed
+        assert err
+        assert HTTPStatus.BAD_REQUEST == err.code
+        assert len(err.msg) == num_errors
+
+        # check for minimum directors error message
+        if (new_legal_type in [Business.LegalTypes.BC_CCC.value, Business.LegalTypes.CCC_CONTINUE_IN.value,
+                               Business.LegalTypes.COOP.value] and not mock_directors):
+            assert 'Must have a minimum of three directors. File a change of director filing first.' in [e['error'] for e in err.msg]
 
 
 def test_validate_correction_continuation_in_incorporation_date(mocker, app, session, jwt):
