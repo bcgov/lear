@@ -21,6 +21,7 @@ def check_postgres_connection(db_engine: Engine):
             raise ValueError("Failed to retrieve the current database name.")
         print(f'✅ Connected to Postgres database: {res}')
 
+
 @task(cache_policy=NO_CACHE)
 def colin_extract_init(config):
     try:
