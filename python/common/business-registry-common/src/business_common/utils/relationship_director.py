@@ -14,6 +14,8 @@
 """Convert changeOfDirectors relationship items to the legacy director shape."""
 from __future__ import annotations
 
+from .relationship_party import entity_to_officer
+
 DIRECTOR_ROLE_TYPE = "director"
 
 # Uppercase relationship actions (business-ui ActionType) -> legacy director actions.
@@ -40,17 +42,6 @@ def _director_role(relationship: dict) -> dict:
     )
 
 
-def _officer_id(relationship: dict) -> int | str | None:
-    """Return the entity identifier as an int party id where possible."""
-    identifier = relationship.get("entity", {}).get("identifier")
-    if identifier is None:
-        return None
-    try:
-        return int(identifier)
-    except (ValueError, TypeError):
-        return identifier
-
-
 def map_relationship_actions(relationship: dict) -> list[str]:
     """Return legacy director actions for a relationship item."""
     if mapped := [
@@ -74,25 +65,9 @@ def relationship_to_director(relationship: dict) -> dict:
     — relationships have no previous-name concept
     - consumers needing them (COLIN sync) enrich from versioned party revisions
     """
-    entity = relationship.get("entity", {})
-    organization_name = entity.get("businessName")
-
-    officer = {
-        "firstName": entity.get("givenName", ""),
-        "middleInitial": entity.get("middleInitial", ""),
-        "lastName": entity.get("familyName", ""),
-        "partyType": "organization" if organization_name else "person",
-    }
-    if organization_name:
-        officer["organizationName"] = organization_name
-    if email := entity.get("email"):
-        officer["email"] = email
-    if (officer_id := _officer_id(relationship)) is not None:
-        officer["id"] = officer_id
-
     director_role = _director_role(relationship)
     director = {
-        "officer": officer,
+        "officer": entity_to_officer(relationship.get("entity", {})),
         "appointmentDate": director_role.get("appointmentDate"),
         "cessationDate": director_role.get("cessationDate"),
         "actions": map_relationship_actions(relationship),

@@ -101,6 +101,9 @@ def test_relationship_to_director_id_cast():
     relationship["entity"]["identifier"] = "BC1234567"
     assert relationship_to_director(relationship)["officer"]["id"] == "BC1234567"
 
+    relationship["entity"]["identifier"] = ""
+    assert "id" not in relationship_to_director(relationship)["officer"]
+
     del relationship["entity"]["identifier"]
     assert "id" not in relationship_to_director(relationship)["officer"]
 
