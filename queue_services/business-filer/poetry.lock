@@ -314,7 +314,7 @@ pg8000 = ">=1.31.2,<2.0.0"
 pycountry = ">=24.6.1,<25.0.0"
 pydantic = ">=2.10.6,<3.0.0"
 pytz = ">=2026.2,<2027.0"
-registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.89"}
+registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.91"}
 sql-versioning = {git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "python/common/sql-versioning-alt"}
 
 [package.source]
@@ -2832,8 +2832,8 @@ strict-rfc3339 = "*"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
-reference = "2.18.89"
-resolved_reference = "26c36d5ec056381f92ee148c662ea94b1b07a0d8"
+reference = "2.18.91"
+resolved_reference = "3af518fed22db3ab25f1b52ee0661477a131f733"
 
 [[package]]
 name = "requests"

@@ -48,9 +48,11 @@ from tests.unit.services.utils import jwt_request_context
 CORRECTION_COD = copy.deepcopy(CORRECTION_COL)
 CORRECTION_COD['filing']['correction']['correctedFilingType'] = 'changeOfDirectors'
 CORRECTION_COD['filing']['correction']['relationships'][0]['roles'][0]['roleType'] = 'Director'
+del CORRECTION_COD['filing']['correction']['relationships'][0]['roles'][0]['meta']
 CORRECTION_DISS = copy.deepcopy(CORRECTION_COL)
 CORRECTION_DISS['filing']['correction']['correctedFilingType'] = 'dissolution'
 CORRECTION_DISS['filing']['correction']['relationships'][0]['roles'][0]['roleType'] = 'Custodian'
+del CORRECTION_DISS['filing']['correction']['relationships'][0]['roles'][0]['meta']
 VALID_ADDRESS = {
     'streetAddress': '123 A St',
     'addressCity': 'Vancouver',

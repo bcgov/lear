@@ -377,7 +377,7 @@ def test_validate_cod_relationship_director_meta_rejected(session):
     party_id = _setup_existing_director(business)
 
     cod = _relationships_cod(party_id)
-    cod['relationships'][0]['roles'][0]['meta'] = {'appointmentMethod': 'court'}
+    cod['relationships'][0]['roles'][0]['meta'] = {'appointmentMethod': 'company'}
     filing = _build_filing(identifier, cod)
 
     err = validate(business, filing)
