@@ -870,6 +870,28 @@ def get_could_file(legal_type: str,
     return could_filing_types
 
 
+def get_draft_bypass_blockers(business: Business,
+                              is_ignore_draft_blockers: bool,
+                              business_blocker_dict: dict) -> tuple[list, dict]:
+    """Return (bypass allowlist, DRAFT-ignoring blocker dict) for the staff draft bypass."""
+    bypass_filing_types = [] if is_ignore_draft_blockers else get_staff_draft_bypass_filing_types()
+    if not bypass_filing_types:
+        return [], business_blocker_dict
+    return bypass_filing_types, business_blocker_check(business, True, draft_status_only=True)
+
+
+def select_blocker_dict(filing_key: str,
+                        sub_type_key: str | None,
+                        bypass_filing_types: list,
+                        bypass_blocker_dict: dict,
+                        business_blocker_dict: dict) -> dict:
+    """Pick the DRAFT-ignoring blockers when the filing (or 'filingType.subType') key is allowlisted."""
+    if filing_key in bypass_filing_types or \
+            (sub_type_key and f"{filing_key}.{sub_type_key}" in bypass_filing_types):
+        return bypass_blocker_dict
+    return business_blocker_dict
+
+
 def get_allowed_filings(business: Business,   # noqa: PLR0913
                         state: Business.State,
                         legal_type: str,
@@ -892,10 +914,9 @@ def get_allowed_filings(business: Business,   # noqa: PLR0913
 
     # doing this check up front to cache result
     business_blocker_dict: dict = business_blocker_check(business, is_ignore_draft_blockers)
-    # permission + allowlist gated bypass: allowlisted filing types ignore DRAFT blockers for this user
-    bypass_filing_types = [] if is_ignore_draft_blockers else get_staff_draft_bypass_filing_types()
-    bypass_blocker_dict: dict = business_blocker_check(business, True, draft_status_only=True) \
-        if bypass_filing_types else business_blocker_dict
+    bypass_filing_types, bypass_blocker_dict = get_draft_bypass_blockers(business,
+                                                                         is_ignore_draft_blockers,
+                                                                         business_blocker_dict)
     allowable_filings = get_allowable_filings_dict(is_authorization).get(user_role, {}).get(state, {})
     allowable_filing_types = []
 
@@ -912,8 +933,8 @@ def get_allowed_filings(business: Business,   # noqa: PLR0913
         allowable_filing_legal_types = allowable_filing_value.get("legalTypes", [])
 
         if allowable_filing_legal_types:
-            blocker_dict = bypass_blocker_dict \
-                if allowable_filing_key in bypass_filing_types else business_blocker_dict
+            blocker_dict = select_blocker_dict(allowable_filing_key, None, bypass_filing_types,
+                                               bypass_blocker_dict, business_blocker_dict)
             is_blocker = has_blocker(business, state_filing, allowable_filing_value, blocker_dict)
             is_include_legal_type = legal_type in allowable_filing_legal_types
             is_allowable = not is_blocker and is_include_legal_type
@@ -930,10 +951,8 @@ def get_allowed_filings(business: Business,   # noqa: PLR0913
                    x[1].get("legalTypes", []), allowable_filing_value.items())
 
         for filing_sub_type_item_key, filing_sub_type_item_value in filing_sub_type_items:
-            blocker_dict = bypass_blocker_dict \
-                if (allowable_filing_key in bypass_filing_types or
-                    f"{allowable_filing_key}.{filing_sub_type_item_key}" in bypass_filing_types) \
-                else business_blocker_dict
+            blocker_dict = select_blocker_dict(allowable_filing_key, filing_sub_type_item_key,
+                                               bypass_filing_types, bypass_blocker_dict, business_blocker_dict)
             is_allowable = not has_blocker(business, state_filing, filing_sub_type_item_value, blocker_dict)
 
             allowable_filing_sub_type = {"name": allowable_filing_key,
