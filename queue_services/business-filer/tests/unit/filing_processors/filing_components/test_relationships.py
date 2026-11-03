@@ -40,8 +40,10 @@ from business_model.models.types.party_class_type import PartyClassType
 
 from business_filer.filing_processors.filing_components import create_address
 from business_filer.filing_processors.filing_components.relationships import (
+    ALLOWED_ROLE_META_PROPERTIES,
     _create_party,
     _create_role,
+    _extract_role_meta,
     _str_to_int,
     _str_to_upper,
     cease_relationships,
@@ -50,6 +52,7 @@ from business_filer.filing_processors.filing_components.relationships import (
     update_relationship_entity_info,
     update_relationships_appointment_date,
     update_relationships_cessation_date,
+    update_relationships_meta,
 )
 from tests.unit import create_business, create_filing
 
@@ -1138,3 +1141,391 @@ def test_update_relationship_entity_info_skip_unrelated_party(app, session, busi
 
     assert Party.find_by_id(party.id).first_name == 'NELLY'
 
+
+def test_extract_role_meta_valid_liquidator():
+    """Test extracting allowed meta fields for liquidator."""
+    role_info = {
+        'roleType': 'Liquidator',
+        'meta': {
+            'appointmentMethod': 'court',
+            'courtOrderNumber': '1234567'
+        }
+    }
+    extracted = _extract_role_meta(PartyRole.RoleTypes.LIQUIDATOR.value, role_info)
+    assert extracted == {
+        'appointmentMethod': 'court',
+        'courtOrderNumber': '1234567'
+    }
+
+    # Only appointmentMethod
+    role_info_single = {
+        'roleType': 'Liquidator',
+        'meta': {
+            'appointmentMethod': 'company'
+        }
+    }
+    assert _extract_role_meta(PartyRole.RoleTypes.LIQUIDATOR.value, role_info_single) == {
+        'appointmentMethod': 'company'
+    }
+
+
+def test_extract_role_meta_extra_properties_filtered():
+    """Test that unauthorized meta fields are filtered out and not retained."""
+    role_info = {
+        'roleType': 'Liquidator',
+        'meta': {
+            'appointmentMethod': 'court',
+            'courtOrderNumber': '9876543',
+            'unauthorizedKey': 'maliciousValue',
+            'nested': {'hack': True}
+        }
+    }
+    extracted = _extract_role_meta(PartyRole.RoleTypes.LIQUIDATOR.value, role_info)
+    assert extracted == {
+        'appointmentMethod': 'court',
+        'courtOrderNumber': '9876543'
+    }
+    assert 'unauthorizedKey' not in extracted
+    assert 'nested' not in extracted
+
+
+def test_extract_role_meta_unallowed_role():
+    """Test that meta is not allowed for roles other than liquidator."""
+    role_info = {
+        'roleType': 'Director',
+        'meta': {
+            'appointmentMethod': 'court',
+            'courtOrderNumber': '1234567'
+        }
+    }
+    assert _extract_role_meta(PartyRole.RoleTypes.DIRECTOR.value, role_info) is None
+    assert _extract_role_meta(PartyRole.RoleTypes.OFFICER.value, role_info) is None
+    assert _extract_role_meta(PartyRole.RoleTypes.RECEIVER.value, role_info) is None
+
+
+def test_extract_role_meta_safe_access_none_and_invalid():
+    """Test safe access when meta is None, missing, non-dict, or contains only None/unallowed values."""
+    liquidator_role = PartyRole.RoleTypes.LIQUIDATOR.value
+
+    # Non-dict role_info
+    assert _extract_role_meta(liquidator_role, None) is None
+    assert _extract_role_meta(liquidator_role, 'string') is None
+
+    # Missing meta key
+    assert _extract_role_meta(liquidator_role, {'roleType': 'Liquidator'}) is None
+
+    # meta is None
+    assert _extract_role_meta(liquidator_role, {'roleType': 'Liquidator', 'meta': None}) is None
+
+    # meta is not a dict
+    assert _extract_role_meta(liquidator_role, {'roleType': 'Liquidator', 'meta': 'invalid'}) is None
+    assert _extract_role_meta(liquidator_role, {'roleType': 'Liquidator', 'meta': [1, 2, 3]}) is None
+
+    # Empty dict
+    assert _extract_role_meta(liquidator_role, {'roleType': 'Liquidator', 'meta': {}}) is None
+
+    # Dict with only unallowed keys
+    assert _extract_role_meta(liquidator_role, {'roleType': 'Liquidator', 'meta': {'random': 'data'}}) is None
+
+    # Dict with allowed keys but None values
+    assert _extract_role_meta(
+        liquidator_role,
+        {'roleType': 'Liquidator', 'meta': {'appointmentMethod': None, 'courtOrderNumber': None}}
+    ) is None
+
+
+def test_configurable_allowed_role_meta_properties():
+    """Test that ALLOWED_ROLE_META_PROPERTIES is configurable."""
+    original_config = copy.deepcopy(ALLOWED_ROLE_META_PROPERTIES)
+    try:
+        # Dynamically add receiver with custom allowed meta properties
+        ALLOWED_ROLE_META_PROPERTIES[PartyRole.RoleTypes.RECEIVER.value] = {'receiverProperty'}
+
+        role_info = {
+            'roleType': 'Receiver',
+            'meta': {
+                'receiverProperty': 'customValue',
+                'otherProperty': 'ignored'
+            }
+        }
+        extracted = _extract_role_meta(PartyRole.RoleTypes.RECEIVER.value, role_info)
+        assert extracted == {'receiverProperty': 'customValue'}
+    finally:
+        ALLOWED_ROLE_META_PROPERTIES.clear()
+        ALLOWED_ROLE_META_PROPERTIES.update(original_config)
+
+
+def test_create_role_meta(app, session):
+    """Test role creation includes safely filtered meta."""
+    party = Party(first_name='TEST', last_name='LIQUIDATOR')
+    party.save()
+
+    # Liquidator with valid and extra meta
+    role_info = {
+        'roleType': 'Liquidator',
+        'meta': {
+            'appointmentMethod': 'court',
+            'courtOrderNumber': '12345',
+            'extra': 'value'
+        }
+    }
+    party_role = _create_role(party, role_info, default_appointment=datetime.now(timezone.utc), role_class=None)
+    assert party_role.meta == {
+        'appointmentMethod': 'court',
+        'courtOrderNumber': '12345'
+    }
+
+    # Liquidator with meta=None
+    role_info_none = {'roleType': 'Liquidator', 'meta': None}
+    party_role_none = _create_role(party, role_info_none, default_appointment=datetime.now(timezone.utc), role_class=None)
+    assert party_role_none.meta is None
+
+    # Director with meta (should be None)
+    director_role_info = {
+        'roleType': 'Director',
+        'meta': {'appointmentMethod': 'court', 'courtOrderNumber': '12345'}
+    }
+    director_role = _create_role(party, director_role_info, default_appointment=datetime.now(timezone.utc), role_class=None)
+    assert director_role.meta is None
+
+
+def test_create_relationships_with_meta(app, session, business, filing):
+    """Test creating relationships saves allowed meta to PartyRole in database."""
+    relationships = [
+        {
+            'entity': {'givenName': 'Lois', 'familyName': 'Liquidator'},
+            'roles': [
+                {
+                    'roleType': 'Liquidator',
+                    'meta': {
+                        'appointmentMethod': 'court',
+                        'courtOrderNumber': '5556667',
+                        'unallowedKey': 'shouldBeStripped'
+                    }
+                }
+            ]
+        },
+        {
+            'entity': {'givenName': 'Dan', 'familyName': 'Director'},
+            'roles': [
+                {
+                    'roleType': 'Director',
+                    'meta': {
+                        'appointmentMethod': 'court',
+                        'courtOrderNumber': '1112223'
+                    }
+                }
+            ]
+        }
+    ]
+
+    err = create_relationships(relationships, business, filing)
+    assert not err
+    session.commit()
+
+    saved_roles = business.party_roles.all()
+    liquidator = next(r for r in saved_roles if r.role == PartyRole.RoleTypes.LIQUIDATOR.value)
+    director = next(r for r in saved_roles if r.role == PartyRole.RoleTypes.DIRECTOR.value)
+
+    assert liquidator.meta == {
+        'appointmentMethod': 'court',
+        'courtOrderNumber': '5556667'
+    }
+    assert 'unallowedKey' not in liquidator.meta
+    # Director must NOT have meta
+    assert director.meta is None
+
+
+def test_update_relationships_meta_success(app, session, business):
+    """Test updating existing party role meta via update_relationships_meta."""
+    party = Party(first_name='CLARK', last_name='KENT')
+    party.save()
+    role = PartyRole(
+        role=PartyRole.RoleTypes.LIQUIDATOR.value,
+        party_id=party.id,
+        business_id=business.id,
+        appointment_date=datetime(2020, 1, 1, tzinfo=timezone.utc),
+        meta={'appointmentMethod': 'directorsResolution'}
+    )
+    role.save()
+    session.commit()
+
+    new_meta = {
+        'appointmentMethod': 'court',
+        'courtOrderNumber': '9988776',
+        'unwanted': 'ignored'
+    }
+    relationships = [
+        {
+            'entity': {'identifier': str(party.id)},
+            'roles': [{'roleType': 'Liquidator', 'meta': new_meta}]
+        }
+    ]
+
+    update_relationships_meta(
+        relationships=relationships,
+        business=business,
+        allowed_roles=[PartyRole.RoleTypes.LIQUIDATOR.value]
+    )
+    session.commit()
+
+    updated_role = PartyRole.find_by_internal_id(role.id)
+    assert updated_role.meta == {
+        'appointmentMethod': 'court',
+        'courtOrderNumber': '9988776'
+    }
+
+
+def test_update_relationships_meta_default_allowed_roles(app, session, business):
+    """Test updating meta when allowed_roles is omitted (defaults to configured roles)."""
+    party = Party(first_name='BRUCE', last_name='WAYNE')
+    party.save()
+    role = PartyRole(
+        role=PartyRole.RoleTypes.LIQUIDATOR.value,
+        party_id=party.id,
+        business_id=business.id,
+        appointment_date=datetime(2020, 1, 1, tzinfo=timezone.utc),
+        meta={'appointmentMethod': 'directorsResolution'}
+    )
+    role.save()
+    session.commit()
+
+    relationships = [
+        {
+            'entity': {'identifier': str(party.id)},
+            'roles': [
+                {
+                    'roleType': 'Liquidator',
+                    'meta': {'appointmentMethod': 'court', 'courtOrderNumber': '88888'}
+                }
+            ]
+        }
+    ]
+
+    update_relationships_meta(relationships=relationships, business=business)
+    session.commit()
+
+    updated_role = PartyRole.find_by_internal_id(role.id)
+    assert updated_role.meta == {
+        'appointmentMethod': 'court',
+        'courtOrderNumber': '88888'
+    }
+
+
+def test_update_relationships_meta_role_not_allowed(app, session, business):
+    """Test that meta is not updated if role is excluded by allowed_roles."""
+    party = Party(first_name='DIANA', last_name='PRINCE')
+    party.save()
+    original_meta = {'appointmentMethod': 'directorsResolution'}
+    role = PartyRole(
+        role=PartyRole.RoleTypes.LIQUIDATOR.value,
+        party_id=party.id,
+        business_id=business.id,
+        appointment_date=datetime(2020, 1, 1, tzinfo=timezone.utc),
+        meta=original_meta
+    )
+    role.save()
+    session.commit()
+
+    relationships = [
+        {
+            'entity': {'identifier': str(party.id)},
+            'roles': [
+                {
+                    'roleType': 'Liquidator',
+                    'meta': {'appointmentMethod': 'court', 'courtOrderNumber': '99999'}
+                }
+            ]
+        }
+    ]
+
+    # Passing only DIRECTOR in allowed_roles
+    update_relationships_meta(
+        relationships=relationships,
+        business=business,
+        allowed_roles=[PartyRole.RoleTypes.DIRECTOR.value]
+    )
+    session.commit()
+
+    updated_role = PartyRole.find_by_internal_id(role.id)
+    assert updated_role.meta == original_meta
+
+
+def test_update_relationships_meta_clear_meta(app, session, business):
+    """Test clearing meta when meta is explicitly submitted as None or empty dict."""
+    party = Party(first_name='BARRY', last_name='ALLEN')
+    party.save()
+    role = PartyRole(
+        role=PartyRole.RoleTypes.LIQUIDATOR.value,
+        party_id=party.id,
+        business_id=business.id,
+        appointment_date=datetime(2020, 1, 1, tzinfo=timezone.utc),
+        meta={'appointmentMethod': 'court', 'courtOrderNumber': '11111'}
+    )
+    role.save()
+    session.commit()
+
+    relationships = [
+        {
+            'entity': {'identifier': str(party.id)},
+            'roles': [{'roleType': 'Liquidator', 'meta': None}]
+        }
+    ]
+
+    update_relationships_meta(relationships=relationships, business=business)
+    session.commit()
+
+    updated_role = PartyRole.find_by_internal_id(role.id)
+    assert updated_role.meta is None
+
+
+def test_update_relationships_meta_key_not_in_role_info(app, session, business):
+    """Test that existing meta is retained when meta key is absent from role_info."""
+    party = Party(first_name='HAL', last_name='JORDAN')
+    party.save()
+    original_meta = {'appointmentMethod': 'court', 'courtOrderNumber': '77777'}
+    role = PartyRole(
+        role=PartyRole.RoleTypes.LIQUIDATOR.value,
+        party_id=party.id,
+        business_id=business.id,
+        appointment_date=datetime(2020, 1, 1, tzinfo=timezone.utc),
+        meta=original_meta
+    )
+    role.save()
+    session.commit()
+
+    relationships = [
+        {
+            'entity': {'identifier': str(party.id)},
+            'roles': [{'roleType': 'Liquidator', 'appointmentDate': datetime(2021, 1, 1, tzinfo=timezone.utc)}]
+        }
+    ]
+
+    update_relationships_meta(relationships=relationships, business=business)
+    session.commit()
+
+    updated_role = PartyRole.find_by_internal_id(role.id)
+    assert updated_role.meta == original_meta
+
+
+def test_update_relationships_meta_missing_or_invalid_identifier(app, session, business):
+    """Test relationships with missing or invalid entity identifiers are safely skipped."""
+    relationships = [
+        {
+            'entity': {'givenName': 'NoIdentifier'},
+            'roles': [{'roleType': 'Liquidator', 'meta': {'appointmentMethod': 'court'}}]
+        },
+        {
+            'entity': {'identifier': 'not-an-int'},
+            'roles': [{'roleType': 'Liquidator', 'meta': {'appointmentMethod': 'court'}}]
+        },
+        {
+            'entity': None,
+            'roles': [{'roleType': 'Liquidator', 'meta': {'appointmentMethod': 'court'}}]
+        }
+    ]
+
+    # Should not raise any exception
+    update_relationships_meta(relationships=relationships, business=business)
+    update_relationships_meta(relationships=None, business=business)
+    update_relationships_meta(relationships=[], business=business)

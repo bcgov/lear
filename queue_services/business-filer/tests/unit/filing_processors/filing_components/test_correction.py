@@ -389,3 +389,167 @@ def test_correct_corp_data_relationships_missing_or_empty(app, session, business
     session.commit()
     assert filing_meta2.correction.get('hasNoa') is False
     assert filing_rec.lear_only is not True
+
+
+def test_correct_corp_data_relationships_update_liquidator_meta(app, session, business, filing_rec):
+    """Test updating liquidator meta property via correction relationships."""
+    filing_meta = _create_filing_meta()
+
+    party = Party(first_name='LIQ', last_name='ONE')
+    party.save()
+    liq_role = PartyRole(
+        role=PartyRole.RoleTypes.LIQUIDATOR.value,
+        party_id=party.id,
+        business_id=business.id,
+        appointment_date=datetime(2021, 1, 1, tzinfo=timezone.utc),
+        meta={'appointmentMethod': 'company'}
+    )
+    liq_role.save()
+    session.commit()
+
+    correction_filing = {
+        'correction': {
+            'relationships': [
+                {
+                    'entity': {'identifier': str(party.id)},
+                    'roles': [
+                        {
+                            'roleType': 'Liquidator',
+                            'meta': {
+                                'appointmentMethod': 'court',
+                                'courtOrderNumber': '9988776',
+                                'extraField': 'notAllowed'
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+
+    correct_corp_data(business, filing_rec, correction_filing, filing_meta)
+    session.commit()
+
+    updated = PartyRole.find_by_internal_id(liq_role.id)
+    assert updated.meta == {
+        'appointmentMethod': 'court',
+        'courtOrderNumber': '9988776'
+    }
+    assert 'extraField' not in updated.meta
+
+
+def test_correct_corp_data_relationships_create_liquidator_with_meta(app, session, business, filing_rec):
+    """Test creating a new liquidator with meta via correction relationships."""
+    filing_meta = _create_filing_meta()
+
+    correction_filing = {
+        'correction': {
+            'relationships': [
+                {
+                    'entity': {'businessName': 'Court Appointed Liquidators Inc.'},
+                    'deliveryAddress': copy.deepcopy(DELIVERY_ADDRESS),
+                    'roles': [
+                        {
+                            'roleType': 'Liquidator',
+                            'meta': {
+                                'appointmentMethod': 'court',
+                                'courtOrderNumber': '1234567',
+                                'unwanted': 'data'
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+
+    correct_corp_data(business, filing_rec, correction_filing, filing_meta)
+    session.commit()
+
+    roles = business.party_roles.all()
+    liquidator = next(r for r in roles if r.role == PartyRole.RoleTypes.LIQUIDATOR.value)
+    assert liquidator.meta == {
+        'appointmentMethod': 'court',
+        'courtOrderNumber': '1234567'
+    }
+    assert 'unwanted' not in liquidator.meta
+
+
+def test_correct_corp_data_relationships_clear_liquidator_meta(app, session, business, filing_rec):
+    """Test clearing existing liquidator meta by submitting meta=None in correction."""
+    filing_meta = _create_filing_meta()
+
+    party = Party(first_name='LIQ', last_name='TWO')
+    party.save()
+    liq_role = PartyRole(
+        role=PartyRole.RoleTypes.LIQUIDATOR.value,
+        party_id=party.id,
+        business_id=business.id,
+        appointment_date=datetime(2021, 1, 1, tzinfo=timezone.utc),
+        meta={'appointmentMethod': 'court', 'courtOrderNumber': '55555'}
+    )
+    liq_role.save()
+    session.commit()
+
+    correction_filing = {
+        'correction': {
+            'relationships': [
+                {
+                    'entity': {'identifier': str(party.id)},
+                    'roles': [
+                        {
+                            'roleType': 'Liquidator',
+                            'meta': None
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+
+    correct_corp_data(business, filing_rec, correction_filing, filing_meta)
+    session.commit()
+
+    updated = PartyRole.find_by_internal_id(liq_role.id)
+    assert updated.meta is None
+
+
+def test_correct_corp_data_relationships_director_meta_ignored(app, session, business, filing_rec):
+    """Test that submitting meta for a director in correction is safely ignored and not saved."""
+    filing_meta = _create_filing_meta()
+
+    party = Party(first_name='DIR', last_name='FOUR')
+    party.save()
+    dir_role = PartyRole(
+        role=PartyRole.RoleTypes.DIRECTOR.value,
+        party_id=party.id,
+        business_id=business.id,
+        appointment_date=datetime(2021, 1, 1, tzinfo=timezone.utc),
+    )
+    dir_role.save()
+    session.commit()
+
+    correction_filing = {
+        'correction': {
+            'relationships': [
+                {
+                    'entity': {'identifier': str(party.id)},
+                    'roles': [
+                        {
+                            'roleType': 'Director',
+                            'meta': {
+                                'appointmentMethod': 'court',
+                                'courtOrderNumber': '12345'
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+
+    correct_corp_data(business, filing_rec, correction_filing, filing_meta)
+    session.commit()
+
+    updated = PartyRole.find_by_internal_id(dir_role.id)
+    assert updated.meta is None
