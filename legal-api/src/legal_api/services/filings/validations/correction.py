@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Correction filing."""
+import re
 from datetime import timedelta
 from http import HTTPStatus
 from typing import Final
@@ -22,6 +23,7 @@ from flask_babel import _
 
 from business_model.models import Business, CourtOrder, Filing, Jurisdiction, PartyRole
 from business_model.models.types.filings import DissolutionSubTypes, FilingTypes
+from legal_api.core.constants import DESIGNATION_ABBREVIATIONS, DESIGNATION_RULES, DesignationRule, DesignationRules
 from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
 from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, SYSTEM_ROLE, NaicsService
@@ -228,7 +230,8 @@ def _validate_corps_correction_active(business: Business, filing_dict, legal_typ
             msg.append({"error": _("New legal type must be different from current legal type."), "path": path})
         else:
             msg.extend(validate_type_change(filing_dict, business, "/filing/correction/newLegalType"))
-    msg.extend(_validate_name_request(business, filing_dict, new_legal_type, filing_type))
+
+    msg.extend(_validate_name_request_corps(business, filing_dict, new_legal_type, filing_type))
 
     if filing_dict.get("filing", {}).get("correction", {}).get("offices", None):
         msg.extend(validate_corp_offices(filing_dict, legal_type, filing_type))
@@ -272,10 +275,17 @@ def _validate_share_structure_correction(filing_dict, filing_type, business: Bus
 
     return msg
 
-
-def _validate_name_request(business, filing_dict, new_legal_type, filing_type):
+def _validate_name_request_corps(business: Business, filing_dict: dict, new_legal_type: str, filing_type: str):
     msg = []
-    if filing_dict.get("filing", {}).get("correction", {}).get("nameRequest", {}).get("nrNumber", None):
+    name_request_dict = filing_dict.get("filing", {}).get(filing_type, {}).get("nameRequest", {})
+
+    if not name_request_dict:
+        return msg
+    
+    nr_legal_name_path = f"/filing/{filing_type}/nameRequest/legalName"
+    new_legal_name = name_request_dict.get("legalName")
+    
+    if name_request_dict.get("nrNumber", None):
         msg.extend(validate_name_request(filing_dict, new_legal_type or business.legal_type, filing_type))
     elif new_legal_type:
         valid_names = [business.legal_name]
@@ -284,10 +294,17 @@ def _validate_name_request(business, filing_dict, new_legal_type, filing_type):
             # then the legal name get updated according to the new legal type
             valid_names.append(new_numbered_name)
 
-        nr_legal_name_path = f"/filing/{filing_type}/nameRequest/legalName"
-        new_legal_name = get_str(filing_dict, nr_legal_name_path)
         if new_legal_name and new_legal_name not in valid_names:
             msg.append({"error": _("Unexpected legal name."), "path": nr_legal_name_path})
+    else:
+        msg.extend(
+            validate_legal_name_designation(
+                business,
+                new_legal_name,
+                err_path=nr_legal_name_path,
+            )
+        )
+
     return msg
 
 
@@ -417,6 +434,7 @@ def _validate_out_correction(filing_dict, filing_type, business):
 
 def _validate_special_resolution_correction(filing_dict, legal_type, msg):
     filing_type = "correction"
+
     if filing_dict.get("filing", {}).get(filing_type, {}).get("nameRequest", {}).get("nrNumber", None):
         msg.extend(validate_name_request(filing_dict, legal_type, filing_type))
     if filing_dict.get("filing", {}).get(filing_type, {}).get("resolution", None):
@@ -572,3 +590,190 @@ def memorandum_change_validation(filing):
         msg.extend(validate_pdf(memorandum_file_key, memorandum_file_key_path))
 
     return msg
+
+
+# Legal name designation validation
+def _pattern_for_designation(item: str) -> str:
+    """Build a regex pattern for a designation.
+
+    Allows an optional trailing period if the item is recognized in DESIGNATION_ABBREVIATIONS
+    regardless of whether the input or the set contains a trailing dot.
+    """
+    trimmed = item.strip()
+    base_text = trimmed.rstrip(".")
+    is_abbreviation = any(
+        abbr.strip().rstrip(".").upper() == base_text.upper()
+        for abbr in DESIGNATION_ABBREVIATIONS
+    )
+
+    if is_abbreviation:
+        return rf"\b{re.escape(base_text)}\.?(?!\w)"
+    
+    if trimmed.endswith("."):
+        return rf"\b{re.escape(base_text)}\.(?!\w)"
+
+    return rf"\b{re.escape(trimmed)}\b"
+
+
+def _build_suffix_pattern(pattern: str) -> str:
+    """Matches text followed by space/punctuation and the designation strictly at the end."""
+    return rf"\S+[\s,]+{pattern}\s*$"
+
+
+def _build_non_prefix_pattern(pattern: str) -> str:
+    """Matches text where designation is NOT the first word."""
+    return rf"\S+[\s,]+{pattern}(?:[\s,]+|$)"
+
+
+def _build_anywhere_pattern(pattern: str) -> str:
+    """Matches a standalone designation anywhere in the string."""
+    return rf"(?:^|[\s,(]){pattern}(?:[\s,.)]|$)"
+
+
+def _normalize_name(name: str | None) -> str:
+    """Normalize whitespaces in name."""
+    return " ".join((name or "").strip().split())
+
+
+def _get_current_designation(
+    name: str,
+    rule: str,
+    allowed: tuple[str, ...],
+) -> str | None:
+    """Extract the designation in a business legal name."""
+    clean_name = _normalize_name(name)
+    if rule == "none" or not allowed or not clean_name:
+        return None
+
+    sorted_allowed = sorted(allowed, key=len, reverse=True)
+
+    if rule == "suffix":
+        for item in sorted_allowed:
+            pattern = _build_suffix_pattern(_pattern_for_designation(item))
+            if re.search(pattern, clean_name, re.IGNORECASE):
+                return item
+
+    elif rule == "non_prefix":
+        for item in sorted_allowed:
+            pattern = _build_non_prefix_pattern(_pattern_for_designation(item))
+            if re.search(pattern, clean_name, re.IGNORECASE):
+                return item
+
+    return None
+
+
+def _validate_name_length(clean_name: str, is_firm: bool) -> str | None:
+    """Validate that the normalized name does not exceed statutory length limits."""
+    max_len = 150 if is_firm else 155
+    if len(clean_name) > max_len:
+        return _("Company name cannot exceed %(max_len)d characters.", max_len=max_len)
+    return None
+
+
+def _validate_designation_position(
+    clean_new_name: str,
+    rule: DesignationRule,
+    current_designation: str,
+) -> str | None:
+    """Validate that the new name satisfies the designation position rule."""
+    current_pattern = _pattern_for_designation(current_designation)
+
+    if rule == "suffix":
+        if not re.search(_build_suffix_pattern(current_pattern), clean_new_name, re.IGNORECASE):
+            return _(
+                "Company name must end with the designation '%(designation)s'.",
+                designation=current_designation,
+            )
+
+    elif rule == "non_prefix":
+        if re.search(rf"^{current_pattern}(?:[\s,]+|$)", clean_new_name, re.IGNORECASE):
+            return _(
+                "Company name cannot start with the designation '%(designation)s'.",
+                designation=current_designation,
+            )
+        if not re.search(_build_non_prefix_pattern(current_pattern), clean_new_name, re.IGNORECASE):
+            return _(
+                "Company name must contain the designation '%(designation)s'.",
+                designation=current_designation,
+            )
+
+    return None
+
+
+def _validate_markers(
+    clean_new_name: str,
+    current_legal_name: str,
+    rules: DesignationRules,
+) -> list[str]:
+    """Verify that any statutory markers present in the current name are preserved."""
+    errors = []
+    for marker_group in rules.get("markers", ()):
+        had_marker = any(
+            re.search(_build_anywhere_pattern(_pattern_for_designation(m)), current_legal_name, re.IGNORECASE)
+            for m in marker_group
+        )
+        has_marker = any(
+            re.search(_build_anywhere_pattern(_pattern_for_designation(m)), clean_new_name, re.IGNORECASE)
+            for m in marker_group
+        )
+        if had_marker and not has_marker:
+            marker_label = " or ".join(f"'{m}'" for m in marker_group)
+            errors.append(
+                _("Company name must contain %(marker_label)s.", marker_label=marker_label)
+            )
+    return errors
+
+
+def _validate_designation_rules(
+    clean_new_name: str,
+    current_legal_name: str,
+    legal_type: str,
+) -> list[str]:
+    """Verify that the new name conforms to the designation and marker rules for the entity type."""
+    rules = DESIGNATION_RULES.get(legal_type)
+    if not rules:
+        return [
+            _("Legal name edits are disabled: no designation rules are configured for this business type.")
+        ]
+
+    rule = rules.get("rule", "none")
+    allowed = rules.get("allowed", ())
+    if rule == "none" or not allowed:
+        return []
+
+    current_designation = _get_current_designation(current_legal_name, rule, allowed)
+    if not current_designation:
+        return [
+            _("Legal name edits are disabled: existing designation could not be verified.")
+        ]
+
+    if position_error := _validate_designation_position(clean_new_name, rule, current_designation):
+        return [position_error]
+
+    return _validate_markers(clean_new_name, current_legal_name, rules)
+
+
+def validate_legal_name_designation(
+    business: Business,
+    new_legal_name: str | None,
+    err_path: str = "/filing/correction/nameRequest/legalName",
+) -> list[dict]:
+    """Validate that the submitted legal name preserves the business's existing designation."""
+    clean_new_name = _normalize_name(new_legal_name)
+    current_legal_name = _normalize_name(business.legal_name)
+
+    if not clean_new_name:
+        return [{"error": _("Company name is required."), "path": err_path}]
+
+    if length_error := _validate_name_length(clean_new_name, business.is_firm):
+        return [{"error": length_error, "path": err_path}]
+
+    if clean_new_name.upper() == current_legal_name.upper():
+        return []
+
+    valid_numbered_name = Business.generate_numbered_legal_name(business.legal_type, business.identifier)
+    if valid_numbered_name and clean_new_name.upper() == valid_numbered_name.upper():
+        return []
+
+    errors = _validate_designation_rules(clean_new_name, current_legal_name, business.legal_type)
+    return [{"error": err, "path": err_path} for err in errors]
