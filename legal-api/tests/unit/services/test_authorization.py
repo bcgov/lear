@@ -4148,6 +4148,25 @@ def test_get_allowed_filings_staff_draft_bypass(monkeypatch, app, session, jwt, 
         assert (('changeOfDirectors', None) in allowed) is expected_directors
 
 
+@pytest.mark.parametrize('test_name,permissions,correction_status,expected_court_order', [
+    ('draft_correction_bypassed', [BYPASS_PERMISSION], Filing.Status.DRAFT.value, True),
+    ('draft_correction_no_permission', [], Filing.Status.DRAFT.value, False),
+    ('pending_correction_still_blocks', [BYPASS_PERMISSION], Filing.Status.PENDING.value, False),
+])
+def test_get_allowed_filings_bypass_ignores_draft_corrections(monkeypatch, app, session, jwt, test_name,
+                                                              permissions, correction_status, expected_court_order):
+    """Assert a DRAFT correction's INCOMPLETE_CORRECTION blocker is bypassed for allowlisted types."""
+    with jwt_request_context(app, jwt, roles=[STAFF_ROLE], username='staff'):
+        _mock_bypass_flags(monkeypatch, ['courtOrder'])
+        business = create_business('BC', Business.State.ACTIVE)
+        create_incomplete_filing(business=business, filing_name='correction', filing_status=correction_status,
+                                 filing_type='correction')
+
+        allowed = _allowed_names(business, jwt, permissions)
+
+        assert (('courtOrder', None) in allowed) is expected_court_order
+
+
 def test_get_allowed_filings_no_blockers_unchanged_by_bypass(monkeypatch, app, session, jwt):
     """Assert the bypass permission does not alter the allowed filings when the business has no blockers."""
     with jwt_request_context(app, jwt, roles=[STAFF_ROLE], username='staff'):

@@ -668,7 +668,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
                 HTTPStatus.UNAUTHORIZED
         if not is_allowed(business, state, filing_type, legal_type, jwt, filing_sub_type, filing):
             blockers = [blocker_type.value
-                        for blocker_type, is_blocked in business_blocker_check(business).items()
+                        for blocker_type, is_blocked in business_blocker_check(business, filing is not None).items()
                         if is_blocked]
             return jsonify({
                 "message": f"Not Allowed - You are not allowed to submit this type of filing for {identifier}.",

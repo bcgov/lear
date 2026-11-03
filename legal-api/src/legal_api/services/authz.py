@@ -1121,7 +1121,7 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
     if len(business.public_user_dod_filings) >= MAX_PUBLIC_USER_DOD_FILINGS:
         business_blocker_checks[BusinessBlocker.MAX_DISSOLUTION_DELAYS_REACHED] = True
 
-    if has_incomplete_correction_filing(business):
+    if has_incomplete_correction_filing(business, exclude_drafts=draft_status_only):
         business_blocker_checks[BusinessBlocker.INCOMPLETE_CORRECTION] = True
 
     return business_blocker_checks
@@ -1284,7 +1284,7 @@ def has_notice_of_withdrawal_filing_blocker(business: Business, is_ignore_draft_
     return not any(f.effective_date and f.effective_date > now for f in paid_filings)
 
 
-def has_incomplete_correction_filing(business: Business) -> bool:
+def has_incomplete_correction_filing(business: Business, exclude_drafts: bool = False) -> bool:
     """Check if the business has an incomplete correction filing."""
     # importing here to avoid circular dependencies
     # pylint: disable=import-outside-toplevel
@@ -1293,7 +1293,10 @@ def has_incomplete_correction_filing(business: Business) -> bool:
     if not business or not business.id:
         return False
 
-    blocker_filing_matches = Filing.get_incomplete_filings_by_types(business.id, [CoreFiling.FilingTypes.CORRECTION.value])
+    excluded_statuses = [Filing.Status.DRAFT.value] if exclude_drafts else []
+    blocker_filing_matches = Filing.get_incomplete_filings_by_types(business.id,
+                                                                    [CoreFiling.FilingTypes.CORRECTION.value],
+                                                                    excluded_statuses)
     return any(blocker_filing_matches)
 
 

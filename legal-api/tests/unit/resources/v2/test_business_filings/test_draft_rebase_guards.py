@@ -517,3 +517,24 @@ def test_forbidden_filing_lists_business_blockers(app, session, client, jwt, mon
     assert 'DEFAULT' in rv.json['blockers']
     assert 'DRAFT_PENDING' in rv.json['blockers']
     assert 'BUSINESS_FROZEN' not in rv.json['blockers']
+
+
+def test_forbidden_put_blockers_exclude_the_draft_being_saved(app, session, client, jwt, monkeypatch,
+                                                              requests_mock):
+    """Assert a PUT denial's blocker detail mirrors is_allowed and does not blame drafts."""
+    _mock_draft_rebase_flag(monkeypatch, False)
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    business.admin_freeze = True
+    business.save()
+    factory_business_mailing_address(business)
+    draft = _create_draft(business, 'public_user')
+    _mock_auth_edit(app, requests_mock, identifier)
+
+    rv = client.put(f'/api/v2/businesses/{identifier}/filings/{draft.id}?draft=true',
+                    json=_ar_json(identifier),
+                    headers=create_header(jwt, [PUBLIC_USER], identifier))
+
+    assert rv.status_code == HTTPStatus.FORBIDDEN
+    assert 'BUSINESS_FROZEN' in rv.json['blockers']
+    assert 'DRAFT_PENDING' not in rv.json['blockers']
