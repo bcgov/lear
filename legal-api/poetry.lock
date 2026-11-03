@@ -373,7 +373,7 @@ subdirectory = "python/common/business-registry-account"
 
 [[package]]
 name = "business-registry-common"
-version = "0.1.3"
+version = "0.1.4"
 description = ""
 optional = false
 python-versions = ">=3.13,<3.14"
@@ -391,7 +391,7 @@ pytz = ">=2026.2,<2027.0"
 type = "git"
 url = "https://github.com/bcgov/lear.git"
 reference = "main"
-resolved_reference = "88124ee47ab75adea2d3bb365f3d22488cdddcb1"
+resolved_reference = "91b19649b4e04201d7ed531dbf5de021c04b93bc"
 subdirectory = "python/common/business-registry-common"
 
 [[package]]
