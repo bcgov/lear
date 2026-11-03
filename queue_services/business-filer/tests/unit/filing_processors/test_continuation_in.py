@@ -83,16 +83,18 @@ def _relationships_filing() -> dict:
     return filing
 
 
-@pytest.mark.parametrize('test_name, filing, party_key, expected_directors, expected_filing_roles', [
-    ('PARTIES', copy.deepcopy(CONTINUATION_IN_FILING_TEMPLATE), 'parties', ['SWANSON'],
+@pytest.mark.parametrize('test_name, filing, corp_num, party_key, expected_directors, expected_filing_roles', [
+    ('PARTIES', copy.deepcopy(CONTINUATION_IN_FILING_TEMPLATE), 9901, 'parties', ['SWANSON'],
      ['completing_party', 'incorporator']),
-    ('RELATIONSHIPS', _relationships_filing(), 'relationships', ['SWANSON', 'QUAGMIRE'], ['completing_party']),
+    ('RELATIONSHIPS', _relationships_filing(), 9902, 'relationships', ['SWANSON', 'QUAGMIRE'],
+     ['completing_party']),
 ])
-def test_continuation_in_party_shapes(app, session, requests_mock, test_name, filing, party_key, expected_directors,
-                                      expected_filing_roles):
+def test_continuation_in_party_shapes(app, session, requests_mock, test_name, filing, corp_num, party_key,
+                                      expected_directors, expected_filing_roles):
     """Assert both party shapes create the same party rows and the stored filing keeps its shape."""
     requests_mock.post(f'{app.config["ACCOUNT_SVC_AUTH_URL"]}', json={'access_token': 'fake-token'})
-    requests_mock.post(f'{app.config["COLIN_API"]}/businesses/BC', json={'corpNum': 1095})
+    # saved businesses outlive the test session, so each case needs an identifier no other test looks up
+    requests_mock.post(f'{app.config["COLIN_API"]}/businesses/BC', json={'corpNum': corp_num})
 
     effective_date = datetime.now(timezone.utc)
     filing_rec = create_filing('123', filing)  # saved so the jurisdiction row can reference it
