@@ -613,8 +613,9 @@ def test_post_allowed_historical(session, client, jwt):
 
 
 @pytest.mark.parametrize('filing_status', [Filing.Status.DRAFT.value, Filing.Status.PENDING.value])
-def test_post_court_order_not_allowed_with_incomplete_correction(session, client, jwt, filing_status):
+def test_post_court_order_not_allowed_with_incomplete_correction(session, client, jwt, monkeypatch, filing_status):
     """Assert that courtOrder is not allowed when business has an incomplete correction filing."""
+    monkeypatch.setattr('legal_api.services.authz.staff_draft_bypass_flag_value', list)
     identifier = 'BC7654321'
     business = factory_business(identifier, state=Business.State.ACTIVE)
     correction_data = copy.deepcopy(CORRECTION_AR)
