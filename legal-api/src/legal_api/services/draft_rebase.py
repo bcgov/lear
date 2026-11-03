@@ -299,6 +299,41 @@ def _scope_party_entities(entities: dict, scope_roles: set) -> dict:
     return scoped
 
 
+def _entity_display_names(base_entities: dict, current_entities: dict, draft_entities: dict) -> dict:
+    """One name per row id; the current snapshot's spelling wins."""
+    display_names = {}
+    for entities in (draft_entities, base_entities, current_entities):
+        for entity in entities.values():
+            if entity["row_id"] is not None and entity["name_key"]:
+                display_names[entity["row_id"]] = entity["name_key"]
+    return display_names
+
+
+def _ambiguous_entity_names(datasets: tuple, display_names: dict) -> set:
+    """Names two rows claim within one dataset (two real people).
+
+    The same name under different ids across datasets is id churn, not ambiguity.
+    """
+    ambiguous_names = set()
+    for entities in datasets:
+        claimants = {}
+        for entity in entities.values():
+            name = display_names.get(entity["row_id"]) if entity["row_id"] is not None else entity["name_key"]
+            if name:
+                claimants[name] = claimants.get(name, 0) + 1
+        ambiguous_names |= {name for name, count in claimants.items() if count > 1}
+    return ambiguous_names
+
+
+def _canonical_entity_key(entity: dict, display_names: dict, ambiguous_names: set) -> str | None:
+    """Pairing key for an entity: ambiguous names pair by id, everything else pairs by name."""
+    if (row_id := entity["row_id"]) is None:
+        return entity["name_key"]  # new row: bare name
+    if (name := display_names.get(row_id)) is None:
+        return f"#{row_id}"  # no name anywhere
+    return f"{name} #{row_id}" if name in ambiguous_names else name
+
+
 def _align_entities_by_row_id(base_entities: dict, current_entities: dict, draft_entities: dict) -> tuple:
     """Rekey entities so the same party pairs up across base, current and draft.
 
@@ -311,35 +346,13 @@ def _align_entities_by_row_id(base_entities: dict, current_entities: dict, draft
         draft   {101: (101, "SMITH, JANE"),              -> {"DOE, JANE": ...,
                  "SMITH, JANE": (None, "SMITH, JANE")}       "SMITH, JANE": ...}
     """
-    # one name per id; the current snapshot's spelling wins
-    display_names = {}
-    for entities in (draft_entities, base_entities, current_entities):
-        for entity in entities.values():
-            if entity["row_id"] is not None and entity["name_key"]:
-                display_names[entity["row_id"]] = entity["name_key"]
-
-    # ambiguous = one dataset holds two rows with the same name (two real people);
-    # the same name under different ids across datasets is id churn, not ambiguity
-    ambiguous_names = set()
-    for entities in (base_entities, current_entities, draft_entities):
-        claimants = {}
-        for entity in entities.values():
-            name = display_names.get(entity["row_id"]) if entity["row_id"] is not None else entity["name_key"]
-            if name:
-                claimants[name] = claimants.get(name, 0) + 1
-        ambiguous_names |= {name for name, count in claimants.items() if count > 1}
-
-    def canonical_key(entity) -> str | None:
-        if (row_id := entity["row_id"]) is None:
-            return entity["name_key"]  # new row: bare name
-        if (name := display_names.get(row_id)) is None:
-            return f"#{row_id}"  # no name anywhere
-        # ambiguous names pair by id, everything else pairs by name
-        return f"{name} #{row_id}" if name in ambiguous_names else name
-
+    datasets = (base_entities, current_entities, draft_entities)
+    display_names = _entity_display_names(base_entities, current_entities, draft_entities)
+    ambiguous_names = _ambiguous_entity_names(datasets, display_names)
     return tuple(
-        {key: entity for entity in entities.values() if (key := canonical_key(entity)) is not None}
-        for entities in (base_entities, current_entities, draft_entities)
+        {key: entity for entity in entities.values()
+         if (key := _canonical_entity_key(entity, display_names, ambiguous_names)) is not None}
+        for entities in datasets
     )
 
 
@@ -426,20 +439,10 @@ class DraftRebaseService:
         report["businessChanges"] = DraftRebaseService._business_changes(
             base_snapshot["business"], current_snapshot["business"])
 
+        party_role_scope = _party_role_scope(draft_filing.filing_type, business.legal_type)
         for section in SNAPSHOT_SECTIONS:
-            build_entities = _SECTION_ENTITY_BUILDERS[section]
-            base_entities = build_entities(base_snapshot.get(section))
-            current_entities = build_entities(current_snapshot.get(section))
-            draft_entities = build_entities(draft_sections.get(section))
-            # parties: only the roles this filing type manages are in play
-            if section == "parties" and \
-                    (role_scope := _party_role_scope(draft_filing.filing_type, business.legal_type)):
-                base_entities = _scope_party_entities(base_entities, role_scope)
-                current_entities = _scope_party_entities(current_entities, role_scope)
-                draft_entities = _scope_party_entities(draft_entities, role_scope)
-            if section in _ID_MATCHED_SECTIONS:
-                base_entities, current_entities, draft_entities = _align_entities_by_row_id(
-                    base_entities, current_entities, draft_entities)
+            base_entities, current_entities, draft_entities = DraftRebaseService._section_entities(
+                section, base_snapshot, current_snapshot, draft_sections, party_role_scope)
 
             intervening_changed = DraftRebaseService._changed_keys(base_entities, current_entities)
             if intervening_changed:
@@ -447,27 +450,55 @@ class DraftRebaseService:
 
             draft_touched = DraftRebaseService._draft_touched_entities(
                 draft_entities, base_entities, section in draft_sections)
-
-            # both sides touched the same entity: same end value = alreadyApplied, else conflict
-            for entity_key, (base_entity, current_entity) in intervening_changed.items():
-                if (draft_entity := draft_touched.get(entity_key)) is None:
-                    continue
-                current_norm = current_entity["norm"] if current_entity else None
-                if draft_entity["norm"] == current_norm:
-                    report["alreadyApplied"].append({"section": section, "entityKey": entity_key})
-                else:
-                    report["conflicts"].append({
-                        "section": section,
-                        "entityKey": entity_key,
-                        "rowId": next((entity["row_id"] for entity in (current_entity, base_entity, draft_entity)
-                                       if entity and entity.get("row_id") is not None), None),  # current row wins
-                        "paths": DraftRebaseService._entity_diff_paths(base_entity, current_entity),
-                        "baseValue": base_entity["json"] if base_entity else None,
-                        "currentValue": current_entity["json"] if current_entity else None,
-                        "draftValue": draft_entity["json"],
-                    })
+            DraftRebaseService._classify_draft_overlaps(report, section, intervening_changed, draft_touched)
 
         return report
+
+    @staticmethod
+    def _section_entities(section: str,
+                          base_snapshot: dict,
+                          current_snapshot: dict,
+                          draft_sections: dict,
+                          party_role_scope: set | None) -> tuple:
+        """Build the base/current/draft entities for one section, role-scoped and id-aligned."""
+        build_entities = _SECTION_ENTITY_BUILDERS[section]
+        entity_sets = (build_entities(base_snapshot.get(section)),
+                       build_entities(current_snapshot.get(section)),
+                       build_entities(draft_sections.get(section)))
+        # parties: only the roles this filing type manages are in play
+        if section == "parties" and party_role_scope:
+            entity_sets = tuple(_scope_party_entities(entities, party_role_scope) for entities in entity_sets)
+        if section in _ID_MATCHED_SECTIONS:
+            entity_sets = _align_entities_by_row_id(*entity_sets)
+        return entity_sets
+
+    @staticmethod
+    def _classify_draft_overlaps(report: dict, section: str, intervening_changed: dict, draft_touched: dict):
+        """Entities both sides touched: same end value = alreadyApplied, else conflict."""
+        for entity_key, (base_entity, current_entity) in intervening_changed.items():
+            if (draft_entity := draft_touched.get(entity_key)) is None:
+                continue
+            current_norm = current_entity["norm"] if current_entity else None
+            if draft_entity["norm"] == current_norm:
+                report["alreadyApplied"].append({"section": section, "entityKey": entity_key})
+            else:
+                report["conflicts"].append(DraftRebaseService._conflict_json(
+                    section, entity_key, base_entity, current_entity, draft_entity))
+
+    @staticmethod
+    def _conflict_json(section: str, entity_key: str,
+                       base_entity: dict | None, current_entity: dict | None, draft_entity: dict) -> dict:
+        """Build one conflict report entry."""
+        return {
+            "section": section,
+            "entityKey": entity_key,
+            "rowId": next((entity["row_id"] for entity in (current_entity, base_entity, draft_entity)
+                           if entity and entity.get("row_id") is not None), None),  # current row wins
+            "paths": DraftRebaseService._entity_diff_paths(base_entity, current_entity),
+            "baseValue": base_entity["json"] if base_entity else None,
+            "currentValue": current_entity["json"] if current_entity else None,
+            "draftValue": draft_entity["json"],
+        }
 
     @staticmethod
     def find_stale_ids(business: Business, filing_json: dict) -> dict:
@@ -620,29 +651,9 @@ class DraftRebaseService:
         filing_type = (filing_json or {}).get("filing", {}).get("header", {}).get("name")
         filing_body = (filing_json or {}).get("filing", {}).get(filing_type, {}) or {}
 
-        party_ids, alias_ids, resolution_ids = set(), set(), set()
-        section_map = DraftRebaseService.FILING_SECTION_MAP.get(filing_type, {})
-        for draft_key, snapshot_section in section_map.items():
-            if snapshot_section != "parties" or not (rows := filing_body.get(draft_key)):
-                continue
-            for row in rows:
-                # stricter than _party_row_id: no top-level id fallback, since a
-                # false positive here rejects the submission
-                if entity := row.get("entity"):
-                    row_id = _int_or_none(entity.get("identifier"))
-                else:
-                    row_id = _int_or_none((row.get("officer") or {}).get("id"))
-                if row_id is not None:
-                    party_ids.add(row_id)
-
-        for row in filing_body.get("nameTranslations") or []:
-            if isinstance(row, dict) and (row_id := _int_or_none(row.get("id"))) is not None:
-                alias_ids.add(row_id)
-
-        for row in (filing_body.get("shareStructure") or {}).get("resolutionDates") or []:
-            if isinstance(row, dict) and (row_id := _int_or_none(row.get("id"))) is not None:
-                resolution_ids.add(row_id)
-
+        party_ids = _embedded_party_ids(filing_type, filing_body)
+        alias_ids = _embedded_row_ids(filing_body.get("nameTranslations"))
+        resolution_ids = _embedded_row_ids((filing_body.get("shareStructure") or {}).get("resolutionDates"))
         return party_ids, alias_ids, resolution_ids
 
 
@@ -654,3 +665,32 @@ def _int_or_none(value):
         return int(value)
     except (TypeError, ValueError):
         return None
+
+
+def _strict_party_row_id(row: dict):
+    """Party row id with no top-level id fallback; a false positive here rejects the submission."""
+    if entity := row.get("entity"):
+        return _int_or_none(entity.get("identifier"))
+    return _int_or_none((row.get("officer") or {}).get("id"))
+
+
+def _embedded_party_ids(filing_type: str, filing_body: dict) -> set:
+    """Integer party ids in the filing's party sections."""
+    party_ids = set()
+    section_map = DraftRebaseService.FILING_SECTION_MAP.get(filing_type, {})
+    for draft_key, snapshot_section in section_map.items():
+        if snapshot_section != "parties":
+            continue
+        for row in filing_body.get(draft_key) or []:
+            if (row_id := _strict_party_row_id(row)) is not None:
+                party_ids.add(row_id)
+    return party_ids
+
+
+def _embedded_row_ids(rows: list | None) -> set:
+    """Integer ids on dict rows (nameTranslations / resolutionDates)."""
+    row_ids = set()
+    for row in rows or []:
+        if isinstance(row, dict) and (row_id := _int_or_none(row.get("id"))) is not None:
+            row_ids.add(row_id)
+    return row_ids
