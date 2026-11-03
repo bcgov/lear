@@ -314,25 +314,14 @@ def correct_corp_data(business: Business,
                       correction_filing: dict,
                       filing_meta: FilingMeta):
     """Correct corporation data."""
-    to_legal_type = None
     # A corp correction has a NOA report if any of the following changes: business name, office, director, shares.
     has_noa: bool = False
-    with suppress(IndexError, KeyError, TypeError):
-        to_legal_type = dpath.get(correction_filing, "/correction/newLegalType")
-        if to_legal_type and business.legal_type != to_legal_type:
-            filing_meta.correction = {
-                **filing_meta.correction,
-                "fromLegalType": business.legal_type,
-                "toLegalType": to_legal_type
-            }
-            business_info.set_corp_type(business, {"legalType": to_legal_type})
-            has_noa = True
 
     # Update business legalName if present
     with suppress(IndexError, KeyError, TypeError):
         name_request_json = dpath.get(correction_filing, CORRECTION_NAME_REQUEST_PATH)
         from_legal_name = business.legal_name
-        business_info.set_legal_name(business.identifier, business, name_request_json, to_legal_type)
+        business_info.set_legal_name(business.identifier, business, name_request_json)
         if from_legal_name != business.legal_name:
             filing_meta.correction = {
                 **filing_meta.correction,
