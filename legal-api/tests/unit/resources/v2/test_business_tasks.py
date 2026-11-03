@@ -688,14 +688,16 @@ DRAFT_REBASE_FEATURE = 'draftRebaseChecks'
 BYPASS_PERMISSION = 'FILE_OVER_EXISTING_DRAFT'
 
 
-def _mock_draft_rebase_flag(monkeypatch, enabled):
-    """Mock only the draftRebaseChecks value of enable-new-feature, delegating every other flag."""
+def _mock_draft_rebase_flag(monkeypatch, enabled, bypass_types=('annualReport',)):
+    """Mock the draftRebaseChecks value and the bypass allowlist, delegating every other flag."""
     flag_value = flags.value
 
     def _value(flag, *args, **kwargs):
         if flag == 'enable-new-feature':
             features = [f for f in (flag_value(flag, *args, **kwargs) or []) if f != DRAFT_REBASE_FEATURE]
             return features + [DRAFT_REBASE_FEATURE] if enabled else features
+        if flag == 'enable-staff-draft-filing-bypass':
+            return list(bypass_types)
         return flag_value(flag, *args, **kwargs)
 
     monkeypatch.setattr('legal_api.services.flags.value', _value)
@@ -849,6 +851,24 @@ def test_get_tasks_staff_draft_lockout(session, client, jwt, monkeypatch, test_n
     by_id = {x['task']['filing']['header']['filingId']: x for x in _filing_tasks(rv)}
     assert by_id[staff_draft.id]['enabled'] is expect_draft_enabled
     assert by_id[own_draft.id]['enabled'] is expect_draft_enabled
+
+
+def test_get_tasks_staff_draft_lockout_skips_non_allowlisted_types(session, client, jwt, monkeypatch):
+    """Assert that a staff draft of a type outside the bypass allowlist does not lock users out."""
+    _mock_draft_rebase_flag(monkeypatch, True, bypass_types=())
+    identifier = 'CP7654321'
+    business = _get_task_business(identifier)
+    staff_draft = _create_task_filing(business, 'DRAFT', 'staff')
+    own_draft = _create_task_filing(business, 'DRAFT', 'public_user')
+
+    with patch.object(PermissionService, 'get_authorized_permissions_for_user', return_value=[]):
+        rv = client.get(f'/api/v2/businesses/{identifier}/tasks',
+                        headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    by_id = {x['task']['filing']['header']['filingId']: x for x in _filing_tasks(rv)}
+    assert by_id[staff_draft.id]['enabled'] is True
+    assert by_id[own_draft.id]['enabled'] is True
 
 
 @pytest.mark.parametrize('status', ['PENDING', 'ERROR'])

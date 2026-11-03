@@ -48,8 +48,12 @@ ROLE_LOOKUP = {
 }
 
 
-def _mock_draft_rebase_flag(monkeypatch, enabled):
-    """Mock the draftRebaseChecks value on and pin the permission flag off, delegating every other flag."""
+def _mock_draft_rebase_flag(monkeypatch, enabled, bypass_types=('annualReport',)):
+    """Mock the draftRebaseChecks value and the bypass allowlist, pin the permission flag off.
+
+    Every other flag is delegated. The default allowlist covers the annualReport
+    drafts these tests use, since ownership enforcement is scoped to it.
+    """
     flag_is_on = flags.is_on
     flag_value = flags.value
 
@@ -62,6 +66,8 @@ def _mock_draft_rebase_flag(monkeypatch, enabled):
         if flag == 'enable-new-feature':
             features = [f for f in (flag_value(flag, *args, **kwargs) or []) if f != DRAFT_REBASE_FEATURE]
             return features + [DRAFT_REBASE_FEATURE] if enabled else features
+        if flag == 'enable-staff-draft-filing-bypass':
+            return list(bypass_types)
         return flag_value(flag, *args, **kwargs)
 
     monkeypatch.setattr('legal_api.services.flags.is_on', _is_on)
@@ -243,24 +249,27 @@ def test_put_draft_with_stale_base_transaction_id_conflicts(app, session, client
 # ---------------------------------------------------------------------------
 
 OWNERSHIP_CASES = [
-    ('staff_on_user_draft', 'staff', 'public_user', True, True),
-    ('public_on_staff_draft', 'public', 'staff', True, True),
-    ('system_on_user_draft', 'system', 'public_user', True, True),
-    ('public_on_system_draft', 'public', 'system', True, True),
-    ('staff_on_staff_draft', 'staff', 'staff', True, False),
-    ('system_on_staff_draft', 'system', 'staff', True, False),
-    ('staff_on_system_draft', 'staff', 'system', True, False),
-    ('public_on_user_draft', 'public', 'public_user', True, False),
-    ('staff_on_unowned_draft', 'staff', None, True, False),
-    ('public_on_unowned_draft', 'public', None, True, False),
-    ('flag_off_staff_on_user_draft', 'staff', 'public_user', False, False),
-    ('flag_off_public_on_staff_draft', 'public', 'staff', False, False),
+    # staff DELETE of a user draft stays allowed: deleting isn't resuming, and it is
+    # the historical path for unblocking a business
+    ('staff_on_user_draft', 'staff', 'public_user', True, True, False),
+    ('public_on_staff_draft', 'public', 'staff', True, True, True),
+    ('system_on_user_draft', 'system', 'public_user', True, True, False),
+    ('public_on_system_draft', 'public', 'system', True, True, True),
+    ('staff_on_staff_draft', 'staff', 'staff', True, False, False),
+    ('system_on_staff_draft', 'system', 'staff', True, False, False),
+    ('staff_on_system_draft', 'staff', 'system', True, False, False),
+    ('public_on_user_draft', 'public', 'public_user', True, False, False),
+    ('staff_on_unowned_draft', 'staff', None, True, False, False),
+    ('public_on_unowned_draft', 'public', None, True, False, False),
+    ('flag_off_staff_on_user_draft', 'staff', 'public_user', False, False, False),
+    ('flag_off_public_on_staff_draft', 'public', 'staff', False, False, False),
 ]
 
 
-@pytest.mark.parametrize('test_name, caller, draft_roles, flag_on, expect_forbidden', OWNERSHIP_CASES)
+@pytest.mark.parametrize('test_name, caller, draft_roles, flag_on, expect_forbidden, _delete_forbidden',
+                         OWNERSHIP_CASES)
 def test_put_draft_ownership(app, session, client, jwt, monkeypatch, requests_mock,
-                             test_name, caller, draft_roles, flag_on, expect_forbidden):
+                             test_name, caller, draft_roles, flag_on, expect_forbidden, _delete_forbidden):
     """Assert that a PUT is rejected only when the caller and the draft are on opposite staff/user sides."""
     _mock_draft_rebase_flag(monkeypatch, flag_on)
     identifier = 'CP7654321'
@@ -280,10 +289,11 @@ def test_put_draft_ownership(app, session, client, jwt, monkeypatch, requests_mo
         assert rv.status_code == HTTPStatus.ACCEPTED
 
 
-@pytest.mark.parametrize('test_name, caller, draft_roles, flag_on, expect_forbidden', OWNERSHIP_CASES)
+@pytest.mark.parametrize('test_name, caller, draft_roles, flag_on, _put_forbidden, expect_forbidden',
+                         OWNERSHIP_CASES)
 def test_delete_draft_ownership(app, session, client, jwt, monkeypatch, requests_mock,
-                                test_name, caller, draft_roles, flag_on, expect_forbidden):
-    """Assert that a DELETE is rejected only when the caller and the draft are on opposite staff/user sides."""
+                                test_name, caller, draft_roles, flag_on, _put_forbidden, expect_forbidden):
+    """Assert that a DELETE is rejected only for users targeting a staff draft (staff keep DELETE)."""
     _mock_draft_rebase_flag(monkeypatch, flag_on)
     identifier = 'CP7654321'
     business = factory_business(identifier)
@@ -301,6 +311,63 @@ def test_delete_draft_ownership(app, session, client, jwt, monkeypatch, requests
     else:
         assert rv.status_code == HTTPStatus.OK
         assert _reload(draft_id) is None
+
+
+@pytest.mark.parametrize('method', ['put', 'delete'])
+def test_draft_ownership_skips_non_allowlisted_filing_types(app, session, client, jwt, monkeypatch,
+                                                            requests_mock, method):
+    """Assert that ownership is not enforced for filing types outside the bypass allowlist."""
+    _mock_draft_rebase_flag(monkeypatch, True, bypass_types=())
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    draft = _create_draft(business, 'staff')
+    draft_id = draft.id
+    _mock_auth_edit(app, requests_mock, identifier)
+
+    if method == 'put':
+        with patch.object(business_filings, 'is_allowed', return_value=True):
+            rv = client.put(f'/api/v2/businesses/{identifier}/filings/{draft_id}?draft=true',
+                            json=_ar_json(identifier),
+                            headers=create_header(jwt, [ROLE_LOOKUP['public']], identifier))
+        assert rv.status_code == HTTPStatus.ACCEPTED
+    else:
+        rv = client.delete(f'/api/v2/businesses/{identifier}/filings/{draft_id}',
+                           headers=create_header(jwt, [ROLE_LOOKUP['public']], identifier))
+        assert rv.status_code == HTTPStatus.OK
+        assert _reload(draft_id) is None
+
+
+# ---------------------------------------------------------------------------
+# invoice stamping
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize('test_name, caller, draft_roles, expected_roles', [
+    ('user_pays_staff_draft', 'public', 'staff', 'public_user'),
+    ('staff_pays_staff_draft', 'staff', 'staff', 'staff'),
+    ('user_pays_own_draft', 'public', 'public_user', 'public_user'),
+])
+def test_invoice_stamps_payer_as_submitter(app, session, client, jwt, monkeypatch, requests_mock,
+                                           test_name, caller, draft_roles, expected_roles):
+    """Assert that submitting re-stamps submitter_roles with the payer's side (flag off, prod behavior)."""
+    _mock_draft_rebase_flag(monkeypatch, False)
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    factory_business_mailing_address(business)
+    draft = _create_draft(business, draft_roles)
+    draft_id = draft.id
+    _mock_auth_edit(app, requests_mock, identifier)
+    requests_mock.post(app.config.get('PAYMENT_SVC_URL'),
+                       json={'id': 666, 'statusCode': 'CREATED', 'isPaymentActionRequired': False},
+                       status_code=201)
+
+    with patch.object(business_filings, 'is_allowed', return_value=True), \
+            patch.object(business_filings, 'validate', return_value=None):
+        rv = client.put(f'/api/v2/businesses/{identifier}/filings/{draft_id}',
+                        json=_ar_json(identifier),
+                        headers=create_header(jwt, [ROLE_LOOKUP[caller]], identifier))
+
+    assert rv.status_code == HTTPStatus.ACCEPTED
+    assert _reload(draft_id).submitter_roles == expected_roles
 
 
 # ---------------------------------------------------------------------------
@@ -382,7 +449,9 @@ def test_stale_id_guard_change_of_directors_rejects_ceased_director(app, session
     rv = _submit_for_validation(client, jwt, identifier, filing_json)
 
     assert rv.status_code == HTTPStatus.BAD_REQUEST
-    assert rv.json['errors'][0]['path'] == '/filing/changeOfDirectors/parties'
+    # the error path names the payload key the ids sit under, not the snapshot section
+    assert rv.json['errors'][0]['path'] == '/filing/changeOfDirectors/directors'
+    assert 'A party record' in rv.json['errors'][0]['error']
 
 
 def test_stale_id_guard_change_of_directors_passes_active_director(app, session, client, jwt, monkeypatch):

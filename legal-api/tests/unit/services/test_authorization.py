@@ -33,7 +33,7 @@ from legal_api import create_app
 from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, CONTACT_CENTRE_STAFF_ROLE , MAXIMUS_STAFF_ROLE, \
     PUBLIC_USER, STAFF_ROLE, SBC_STAFF_ROLE, \
     authorized, is_allowed, get_allowed, get_allowed_filings, get_allowable_actions, get_allowable_filings_dict, \
-    get_staff_draft_bypass_filing_types, has_blocker_filing
+    get_staff_draft_bypass_filing_types, has_blocker_filing, is_draft_rebase_scoped_filing
 from legal_api.services.permissions import PermissionService
 from legal_api.services.warnings.business.business_checks import WarningType
 from registry_schemas.example_data import (
@@ -4087,6 +4087,8 @@ def _mock_bypass_flags(monkeypatch, bypass_types):
      ['changeOfLiquidators.appointLiquidator']),
     ('empty_flag', [BYPASS_PERMISSION], [], []),
     ('none_flag', [BYPASS_PERMISSION], None, []),
+    # a comma string would substring-match in callers; non-list values fail closed
+    ('string_flag_fails_closed', [BYPASS_PERMISSION], 'changeOfAddress,changeOfDirectors', []),
 ])
 def test_get_staff_draft_bypass_filing_types(monkeypatch, app, jwt, test_name, permissions, flag_value, expected):
     """Assert the bypass allowlist is read from the flag only when the user holds the permission."""
@@ -4094,6 +4096,25 @@ def test_get_staff_draft_bypass_filing_types(monkeypatch, app, jwt, test_name, p
         _mock_bypass_flags(monkeypatch, flag_value)
         with patch.object(PermissionService, 'get_authorized_permissions_for_user', return_value=permissions):
             assert get_staff_draft_bypass_filing_types() == expected
+
+
+@pytest.mark.parametrize('test_name,flag_value,filing_type,filing_sub_type,expected', [
+    ('parent_key', ['changeOfAddress'], 'changeOfAddress', None, True),
+    ('parent_key_covers_sub_types', ['changeOfLiquidators'], 'changeOfLiquidators', 'appointLiquidator', True),
+    ('sub_type_key', ['changeOfLiquidators.appointLiquidator'], 'changeOfLiquidators', 'appointLiquidator', True),
+    ('sub_type_key_other_sub_type', ['changeOfLiquidators.appointLiquidator'],
+     'changeOfLiquidators', 'ceaseLiquidator', False),
+    ('not_listed', ['changeOfAddress'], 'annualReport', None, False),
+    ('no_substring_match', ['dissolution.delay'], 'dissolution', None, False),
+    ('string_flag_fails_closed', 'changeOfAddress', 'changeOfAddress', None, False),
+    ('none_flag', None, 'changeOfAddress', None, False),
+])
+def test_is_draft_rebase_scoped_filing(monkeypatch, app, jwt, test_name, flag_value, filing_type,
+                                       filing_sub_type, expected):
+    """Assert the enforcement scope matches the allowlist keys without a permission check."""
+    with jwt_request_context(app, jwt, roles=[STAFF_ROLE], username='staff'):
+        _mock_bypass_flags(monkeypatch, flag_value)
+        assert is_draft_rebase_scoped_filing(filing_type, filing_sub_type) is expected
 
 
 def _allowed_names(business, jwt, permissions):

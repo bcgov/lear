@@ -149,25 +149,48 @@ def _party_snapshot_to_relationship(row: dict) -> dict:
     return relationship
 
 
+def _party_detail_norm(row: dict) -> tuple:
+    """Exact-value entity fields beyond the name; date fields are left out (format churn)."""
+    detail = _party_officer(row)
+    return (_norm_value(detail.get("middleInitial")),
+            _norm_value(detail.get("email")))
+
+
+def _merge_party_json(rows: list) -> dict:
+    """Combine one-role-per-row snapshot rows into one row carrying every role."""
+    if len(rows) == 1 or not any(isinstance(row.get("roles"), list) for row in rows):
+        return rows[0]
+    merged_roles, seen = [], set()
+    for row in rows:
+        for role in row.get("roles") or []:
+            if (role_key := role.get("roleType") or role.get("id")) not in seen:
+                seen.add(role_key)
+                merged_roles.append(role)
+    return {**rows[0], "roles": merged_roles}
+
+
 def _party_entities(parties: list | None) -> dict:
     """Group party rows by row id (name key when absent); several roles become one entity."""
     entities = {}
+    grouped_rows = {}
     for row in parties or []:
         row_id = _party_row_id(row)
         name_key = _party_name_key(row)
         if (key := row_id if row_id is not None else name_key) is None:
             continue
-        entity = entities.setdefault(key, {"json": row, "row_id": row_id, "name_key": name_key,
+        entity = entities.setdefault(key, {"row_id": row_id, "name_key": name_key,
                                            "roles": set(), "actions": []})
+        grouped_rows.setdefault(key, []).append(row)
         entity["roles"] |= _party_roles(row)
         entity["actions"].extend(_row_actions(row))
-    for entity in entities.values():
-        row = entity["json"]
+    for key, entity in entities.items():
+        row = entity["json"] = _merge_party_json(grouped_rows[key])
         # the name is part of the norm (not only the key) so an id-paired rename still diffs
         entity["norm"] = (entity["name_key"],
                           tuple(sorted(entity["roles"])),
                           _norm_address(row.get("deliveryAddress")),
-                          _norm_address(row.get("mailingAddress")))
+                          _norm_address(row.get("mailingAddress")),
+                          _party_detail_norm(row))
     return entities
 
 
@@ -192,6 +215,8 @@ def _share_class_norm(share_class: dict) -> tuple:
         bool(share_class.get("hasParValue")),
         _norm_number(share_class.get("parValue")),
         _norm_value(share_class.get("currency")),
+        _norm_value(share_class.get("currencyAdditional")),
+        _norm_number(share_class.get("priority")),
         bool(share_class.get("hasRightsOrRestrictions")),
         tuple(sorted((_share_series_norm(series) for series in share_class.get("series") or []), key=repr)),
     )
@@ -294,9 +319,26 @@ def _scope_party_entities(entities: dict, scope_roles: set) -> dict:
         scoped_entity = entity
         if in_scope_roles != entity["roles"]:
             scoped_entity = {**entity, "roles": in_scope_roles,
+                             "json": _scope_party_json(entity["json"], scope_roles),
                              "norm": (entity["norm"][0], tuple(sorted(in_scope_roles)), *entity["norm"][2:])}
         scoped[key] = scoped_entity
     return scoped
+
+
+def _scope_party_json(row: dict, scope_roles: set) -> dict:
+    """Drop out-of-scope role entries from the row's json so reported values match the section."""
+    roles = row.get("roles")
+    if not isinstance(roles, list):
+        return row
+    scoped_roles = [role for role in roles
+                    if str(role.get("roleType") or "").replace("_", " ").strip().lower() in scope_roles]
+    return {**row, "roles": scoped_roles} if len(scoped_roles) != len(roles) else row
+
+
+def _first_row_id(*entities) -> int | None:
+    """First known row id across the given entities (pass current first so its row wins)."""
+    return next((entity["row_id"] for entity in entities
+                 if entity and entity.get("row_id") is not None), None)
 
 
 def _entity_display_names(base_entities: dict, current_entities: dict, draft_entities: dict) -> dict:
@@ -480,7 +522,13 @@ class DraftRebaseService:
                 continue
             current_norm = current_entity["norm"] if current_entity else None
             if draft_entity["norm"] == current_norm:
-                report["alreadyApplied"].append({"section": section, "entityKey": entity_key})
+                # rowId/draftValue let the UI find and drop the draft's duplicate row
+                report["alreadyApplied"].append({
+                    "section": section,
+                    "entityKey": entity_key,
+                    "rowId": _first_row_id(current_entity, base_entity, draft_entity),
+                    "draftValue": draft_entity["json"],
+                })
             else:
                 report["conflicts"].append(DraftRebaseService._conflict_json(
                     section, entity_key, base_entity, current_entity, draft_entity))
@@ -492,8 +540,7 @@ class DraftRebaseService:
         return {
             "section": section,
             "entityKey": entity_key,
-            "rowId": next((entity["row_id"] for entity in (current_entity, base_entity, draft_entity)
-                           if entity and entity.get("row_id") is not None), None),  # current row wins
+            "rowId": _first_row_id(current_entity, base_entity, draft_entity),  # current row wins
             "paths": DraftRebaseService._entity_diff_paths(base_entity, current_entity),
             "baseValue": base_entity["json"] if base_entity else None,
             "currentValue": current_entity["json"] if current_entity else None,
@@ -538,13 +585,27 @@ class DraftRebaseService:
         if filing_type not in DraftRebaseService.FILING_SECTION_MAP:
             return []
         stale = DraftRebaseService.find_stale_ids(business, filing_json)
+        filing_body = filing_json.get("filing", {}).get(filing_type, {}) or {}
+        labels = {"parties": "party", "nameTranslations": "name translation", "resolutions": "resolution"}
         return [
-            {"error": f"A {section} record in this filing (id {stale_id}) no longer exists on the business. "
-                      "Reload the filing to pick up the current data and try again.",
-             "path": f"/filing/{filing_type}/{section}"}
+            {"error": f"A {labels[section]} record in this filing (id {stale_id}) no longer exists "
+                      "on the business. Reload the filing to pick up the current data and try again.",
+             "path": DraftRebaseService._stale_error_path(filing_type, section, filing_body)}
             for section, stale_ids in stale.items()
             for stale_id in stale_ids
         ]
+
+    @staticmethod
+    def _stale_error_path(filing_type: str, section: str, filing_body: dict) -> str:
+        """Path of the payload key the stale id sits under, not the snapshot section name."""
+        if section == "resolutions":
+            return f"/filing/{filing_type}/shareStructure/resolutionDates"
+        if section == "parties":
+            section_map = DraftRebaseService.FILING_SECTION_MAP.get(filing_type, {})
+            draft_key = next((key for key, snapshot_section in section_map.items()
+                              if snapshot_section == "parties" and filing_body.get(key)), "parties")
+            return f"/filing/{filing_type}/{draft_key}"
+        return f"/filing/{filing_type}/{section}"
 
     @staticmethod
     def fallback_base_transaction_id(business: Business, draft_filing: Filing):

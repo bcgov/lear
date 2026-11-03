@@ -68,7 +68,12 @@ from legal_api.services import (
     flags,
     namex,
 )
-from legal_api.services.authz import business_blocker_check, is_allowed, is_draft_rebase_checks_enabled
+from legal_api.services.authz import (
+    business_blocker_check,
+    is_allowed,
+    is_draft_rebase_checks_enabled,
+    is_draft_rebase_scoped_filing,
+)
 from legal_api.services.draft_rebase import DraftRebaseService
 from legal_api.services.event_publisher import publish_to_queue
 from legal_api.services.filings import validate
@@ -260,7 +265,7 @@ def delete_filings(identifier, filing_id=None):
     if err_code:
         return jsonify({"message": _(err_message)}), err_code
 
-    if ListFilingResource.draft_ownership_mismatch(business, filing):
+    if ListFilingResource.draft_ownership_mismatch(business, filing, staff_exempt=True):
         return jsonify({
             "message": _("Not Allowed - This draft can only be deleted by its submitter for:") + identifier,
             "errorCode": "DRAFT_FILING_VIEW_ONLY"
@@ -681,15 +686,22 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
         return None, None
 
     @staticmethod
-    def draft_ownership_mismatch(business: Business | None, filing: Filing | None) -> bool:
-        """Return True when a staff caller targets a user-filed draft or vice versa (bootstraps excluded)."""
+    def draft_ownership_mismatch(business: Business | None, filing: Filing | None,
+                                 staff_exempt: bool = False) -> bool:
+        """Return True when a staff caller targets a user-filed draft or vice versa (bootstraps excluded).
+
+        Only filing types in the bypass allowlist are enforced.
+        """
         if not business or not filing or filing.status != Filing.Status.DRAFT.value \
-                or not is_draft_rebase_checks_enabled():
+                or not is_draft_rebase_checks_enabled() \
+                or not is_draft_rebase_scoped_filing(filing.filing_type, filing.filing_sub_type):
             return False
         if filing.submitter_roles is None:
             # pre-feature drafts never recorded a submitter side; either side may modify them
             return False
         is_staff_caller = ListFilingResource._current_user_special_role() in [UserRoles.staff, UserRoles.system]
+        if staff_exempt and is_staff_caller:
+            return False
         is_staff_draft = filing.submitter_roles in [UserRoles.staff.value, UserRoles.system.value]
         return is_staff_caller != is_staff_draft
 
@@ -1172,10 +1184,8 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
             # use the specified payment account from pay-api which would be vendor account for linked accounts
             paying_account_id = (rv.json().get("paymentAccount") or {}).get("accountId") or payment_account_id
             filing.payment_account = paying_account_id
-            if special_role:
-                # public users keep the submitter side stamped at draft creation; writing
-                # None here would un-own the draft if the payment is later cancelled
-                filing.submitter_roles = special_role
+            # the payer is the submitter
+            filing.submitter_roles = special_role or UserRoles.public_user
 
             filing.save()
             return {"isPaymentActionRequired": rv.json().get("isPaymentActionRequired", False)}, HTTPStatus.CREATED

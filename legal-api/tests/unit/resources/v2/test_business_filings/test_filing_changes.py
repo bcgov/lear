@@ -239,7 +239,9 @@ def test_changes_reports_already_applied_when_draft_matches_current(session, cli
 
     assert rv.status_code == HTTPStatus.OK
     assert rv.json['conflicts'] == []
-    assert rv.json['alreadyApplied'] == [{'section': 'parties', 'entityKey': 'SMITH, JANE'}]
+    entry = rv.json['alreadyApplied'][0]
+    assert (entry['section'], entry['entityKey'], entry['rowId']) == ('parties', 'SMITH, JANE', person.id)
+    assert entry['draftValue']['officer']['id'] == person.id
     assert rv.json['changedSections'] == ['parties']
 
 

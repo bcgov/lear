@@ -33,6 +33,7 @@ from legal_api.services.authz import (
     BusinessBlocker,
     business_blocker_check,
     is_draft_rebase_checks_enabled,
+    is_draft_rebase_scoped_filing,
 )
 from legal_api.services.permissions import PermissionService
 from legal_api.services.request_context import add_account_linking_key_header
@@ -121,8 +122,10 @@ def construct_task_list(business: Business):
     # permission cannot open any draft task, including their own draft
     user_locked_out = False
     if has_draft_filing and is_draft_rebase_checks_enabled():
-        staff_draft_exists = any(_is_staff_filed(filing) for filing in pending_filings
-                                 if filing.status == Filing.Status.DRAFT.value)
+        # only staff drafts of bypass-allowlisted types lock users out
+        staff_draft_exists = any(
+            _is_staff_filed(filing) and is_draft_rebase_scoped_filing(filing.filing_type, filing.filing_sub_type)
+            for filing in pending_filings if filing.status == Filing.Status.DRAFT.value)
         has_bypass_permission = FILE_OVER_EXISTING_DRAFT_PERMISSION in \
             (PermissionService.get_authorized_permissions_for_user() or [])
         user_locked_out = staff_draft_exists and not has_bypass_permission

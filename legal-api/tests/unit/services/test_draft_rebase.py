@@ -30,6 +30,7 @@ from legal_api.services.draft_rebase import (
     _party_row_id,
     _resolution_entities,
     _scope_party_entities,
+    _share_class_norm,
 )
 from registry_schemas.example_data import ANNUAL_REPORT
 from tests.unit.models import factory_business, factory_completed_filing, factory_filing
@@ -301,6 +302,84 @@ def test_scope_keeps_entities_without_role_data():
     assert scoped == entities
 
 
+def test_multi_role_snapshot_rows_merge_roles_into_json():
+    """Assert one-role-per-row snapshot rows produce a json value carrying every role."""
+    entities = _party_entities([
+        party(101, 'Pat', 'Officer', 'Victoria', roles=('Ceo',), entity_shape=True),
+        party(101, 'Pat', 'Officer', 'Victoria', roles=('Cfo',), entity_shape=True),
+    ])
+
+    entity = entities[101]
+    assert entity['roles'] == {'ceo', 'cfo'}
+    assert [role['roleType'] for role in entity['json']['roles']] == ['Ceo', 'Cfo']
+
+
+def test_scope_drops_out_of_scope_roles_from_json():
+    """Assert the reported json for a scoped section omits out-of-scope role entries."""
+    entities = _party_entities([
+        party(101, 'Pat', 'Officer', 'Victoria', roles=('Director',)),
+        party(101, 'Pat', 'Officer', 'Victoria', roles=('Ceo',)),
+    ])
+
+    scoped = _scope_party_entities(entities, {'director'})
+    assert [role['roleType'] for role in scoped[101]['json']['roles']] == ['Director']
+
+
+@pytest.mark.parametrize('field', ['middleInitial', 'email'])
+def test_entity_detail_changes_are_detected(field):
+    """Assert staff edits to the exact-value entity fields are visible to the diff."""
+    base = [party(101, 'Jane', 'Smith', 'Victoria')]
+    current = [party(101, 'Jane', 'Smith', 'Victoria')]
+    current[0]['officer'][field] = 'B' if field == 'middleInitial' else 'jane@home.com'
+
+    changed, _, conflicts, _ = classify(base, current,
+                                        [party(101, 'Jane', 'Smith', 'Nanaimo', actions=['EDITED'])])
+    assert set(changed) == {'SMITH, JANE'}
+    assert conflicts == ['SMITH, JANE']
+
+
+@pytest.mark.parametrize('field, value', [('currencyAdditional', 'rubles'), ('priority', 2)])
+def test_share_class_norm_includes_currency_additional_and_priority(field, value):
+    """Assert staff edits to currencyAdditional or priority are visible to the diff."""
+    base_row = {'name': 'Class A', 'currency': 'CAD', 'priority': 1}
+
+    assert _share_class_norm(base_row) != _share_class_norm({**base_row, field: value})
+
+
+def test_already_applied_carries_row_identity():
+    """Assert alreadyApplied entries carry rowId and draftValue so the UI can drop the draft row."""
+    base, current, draft = _align_entities_by_row_id(
+        _party_entities([]),
+        _party_entities([party(348, 'John', 'Doe', 'Victoria', entity_shape=True)]),
+        _party_entities([party(None, 'John', 'Doe', 'Victoria', actions=['ADDED'], entity_shape=True)]))
+    changed = DraftRebaseService._changed_keys(base, current)
+    touched = DraftRebaseService._draft_touched_entities(draft, base, True)
+
+    report = {'alreadyApplied': [], 'conflicts': []}
+    DraftRebaseService._classify_draft_overlaps(report, 'parties', changed, touched)
+
+    assert report['conflicts'] == []
+    entry = report['alreadyApplied'][0]
+    assert entry['entityKey'] == 'DOE, JOHN'
+    assert entry['rowId'] == 348
+    assert entry['draftValue']['entity']['familyName'] == 'Doe'
+
+
+def test_stale_error_path_names_payload_keys():
+    """Assert stale-id error paths point at the payload key, not the snapshot section name."""
+    directors_body = {'directors': [{'officer': {'id': 1}}]}
+    relationships_body = {'relationships': [{'entity': {'identifier': 1}}]}
+
+    assert DraftRebaseService._stale_error_path('changeOfDirectors', 'parties', directors_body) == \
+        '/filing/changeOfDirectors/directors'
+    assert DraftRebaseService._stale_error_path('changeOfOfficers', 'parties', relationships_body) == \
+        '/filing/changeOfOfficers/relationships'
+    assert DraftRebaseService._stale_error_path('alteration', 'resolutions', {}) == \
+        '/filing/alteration/shareStructure/resolutionDates'
+    assert DraftRebaseService._stale_error_path('alteration', 'nameTranslations', {}) == \
+        '/filing/alteration/nameTranslations'
+
+
 def test_officer_only_change_is_invisible_to_directors_draft():
     """Assert an intervening change to an officer-role party yields no change for a directors draft."""
     changed, touched, conflicts, already = classify(
@@ -566,8 +645,10 @@ def test_validate_no_stale_ids_returns_per_path_errors(session):
     errors = DraftRebaseService.validate_no_stale_ids(business, filing_json)
 
     assert [error['path'] for error in errors] == ['/filing/alteration/nameTranslations',
-                                                   '/filing/alteration/resolutions']
+                                                   '/filing/alteration/shareStructure/resolutionDates']
+    assert 'A name translation record' in errors[0]['error']
     assert 'id 888888' in errors[0]['error']
+    assert 'A resolution record' in errors[1]['error']
     assert 'id 777777' in errors[1]['error']
 
 
@@ -718,7 +799,9 @@ def test_report_marks_matching_draft_edit_as_already_applied(session):
     report = DraftRebaseService.get_changes_report(business, draft)
 
     assert report['conflicts'] == []
-    assert report['alreadyApplied'] == [{'section': 'parties', 'entityKey': 'SMITH, JANE'}]
+    entry = report['alreadyApplied'][0]
+    assert (entry['section'], entry['entityKey'], entry['rowId']) == ('parties', 'SMITH, JANE', person.id)
+    assert entry['draftValue']['officer']['id'] == person.id
 
 
 def test_report_is_up_to_date_when_there_are_no_completed_filings(session):

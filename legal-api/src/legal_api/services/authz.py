@@ -979,6 +979,32 @@ def is_draft_rebase_checks_enabled() -> bool:
     return DRAFT_REBASE_CHECKS_FEATURE in enabled_features
 
 
+def staff_draft_bypass_flag_value() -> list:
+    """Return the bypass allowlist of filing types (or 'filingType.subType' keys) from the LD flag.
+
+    Non-list values fail closed: a comma string would substring-match in callers
+    ('dissolution' would match inside 'dissolution.delay').
+    """
+    request_context = get_request_context()
+    bypass_filing_types = flags.value(STAFF_DRAFT_FILING_BYPASS_FLAG,
+                                      request_context.user,
+                                      request_context.account_id)
+    return bypass_filing_types if isinstance(bypass_filing_types, list) else []
+
+
+def is_draft_rebase_scoped_filing(filing_type: str, filing_sub_type: str | None = None) -> bool:
+    """Return True when the bypass allowlist covers the filing type.
+
+    Draft-rebase enforcement (ownership 403s, tasks lockout) only applies where the
+    feature is live; legacy filing types keep today's behavior. Unlike
+    get_staff_draft_bypass_filing_types, this is not permission-gated — enforcement
+    scope is about the filing, not the caller.
+    """
+    bypass_filing_types = staff_draft_bypass_flag_value()
+    return filing_type in bypass_filing_types or \
+        (filing_sub_type is not None and f"{filing_type}.{filing_sub_type}" in bypass_filing_types)
+
+
 def get_staff_draft_bypass_filing_types() -> list:
     """Return the filing type keys the current user may file while other drafts exist.
 
@@ -994,10 +1020,7 @@ def get_staff_draft_bypass_filing_types() -> list:
             FILE_OVER_EXISTING_DRAFT_PERMISSION not in authorized_permissions:
         return []
 
-    request_context = get_request_context()
-    return flags.value(STAFF_DRAFT_FILING_BYPASS_FLAG,
-                       request_context.user,
-                       request_context.account_id) or []
+    return staff_draft_bypass_flag_value()
 
 
 def has_blocker(business: Business, # noqa: PLR0911
