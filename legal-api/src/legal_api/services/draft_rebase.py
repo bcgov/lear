@@ -245,13 +245,14 @@ def _norm_resolution_date(value) -> str:
 
 def _resolution_entities(resolutions: list | None) -> dict:
     entities = {}
-    for row in resolutions or []:
-        if isinstance(row, dict):
-            key = f'{_norm_resolution_date(row.get("date"))} ({row.get("type") or "SPECIAL"})'
-            actions = _row_actions(row)
+    for raw_row in resolutions or []:
+        if isinstance(raw_row, dict):
+            row = raw_row
+            key = f'{_norm_resolution_date(raw_row.get("date"))} ({raw_row.get("type") or "SPECIAL"})'
+            actions = _row_actions(raw_row)
         else:  # resolutionDates payloads can be plain date strings
-            key = f"{_norm_resolution_date(row)} (SPECIAL)"
-            row = {"date": row}
+            key = f"{_norm_resolution_date(raw_row)} (SPECIAL)"
+            row = {"date": raw_row}
             actions = []
         entities[key] = {"json": row, "norm": key, "actions": actions}
     return entities
@@ -290,10 +291,11 @@ def _scope_party_entities(entities: dict, scope_roles: set) -> dict:
         in_scope_roles = entity["roles"] & scope_roles
         if entity["roles"] and not in_scope_roles:
             continue
+        scoped_entity = entity
         if in_scope_roles != entity["roles"]:
-            entity = {**entity, "roles": in_scope_roles,
-                      "norm": (entity["norm"][0], tuple(sorted(in_scope_roles)), *entity["norm"][2:])}
-        scoped[key] = entity
+            scoped_entity = {**entity, "roles": in_scope_roles,
+                             "norm": (entity["norm"][0], tuple(sorted(in_scope_roles)), *entity["norm"][2:])}
+        scoped[key] = scoped_entity
     return scoped
 
 
@@ -565,9 +567,8 @@ class DraftRebaseService:
         for draft_key, snapshot_section in section_map.items():
             if (value := filing_body.get(draft_key)) is None:
                 continue
-            if draft_key == "shareStructure":
-                if (value := value.get("shareClasses")) is None:
-                    continue
+            if draft_key == "shareStructure" and (value := value.get("shareClasses")) is None:
+                continue
             sections[snapshot_section] = value
         return sections
 
