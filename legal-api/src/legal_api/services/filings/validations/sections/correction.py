@@ -16,7 +16,7 @@
 
 from business_model.models import Business
 from legal_api.services.filings.validations.correction import (
-    validate_legal_name_designation_unchanged,
+    validate_legal_name_designation,
 )
 
 from . import register_section_validator
@@ -30,7 +30,7 @@ def validate_correction_name_request(
     filing_sub_type: str | None = None,
 ) -> list[dict]:
     """Validate legal name designation preservation for correction filings."""
-    return validate_legal_name_designation_unchanged(
+    return validate_legal_name_designation(
         business=business,
         new_legal_name=data.get("legalName"),
         err_path="/legalName",

@@ -298,7 +298,7 @@ def _validate_name_request_corps(business: Business, filing_dict: dict, new_lega
             msg.append({"error": _("Unexpected legal name."), "path": nr_legal_name_path})
     else:
         msg.extend(
-            validate_legal_name_designation_unchanged(
+            validate_legal_name_designation(
                 business,
                 new_legal_name,
                 err_path=nr_legal_name_path,
@@ -753,7 +753,7 @@ def _validate_designation_rules(
     return _validate_markers(clean_new_name, current_legal_name, rules)
 
 
-def validate_legal_name_designation_unchanged(
+def validate_legal_name_designation(
     business: Business,
     new_legal_name: str | None,
     err_path: str = "/filing/correction/nameRequest/legalName",
@@ -769,6 +769,10 @@ def validate_legal_name_designation_unchanged(
         return [{"error": length_error, "path": err_path}]
 
     if clean_new_name.upper() == current_legal_name.upper():
+        return []
+
+    valid_numbered_name = Business.generate_numbered_legal_name(business.legal_type, business.identifier)
+    if valid_numbered_name and clean_new_name.upper() == valid_numbered_name.upper():
         return []
 
     errors = _validate_designation_rules(clean_new_name, current_legal_name, business.legal_type)

@@ -445,6 +445,38 @@ CORRECTION_NAME_REQUEST_ONLY = {
         ('embedded designation inside word', 'BC', 'ORIGINAL LOGISTICS INC.', 'ZINC RESOURCE DRILLING INC.'),
         ('corporation embedded in word', 'BC', 'ACME HOLDINGS CORP.', 'INCORPORATING SOLUTIONS CORP.'),
         ('whitespace does not cause false max-length failure', 'BC', 'ACME HOLDINGS INC.', f'   {"A" * 140} INC.   '),
+
+        # Numbered name conversions
+        (
+            'convert BEN to numbered name',
+            'BEN',
+            'GREEN FUTURE CONSULTING INC.',
+            '1234567 B.C. LTD.'
+        ),
+        (
+            'convert standard BC (COMP) to numbered name',
+            'BC',
+            'ACME DEVELOPMENTS CORP.',
+            '1234567 B.C. LTD.'
+        ),
+        (
+            'convert ULC to numbered name',
+            'ULC',
+            'NORTHERN VENTURES UNLIMITED LIABILITY COMPANY',
+            '1234567 B.C. UNLIMITED LIABILITY COMPANY'
+        ),
+        (
+            'convert CCC to numbered name',
+            'CC',
+            'COMMUNITY ROOTS COMMUNITY CONTRIBUTION COMPANY LTD.',
+            '1234567 B.C. COMMUNITY CONTRIBUTION COMPANY LTD.'
+        ),
+        (
+            'convert numbered name case insensitively',
+            'BEN',
+            'GREEN FUTURE CONSULTING INC.',
+            '1234567 b.c. ltd.'
+        ),
     ],
 )
 def test_legal_name_correction_valid_variations(
@@ -629,7 +661,25 @@ def test_legal_name_correction_valid_variations(
             "Company name must end with the designation 'LTD.'.",
             '/filing/correction/nameRequest/legalName',
         ),
-        # ( COOPS not yet supported (doesn't use designation check yet)
+        # Mapped entity type providing an invalid numbered name format/suffix
+        (
+            'benefit company converting to invalid numbered suffix (missing LTD)',
+            'BEN',
+            'HORIZON BENEFIT COMPANY INC.',
+            {'legalName': '1234567 B.C.', 'legalType': 'BEN'},
+            "Company name must end with the designation 'INC.'.",
+            '/filing/correction/nameRequest/legalName',
+        ),
+        (
+            'numbered company wrong corporation number digits',
+            'BC',
+            'ACME HOLDINGS INC.',
+            {'legalName': '9999999 B.C. LTD.', 'legalType': 'BC'},
+            "Company name must end with the designation 'INC.'.",
+            '/filing/correction/nameRequest/legalName',
+        ),
+        #  COOPS not yet supported (doesn't use designation check yet)
+        # (
         #     'cooperative designation as prefix',
         #     'CP',
         #     'COASTAL COOPERATIVE SERVICES',
