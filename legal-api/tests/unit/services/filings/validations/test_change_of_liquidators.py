@@ -34,6 +34,40 @@ from registry_schemas.example_data import CHANGE_OF_LIQUIDATORS, FILING_HEADER
             None
         ),
         (
+            'Valid liquidator with valid meta',
+            [{'roleType': 'Liquidator', 'meta': {'appointmentMethod': 'court', 'courtOrderNumber': '12345'}}],
+            None,
+            None
+        ),
+        (
+            'Valid liquidator with meta None',
+            [{'roleType': 'Liquidator', 'meta': None}],
+            None,
+            None
+        ),
+        (
+            'Invalid liquidator meta property',
+            [{'roleType': 'Liquidator', 'meta': {'appointmentMethod': 'court', 'unauthorizedKey': 'invalid'}}],
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    'error': 'Invalid meta property: unauthorizedKey.',
+                    'path': '/filing/changeOfLiquidators/relationships/0/roles/0/meta/unauthorizedKey'
+                }
+            ]
+        ),
+        (
+            'Invalid liquidator meta non-dict',
+            [{'roleType': 'Liquidator', 'meta': 'not_a_dict'}],
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    'error': 'Invalid meta property for this role.',
+                    'path': '/filing/changeOfLiquidators/relationships/0/roles/0/meta'
+                }
+            ]
+        ),
+        (
             'Invalid role',
             [{'roleType': 'Director' }],  # Invalid role
             HTTPStatus.BAD_REQUEST,
@@ -41,6 +75,21 @@ from registry_schemas.example_data import CHANGE_OF_LIQUIDATORS, FILING_HEADER
                 {
                     'error': 'Invalid role type for this filing.',
                     'path': '/filing/changeOfLiquidators/relationships/0/roles/0/roleType'
+                }
+            ]
+        ),
+        (
+            'Invalid role with meta',
+            [{'roleType': 'Director', 'meta': {'appointmentMethod': 'court'}}],
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    'error': 'Invalid role type for this filing.',
+                    'path': '/filing/changeOfLiquidators/relationships/0/roles/0/roleType'
+                },
+                {
+                    'error': 'Cannot submit meta properties for this role.',
+                    'path': '/filing/changeOfLiquidators/relationships/0/roles/0/meta'
                 }
             ]
         )

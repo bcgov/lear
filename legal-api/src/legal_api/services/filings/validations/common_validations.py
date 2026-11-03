@@ -956,6 +956,47 @@ def validate_relationship_entity_colin_sync(relationship: dict, legal_type: str,
     return msg
 
 
+# Configurable mapping of role types to allowed meta property keys
+ALLOWED_ROLE_META_PROPERTIES = {
+    PartyRole.RoleTypes.LIQUIDATOR.value: {"appointmentMethod", "courtOrderNumber"},
+}
+
+
+def _validate_relationship_role_meta(role: dict, path: str) -> list:
+    """Validate meta properties for a relationship role."""
+    msg = []
+    if "meta" not in role:
+        return msg
+
+    meta = role.get("meta")
+    role_type = (role.get("roleType") or "").lower().replace(" ", "_")
+    allowed_meta_properties = ALLOWED_ROLE_META_PROPERTIES.get(role_type)
+
+    if allowed_meta_properties is None:
+        if meta is not None:
+            msg.append({
+                "error": "Cannot submit meta properties for this role.",
+                "path": f"{path}/meta"
+            })
+        return msg
+
+    if meta is not None:
+        if isinstance(meta, dict):
+            for key in meta:
+                if key not in allowed_meta_properties:
+                    msg.append({
+                        "error": f"Invalid meta property: {key}.",
+                        "path": f"{path}/meta/{key}"
+                    })
+        else:
+            msg.append({
+                "error": "Invalid meta property for this role.",
+                "path": f"{path}/meta"
+            })
+
+    return msg
+
+
 def validate_relationship_roles(relationship: dict,  # noqa: PLR0913
                                 allowed_roles: list[PartyRole.RoleTypes],
                                 path: str,
@@ -995,6 +1036,7 @@ def validate_relationship_roles(relationship: dict,  # noqa: PLR0913
                                               cessation_date,
                                               f"{path}/roles/{index}",
                                               role))
+        msg.extend(_validate_relationship_role_meta(role, f"{path}/roles/{index}"))
     return msg
 
 def _validate_director_dates(appointment_date: date, cessation_date: date, path: str, role: dict) -> list:
