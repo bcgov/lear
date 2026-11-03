@@ -27,7 +27,6 @@ from legal_api.core.constants import DESIGNATION_ABBREVIATIONS, DESIGNATION_RULE
 from legal_api.core.filing_helper import is_special_resolution_correction_by_filing_json
 from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, SYSTEM_ROLE, NaicsService
-from legal_api.services.filings.validations.alteration import validate_type_change
 from legal_api.services.filings.validations.common_validations import (
     is_same_str,
     validate_court_order,
@@ -223,15 +222,8 @@ def _validate_corps_correction_historical(business: Business, filing_dict, msg):
 
 def _validate_corps_correction_active(business: Business, filing_dict, legal_type, msg):
     filing_type = "correction"
-    if new_legal_type := filing_dict.get("filing", {}).get("correction", {}).get("newLegalType"):
-        if business.legal_type == new_legal_type:
-            # This is not a valid type change
-            path = "/filing/correction/newLegalType"
-            msg.append({"error": _("New legal type must be different from current legal type."), "path": path})
-        else:
-            msg.extend(validate_type_change(filing_dict, business, "/filing/correction/newLegalType"))
 
-    msg.extend(_validate_name_request_corps(business, filing_dict, new_legal_type, filing_type))
+    msg.extend(_validate_name_request_corps(business, filing_dict, filing_type))
 
     if filing_dict.get("filing", {}).get("correction", {}).get("offices", None):
         msg.extend(validate_corp_offices(filing_dict, legal_type, filing_type))
@@ -275,7 +267,7 @@ def _validate_share_structure_correction(filing_dict, filing_type, business: Bus
 
     return msg
 
-def _validate_name_request_corps(business: Business, filing_dict: dict, new_legal_type: str, filing_type: str):
+def _validate_name_request_corps(business: Business, filing_dict: dict, filing_type: str):
     msg = []
     name_request_dict = filing_dict.get("filing", {}).get(filing_type, {}).get("nameRequest", {})
 
@@ -286,16 +278,7 @@ def _validate_name_request_corps(business: Business, filing_dict: dict, new_lega
     new_legal_name = name_request_dict.get("legalName")
     
     if name_request_dict.get("nrNumber", None):
-        msg.extend(validate_name_request(filing_dict, new_legal_type or business.legal_type, filing_type))
-    elif new_legal_type:
-        valid_names = [business.legal_name]
-        if new_numbered_name := Business.generate_numbered_legal_name(new_legal_type, business.identifier):
-            # if existing legal_name is a numbered name and if type has changed
-            # then the legal name get updated according to the new legal type
-            valid_names.append(new_numbered_name)
-
-        if new_legal_name and new_legal_name not in valid_names:
-            msg.append({"error": _("Unexpected legal name."), "path": nr_legal_name_path})
+        msg.extend(validate_name_request(filing_dict, business.legal_type, filing_type))
     else:
         msg.extend(
             validate_legal_name_designation(
