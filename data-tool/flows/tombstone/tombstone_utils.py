@@ -696,7 +696,8 @@ def format_filing_comments_data(data: dict, event_id: Decimal) -> list:
 
     formatted_filing_comments = []
     for x in matched_filing_comments:
-        if c := x['lt_notation']:
+        if pd.notna(x['lt_notation']):
+            c = x['lt_notation']
             timestamp = x['lt_ledger_text_dts_str']
             # Note that only a small number of lt_user_id is BCOMPS,
             # others are None
@@ -704,7 +705,7 @@ def format_filing_comments_data(data: dict, event_id: Decimal) -> list:
             staff_id = x['lt_user_id']
         else:
             c = x['cl_ledger_desc']
-            timestamp = None
+            timestamp = x['lt_ledger_text_dts_str']
             staff_id = None
         comment = {
             'comment': c,
