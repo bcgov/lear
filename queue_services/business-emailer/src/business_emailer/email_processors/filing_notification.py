@@ -83,9 +83,8 @@ def _get_additional_recipients(filing: Filing, token: str) -> str | None:
             # when staff do filing documentOptionalEmail may contain completing party email
             return filing.filing_json["filing"]["header"].get("documentOptionalEmail")
         return get_user_email_from_auth(filing.filing_submitter.username, token)
-    if filing.filing_type == "amalgamationApplication" and is_staff_submitter:
-        # client completing party is already covered by get_recipients (party email);
-        # staff may instead enter the client email in Document Delivery (#35050)
+    if filing.filing_type == "amalgamationApplication":
+        # the Additional Email entered in Document Delivery gets every output
         return filing.filing_json["filing"]["header"].get("documentOptionalEmail")
     return None
 
