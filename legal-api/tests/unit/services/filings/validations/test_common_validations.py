@@ -613,6 +613,7 @@ def test_validate_certified_by_corps(session, legal_type, input_value, expected_
 
 @pytest.mark.parametrize('filing_type', [
     CoreFiling.FilingTypes.INCORPORATIONAPPLICATION,
+    CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION,
     CoreFiling.FilingTypes.CONSENTCONTINUATIONOUT,
 ])
 @pytest.mark.parametrize('test_name, roles, login_source, certified_by, expected_error', [
@@ -625,9 +626,10 @@ def test_validate_certified_by_corps(session, legal_type, input_value, expected_
 ])
 def test_validate_certified_by_corps_completing_party(app, session, filing_type, test_name, roles,
                                                         login_source, certified_by, expected_error):
-    """Corps IA and CCO require certifiedBy for staff and API users (API users identified by loginSource)."""
+    """Corps IA, amalgamation and CCO require certifiedBy for staff and API users (identified by loginSource)."""
     filing_type_data = {
         CoreFiling.FilingTypes.INCORPORATIONAPPLICATION: ('incorporationApplication', INCORPORATION),
+        CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION: ('amalgamationApplication', AMALGAMATION_APPLICATION),
         CoreFiling.FilingTypes.CONSENTCONTINUATIONOUT: ('consentContinuationOut', CONSENT_CONTINUATION_OUT),
     }
     filing_key, filing_data = filing_type_data[filing_type]

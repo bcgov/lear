@@ -164,9 +164,10 @@ def test_short_form_amalgamation_rejects_nr(mocker, app, session, amalgamation_t
 @pytest.mark.parametrize(
     'amalgamation_type, expected_msg',
     [
-        (Amalgamation.AmalgamationTypes.regular.name, 'At least one Director and a Completing Party is required.'),
-        (Amalgamation.AmalgamationTypes.vertical.name, 'A Completing Party is required.'),
-        (Amalgamation.AmalgamationTypes.horizontal.name, 'A Completing Party is required.'),
+        # corps no longer collect a Completing Party
+        (Amalgamation.AmalgamationTypes.regular.name, 'At least one Director is required.'),
+        (Amalgamation.AmalgamationTypes.vertical.name, None),
+        (Amalgamation.AmalgamationTypes.horizontal.name, None),
     ]
 )
 def test_amalgamation_parties_missing_role(mocker, app, session, amalgamation_type, expected_msg):
@@ -181,8 +182,25 @@ def test_amalgamation_parties_missing_role(mocker, app, session, amalgamation_ty
 
     err = validate(None, filing)
 
-    assert err
-    assert err.msg[0]['error'] == expected_msg
+    party_errors = [m['error'] for m in (err.msg if err else [])
+                    if m['path'] == '/filing/amalgamationApplication/parties']
+    assert party_errors == ([expected_msg] if expected_msg else [])
+
+
+def test_amalgamation_corp_completing_party_still_accepted(mocker, app, session):
+    """Assert that a corp amalgamation with a Completing Party (older drafts) still passes party validation."""
+    filing = _get_amalg_template()
+    assert any(role['roleType'] == 'Completing Party'
+               for party in filing['filing']['amalgamationApplication']['parties']
+               for role in party['roles'])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_amalgamating_businesses',
+                 return_value=[])
+
+    err = validate(None, filing)
+
+    assert not any(m['path'] == '/filing/amalgamationApplication/parties' for m in (err.msg if err else []))
 
 @pytest.mark.parametrize(
     'parties, expected_msg',
@@ -2791,6 +2809,22 @@ def test_coop_amalgamation_director_minimum(mocker, app, session, jwt):
     # so only the three-director minimum is violated
     filing['filing']['amalgamationApplication']['parties'] = \
         filing['filing']['amalgamationApplication']['parties'][:1]
+    _setup_coop_amalgamation_mocks(mocker)
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    assert err.code == HTTPStatus.BAD_REQUEST
+    expected = 'At least three Directors and a Completing Party are required.'
+    assert next((x for x in err.msg if x['error'] == expected), None)
+
+
+def test_coop_amalgamation_requires_completing_party(mocker, app, session, jwt):
+    """Assert a CP amalgamation still requires a Completing Party."""
+    account_id = '123456'
+    filing = _get_coop_amalg_template()
+    for party in filing['filing']['amalgamationApplication']['parties']:
+        party['roles'] = [role for role in party['roles'] if role['roleType'] != 'Completing Party']
     _setup_coop_amalgamation_mocks(mocker)
 
     with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):

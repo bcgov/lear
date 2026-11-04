@@ -1543,10 +1543,11 @@ def validate_certified_by(filing_json: dict, filing_type: str, legal_type: str) 
 
     if legal_type in Business.CORPS:
         # the completing party statement takes its name from certifiedBy for staff and API users,
-        # so certifiedBy is required for them on a corp incorporation application
+        # so certifiedBy is required for them on a corp incorporation or amalgamation application
         api_login_source = "API_GW"  # jwt loginSource of an API gateway user
         current_user = getattr(request_ctx, "current_user", None) if has_request_context() else None
         if (filing_type in (CoreFiling.FilingTypes.INCORPORATIONAPPLICATION,
+                    CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION,
                     CoreFiling.FilingTypes.CONSENTCONTINUATIONOUT)
                 and current_user
                 and (jwt.validate_roles(current_user, [STAFF_ROLE])
