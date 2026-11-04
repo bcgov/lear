@@ -47,13 +47,22 @@ from business_filer.filing_processors.filing_components.relationships import (
     create_relationships,
     update_relationship_addresses,
 )
+from business_filer.services.utils import get_date
 
 
-def _init_liquidation(business: Business, filing_meta: FilingMeta):
+def _init_liquidation(business: Business, filing_meta: FilingMeta, filing_json: dict):
     """Put the business into liquidation."""
     if not business.in_liquidation:
         business.in_liquidation = True
-        business.in_liquidation_date = filing_meta.application_date or datetime.now(UTC)
+
+        col_date = get_date(filing_json, "/filing/changeOfLiquidators/changeOfLiquidatorsDate")
+        if col_date:
+            date_str = col_date.isoformat()
+        else:
+            effective_dt = filing_meta.application_date or datetime.now(UTC)
+            date_str = LegislationDatetime.format_as_legislation_date(effective_dt)
+
+        business.in_liquidation_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(date_str)
 
         # withdraw any existing involuntary dissolution processing if it exists
         batch_details = InvoluntaryDissolutionService.get_in_dissolution_batch_processing(business.id)
@@ -82,7 +91,7 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
     if filing_rec.filing_sub_type in ["intentToLiquidate", "appointLiquidator"]:
         create_relationships(relationships, business, filing_rec)
         update_or_create_offices(business, offices)
-        _init_liquidation(business, filing_meta)
+        _init_liquidation(business, filing_meta, filing_json)
 
     elif filing_rec.filing_sub_type == "ceaseLiquidator":
         cease_relationships(relationships, business, [PartyRole.RoleTypes.LIQUIDATOR.value], filing_meta.application_date)

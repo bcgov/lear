@@ -33,17 +33,21 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """The Test Suite to ensure that the worker is operating correctly for change of liquidators."""
 import copy
-import datetime
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
+from freezegun import freeze_time
 import random
+import pytest
 
 from business_model.models import Address, BatchProcessing, Business, Filing, Office, OfficeType, PartyRole, Party
+from business_model.utils.legislation_datetime import LegislationDatetime
 from registry_schemas.example_data import FILING_TEMPLATE
 
 from business_filer.common.filing_message import FilingMessage
 from business_filer.services.filer import process_filing
+from business_filer.filing_meta import FilingMeta
 from tests.unit import create_business, create_filing, factory_batch, factory_batch_processing
 from tests.unit.filing_processors.filing_components.test_offices import LIQUIDATION_RECORDS_OFFICE
+from business_filer.filing_processors.change_of_liquidators import _init_liquidation
 from tests.unit.test_filer import check_drs_publish
 
 CHANGE_OF_LIQUIDATORS_INTENT = {
@@ -151,7 +155,7 @@ def _assert_common_data(business: Business, filing: Filing, expected_date, expec
     assert business.last_lr_year == expected_lr_year
     assert business.next_lr_min_date.year == expected_next_lr_yr
 
-def _get_liquidation_filing(sub_type: str, effective_date: datetime, identifier = 'BC1234567'):
+def _get_liquidation_filing(sub_type: str, effective_date: datetime, col_date: str | None = None, identifier = 'BC1234567'):
     """Return a valid change of liquidators filing for the sub type."""
     payment_id = str(random.SystemRandom().getrandbits(0x58))
     filing = copy.deepcopy(FILING_TEMPLATE)
@@ -159,14 +163,24 @@ def _get_liquidation_filing(sub_type: str, effective_date: datetime, identifier 
     filing['filing']['header']['effectiveDate'] = effective_date.isoformat()
     filing['filing']['business']['identifier'] = identifier
     filing['filing']['business']['legalType'] = 'BC'
-    filing['filing']['changeOfLiquidators'] = copy.deepcopy(CHANGE_OF_LIQUIDATORS_INTENT)
+
+    col_payload = copy.deepcopy(CHANGE_OF_LIQUIDATORS_INTENT)
+    col_payload['type'] = sub_type
+    if col_date:
+        col_payload['changeOfLiquidatorsDate'] = col_date
+    else:
+        col_payload.pop('changeOfLiquidatorsDate', None)
+
+    filing['filing']['changeOfLiquidators'] = col_payload
     return filing, payment_id, identifier
     
 
 def test_process_col_filing(app, session, mocker):
     """Assert that all COL filings can be applied to the model correctly."""
-    # NOTE: this is actually in 2023 pacific time
-    expected_in_liquidation_date = datetime(2024, 1, 1, 1, 0, 0, tzinfo=timezone.utc)
+    effective_date = datetime(2024, 1, 1, 12, 30, 0, tzinfo=timezone.utc)
+    col_date_str = '2024-01-01'
+    expected_in_liquidation_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(col_date_str)
+
     drs_publish_mock = mocker.patch('business_filer.services.gcp_queue.publish', return_value=None)
     filing, payment_id, identifier = _get_liquidation_filing('intentToLiquidate', expected_in_liquidation_date)
     business = create_business(identifier)
@@ -186,7 +200,7 @@ def test_process_col_filing(app, session, mocker):
     business: Business = Business.find_by_internal_id(business.id)
 
     # assert changes
-    _assert_common_data(business, intent_filing, expected_in_liquidation_date, None, 2024)
+    _assert_common_data(business, intent_filing, expected_in_liquidation_date, None, 2025)
     check_drs_publish(drs_publish_mock, app, business, intent_filing, '')
     drs_publish_mock.reset_mock()
 
@@ -237,7 +251,7 @@ def test_process_col_filing(app, session, mocker):
     business: Business = Business.find_by_internal_id(business.id)
 
     # assert changes
-    _assert_common_data(business, cease_filing, expected_in_liquidation_date, None, 2024)
+    _assert_common_data(business, cease_filing, expected_in_liquidation_date, None, 2025)
     check_drs_publish(drs_publish_mock, app, business, cease_filing, '')
     drs_publish_mock.reset_mock()
 
@@ -299,7 +313,7 @@ def test_process_col_filing(app, session, mocker):
     business: Business = Business.find_by_internal_id(business.id)
 
     # assert changes
-    _assert_common_data(business, change_address_filing, expected_in_liquidation_date, None, 2024)
+    _assert_common_data(business, change_address_filing, expected_in_liquidation_date, None, 2025)
     check_drs_publish(drs_publish_mock, app, business, change_address_filing, '')
     drs_publish_mock.reset_mock()
 
@@ -345,7 +359,7 @@ def test_process_col_filing(app, session, mocker):
     business: Business = Business.find_by_internal_id(business.id)
 
     # assert changes
-    _assert_common_data(business, change_address_filing, expected_in_liquidation_date, None, 2024)
+    _assert_common_data(business, change_address_filing, expected_in_liquidation_date, None, 2025)
     check_drs_publish(drs_publish_mock, app, business, change_address_filing, '')
     drs_publish_mock.reset_mock()
 
@@ -388,7 +402,7 @@ def test_process_col_filing(app, session, mocker):
     business: Business = Business.find_by_internal_id(business.id)
 
     # assert changes
-    _assert_common_data(business, change_address_filing, expected_in_liquidation_date, None, 2024)
+    _assert_common_data(business, change_address_filing, expected_in_liquidation_date, None, 2025)
     check_drs_publish(drs_publish_mock, app, business, change_address_filing, '')
     drs_publish_mock.reset_mock()
 
@@ -450,7 +464,7 @@ def test_process_col_filing(app, session, mocker):
     business: Business = Business.find_by_internal_id(business.id)
 
     # assert changes
-    _assert_common_data(business, appoint_filing, expected_in_liquidation_date, None, 2024)
+    _assert_common_data(business, appoint_filing, expected_in_liquidation_date, None, 2025)
     check_drs_publish(drs_publish_mock, app, business, appoint_filing, new_document_id)
     drs_publish_mock.reset_mock()
 
@@ -473,7 +487,7 @@ def test_process_col_filing(app, session, mocker):
             assert mailing_address.street == new_relationship['mailingAddress']['streetAddress']
     
     # liquidation report
-    expected_last_lr_year = 2024
+    expected_last_lr_year = 2025
 
     filing['filing']['changeOfLiquidators'] = {
         'type': 'liquidationReport',
@@ -494,7 +508,7 @@ def test_process_col_filing(app, session, mocker):
     business: Business = Business.find_by_internal_id(business.id)
 
     # assert changes
-    _assert_common_data(business, lr_filing_1, expected_in_liquidation_date, expected_last_lr_year, 2025)
+    _assert_common_data(business, lr_filing_1, expected_in_liquidation_date, expected_last_lr_year, 2026)
     check_drs_publish(drs_publish_mock, app, business, lr_filing_1, '')
     drs_publish_mock.reset_mock()
     
@@ -519,21 +533,24 @@ def test_process_col_filing(app, session, mocker):
     business: Business = Business.find_by_internal_id(business.id)
 
     # assert changes
-    _assert_common_data(business, lr_filing_2, expected_in_liquidation_date, second_expected_last_lr_year, 2026)
+    _assert_common_data(business, lr_filing_2, expected_in_liquidation_date, second_expected_last_lr_year, 2027)
     check_drs_publish(drs_publish_mock, app, business, lr_filing_2, '')
     drs_publish_mock.reset_mock()
 
 
 def test_process_col_filing_initiated_with_appoint(app, session, mocker):
     """Assert that appointLiquidator filings can put the business into liquidation and can include liquidation office."""
-    expected_in_liquidation_date = datetime(2023, 10, 10, 10, 0, 0, tzinfo=timezone.utc)
-    filing, payment_id, identifier = _get_liquidation_filing('appointLiquidator', expected_in_liquidation_date)
+    effective_date = datetime(2023, 10, 10, 15, 45, 0, tzinfo=timezone.utc)
+    col_date_str = '2023-10-10'
+    expected_in_liquidation_date = LegislationDatetime.as_utc_timezone_from_legislation_date_str(col_date_str)
+
+    filing, payment_id, identifier = _get_liquidation_filing('appointLiquidator', expected_in_liquidation_date, col_date_str)
     drs_publish_mock = mocker.patch('business_filer.services.gcp_queue.publish', return_value=None)
 
     business = create_business(identifier)
 
     filing_rec = create_filing(payment_id, filing, business.id)
-    filing_rec.effective_date = expected_in_liquidation_date
+    filing_rec.effective_date = effective_date
     filing_rec.save()
     
     # create batch and batch_processing
@@ -570,3 +587,125 @@ def test_process_col_filing_initiated_with_appoint(app, session, mocker):
     
     assert batch_processing.status == BatchProcessing.BatchProcessingStatus.WITHDRAWN.value
     assert batch_processing.notes == 'Moved into liquidation'
+
+
+@pytest.mark.parametrize(
+    'test_name, col_date, app_date, frozen_now, expected_legislation_date_str, expected_utc_dt',
+    [
+        (
+            'col_date during historical PST',
+            '2024-01-15',
+            datetime(2024, 1, 20, 18, 45, 0, tzinfo=UTC),
+            '2024-01-22 12:00:00',
+            '2024-01-15',
+            datetime(2024, 1, 15, 8, 0, 0, tzinfo=UTC),
+        ),
+        (
+            'col_date during PDT',
+            '2024-06-20',
+            datetime(2024, 6, 25, 22, 15, 0, tzinfo=UTC),
+            '2024-06-26 12:00:00',
+            '2024-06-20',
+            datetime(2024, 6, 20, 7, 0, 0, tzinfo=UTC),
+        ),
+        (
+            'col_date post Nov 1 2026',
+            '2026-11-15',
+            datetime(2026, 11, 20, 18, 45, 0, tzinfo=UTC),
+            '2026-11-22 12:00:00',
+            '2026-11-15',
+            datetime(2026, 11, 15, 7, 0, 0, tzinfo=UTC),
+        ),
+        (
+            'Fallback to application_date during historical PST',
+            None,
+            datetime(2024, 1, 15, 20, 30, 0, tzinfo=UTC),
+            '2024-01-22 12:00:00',
+            '2024-01-15',
+            datetime(2024, 1, 15, 8, 0, 0, tzinfo=UTC),
+        ),
+        (
+            'Fallback to application_date across UTC midnight',
+            None,
+            datetime(2024, 7, 16, 2, 30, 0, tzinfo=UTC),
+            '2024-07-20 12:00:00',
+            '2024-07-15',
+            datetime(2024, 7, 15, 7, 0, 0, tzinfo=UTC),
+        ),
+        (
+            'Fallback to application_date post Nov 1 2026',
+            None,
+            datetime(2026, 11, 5, 18, 30, 0, tzinfo=UTC),
+            '2026-11-10 12:00:00',
+            '2026-11-05',
+            datetime(2026, 11, 5, 7, 0, 0, tzinfo=UTC),
+        ),
+        (
+            'Fallback to datetime.now(UTC) during historical PST',
+            None,
+            None,
+            '2024-02-10 14:00:00',
+            '2024-02-10',
+            datetime(2024, 2, 10, 8, 0, 0, tzinfo=UTC),
+        ),
+        (
+            'Fallback to datetime.now(UTC) across UTC midnight',
+            None,
+            None,
+            '2024-08-01 04:00:00',
+            '2024-07-31',
+            datetime(2024, 7, 31, 7, 0, 0, tzinfo=UTC),
+        ),
+        (
+            'Fallback to datetime.now(UTC) post Nov 1 2026',
+            None,
+            None,
+            '2026-11-10 14:00:00',
+            '2026-11-10',
+            datetime(2026, 11, 10, 7, 0, 0, tzinfo=UTC),
+        ),
+    ]
+)
+def test_init_liquidation_date(
+    session,
+    mocker,
+    test_name,
+    col_date,
+    app_date,
+    frozen_now,
+    expected_legislation_date_str,
+    expected_utc_dt,
+):
+    """Assert business.in_liquidation_date is normalized to start-of-day Pacific converted to UTC."""
+    mocker.patch(
+        'business_filer.common.services.InvoluntaryDissolutionService.get_in_dissolution_batch_processing',
+        return_value=None
+    )
+
+    business = Business()
+    business.state = Business.State.ACTIVE
+
+    filing_meta = FilingMeta()
+    filing_meta.application_date = app_date
+
+    filing_json = {
+        'filing': {
+            'changeOfLiquidators': {}
+        }
+    }
+    if col_date:
+        filing_json['filing']['changeOfLiquidators']['changeOfLiquidatorsDate'] = col_date
+
+    with freeze_time(frozen_now, tz_offset=0):
+        _init_liquidation(business, filing_meta, filing_json)
+
+    assert business.in_liquidation is True
+
+    assert business.in_liquidation_date == expected_utc_dt
+
+    local_legislation_dt = LegislationDatetime.as_legislation_timezone(business.in_liquidation_date)
+    assert local_legislation_dt.strftime('%Y-%m-%d') == expected_legislation_date_str
+    assert local_legislation_dt.hour == 0
+    assert local_legislation_dt.minute == 0
+    assert local_legislation_dt.second == 0
+    assert local_legislation_dt.microsecond == 0

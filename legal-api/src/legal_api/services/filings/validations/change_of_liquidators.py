@@ -34,19 +34,25 @@
 """Validation for the Change of Liquidators filing."""
 from http import HTTPStatus
 
+from flask_babel import _
+
+from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business, PartyRole
 from legal_api.errors import Error
-from legal_api.services.filings.validations.common_validations import validate_offices, validate_relationships
+from legal_api.services.filings.validations.common_validations import get_date, validate_offices, validate_relationships
 
 
 def validate(business: Business, filing_json: dict) -> Error | None:
     """Validate the Change of Liquidators filing."""
     filing_type = "changeOfLiquidators"
-    filing_sub_type = filing_json["filing"][filing_type]["type"]
+    filing_data = filing_json["filing"][filing_type]
+    filing_sub_type = filing_data.get("type")
 
     msg = []
 
-    if filing_json["filing"][filing_type].get("relationships"):
+    msg.extend(_validate_liquidation_date(business, filing_json, filing_type, filing_sub_type))
+
+    if filing_data.get("relationships"):
         msg.extend(validate_relationships(
             business,
             filing_json,
@@ -56,7 +62,7 @@ def validate(business: Business, filing_json: dict) -> Error | None:
             filing_sub_type in ["ceaseLiquidator", "changeAddressLiquidator"]
         ))
 
-    if filing_json["filing"][filing_type].get("offices"):
+    if filing_data.get("offices"):
         allowed_offices = []
         required_offices = []
         if filing_sub_type in ["intentToLiquidate", "changeAddressLiquidator"]:
@@ -72,3 +78,39 @@ def validate(business: Business, filing_json: dict) -> Error | None:
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
+
+
+def _validate_liquidation_date(
+    business: Business,
+    filing_json: dict,
+    filing_type: str = "changeOfLiquidators",
+    filing_sub_type: str | None = None
+) -> list:
+    """Validate changeOfLiquidatorsDate for standard and correction filings."""
+    msg = []
+    date_path = f"/filing/{filing_type}/changeOfLiquidatorsDate"
+    liquidation_date = get_date(filing_json, date_path)
+
+    # Required for appointLiquidator when the business is not yet in liquidation
+    is_correction = filing_type == "correction"
+    if (
+        filing_sub_type == "appointLiquidator"
+        and not business.in_liquidation
+        and not is_correction
+        and not liquidation_date
+    ):
+        msg.append({
+            "error": _("'changeOfLiquidatorsDate' is required when business is not yet in liquidation."),
+            "path": date_path
+        })
+        return msg
+
+    if liquidation_date:
+        today = LegislationDatetime.datenow()
+        if liquidation_date > today:
+            msg.append({
+                "error": _("'changeOfLiquidatorsDate' cannot be in the future."),
+                "path": date_path
+            })
+
+    return msg

@@ -13,10 +13,11 @@
 # limitations under the License.
 """Test Change of Liquidator validation."""
 import copy
-from datetime import date
+from datetime import date, timedelta
 from http import HTTPStatus
 import pytest
 
+from business_common.utils.legislation_datetime import LegislationDatetime
 from legal_api.services.filings import validate
 from tests.unit.services.filings.validations import lists_are_equal
 from tests.unit.models import factory_business
@@ -154,6 +155,191 @@ def test_validate_col_offices(
     err = validate(business, f)
 
     if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
+    else:
+        assert err is None
+
+
+@pytest.mark.parametrize(
+    'test_name, filing_sub_type, in_liquidation, day_offset, raw_date, expected_code, expected_msg',
+    [
+        (
+            'Valid appointLiquidator date (not in liquidation)',
+            'appointLiquidator',
+            False,
+            -5,
+            None,
+            None,
+            None
+        ),
+        (
+            'Valid appointLiquidator current date (not in liquidation)',
+            'appointLiquidator',
+            False,
+            0,
+            None,
+            None,
+            None
+        ),
+        (
+            'Missing date for appointLiquidator (not in liquidation)',
+            'appointLiquidator',
+            False,
+            None,
+            None,
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    'error': "'changeOfLiquidatorsDate' is required when business is not yet in liquidation.",
+                    'path': '/filing/changeOfLiquidators/changeOfLiquidatorsDate'
+                }
+            ]
+        ),
+        (
+            'Future date for appointLiquidator (not in liquidation)',
+            'appointLiquidator',
+            False,
+            1,
+            None,
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    'error': "'changeOfLiquidatorsDate' cannot be in the future.",
+                    'path': '/filing/changeOfLiquidators/changeOfLiquidatorsDate'
+                }
+            ]
+        ),
+        (
+            'Invalid format date for appointLiquidator (not in liquidation)',
+            'appointLiquidator',
+            False,
+            None,
+            '2026/05/15',
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            [
+                {
+                    'error': "'2026/05/15' is not a 'date'",
+                    'path': 'changeOfLiquidators/changeOfLiquidatorsDate',
+                    'context': []
+                }
+            ]
+        ),
+        (
+            'Optional date omitted for appointLiquidator when already in liquidation',
+            'appointLiquidator',
+            True,
+            None,
+            None,
+            None,
+            None
+        ),
+        (
+            'Optional date provided in the past when already in liquidation',
+            'appointLiquidator',
+            True,
+            -10,
+            None,
+            None,
+            None
+        ),
+        (
+            'Optional date in the future when already in liquidation',
+            'appointLiquidator',
+            True,
+            2,
+            None,
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    'error': "'changeOfLiquidatorsDate' cannot be in the future.",
+                    'path': '/filing/changeOfLiquidators/changeOfLiquidatorsDate'
+                }
+            ]
+        ),
+        (
+            'Valid intentToLiquidate past date',
+            'intentToLiquidate',
+            False,
+            -3,
+            None,
+            None,
+            None
+        ),
+        (
+            'Valid intentToLiquidate current date',
+            'intentToLiquidate',
+            False,
+            0,
+            None,
+            None,
+            None
+        ),
+        (
+            'Future date for intentToLiquidate',
+            'intentToLiquidate',
+            False,
+            1,
+            None,
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    'error': "'changeOfLiquidatorsDate' cannot be in the future.",
+                    'path': '/filing/changeOfLiquidators/changeOfLiquidatorsDate'
+                }
+            ]
+        ),
+        (
+            'Invalid calendar day format for intentToLiquidate',
+            'intentToLiquidate',
+            False,
+            None,
+            '2026-02-31',
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            [
+                {
+                    'error': "'2026-02-31' is not a 'date'",
+                    'path': 'changeOfLiquidators/changeOfLiquidatorsDate',
+                    'context': []
+                }
+            ]
+        ),
+    ]
+)
+def test_validate_col_dates(
+    session, test_name, filing_sub_type, in_liquidation, day_offset, raw_date, expected_code, expected_msg
+):
+    """Assert changeOfLiquidatorsDate validations."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier)
+    business.in_liquidation = in_liquidation
+
+    today_legislation = LegislationDatetime.datenow()
+
+    f = copy.deepcopy(FILING_HEADER)
+    f['filing']['header']['date'] = today_legislation.isoformat()
+    f['filing']['header']['name'] = 'changeOfLiquidators'
+    f['filing']['business']['identifier'] = identifier
+
+    col = copy.deepcopy(CHANGE_OF_LIQUIDATORS)
+    col['type'] = filing_sub_type
+
+    if in_liquidation:
+        col.pop('offices')
+
+    if raw_date is not None:
+        col['changeOfLiquidatorsDate'] = raw_date
+    elif day_offset is not None:
+        col['changeOfLiquidatorsDate'] = (today_legislation + timedelta(days=day_offset)).isoformat()
+    else:
+        col.pop('changeOfLiquidatorsDate', None)
+
+    f['filing']['changeOfLiquidators'] = col
+
+    err = validate(business, f)
+
+    if expected_code:
+        assert err is not None
         assert err.code == expected_code
         assert lists_are_equal(err.msg, expected_msg)
     else:
