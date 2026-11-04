@@ -69,7 +69,7 @@ def format_address_data(address_data: dict, prefix: str) -> dict:
     city = address_data[f'{prefix}city']
     region = address_data[f'{prefix}province']
     postal_code = address_data[f'{prefix}postal_cd']
-    country_typ_cd = address_data[f'{prefix}country_typ_cd'],
+    country_typ_cd = address_data[f'{prefix}country_typ_cd']
     street_additional_elements = []
     if (line_2 := address_data[f'{prefix}addr_line_2']) and isinstance(line_2, str) and (line_2 := str(line_2).strip()):
         street_additional_elements.append(line_2)
