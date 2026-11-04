@@ -48,6 +48,12 @@ ACCOUNT_IDENTITY = "account_identity"
 
 MAX_PUBLIC_USER_DOD_FILINGS = 2
 
+# single source for this permission name: ListActionsPermissionsAllowed.FILE_OVER_EXISTING_DRAFT
+# takes its value from here, since permissions.py imports this module and not the other way around
+FILE_OVER_EXISTING_DRAFT_PERMISSION = "FILE_OVER_EXISTING_DRAFT"
+STAFF_DRAFT_FILING_BYPASS_FLAG = "enable-staff-draft-filing-bypass"
+DRAFT_REBASE_CHECKS_FEATURE = "draftRebaseChecks"  # a value inside the enable-new-feature flag
+
 
 class BusinessBlocker(str, Enum):
     """Define an enum for business level blocker checks."""
@@ -864,6 +870,28 @@ def get_could_file(legal_type: str,
     return could_filing_types
 
 
+def get_draft_bypass_blockers(business: Business,
+                              is_ignore_draft_blockers: bool,
+                              business_blocker_dict: dict) -> tuple[list, dict]:
+    """Return (bypass allowlist, DRAFT-ignoring blocker dict) for the staff draft bypass."""
+    bypass_filing_types = [] if is_ignore_draft_blockers else get_staff_draft_bypass_filing_types()
+    if not bypass_filing_types:
+        return [], business_blocker_dict
+    return bypass_filing_types, business_blocker_check(business, True, draft_status_only=True)
+
+
+def select_blocker_dict(filing_key: str,
+                        sub_type_key: str | None,
+                        bypass_filing_types: list,
+                        bypass_blocker_dict: dict,
+                        business_blocker_dict: dict) -> dict:
+    """Pick the DRAFT-ignoring blockers when the filing (or 'filingType.subType') key is allowlisted."""
+    if filing_key in bypass_filing_types or \
+            (sub_type_key and f"{filing_key}.{sub_type_key}" in bypass_filing_types):
+        return bypass_blocker_dict
+    return business_blocker_dict
+
+
 def get_allowed_filings(business: Business,   # noqa: PLR0913
                         state: Business.State,
                         legal_type: str,
@@ -886,6 +914,9 @@ def get_allowed_filings(business: Business,   # noqa: PLR0913
 
     # doing this check up front to cache result
     business_blocker_dict: dict = business_blocker_check(business, is_ignore_draft_blockers)
+    bypass_filing_types, bypass_blocker_dict = get_draft_bypass_blockers(business,
+                                                                         is_ignore_draft_blockers,
+                                                                         business_blocker_dict)
     allowable_filings = get_allowable_filings_dict(is_authorization).get(user_role, {}).get(state, {})
     allowable_filing_types = []
 
@@ -902,7 +933,9 @@ def get_allowed_filings(business: Business,   # noqa: PLR0913
         allowable_filing_legal_types = allowable_filing_value.get("legalTypes", [])
 
         if allowable_filing_legal_types:
-            is_blocker = has_blocker(business, state_filing, allowable_filing_value, business_blocker_dict)
+            blocker_dict = select_blocker_dict(allowable_filing_key, None, bypass_filing_types,
+                                               bypass_blocker_dict, business_blocker_dict)
+            is_blocker = has_blocker(business, state_filing, allowable_filing_value, blocker_dict)
             is_include_legal_type = legal_type in allowable_filing_legal_types
             is_allowable = not is_blocker and is_include_legal_type
             allowable_filing_type = {"name": allowable_filing_key,
@@ -918,7 +951,9 @@ def get_allowed_filings(business: Business,   # noqa: PLR0913
                    x[1].get("legalTypes", []), allowable_filing_value.items())
 
         for filing_sub_type_item_key, filing_sub_type_item_value in filing_sub_type_items:
-            is_allowable = not has_blocker(business, state_filing, filing_sub_type_item_value, business_blocker_dict)
+            blocker_dict = select_blocker_dict(allowable_filing_key, filing_sub_type_item_key,
+                                               bypass_filing_types, bypass_blocker_dict, business_blocker_dict)
+            is_allowable = not has_blocker(business, state_filing, filing_sub_type_item_value, blocker_dict)
 
             allowable_filing_sub_type = {"name": allowable_filing_key,
                                          "type": filing_sub_type_item_key,
@@ -933,6 +968,59 @@ def get_allowed_filings(business: Business,   # noqa: PLR0913
                                                                allowable_filing_sub_type)
 
     return allowable_filing_types
+
+
+def is_draft_rebase_checks_enabled() -> bool:
+    """Return True when draftRebaseChecks is in the enable-new-feature flag."""
+    request_context = get_request_context()
+    enabled_features = flags.value("enable-new-feature",
+                                   request_context.user,
+                                   request_context.account_id) or []
+    return DRAFT_REBASE_CHECKS_FEATURE in enabled_features
+
+
+def staff_draft_bypass_flag_value() -> list:
+    """Return the bypass allowlist of filing types (or 'filingType.subType' keys) from the LD flag.
+
+    Non-list values fail closed: a comma string would substring-match in callers
+    ('dissolution' would match inside 'dissolution.delay').
+    """
+    request_context = get_request_context()
+    bypass_filing_types = flags.value(STAFF_DRAFT_FILING_BYPASS_FLAG,
+                                      request_context.user,
+                                      request_context.account_id)
+    return bypass_filing_types if isinstance(bypass_filing_types, list) else []
+
+
+def is_draft_rebase_scoped_filing(filing_type: str, filing_sub_type: str | None = None) -> bool:
+    """Return True when the bypass allowlist covers the filing type.
+
+    Draft-rebase enforcement (ownership 403s, tasks lockout) only applies where the
+    feature is live; legacy filing types keep today's behavior. Unlike
+    get_staff_draft_bypass_filing_types, this is not permission-gated — enforcement
+    scope is about the filing, not the caller.
+    """
+    bypass_filing_types = staff_draft_bypass_flag_value()
+    return filing_type in bypass_filing_types or \
+        (filing_sub_type is not None and f"{filing_type}.{filing_sub_type}" in bypass_filing_types)
+
+
+def get_staff_draft_bypass_filing_types() -> list:
+    """Return the filing type keys the current user may file while other drafts exist.
+
+    Empty unless the user holds FILE_OVER_EXISTING_DRAFT; the LD flag holds the
+    allowlist of filing types (or 'filingType.subType' keys).
+    """
+    # importing here to avoid circular dependencies
+    # pylint: disable=import-outside-toplevel
+    from legal_api.services.permissions import PermissionService
+
+    authorized_permissions = PermissionService.get_authorized_permissions_for_user()
+    if not authorized_permissions or \
+            FILE_OVER_EXISTING_DRAFT_PERMISSION not in authorized_permissions:
+        return []
+
+    return staff_draft_bypass_flag_value()
 
 
 def has_blocker(business: Business, # noqa: PLR0911
@@ -985,7 +1073,8 @@ def has_business_blocker(blocker_checks: dict, business_blocker_dict: dict):
     return False
 
 
-def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = False):
+def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = False,
+                           draft_status_only: bool = False):
     """Return True if the business has a default blocker condition."""
     business_blocker_checks: dict = {
         BusinessBlocker.DEFAULT: False,
@@ -1004,7 +1093,7 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
     if not business:
         return business_blocker_checks
 
-    if has_blocker_filing(business, is_ignore_draft_blockers):
+    if has_blocker_filing(business, is_ignore_draft_blockers, draft_status_only):
         business_blocker_checks[BusinessBlocker.DRAFT_PENDING] = True
         business_blocker_checks[BusinessBlocker.DEFAULT] = True
 
@@ -1032,13 +1121,14 @@ def business_blocker_check(business: Business, is_ignore_draft_blockers: bool = 
     if len(business.public_user_dod_filings) >= MAX_PUBLIC_USER_DOD_FILINGS:
         business_blocker_checks[BusinessBlocker.MAX_DISSOLUTION_DELAYS_REACHED] = True
 
-    if has_incomplete_correction_filing(business):
+    if has_incomplete_correction_filing(business, exclude_drafts=draft_status_only):
         business_blocker_checks[BusinessBlocker.INCOMPLETE_CORRECTION] = True
 
     return business_blocker_checks
 
 
-def has_blocker_filing(business: Business, is_ignore_draft_blockers: bool = False):
+def has_blocker_filing(business: Business, is_ignore_draft_blockers: bool = False,
+                       draft_status_only: bool = False):
     """Check if there are any incomplete states filings. This is a blocker because it needs to be completed first."""
     # importing here to avoid circular dependencies
     # pylint: disable=import-outside-toplevel
@@ -1051,6 +1141,11 @@ def has_blocker_filing(business: Business, is_ignore_draft_blockers: bool = Fals
     if not is_ignore_draft_blockers:
         filing_statuses.extend([Filing.Status.DRAFT.value,
                                 Filing.Status.AWAITING_REVIEW.value,
+                                Filing.Status.CHANGE_REQUESTED.value,
+                                Filing.Status.APPROVED.value])
+    elif draft_status_only:
+        # the staff draft bypass ignores DRAFT filings only; in-review filings still block
+        filing_statuses.extend([Filing.Status.AWAITING_REVIEW.value,
                                 Filing.Status.CHANGE_REQUESTED.value,
                                 Filing.Status.APPROVED.value])
     blocker_filing_matches = Filing.get_filings_by_status(business.id, filing_statuses)
@@ -1189,7 +1284,7 @@ def has_notice_of_withdrawal_filing_blocker(business: Business, is_ignore_draft_
     return not any(f.effective_date and f.effective_date > now for f in paid_filings)
 
 
-def has_incomplete_correction_filing(business: Business) -> bool:
+def has_incomplete_correction_filing(business: Business, exclude_drafts: bool = False) -> bool:
     """Check if the business has an incomplete correction filing."""
     # importing here to avoid circular dependencies
     # pylint: disable=import-outside-toplevel
@@ -1198,7 +1293,10 @@ def has_incomplete_correction_filing(business: Business) -> bool:
     if not business or not business.id:
         return False
 
-    blocker_filing_matches = Filing.get_incomplete_filings_by_types(business.id, [CoreFiling.FilingTypes.CORRECTION.value])
+    excluded_statuses = [Filing.Status.DRAFT.value] if exclude_drafts else []
+    blocker_filing_matches = Filing.get_incomplete_filings_by_types(business.id,
+                                                                    [CoreFiling.FilingTypes.CORRECTION.value],
+                                                                    excluded_statuses)
     return any(blocker_filing_matches)
 
 
