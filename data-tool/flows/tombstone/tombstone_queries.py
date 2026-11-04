@@ -871,7 +871,10 @@ def get_filing_comments_query(corp_num):
     union
     select
         e.event_id        as e_event_id,
-        null              as lt_ledger_text_dts_str,
+        to_char(
+                e.event_timerstamp::timestamptz at time zone 'UTC',
+                'YYYY-MM-DD HH24:MI:SSTZH:TZM'
+        )            as lt_ledger_text_dts_str,
         null              as lt_user_id,
         null               as lt_notation,
         trim(cl.ledger_desc) as cl_ledger_desc

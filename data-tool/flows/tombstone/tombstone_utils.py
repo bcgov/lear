@@ -66,25 +66,30 @@ def format_address_data(address_data: dict, prefix: str) -> dict:
     address_type = 'mailing' if prefix == 'ma_' else 'delivery'
 
     street = address_data[f'{prefix}addr_line_1']
+    city = address_data[f'{prefix}city']
+    region = address_data[f'{prefix}province']
+    postal_code = address_data[f'{prefix}postal_cd']
+    country_typ_cd = address_data[f'{prefix}country_typ_cd']
     street_additional_elements = []
-    if (line_2 := address_data[f'{prefix}addr_line_2']) and (line_2 := str(line_2).strip()):
+    if (line_2 := address_data[f'{prefix}addr_line_2']) and isinstance(line_2, str) and (line_2 := str(line_2).strip()):
         street_additional_elements.append(line_2)
-    if (line_3 := address_data[f'{prefix}addr_line_3']) and (line_3 := str(line_3).strip()):
+    if (line_3 := address_data[f'{prefix}addr_line_3']) and isinstance(line_3, str) and (line_3 := str(line_3).strip()):
         street_additional_elements.append(line_3)
     street_additional = ' '.join(street_additional_elements)
 
-    if not (delivery_instructions := address_data[f'{prefix}delivery_instructions']) \
+    delivery_instructions = address_data[f'{prefix}delivery_instructions']
+    if not isinstance(delivery_instructions, str) \
             or not (delivery_instructions := delivery_instructions.strip()):
         delivery_instructions = ''
 
     formatted_address = {
         'address_type': address_type,
-        'street': street or '',
+        'street': street if isinstance(street, str) else '',
         'street_additional': street_additional or '',
-        'city': address_data[f'{prefix}city'] or '',
-        'region': address_data[f'{prefix}province'] or '',
-        'country': address_data[f'{prefix}country_typ_cd'],
-        'postal_code': address_data[f'{prefix}postal_cd'] or '',
+        'city': city if isinstance(city, str) else  '',
+        'region': region if isinstance(region, str) else '',
+        'country': country_typ_cd if isinstance(country_typ_cd, str) else '',
+        'postal_code': postal_code if isinstance(postal_code, str) else '',
         'delivery_instructions': delivery_instructions or ''
     }
     return formatted_address
@@ -696,7 +701,8 @@ def format_filing_comments_data(data: dict, event_id: Decimal) -> list:
 
     formatted_filing_comments = []
     for x in matched_filing_comments:
-        if c := x['lt_notation']:
+        if pd.notna(x['lt_notation']):
+            c = x['lt_notation']
             timestamp = x['lt_ledger_text_dts_str']
             # Note that only a small number of lt_user_id is BCOMPS,
             # others are None
@@ -704,7 +710,7 @@ def format_filing_comments_data(data: dict, event_id: Decimal) -> list:
             staff_id = x['lt_user_id']
         else:
             c = x['cl_ledger_desc']
-            timestamp = None
+            timestamp = x['lt_ledger_text_dts_str']
             staff_id = None
         comment = {
             'comment': c,
