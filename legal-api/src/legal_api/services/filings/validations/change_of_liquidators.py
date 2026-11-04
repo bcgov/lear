@@ -33,12 +33,13 @@
 # POSSIBILITY OF SUCH DAMAGE.
 """Validation for the Change of Liquidators filing."""
 from http import HTTPStatus
-from datetime import date
+
 from flask_babel import _
+
+from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business, PartyRole
 from legal_api.errors import Error
-from business_common.utils.legislation_datetime import LegislationDatetime
-from legal_api.services.filings.validations.common_validations import validate_offices, validate_relationships, get_date
+from legal_api.services.filings.validations.common_validations import get_date, validate_offices, validate_relationships
 
 
 def validate(business: Business, filing_json: dict) -> Error | None:
@@ -92,13 +93,17 @@ def _validate_liquidation_date(
 
     # Required for appointLiquidator when the business is not yet in liquidation
     is_correction = filing_type == "correction"
-    if filing_sub_type == "appointLiquidator" and not business.in_liquidation and not is_correction:
-        if not liquidation_date:
-            msg.append({
-                "error": _("'changeOfLiquidatorsDate' is required when business is not yet in liquidation."),
-                "path": date_path
-            })
-            return msg
+    if (
+        filing_sub_type == "appointLiquidator"
+        and not business.in_liquidation
+        and not is_correction
+        and not liquidation_date
+    ):
+        msg.append({
+            "error": _("'changeOfLiquidatorsDate' is required when business is not yet in liquidation."),
+            "path": date_path
+        })
+        return msg
 
     if liquidation_date:
         today = LegislationDatetime.datenow()
