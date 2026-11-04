@@ -1503,7 +1503,7 @@ class Filing:  # pylint: disable=too-many-instance-attributes;
                                                                        event_id=filing.event_id)
                     if completing_party_created:
                         has_completing_party = True
-                if (filing.filing_type == 'incorporationApplication' and
+                if (filing.filing_type in ['incorporationApplication', 'amalgamationApplication'] and
                         filing.business.corp_type != Business.TypeCodes.COOP.value and
                         not has_completing_party):
                     cls._create_completing_party(cursor=cursor, filing=filing)

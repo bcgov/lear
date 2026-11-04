@@ -1542,8 +1542,8 @@ def validate_certified_by(filing_json: dict, filing_type: str, legal_type: str) 
     certified_by = filing_json["filing"]["header"].get("certifiedBy")
 
     if legal_type in Business.CORPS:
-        # the completing party statement takes its name from certifiedBy for staff and API users,
-        # so certifiedBy is required for them on a corp incorporation or amalgamation application
+        # corps no longer collect a completing party on these filings, so certifiedBy identifies
+        # the submitter for staff and API users and is required for them
         api_login_source = "API_GW"  # jwt loginSource of an API gateway user
         current_user = getattr(request_ctx, "current_user", None) if has_request_context() else None
         if (filing_type in (CoreFiling.FilingTypes.INCORPORATIONAPPLICATION,
