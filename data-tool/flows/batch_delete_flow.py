@@ -15,14 +15,14 @@ from sqlalchemy.engine import Engine
 
 businesses_cnt_query = """
 SELECT COUNT(*) FROM businesses
-WHERE 1 = 1 
+WHERE 1 = 1
 AND legal_type IN ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE', 'BEN', 'CP')
 AND legal_name LIKE '%' || :corp_name_suffix
 """
 
 identifiers_query = """
 SELECT id, identifier FROM businesses
-WHERE 1 = 1 
+WHERE 1 = 1
 AND legal_type IN ('BC', 'C', 'ULC', 'CUL', 'CC', 'CCC', 'QA', 'QB', 'QC', 'QD', 'QE', 'BEN', 'CP')
 AND legal_name LIKE '%' || :corp_name_suffix
 LIMIT :batch_size
@@ -54,14 +54,54 @@ CORP_PROCESSING_ACCOUNTS_BASE = """
 @contextmanager
 def replica_role(conn: Connection):
     try:
-        conn.execute(text("SET session_replication_role = 'replica';"))
-        yield
-        conn.commit()
-    except Exception as e:
-        conn.rollback()
-        print(f'DB operations rollback due to error:\n {e}')
-        raise e
+        conn.execute(text(
+            "SET max_parallel_workers_per_gather = 0"
+        ))
+        conn.execute(text("SELECT set_replica_mode();"))
 
+        role = conn.execute(
+            text("SELECT current_setting('session_replication_role')")
+        ).scalar_one()
+
+        if role != "replica":
+            raise RuntimeError(
+                f"Failed to enable replica mode; current role is '{role}'"
+            )
+
+        print(f"Session replication role set to: {role}")
+
+        yield conn
+
+    except Exception as exc:
+        conn.rollback()
+        print(f"Database operation failed: {exc}")
+        raise
+
+    else:
+        conn.commit()
+
+    finally:
+        try:
+            conn.execute(text("SELECT set_origin_mode();"))
+            role = conn.execute(
+                text("SELECT current_setting('session_replication_role')")
+            ).scalar_one()
+
+            if role != "origin":
+                raise RuntimeError(
+                    f"Failed to restore origin mode; current role is '{role}'"
+                )
+
+            conn.commit()
+            conn.execute(text(
+                "RESET max_parallel_workers_per_gather"
+            ))
+            conn.commit()
+            print("Session replication role restored to: origin")
+
+        except Exception as exc:
+            conn.rollback()
+            print(f"Failed to restore replica role: {exc}")
 
 @task(cache_policy=NO_CACHE)
 def get_selected_corps(db_engine: Engine, config):
@@ -216,8 +256,39 @@ def get_affiliation_targets(config, colin_engine: Engine, identifiers: List[str]
     return targets
 
 
+def run_delete_query(conn: Connection, plan: dict, stats: dict) -> dict:
+    try:
+        result = execute_query.submit(conn, plan).result()
+        if not isinstance(result, dict):
+            raise TypeError(
+                f"execute_query for {plan.get('source')} returned "
+                f"{type(result).__name__}, expected dict"
+            )
+        return result
+    except Exception as exc:
+        stats['failed'] += 1
+        print(f"Failed querying {plan.get('source')}: {exc!r}")
+        return {}
+
+
+def run_delete_table(conn: Connection, table: str, ids: list, stats: dict) -> None:
+    ids = filter_none(ids if isinstance(ids, list) else [])
+    if not ids:
+        print(f'Skip deleting {table} due to empty ID list')
+        return
+
+    try:
+        execute_delete_plan.submit(conn, table, ids).result()
+        stats['succeeded'] += 1
+    except Exception as exc:
+        stats['failed'] += 1
+        print(f'Failed deleting {table}: {exc!r}')
+
+
 @task(cache_policy=NO_CACHE)
 def lear_delete_non_versioned(conn: Connection, business_ids: list):
+    stats = {'succeeded': 0, 'failed': 0}
+
     # first query
     query_plans_one = [
         {
@@ -252,85 +323,85 @@ def lear_delete_non_versioned(conn: Connection, business_ids: list):
         },
     ]
 
-    query_futures_one = []
-    for plan in query_plans_one:
-        query_futures_one.append(
-            execute_query.submit(conn, plan)
-        )
-
+    
     results_one = {}
-    for future in query_futures_one:
-        result = future.result()
-        results_one.update(result)
+    for plan in query_plans_one:
+        delete_plans = run_delete_query(conn, plan, stats)
+        print(
+            f"Delete plans for {len(delete_plans)} tables from "
+            f"{plan.get('source')}: {list(delete_plans.keys())}"
+        )
+        for table, ids in delete_plans.items():
+            results_one.setdefault(table, []).extend(
+                ids if isinstance(ids, list) else []
+            )
 
-    # second second
+    # second query
     query_plans_two = [
         {
             'source': 'addresses',
-            'params': {'office_id': results_one['offices']},
+            'params': {'office_id': results_one.get('offices', [])},
         },
         {
             'source': 'parties',
             'columns': ['delivery_address_id', 'mailing_address_id'],
-            'params': {'id': results_one['parties']},
+            'params': {'id': results_one.get('parties', [])},
             'targets': ['addresses', 'addresses'],
         },
         {
             'source': 'share_series',
-            'params': {'share_class_id': results_one['share_classes']},
+            'params': {'share_class_id': results_one.get('share_classes', [])},
         },
         {
             'source': 'amalgamating_businesses',
-            'params': { 'amalgamation_id': results_one['amalgamations']},
+            'params': {'amalgamation_id': results_one.get('amalgamations', [])},
         },
         {
             'source': 'offices_held',
-            'params': {'party_role_id': results_one['party_roles']},
+            'params': {'party_role_id': results_one.get('party_roles', [])},
         }
     ]
 
-    query_futures_two = []
+    second_delete_plans = []
     for plan in query_plans_two:
-        query_futures_two.append(
-            execute_query.submit(conn, plan)
+        delete_plans = run_delete_query(conn, plan, stats)
+        print(
+            f"Delete plans for {len(delete_plans)} tables from "
+            f"{plan.get('source')}: {list(delete_plans.keys())}"
         )
+        second_delete_plans.append(delete_plans)
 
-    delete_futures = []
-    # delete for first query results
+    # Execute every query first, then delete serially. The shared SQLAlchemy
+    # connection must not be used by concurrent Prefect tasks.
     for table, ids in results_one.items():
-        delete_futures.append(
-            execute_delete_plan.submit(conn, table, ids)
-        )
-    # delete for second query results
-    for future in query_futures_two:
-        delete_plans = future.result()
-        for table, ids in delete_plans.items():
-            delete_futures.append(
-                execute_delete_plan.submit(conn, table, ids)
-            )
+        run_delete_table(conn, table, ids, stats)
 
-    wait(delete_futures)
-    succeeded = sum(1 for f in delete_futures if f.state.is_completed())
-    failed = len(delete_futures) - succeeded
-    print(f'Lear delete (non-versioned) complete for this round. Succeeded: {succeeded}. Failed: {failed}')
+    for delete_plans in second_delete_plans:
+        for table, ids in delete_plans.items():
+            run_delete_table(conn, table, ids, stats)
+
+    print(
+        'Lear delete (non-versioned) complete for this round. '
+        f'Succeeded: {stats["succeeded"]}. Failed: {stats["failed"]}'
+    )
 
 
 @task(cache_policy=NO_CACHE)
 def lear_delete_versioned(conn: Connection, business_ids: list):
+    stats = {'succeeded': 0, 'failed': 0}
+
     # filing, transaction
-            filings_transaction_future = execute_query.submit(conn, {
-                'source': 'filings',
-                'columns': ['id', 'transaction_id'],
-                'params': {'business_id': business_ids},
-                'targets': ['filings', 'transaction'],
-            })
+    plans = run_delete_query(conn, {
+        'source': 'filings',
+        'columns': ['id', 'transaction_id'],
+        'params': {'business_id': business_ids},
+        'targets': ['filings', 'transaction'],
+    }, stats)
 
-            plans = filings_transaction_future.result()
+    filing_ids = plans.get('filings', [])
+    transaction_ids = plans.get('transaction', [])
 
-            filing_ids = plans['filings']
-            transaction_ids = plans['transaction']
-
-            query_plans = [
+    query_plans = [
                 # based on transaction_id
                 {
                     'source': 'addresses_version',
@@ -416,46 +487,47 @@ def lear_delete_versioned(conn: Connection, business_ids: list):
                 },
             ]
 
-            query_futures = []
-            for plan in query_plans:
-                query_futures.append(
-                    execute_query.submit(conn, plan)
-                )
+    # Execute every query and delete serially. The shared SQLAlchemy connection
+    # must not be used by concurrent Prefect tasks.
+    for plan in query_plans:
+        delete_plans = run_delete_query(conn, plan, stats)
+        print(
+            f"Delete plans for {len(delete_plans)} tables from "
+            f"{plan.get('source')}: {list(delete_plans.keys())}"
+        )
+        for table, ids in delete_plans.items():
+            run_delete_table(conn, table, ids, stats)
 
-            delete_futures = []
-            for future in query_futures:
-                delete_plans = future.result()
-                for table, ids in delete_plans.items():
-                    delete_futures.append(
-                        execute_delete_plan.submit(conn, table, ids)
-                    )
+    tables_and_ids = [
+        ('businesses', business_ids),
+        ('businesses_version', business_ids),
+        ('filings', filing_ids),
+        ('transaction', transaction_ids),
+    ]
+    for table, ids in tables_and_ids:
+        run_delete_table(conn, table, ids, stats)
 
-            # the rest of tables
-            tables_and_ids = [
-                ('businesses', business_ids),
-                ('businesses_version', business_ids),
-                ('filings', filing_ids),
-                ('transaction', transaction_ids)
-            ]
-            for table, ids in tables_and_ids:
-                delete_futures.append(
-                    execute_delete_plan.submit(conn, table, ids)
-                )
-
-            wait(delete_futures)
-            succeeded = sum(1 for f in delete_futures if f.state.is_completed())
-            failed = len(delete_futures) - succeeded
-            print(f'Lear delete (versioned) complete for this round. Succeeded: {succeeded}. Failed: {failed}')
+    print(
+        'Lear delete (versioned) complete for this round. '
+        f'Succeeded: {stats["succeeded"]}. Failed: {stats["failed"]}'
+    )
 
 
 @task(cache_policy=NO_CACHE)
 def lear_delete(db_engine: Engine, business_ids: list):
+    if not business_ids:
+        print("Skip LEAR delete due to empty business ID list")
+        return
+
     with db_engine.connect() as conn:
         with replica_role(conn):
-            # no overlaps between versioned & non-versioned records
             versioned = lear_delete_versioned.submit(conn, business_ids)
+            versioned.result()
+            print(f"Completed LEAR versioned delete for {len(business_ids)} business IDs")
+
             non_versioned = lear_delete_non_versioned.submit(conn, business_ids)
-            wait([versioned, non_versioned])
+            non_versioned.result()
+            print(f"Completed LEAR non-versioned delete for {len(business_ids)} business IDs")
 
 
 @task(cache_policy=NO_CACHE)
@@ -920,12 +992,14 @@ def batch_delete_flow():
             if not business_ids:
                 break
             print(f'🚀 Running round {cnt} to delete {len(business_ids)} busiesses...')
+            print(f'👷 Identifiers to delete: {identifiers}')
 
             # If business has lear filings save them to demigrated filings table
             if config.SAVE_DEMIGRATED_LEAR_FILINGS:
                 insert_demigrated_filings(lear_engine, colin_engine, business_ids, identifiers)
 
             futures = []
+
             futures.append(lear_delete.submit(lear_engine, business_ids))
 
             if config.DELETE_AUTH_RECORDS:
