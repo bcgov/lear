@@ -66,6 +66,32 @@ RELATIONSHIP_ROLE_CONVERTER = {
     "other": PartyRole.RoleTypes.OTHER.value,
 }
 
+# Configurable mapping of role types to allowed meta property keys
+ALLOWED_ROLE_META_PROPERTIES = {
+    PartyRole.RoleTypes.LIQUIDATOR.value: {"appointmentMethod", "courtOrderNumber"},
+}
+
+
+def _extract_role_meta(role: str, role_info: dict) -> dict | None:
+    """Extract and filter meta properties allowed for the role."""
+    if not isinstance(role_info, dict):
+        return None
+
+    meta = role_info.get("meta")
+    if not isinstance(meta, dict):
+        return None
+
+    allowed_properties = ALLOWED_ROLE_META_PROPERTIES.get(role)
+    if not allowed_properties:
+        return None
+
+    filtered_meta = {
+        key: meta[key]
+        for key in allowed_properties
+        if key in meta and meta[key] is not None
+    }
+    return filtered_meta if filtered_meta else None
+
 
 def _create_party(relationship: dict):
     """Create a new party."""
@@ -100,12 +126,14 @@ def _create_role(party: Party,
                  default_appointment: datetime.datetime,
                  role_class: PartyClassType | None) -> PartyRole:
     """Create a new party role and link to party."""
+    role = RELATIONSHIP_ROLE_CONVERTER.get((role_info.get("roleType") or "").lower(), "")
     party_role = PartyRole(
-        role=RELATIONSHIP_ROLE_CONVERTER.get(role_info.get("roleType").lower(), ""),
+        role=role,
         # FUTURE: use appointmentDate instead of default when given (api validation needs to be updated first for officers, receivers, liquidators)
         appointment_date=default_appointment or role_info.get("appointmentDate"),
         cessation_date=role_info.get("cessationDate"),
-        party=party
+        party=party,
+        meta=_extract_role_meta(role, role_info)
     )
     if role_class:
         party_role.party_class_type = role_class
@@ -283,6 +311,47 @@ def update_relationships_cessation_date(
                 and (role_info := _get_info_by_role(relationship.get("roles", []), party_role.role))
             ):
                 party_role.cessation_date = role_info.get("cessationDate")
+
+
+def update_relationships_meta(
+    relationships: list[dict],
+    business: Business,
+    allowed_roles: list[str] | None = None
+) -> None:
+    """Update the meta for the given parties for a business.
+
+    Assumption: The structure has already been validated, upon submission.
+    """
+    if allowed_roles is None:
+        allowed_roles = list(ALLOWED_ROLE_META_PROPERTIES.keys())
+
+    def _get_info_by_role(roles: list[dict], role: str):
+        return next(
+            (
+                role_info for role_info in roles
+                if RELATIONSHIP_ROLE_CONVERTER.get((role_info.get("roleType") or "").lower(), "") == role and
+                "meta" in role_info
+            ),
+            None
+        )
+
+    existing_relationships = [
+        relationship
+        for relationship in (relationships or [])
+        if (relationship.get("entity") or {}).get("identifier") is not None
+    ]
+    for relationship in existing_relationships:
+        party_id = _str_to_int((relationship.get("entity") or {}).get("identifier"))
+        if not party_id:
+            continue
+        party_roles: list[PartyRole] = PartyRole.get_party_roles_by_party_id(business.id, party_id)
+
+        for party_role in party_roles:
+            if (party_role.role in allowed_roles
+                and party_role.role in ALLOWED_ROLE_META_PROPERTIES
+                and (role_info := _get_info_by_role(relationship.get("roles", []), party_role.role))
+            ):
+                party_role.meta = _extract_role_meta(party_role.role, role_info)
 
 
 def update_relationship_addresses(relationships: list[dict], business: Business) -> None:

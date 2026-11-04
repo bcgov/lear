@@ -1242,11 +1242,19 @@ def _mock_external_checks(mocker, monkeypatch):
 def _relationship(roles: list, given_name='Peter', family_name='Griffin') -> dict:
     """Return a person relationship with the given role types."""
     base = CONTINUATION_IN_RELATIONSHIPS['relationships'][1]
+
+    role_list = []
+    for role in roles:
+        role_entry = {'roleType': role, 'appointmentDate': '2018-01-01'}
+        if role.lower() == 'liquidator':
+            role_entry['meta'] = { 'appointmentMethod': 'company' }
+        role_list.append(role_entry)
+
     return {
         'entity': {'givenName': given_name, 'familyName': family_name},
         'deliveryAddress': copy.deepcopy(base['deliveryAddress']),
         'mailingAddress': copy.deepcopy(base['mailingAddress']),
-        'roles': [{'roleType': role, 'appointmentDate': '2018-01-01'} for role in roles]
+        'roles': role_list
     }
 
 

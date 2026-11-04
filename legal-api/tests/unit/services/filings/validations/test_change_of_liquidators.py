@@ -28,14 +28,68 @@ from registry_schemas.example_data import CHANGE_OF_LIQUIDATORS, FILING_HEADER
     'test_name, roles, expected_code, expected_msg',
     [
         (
-            'Valid liquidator',
-            [{'roleType': 'Liquidator' }],
+            'Valid liquidator with valid meta',
+            [{'roleType': 'Liquidator', 'meta': {'appointmentMethod': 'court', 'courtOrderNumber': '12345'}}],
             None,
             None
         ),
         (
-            'Invalid role',
-            [{'roleType': 'Director' }],  # Invalid role
+            'Invalid liquidator with missing meta key (schema 422)',
+            [{'roleType': 'Liquidator'}],
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            [
+                {
+                    'context': [],
+                    'error': "'meta' is a required property",
+                    'path': 'changeOfLiquidators/relationships/0/roles/0'
+                }
+            ]
+        ),
+        (
+            'Invalid liquidator with meta None (schema 422)',
+            [{'roleType': 'Liquidator', 'meta': None}],
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            [
+                {
+                    'context': [],
+                    'error': "None is not of type 'object'",
+                    'path': 'changeOfLiquidators/relationships/0/roles/0/meta'
+                }
+            ]
+        ),
+        (
+            'Invalid liquidator meta non-dict (schema 422)',
+            [{'roleType': 'Liquidator', 'meta': 'not_a_dict'}],
+            HTTPStatus.UNPROCESSABLE_ENTITY,
+            [
+                {
+                    'context': [],
+                    'error': "'not_a_dict' is not of type 'object'",
+                    'path': 'changeOfLiquidators/relationships/0/roles/0/meta'
+                }
+            ]
+        ),
+        (
+            'Invalid liquidator meta property (business rule 400)',
+            [{
+                'roleType': 'Liquidator', 
+                'meta': {
+                    'appointmentMethod': 'court', 
+                    'courtOrderNumber': '12345', 
+                    'unauthorizedKey': 'invalid'
+                }
+            }],
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    'error': 'Invalid meta property: unauthorizedKey.',
+                    'path': '/filing/changeOfLiquidators/relationships/0/roles/0/meta/unauthorizedKey'
+                }
+            ]
+        ),
+        (
+            'Invalid role without meta',
+            [{'roleType': 'Director'}],
             HTTPStatus.BAD_REQUEST,
             [
                 {
@@ -43,7 +97,22 @@ from registry_schemas.example_data import CHANGE_OF_LIQUIDATORS, FILING_HEADER
                     'path': '/filing/changeOfLiquidators/relationships/0/roles/0/roleType'
                 }
             ]
-        )
+        ),
+        (
+            'Invalid role with meta',
+            [{'roleType': 'Director', 'meta': {'appointmentMethod': 'company'}}],
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    'error': 'Invalid role type for this filing.',
+                    'path': '/filing/changeOfLiquidators/relationships/0/roles/0/roleType'
+                },
+                {
+                    'error': 'Cannot submit meta properties for this role.',
+                    'path': '/filing/changeOfLiquidators/relationships/0/roles/0/meta'
+                }
+            ]
+        ),
     ]
 )
 def test_validate_col_relationships(

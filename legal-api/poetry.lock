@@ -336,7 +336,7 @@ pg8000 = ">=1.31.2,<2.0.0"
 pycountry = ">=24.6.1,<25.0.0"
 pydantic = ">=2.10.6,<3.0.0"
 pytz = ">=2026.2,<2027.0"
-registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.90"}
+registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.91"}
 sql-versioning = {git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "python/common/sql-versioning-alt"}
 
 [package.source]
@@ -3390,8 +3390,8 @@ strict-rfc3339 = "*"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
-reference = "2.18.90"
-resolved_reference = "1e9deb90f3c08aee04335f34eb1d932ac25758f1"
+reference = "2.18.91"
+resolved_reference = "3af518fed22db3ab25f1b52ee0661477a131f733"
 
 [[package]]
 name = "reportlab"
