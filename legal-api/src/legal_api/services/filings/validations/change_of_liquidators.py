@@ -38,7 +38,7 @@ from flask_babel import _
 from business_model.models import Business, PartyRole
 from legal_api.errors import Error
 from business_common.utils.legislation_datetime import LegislationDatetime
-from legal_api.services.filings.validations.common_validations import validate_offices, validate_relationships
+from legal_api.services.filings.validations.common_validations import validate_offices, validate_relationships, get_date
 
 
 def validate(business: Business, filing_json: dict) -> Error | None:
@@ -49,7 +49,7 @@ def validate(business: Business, filing_json: dict) -> Error | None:
 
     msg = []
 
-    msg.extend(_validate_liquidation_date(business, filing_data, filing_type, filing_sub_type))
+    msg.extend(_validate_liquidation_date(business, filing_json, filing_type, filing_sub_type))
 
     if filing_data.get("relationships"):
         msg.extend(validate_relationships(
@@ -81,38 +81,31 @@ def validate(business: Business, filing_json: dict) -> Error | None:
 
 def _validate_liquidation_date(
     business: Business,
-    filing_data: dict,
+    filing_json: dict,
     filing_type: str = "changeOfLiquidators",
     filing_sub_type: str | None = None
 ) -> list:
     """Validate changeOfLiquidatorsDate for standard and correction filings."""
     msg = []
-    date_str = filing_data.get("changeOfLiquidatorsDate")
-    err_path = f"/filing/{filing_type}/changeOfLiquidatorsDate"
+    date_path = f"/filing/{filing_type}/changeOfLiquidatorsDate"
+    liquidation_date = get_date(filing_json, date_path)
 
     # Required for appointLiquidator when the business is not yet in liquidation
     is_correction = filing_type == "correction"
     if filing_sub_type == "appointLiquidator" and not business.in_liquidation and not is_correction:
-        if not date_str:
+        if not liquidation_date:
             msg.append({
                 "error": _("'changeOfLiquidatorsDate' is required when business is not yet in liquidation."),
-                "path": err_path
+                "path": date_path
             })
             return msg
 
-    if date_str:
-        try:
-            liquidation_date = date.fromisoformat(str(date_str).strip())
-            today = LegislationDatetime.datenow()
-            if liquidation_date > today:
-                msg.append({
-                    "error": _("'changeOfLiquidatorsDate' cannot be in the future."),
-                    "path": err_path
-                })
-        except (ValueError, TypeError):
+    if liquidation_date:
+        today = LegislationDatetime.datenow()
+        if liquidation_date > today:
             msg.append({
-                "error": _("Invalid date format for 'changeOfLiquidatorsDate' (YYYY-MM-DD)."),
-                "path": err_path
+                "error": _("'changeOfLiquidatorsDate' cannot be in the future."),
+                "path": date_path
             })
 
     return msg
