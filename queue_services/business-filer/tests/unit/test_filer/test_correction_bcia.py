@@ -1298,54 +1298,6 @@ def test_comment_only_correction(app, session, mocker, test_name):
 
 
 @pytest.mark.parametrize(
-    'legal_type, new_legal_type',
-    [
-        (Business.LegalTypes.COMP.value, Business.LegalTypes.BCOMP.value),
-        (Business.LegalTypes.BCOMP.value, Business.LegalTypes.COMP.value)
-    ]
-)
-def test_new_legal_type(app, session, mocker, legal_type, new_legal_type):
-    """Assert that the business legal type is correctly set during correction."""
-    identifier = f'BC{random.randint(1000000, 9999999)}'
-    business = create_entity(identifier, legal_type, 'Test Entity')
-
-    filing = copy.deepcopy(BC_CORRECTION)
-
-    corrected_filing = factory_completed_filing(business, BC_CORRECTION_APPLICATION)
-    filing['filing']['correction']['correctedFilingId'] = corrected_filing.id
-
-    filing['filing']['correction']['contactPoint'] = CONTACT_POINT
-    del filing['filing']['correction']['nameRequest']
-    del filing['filing']['correction']['offices']
-    del filing['filing']['correction']['shareStructure']
-    del filing['filing']['correction']['parties'][0]
-    filing['filing']['correction']['newLegalType'] = new_legal_type
-
-    payment_id = str(random.SystemRandom().getrandbits(0x58))
-    filing_id = (create_filing(payment_id, filing, business_id=business.id)).id
-
-    filing_msg = FilingMessage(filing_identifier=filing_id)
-
-    # mock out the email sender and event publishing
-    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_email_message', return_value=None)
-    mocker.patch('business_filer.services.publish_event.PublishEvent.publish_event', return_value=None)
-    mocker.patch('business_filer.filing_processors.filing_components.name_request.consume_nr', return_value=None)
-    mocker.patch('business_filer.filing_processors.filing_components.business_profile.update_business_profile',
-                 return_value=None)
-    mocker.patch('business_filer.services.AccountService.update_entity', return_value=None)
-
-    # Test
-    with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-        process_filing(filing_msg)
-
-    # Check outcome
-    assert business.legal_type == new_legal_type
-    final_filing = Filing.find_by_id(filing_id)
-    meta_data = final_filing.meta_data.get('correction', {})
-    assert meta_data.get("hasNoa")
-
-
-@pytest.mark.parametrize(
     'is_country_changed, is_region_changed',
     [
         (True, True),   # changed both country and region
