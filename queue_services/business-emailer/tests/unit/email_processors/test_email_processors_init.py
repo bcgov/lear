@@ -334,6 +334,56 @@ def test_get_recipients_dissolution_includes_party_emails(app):
     assert 'custodian@example.com' in result
 
 
+def _relationship(email, role_type):
+    return {'entity': {'givenName': 'Joe', 'familyName': 'Swanson', 'email': email},
+            'roles': [{'roleType': role_type, 'appointmentDate': '2018-01-01'}]}
+
+
+@pytest.mark.parametrize('option, expected_included', [
+    ('PAID', True),
+    ('bn', True),
+    ('COMPLETED', False),
+    ('mras', False),
+])
+def test_get_recipients_continuation_in_relationships(app, option, expected_included):
+    """Assert a relationships-shaped continuationIn resolves the completing party email like parties."""
+    filing_json = _make_filing_json('continuationIn')
+    filing_json['filing']['continuationIn']['relationships'] = [
+        _relationship('comp@example.com', 'Completing Party'),
+        _relationship('director@example.com', 'Director'),
+    ]
+    with app.app_context():
+        result = get_recipients(option, filing_json, None, 'continuationIn')
+    assert CONTACT_POINT in result
+    assert ('comp@example.com' in result) == expected_included
+    assert 'director@example.com' not in result
+
+
+def test_get_recipients_parties_take_precedence_over_relationships(app):
+    """Assert a parties key present alongside relationships is the one read."""
+    filing_json = _make_filing_json(
+        'continuationIn',
+        parties=[{'officer': {'email': 'legacy@example.com'}, 'roles': [{'roleType': 'Completing Party'}]}]
+    )
+    filing_json['filing']['continuationIn']['relationships'] = [_relationship('rel@example.com', 'Completing Party')]
+    with app.app_context():
+        result = get_recipients('PAID', filing_json, None, 'continuationIn')
+    assert 'legacy@example.com' in result
+    assert 'rel@example.com' not in result
+
+
+def test_get_recipients_correction_relationships_unchanged(app):
+    """Assert a relationships-shaped correction (outside the party-shape filings) adds no party emails."""
+    filing_json = _make_filing_json('correction')
+    filing_json['filing']['correction']['relationships'] = [
+        _relationship('custodian@example.com', 'Custodian'),
+        _relationship('comp@example.com', 'Completing Party'),
+    ]
+    with app.app_context():
+        result = get_recipients('COMPLETED', filing_json, None, 'correction')
+    assert result == CONTACT_POINT
+
+
 def test_get_recipients_missing_contact_point_coalesced_to_empty_string(app):
     """Assert that a missing contactPoint email is coalesced to an empty string (not None)."""
     filing_json = _make_filing_json(

@@ -23,6 +23,12 @@ from flask_cors import cross_origin
 from sqlalchemy import or_, text
 
 from business_common.utils.relationship_director import relationship_to_director
+from business_common.utils.relationship_party import (
+    COLIN_PARTY_SHAPE_FILING_TYPES,
+    RELATIONSHIPS_KEY,
+    get_parties,
+    party_key,
+)
 from business_model.models import (
     Address,
     Alias,
@@ -61,6 +67,9 @@ def get_completed_filings_for_colin():
         business = Business.find_by_internal_id(filing.business_id)
 
         filing_json = _get_initial_filing_json(filing, business)
+
+        if filing.filing_type in COLIN_PARTY_SHAPE_FILING_TYPES:
+            _convert_relationships_to_parties(filing_json["filing"].get(filing.filing_type) or {})
 
         if filing.filing_type == "correction" and business.legal_type != Business.LegalTypes.COOP.value:
             try:
@@ -323,6 +332,13 @@ def _addresses_differ(director: dict, prev_party_json: dict) -> bool:
                            for field in _COLIN_ADDRESS_COMPARE_FIELDS):
             return True
     return False
+
+
+def _convert_relationships_to_parties(filing_section: dict):
+    """Down-convert relationships to the legacy parties shape colin-api reads."""
+    if party_key(filing_section) == RELATIONSHIPS_KEY:
+        filing_section["parties"] = get_parties(filing_section)
+        del filing_section[RELATIONSHIPS_KEY]
 
 
 def _convert_cod_relationships_to_directors(filing: Filing, filing_json: dict):

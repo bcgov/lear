@@ -27,6 +27,12 @@ from flask import current_app, jsonify
 from business_common.utils.datetime import datetime
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_common.utils.relationship_director import relationship_to_director
+from business_common.utils.relationship_party import (
+    PARTY_SHAPE_FILING_TYPES,
+    RELATIONSHIPS_KEY,
+    get_parties,
+    party_key,
+)
 from business_model.models import (
     AmalgamatingBusiness,
     Business,
@@ -324,6 +330,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             filing = copy.deepcopy(self._filing.filing_json["filing"])
             filing["header"]["filingId"] = self._filing.id
             filing["header"]["status"] = self._filing.status
+            self._normalize_party_shape(filing)
             self._format_filing_json(filing)
 
         filing["header"]["reportType"] = self._report_key
@@ -340,6 +347,17 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing["enable_new_ben_statements"] = flags.is_on("enable-new-ben-statements")
         filing["enable_sandbox"] = flags.is_on("enable-sandbox")
         return filing
+
+    def _normalize_party_shape(self, filing):
+        """Convert relationships to the legacy parties shape the party-shape filing templates read."""
+        filing_type = self._filing.filing_type
+        section = filing.get(filing_type) or {}
+        if filing_type in PARTY_SHAPE_FILING_TYPES and party_key(section) == RELATIONSHIPS_KEY:
+            section["parties"] = get_parties(section)
+            for party in section["parties"]:
+                # common/directors.html renders officer.middleName; business-ui sends the middle name as middleInitial
+                officer = party["officer"]
+                officer["middleName"] = officer.get("middleName") or officer.get("middleInitial") or ""
 
     def _format_par_value(self, filing):
         if share_classes := filing.get("shareClasses"):

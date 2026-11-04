@@ -26,7 +26,7 @@ from business_model.models import Business
 from legal_api.services import NameXService
 from legal_api.services.filings.validations.validation import validate
 from legal_api.services.filings.validations.continuation_in import validate_continuation_in_foreign_jurisdiction, validate_continuation_in_expro_business_in_colin
-from registry_schemas.example_data import CONTINUATION_IN
+from registry_schemas.example_data import CONTINUATION_IN, CONTINUATION_IN_RELATIONSHIPS
 
 from tests.unit.services.filings.validations import create_party, create_party_address, lists_are_equal
 
@@ -1210,3 +1210,177 @@ def test_continuation_in_foreign_jurisdiction_name_rejected_by_schema(session, f
     valid, _ = registry_schemas.validate({'continuationIn': ci}, 'continuation_in')
 
     assert not valid
+
+
+RELATIONSHIPS_PATH = '/filing/continuationIn/relationships'
+PARTY_ROLE_MOCKS = [
+    'legal_api.services.filings.validations.continuation_in.validate_pdf',
+    'legal_api.services.filings.validations.continuation_in.validate_name_request',
+    'legal_api.services.filings.validations.continuation_in.validate_continuation_in_expro_business_in_colin',
+]
+
+
+def _get_continuation_in_relationships_template(legal_type=Business.LegalTypes.BCOMP_CONTINUE_IN.value):
+    """Return an approved continuationIn filing in the relationships shape."""
+    filing = _get_continuation_in_template()
+    filing['filing']['continuationIn'] = copy.deepcopy(CONTINUATION_IN_RELATIONSHIPS)
+    filing['filing']['continuationIn']['nameRequest']['legalType'] = legal_type
+    filing['filing']['continuationIn']['nameRequest']['nrNumber'] = 'NR 1234567'
+    return filing
+
+
+def _mock_external_checks(mocker, monkeypatch):
+    """Stub the flag, NR, PDF and COLIN lookups so only the party rules are exercised."""
+    monkeypatch.setattr(
+        'legal_api.services.flags.value',
+        lambda flag, default=None: 'C CBEN CCC CUL' if flag == 'supported-continuation-in-entities' else default
+    )
+    for target in PARTY_ROLE_MOCKS:
+        mocker.patch(target, return_value=[])
+
+
+def _relationship(roles: list, given_name='Peter', family_name='Griffin') -> dict:
+    """Return a person relationship with the given role types."""
+    base = CONTINUATION_IN_RELATIONSHIPS['relationships'][1]
+    return {
+        'entity': {'givenName': given_name, 'familyName': family_name},
+        'deliveryAddress': copy.deepcopy(base['deliveryAddress']),
+        'mailingAddress': copy.deepcopy(base['mailingAddress']),
+        'roles': [{'roleType': role, 'appointmentDate': '2018-01-01'} for role in roles]
+    }
+
+
+@pytest.mark.parametrize(
+    'legal_type, expected_errors',
+    [
+        (Business.LegalTypes.CONTINUE_IN.value, []),
+        (Business.LegalTypes.BCOMP_CONTINUE_IN.value, []),
+        (Business.LegalTypes.ULC_CONTINUE_IN.value, []),
+        (Business.LegalTypes.CCC_CONTINUE_IN.value, ['Must have a minimum of 3 Director.']),
+    ]
+)
+def test_continuation_in_relationships(mocker, app, session, monkeypatch, legal_type, expected_errors):
+    """Assert the relationships shape passes the party rules and reports role errors at its own path."""
+    _mock_external_checks(mocker, monkeypatch)
+    filing = _get_continuation_in_relationships_template(legal_type)
+
+    err = validate(None, filing)
+
+    if not expected_errors:
+        assert err is None
+    else:
+        assert err.code == HTTPStatus.BAD_REQUEST
+        assert [m['error'] for m in err.msg] == expected_errors
+        assert err.msg[0]['path'] == f'{RELATIONSHIPS_PATH}/roles'
+
+
+@pytest.mark.parametrize(
+    'test_name, relationships, expected_errors',
+    [
+        ('NO_COMPLETING_PARTY', [_relationship(['Director'])], ['Must have a minimum of one completing party.']),
+        ('NO_DIRECTOR', [_relationship(['Completing Party'])], ['Must have a minimum of 1 Director.']),
+        ('TWO_COMPLETING_PARTIES',
+         [_relationship(['Completing Party', 'Director']), _relationship(['Completing Party'], 'Glenn', 'Quagmire')],
+         ['Must have a maximum of one completing party.']),
+        ('INVALID_ROLE',
+         [_relationship(['Completing Party', 'Director']), _relationship(['Liquidator'], 'Glenn', 'Quagmire')],
+         ['Invalid party role(s) provided: liquidator.']),
+    ]
+)
+def test_continuation_in_relationships_roles(mocker, app, session, monkeypatch, test_name, relationships,
+                                             expected_errors):
+    """Assert the legacy role rules apply to relationships with the path rewritten."""
+    _mock_external_checks(mocker, monkeypatch)
+    filing = _get_continuation_in_relationships_template()
+    filing['filing']['continuationIn']['relationships'] = relationships
+
+    err = validate(None, filing)
+
+    assert err.code == HTTPStatus.BAD_REQUEST
+    assert [m['error'] for m in err.msg] == expected_errors
+    assert all(m['path'] == f'{RELATIONSHIPS_PATH}/roles' for m in err.msg)
+
+
+def test_continuation_in_both_party_shapes_rejected(mocker, app, session, monkeypatch):
+    """Assert submitting parties and relationships together is rejected."""
+    _mock_external_checks(mocker, monkeypatch)
+    filing = _get_continuation_in_relationships_template()
+    filing['filing']['continuationIn']['parties'] = copy.deepcopy(CONTINUATION_IN['parties'])
+
+    err = validate(None, filing)
+
+    assert err.code == HTTPStatus.BAD_REQUEST
+    assert err.msg == [{'error': 'Provide either parties or relationships, not both.', 'path': RELATIONSHIPS_PATH}]
+
+
+def test_continuation_in_relationships_not_approved(mocker, app, session, monkeypatch):
+    """Assert relationships are accepted before approval, when the party rules do not run."""
+    _mock_external_checks(mocker, monkeypatch)
+    filing = _get_continuation_in_relationships_template(Business.LegalTypes.CCC_CONTINUE_IN.value)
+    filing['filing']['continuationIn']['isApproved'] = False
+
+    err = validate(None, filing)
+
+    assert err is None
+
+
+def test_continuation_in_relationships_appointment_date_required(mocker, app, session, monkeypatch):
+    """Assert every relationship role needs an appointmentDate."""
+    _mock_external_checks(mocker, monkeypatch)
+    filing = _get_continuation_in_relationships_template()
+    del filing['filing']['continuationIn']['relationships'][1]['roles'][0]['appointmentDate']
+
+    err = validate(None, filing)
+
+    assert err.code == HTTPStatus.BAD_REQUEST
+    assert err.msg == [{'error': 'appointmentDate is required.', 'path': f'{RELATIONSHIPS_PATH}/1/roles/0/appointmentDate'}]
+
+
+def test_continuation_in_relationships_name_rules(mocker, app, session, monkeypatch):
+    """Assert the COLIN name length rule applies to relationships with the path rewritten."""
+    _mock_external_checks(mocker, monkeypatch)
+    filing = _get_continuation_in_relationships_template()
+    filing['filing']['continuationIn']['relationships'][1]['entity']['givenName'] = 'G' * 21
+
+    err = validate(None, filing)
+
+    assert err.code == HTTPStatus.BAD_REQUEST
+    assert err.msg == [{'error': 'Director first name cannot be longer than 20 characters', 'path': RELATIONSHIPS_PATH}]
+
+
+def test_continuation_in_relationships_person_with_business_name(mocker, app, session, monkeypatch):
+    """Assert a person relationship carrying a businessName is reported at the entity path."""
+    _mock_external_checks(mocker, monkeypatch)
+    filing = _get_continuation_in_relationships_template()
+    filing['filing']['continuationIn']['relationships'][1]['entity']['businessName'] = 'ACME Ltd.'
+
+    err = validate(None, filing)
+
+    assert err.code == HTTPStatus.BAD_REQUEST
+    assert {'error': 'Director businessName should not be set for a person relationship entity',
+            'path': f'{RELATIONSHIPS_PATH}/1/entity/businessName'} in err.msg
+    assert all(m['path'].startswith(RELATIONSHIPS_PATH) for m in err.msg)
+
+
+def test_continuation_in_relationships_postal_code(mocker, app, session, monkeypatch):
+    """Assert the party address rules apply to relationships with the path rewritten."""
+    _mock_external_checks(mocker, monkeypatch)
+    filing = _get_continuation_in_relationships_template()
+    del filing['filing']['continuationIn']['relationships'][0]['deliveryAddress']['postalCode']
+
+    err = validate(None, filing)
+
+    assert err.code == HTTPStatus.BAD_REQUEST
+    assert err.msg[0]['error'] == 'Postal code is required.'
+    assert err.msg[0]['path'].startswith(f'{RELATIONSHIPS_PATH}/0/deliveryAddress')
+
+
+def test_continuation_in_relationships_delivery_address_required_by_schema(mocker, app, session, monkeypatch):
+    """Assert a relationship without a deliveryAddress is rejected by the schema."""
+    _mock_external_checks(mocker, monkeypatch)
+    filing = _get_continuation_in_relationships_template()
+    del filing['filing']['continuationIn']['relationships'][1]['deliveryAddress']
+
+    err = validate(None, filing)
+
+    assert err.code == HTTPStatus.UNPROCESSABLE_ENTITY

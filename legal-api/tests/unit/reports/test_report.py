@@ -39,6 +39,8 @@ from registry_schemas.example_data import (
     CHANGE_OF_DIRECTORS_MAILING,
     CHANGE_OF_LIQUIDATORS,
     CHANGE_OF_NAME,
+    CONTINUATION_IN,
+    CONTINUATION_IN_RELATIONSHIPS,
     CORP_CHANGE_OF_ADDRESS,
     CORRECTION_COMBINED_AR,
     DISSOLUTION,
@@ -464,6 +466,47 @@ def test_set_directors_from_relationships(session, mocker):
 
     # the submitted filing json keeps the relationships shape
     assert 'relationships' in filing.filing_json['filing']['changeOfDirectors']
+
+
+@pytest.mark.parametrize(
+    'test_name, template',
+    [
+        ('PARTIES', CONTINUATION_IN),
+        ('RELATIONSHIPS', CONTINUATION_IN_RELATIONSHIPS),
+    ]
+)
+def test_format_continuation_in_data_party_shapes(session, test_name, template):
+    """Assert both continuationIn party shapes feed the legacy parties template data."""
+    report = create_report(identifier='C1234567', entity_type='CBEN', report_type='continuationIn',
+                           filing_type='continuationIn', template=template)
+    filing = copy.deepcopy(report._filing.filing_json['filing'])
+    filing['continuationIn'].pop('business', None)  # the example expro block has no foundingDate
+
+    report._normalize_party_shape(filing)
+    report._format_continuation_in_data(filing)
+
+    assert filing['parties'] is filing['continuationIn']['parties']
+    assert filing['parties'][0]['officer']['firstName'] == 'Joe'
+    assert filing['parties'][0]['officer']['lastName'] == 'Swanson'
+    assert filing['parties'][0]['officer']['middleName'] == 'P'  # the directors template reads middleName
+    assert [r['roleType'] for r in filing['parties'][0]['roles']] == ['Completing Party', 'Director']
+    assert filing['parties'][0]['deliveryAddress']['addressCountry'] == 'Canada'  # _format_directors ran
+    # the stored filing json keeps the submitted shape
+    stored = report._filing.filing_json['filing']['continuationIn']
+    assert ('relationships' in stored) == (test_name == 'RELATIONSHIPS')
+    assert ('parties' in stored) == (test_name == 'PARTIES')
+
+
+def test_normalize_party_shape_only_for_party_shape_filings(session):
+    """Assert the relationships normalization leaves filings outside the party-shape set alone."""
+    report = create_report(identifier='BC1234567', entity_type='BC', report_type='changeOfDirectors',
+                           filing_type='changeOfDirectors', template=CHANGE_OF_DIRECTORS)
+    filing = copy.deepcopy(report._filing.filing_json['filing'])
+    filing['changeOfDirectors'] = {'relationships': copy.deepcopy(CONTINUATION_IN_RELATIONSHIPS['relationships'])}
+
+    report._normalize_party_shape(filing)
+
+    assert 'parties' not in filing['changeOfDirectors']
 
 
 def test_alteration_name_change(session, monkeypatch):

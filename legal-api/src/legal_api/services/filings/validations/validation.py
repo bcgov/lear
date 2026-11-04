@@ -16,6 +16,7 @@ from http import HTTPStatus
 
 from flask_babel import _ as babel
 
+from business_common.utils.relationship_party import PARTY_SHAPE_FILING_TYPES, RELATIONSHIPS_KEY
 from business_model.models import Business, Filing
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
@@ -50,6 +51,12 @@ from .dissolution import DissolutionTypes
 from .dissolution import validate as dissolution_validate
 from .incorporation_application import validate as incorporation_application_validate
 from .notice_of_withdrawal import validate as notice_of_withdrawal_validate
+from .party_shape import (
+    normalize_party_shape,
+    rewrite_party_error_paths,
+    submitted_party_key,
+    validate_relationship_items,
+)
 from .put_back_off import validate as put_back_off_validate
 from .put_back_on import validate as put_back_on_validate
 from .registrars_notation import validate as registrars_notation_validate
@@ -63,15 +70,38 @@ from .transition import validate as transition_validate
 from .transparency_register import validate as transparency_register_validate
 
 
-def validate(business: Business,  # noqa: PLR0915, PLR0912, PLR0911
+def validate(business: Business,
              filing_json: dict,
              account_id=None,
              filing_id: int | None = None) -> Error:
-    """Validate the filing JSON."""
+    """Validate the filing JSON, normalizing relationships-shaped parties for the legacy validators."""
     err = validate_against_schema(filing_json)
     if err:
         return err
-    
+
+    filing_type = filing_json["filing"]["header"].get("name")
+    if filing_type not in PARTY_SHAPE_FILING_TYPES:
+        return _validate(business, filing_json, account_id, filing_id)
+
+    normalized, shape_err = normalize_party_shape(filing_json, filing_type)
+    if shape_err:
+        return shape_err
+    err = _validate(business, normalized, account_id, filing_id)
+    if submitted_party_key(filing_json, filing_type) != RELATIONSHIPS_KEY:
+        return err
+    if err and err.code != HTTPStatus.BAD_REQUEST:
+        return err  # nothing party related to merge (e.g. unsupported legal type)
+
+    msg = rewrite_party_error_paths(err.msg if err else [], filing_type)
+    msg.extend(validate_relationship_items(filing_json, filing_type))
+    return Error(HTTPStatus.BAD_REQUEST, msg) if msg else None
+
+
+def _validate(business: Business,  # noqa: PLR0915, PLR0912, PLR0911
+              filing_json: dict,
+              account_id=None,
+              filing_id: int | None = None) -> Error:
+    """Run the certifier, permission and filing type validators on a parties-shaped filing."""
     filing_type = filing_json["filing"]["header"].get("name")
 
     if isinstance(business, Business):

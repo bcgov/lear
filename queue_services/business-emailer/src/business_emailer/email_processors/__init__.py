@@ -25,7 +25,8 @@ from pathlib import Path
 import requests
 from flask import current_app
 
-from business_model.models import Amalgamation, Business, Filing
+from business_common.utils.relationship_party import PARTY_SHAPE_FILING_TYPES, get_parties
+from business_model.models import Business, Filing
 from business_model.utils.legislation_datetime import LegislationDatetime
 
 
@@ -77,8 +78,10 @@ def get_recipients(option: str, filing_json: dict, token: str | None = None, fil
                       or (filing_type == "amalgamationApplication" and option in ["PAID", "COMPLETED", "bn"]))
         is_coop_incorp_paid = is_coop and filing_type == "incorporationApplication" and option == "PAID"
         is_valid_filing = filing_type in ["changeOfRegistration", "registration", "correction", "dissolution"]
+        # only the party-shape filings convert relationships; corrections keep their parties-only recipients
+        parties = get_parties(filing_data) if filing_type in PARTY_SHAPE_FILING_TYPES else filing_data.get("parties")
         if ((temp_logic or is_coop_incorp_paid or is_valid_filing)
-            and (parties := filing_data.get("parties"))
+            and parties
             and (party_emails := get_party_emails(parties, ["Completing Party", "Custodian", "Partner", "Proprietor"]))
         ):
             recipients = f"{recipients}, {', '.join(party_emails)}"
