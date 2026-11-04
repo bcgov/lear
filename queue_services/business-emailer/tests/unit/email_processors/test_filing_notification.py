@@ -187,16 +187,16 @@ def test_bootstrap_notification_recipients(app, session, mock_pdfs, filing_type,
     assert (COMP_PARTY_EMAIL in email['recipients']) == expects_comp_party
 
 
-@pytest.mark.parametrize('status, submitter_roles, expects_optional_email', [
-    # staff amalgamation: Document Delivery client email gets every output (#35050)
-    ('PAID', 'staff', True),
-    ('COMPLETED', 'staff', True),
-    ('COMPLETED', 'public_user', False),
-    ('COMPLETED', None, False),
+@pytest.mark.parametrize('status, submitter_roles', [
+    # amalgamation: the Document Delivery Additional Email gets every output
+    ('PAID', 'staff'),
+    ('COMPLETED', 'staff'),
+    ('PAID', 'public_user'),
+    ('COMPLETED', 'public_user'),
+    ('COMPLETED', None),
 ])
-def test_amalgamation_staff_document_optional_email(app, session, mock_pdfs, status, submitter_roles,
-                                                    expects_optional_email):
-    """Assert that a staff-entered documentOptionalEmail is a recipient for amalgamation outputs."""
+def test_amalgamation_document_optional_email(app, session, mock_pdfs, status, submitter_roles):
+    """Assert that documentOptionalEmail is a recipient for amalgamation outputs regardless of submitter."""
     filing = prep_bootstrap_filing(session, 'amalgamationApplication', 'BC1234567', 'BC', status, LEGAL_NAME)
     if status == 'PAID':
         make_future_effective(filing)
@@ -210,7 +210,7 @@ def test_amalgamation_staff_document_optional_email(app, session, mock_pdfs, sta
 
     assert CONTACT_POINT in email['recipients']
     assert COMP_PARTY_EMAIL in email['recipients']
-    assert ('optional@email.com' in email['recipients']) == expects_optional_email
+    assert 'optional@email.com' in email['recipients']
 
 
 @pytest.mark.parametrize('filing_type, filing_sub_type, status, expected_attachments', [
