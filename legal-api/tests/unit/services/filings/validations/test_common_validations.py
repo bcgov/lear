@@ -13,7 +13,7 @@
 # limitations under the License.
 """Test Suite for common validations sharing through the different filings."""
 import copy
-from datetime import datetime
+from datetime import date, datetime
 from http import HTTPStatus
 from unittest.mock import patch
 
@@ -50,6 +50,7 @@ from registry_schemas.example_data import (
 from tests.unit.models import factory_business, factory_party_role, factory_pending_filing
 
 from legal_api.services.filings.validations.common_validations import (
+    ALLOWED_ROLE_META_PROPERTIES,
     EXCLUDED_WORDS_FOR_CLASS,
     EXCLUDED_WORDS_FOR_SERIES,
     find_updated_keys_for_firms,
@@ -63,6 +64,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_foreign_jurisdiction,
     validate_offices,
     validate_offices_addresses,
+    validate_relationships,
     validate_share_currency,
     validate_parties_addresses,
     validate_party_name,
@@ -615,6 +617,7 @@ def test_validate_certified_by_corps(session, legal_type, input_value, expected_
 
 @pytest.mark.parametrize('filing_type', [
     CoreFiling.FilingTypes.INCORPORATIONAPPLICATION,
+    CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION,
     CoreFiling.FilingTypes.CONSENTCONTINUATIONOUT,
 ])
 @pytest.mark.parametrize('test_name, roles, login_source, certified_by, expected_error', [
@@ -627,9 +630,10 @@ def test_validate_certified_by_corps(session, legal_type, input_value, expected_
 ])
 def test_validate_certified_by_corps_completing_party(app, session, filing_type, test_name, roles,
                                                         login_source, certified_by, expected_error):
-    """Corps IA and CCO require certifiedBy for staff and API users (API users identified by loginSource)."""
+    """Corps IA, amalgamation and CCO require certifiedBy for staff and API users (identified by loginSource)."""
     filing_type_data = {
         CoreFiling.FilingTypes.INCORPORATIONAPPLICATION: ('incorporationApplication', INCORPORATION),
+        CoreFiling.FilingTypes.AMALGAMATIONAPPLICATION: ('amalgamationApplication', AMALGAMATION_APPLICATION),
         CoreFiling.FilingTypes.CONSENTCONTINUATIONOUT: ('consentContinuationOut', CONSENT_CONTINUATION_OUT),
     }
     filing_key, filing_data = filing_type_data[filing_type]
@@ -2435,3 +2439,189 @@ def test_nr_in_pending_filing(session, test_name, filing_type, status, has_nr, e
 
     exclude_filing_id = f.id if exclude_own_id else None
     assert _nr_in_pending_filing(nr_number, exclude_filing_id=exclude_filing_id) is expected
+
+
+@pytest.mark.parametrize(
+    'test_name, role_type, role_enum, meta, expected_err, expected_sub_path',
+    [
+        (
+            'Director with meta is rejected',
+            'Director',
+            PartyRole.RoleTypes.DIRECTOR,
+            {'appointmentMethod': 'court'},
+            'Cannot submit meta properties for this role.',
+            '/roles/0/meta'
+        ),
+        (
+            'Officer with meta is rejected',
+            'Officer',
+            PartyRole.RoleTypes.OFFICER,
+            {'courtOrderNumber': '12345'},
+            'Cannot submit meta properties for this role.',
+            '/roles/0/meta'
+        ),
+        (
+            'Receiver with meta is rejected',
+            'Receiver',
+            PartyRole.RoleTypes.RECEIVER,
+            {'appointmentMethod': 'court'},
+            'Cannot submit meta properties for this role.',
+            '/roles/0/meta'
+        ),
+        (
+            'Director with empty meta dict is rejected',
+            'Director',
+            PartyRole.RoleTypes.DIRECTOR,
+            {},
+            'Cannot submit meta properties for this role.',
+            '/roles/0/meta'
+        ),
+        (
+            'Liquidator with valid meta is accepted',
+            'Liquidator',
+            PartyRole.RoleTypes.LIQUIDATOR,
+            {'appointmentMethod': 'court', 'courtOrderNumber': '12345'},
+            None,
+            None
+        ),
+        (
+            'Liquidator with meta=None is accepted',
+            'Liquidator',
+            PartyRole.RoleTypes.LIQUIDATOR,
+            None,
+            None,
+            None
+        ),
+        (
+            'Liquidator with invalid meta property is rejected',
+            'Liquidator',
+            PartyRole.RoleTypes.LIQUIDATOR,
+            {'appointmentMethod': 'court', 'unauthorizedField': 'bad'},
+            'Invalid meta property: unauthorizedField.',
+            '/roles/0/meta/unauthorizedField'
+        ),
+        (
+            'Liquidator with non-dict meta is rejected',
+            'Liquidator',
+            PartyRole.RoleTypes.LIQUIDATOR,
+            'invalid_type',
+            'Invalid meta property for this role.',
+            '/roles/0/meta'
+        ),
+    ]
+)
+def test_validate_relationships_meta_restrictions(
+    session, test_name, role_type, role_enum, meta, expected_err, expected_sub_path
+):
+    """Assert validate_relationships restricts meta properties to liquidators with allowed fields."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier)
+
+    role_dict = {'roleType': role_type}
+    if meta is not None or expected_err is not None:
+        role_dict['meta'] = meta
+
+    filing_json = {
+        'filing': {
+            'header': {'name': 'correction', 'date': date.today().isoformat()},
+            'business': {'identifier': identifier},
+            'correction': {
+                'relationships': [
+                    {
+                        'entity': {'givenName': 'Jane', 'familyName': 'Doe'},
+                        'deliveryAddress': {
+                            'streetAddress': '123 Test St',
+                            'addressCity': 'Victoria',
+                            'addressRegion': 'BC',
+                            'addressCountry': 'CA',
+                            'postalCode': 'V8W 1W4'
+                        },
+                        'mailingAddress': {
+                            'streetAddress': '123 Test St',
+                            'addressCity': 'Victoria',
+                            'addressRegion': 'BC',
+                            'addressCountry': 'CA',
+                            'postalCode': 'V8W 1W4'
+                        },
+                        'roles': [role_dict]
+                    }
+                ]
+            }
+        }
+    }
+
+    errs = validate_relationships(
+        business=business,
+        filing_json=filing_json,
+        filing_type='correction',
+        role_types=[role_enum],
+        allow_new=True,
+        allow_edits=True
+    )
+
+    if expected_err:
+        expected_full_path = f'/filing/correction/relationships/0{expected_sub_path}'
+        assert any(e['error'] == expected_err and e['path'] == expected_full_path for e in errs)
+    else:
+        assert not any('meta' in e.get('path', '') for e in errs)
+
+
+def test_validate_relationships_configurable_allowed_meta_properties(session):
+    """Assert ALLOWED_ROLE_META_PROPERTIES can be configured to permit new roles/keys."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier)
+
+    original_config = copy.deepcopy(ALLOWED_ROLE_META_PROPERTIES)
+    try:
+        # Dynamically add receiver with allowed meta key
+        ALLOWED_ROLE_META_PROPERTIES[PartyRole.RoleTypes.RECEIVER.value] = {'receiverMethod'}
+
+        filing_json = {
+            'filing': {
+                'header': {'name': 'correction', 'date': date.today().isoformat()},
+                'business': {'identifier': identifier},
+                'correction': {
+                    'relationships': [
+                        {
+                            'entity': {'givenName': 'Jane', 'familyName': 'Doe'},
+                            'deliveryAddress': {
+                                'streetAddress': '123 Test St',
+                                'addressCity': 'Victoria',
+                                'addressRegion': 'BC',
+                                'addressCountry': 'CA',
+                                'postalCode': 'V8W 1W4'
+                            },
+                            'mailingAddress': {
+                                'streetAddress': '123 Test St',
+                                'addressCity': 'Victoria',
+                                'addressRegion': 'BC',
+                                'addressCountry': 'CA',
+                                'postalCode': 'V8W 1W4'
+                            },
+                            'roles': [
+                                {
+                                    'roleType': 'Receiver',
+                                    'meta': {'receiverMethod': 'court'}
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+
+        errs = validate_relationships(
+            business=business,
+            filing_json=filing_json,
+            filing_type='correction',
+            role_types=[PartyRole.RoleTypes.RECEIVER],
+            allow_new=True,
+            allow_edits=True
+        )
+
+        # Receiver should now be allowed with receiverMethod
+        assert not any('meta' in e.get('path', '') for e in errs)
+    finally:
+        ALLOWED_ROLE_META_PROPERTIES.clear()
+        ALLOWED_ROLE_META_PROPERTIES.update(original_config)
+

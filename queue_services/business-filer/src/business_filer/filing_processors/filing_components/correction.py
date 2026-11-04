@@ -60,6 +60,7 @@ from business_filer.filing_processors.filing_components.relationships import (
     update_relationship_entity_info,
     update_relationships_appointment_date,
     update_relationships_cessation_date,
+    update_relationships_meta,
 )
 from business_filer.services.utils import is_same_str
 
@@ -361,6 +362,7 @@ def correct_corp_data(business: Business,
 
         update_relationships_appointment_date(relationships, business, [PartyRole.RoleTypes.DIRECTOR.value])
         update_relationships_cessation_date(relationships, business, [PartyRole.RoleTypes.DIRECTOR.value])
+        update_relationships_meta(relationships, business, [PartyRole.RoleTypes.LIQUIDATOR.value])
         update_relationship_addresses(relationships, business)
         update_relationship_entity_info(relationships, business)
         _set_lear_only(correction_filing, correction_filing_rec, relationships, business)

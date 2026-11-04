@@ -882,15 +882,20 @@ def validate_party(filing: dict, amalgamation_type, filing_type, legal_type=None
     party_path = f"/filing/{filing_type}/parties"
     coop_minimum_directors: Final = 3
     minimum_directors = coop_minimum_directors if legal_type == Business.LegalTypes.COOP.value else 1
+    # corps no longer collect a Completing Party (the submitter is identified by certifiedBy)
+    requires_completing_party = legal_type not in Business.CORPS
     if (amalgamation_type == Amalgamation.AmalgamationTypes.regular.name and
-            (completing_parties < 1 or director_parties < minimum_directors)):
-        error = ("At least three Directors and a Completing Party are required."
-                 if minimum_directors == coop_minimum_directors
-                 else "At least one Director and a Completing Party is required.")
+            ((requires_completing_party and completing_parties < 1) or director_parties < minimum_directors)):
+        if minimum_directors == coop_minimum_directors:
+            error = "At least three Directors and a Completing Party are required."
+        elif requires_completing_party:
+            error = "At least one Director and a Completing Party is required."
+        else:
+            error = "At least one Director is required."
         msg.append({"error": error, "path": party_path})
     elif (amalgamation_type in [Amalgamation.AmalgamationTypes.vertical.name,
                                 Amalgamation.AmalgamationTypes.horizontal.name] and
-          completing_parties == 0):
+          requires_completing_party and completing_parties == 0):
         msg.append({"error": "A Completing Party is required.", "path": party_path})
 
     return msg

@@ -368,3 +368,23 @@ def test_validate_cod_relationship_given_name_too_long(session):
     assert any('given name cannot be longer than 20 characters' in e['error']
                and e['path'] == '/filing/changeOfDirectors/relationships/0/entity/givenName'
                for e in err.msg)
+
+
+def test_validate_cod_relationship_director_meta_rejected(session):
+    """Assert meta properties submitted for a director are rejected."""
+    identifier = f'BC{random.randint(1000000, 9999999)}'
+    business = _setup_business(identifier)
+    party_id = _setup_existing_director(business)
+
+    cod = _relationships_cod(party_id)
+    cod['relationships'][0]['roles'][0]['meta'] = {'appointmentMethod': 'company'}
+    filing = _build_filing(identifier, cod)
+
+    err = validate(business, filing)
+
+    assert err is not None
+    assert err.code == HTTPStatus.BAD_REQUEST
+    assert any(e['error'] == 'Cannot submit meta properties for this role.'
+               and e['path'] == '/filing/changeOfDirectors/relationships/0/roles/0/meta'
+               for e in err.msg)
+
