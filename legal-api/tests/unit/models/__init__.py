@@ -231,7 +231,7 @@ def factory_business_office(business, office_type):
         city='Test City',
         street=f'{business.identifier}-Test Street MAILING',
         postal_code='T3S3T3',
-        country='TA',
+        country='CA',
         region='BC',
         address_type=Address.MAILING
     )
@@ -239,7 +239,7 @@ def factory_business_office(business, office_type):
         city='Test City',
         street=f'{business.identifier}-Test Street DELIVERY',
         postal_code='T3S3T3',
-        country='TA',
+        country='CA',
         region='BC',
         address_type=Address.DELIVERY
     )

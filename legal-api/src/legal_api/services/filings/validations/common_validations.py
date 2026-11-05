@@ -36,7 +36,7 @@ from legal_api.errors import Error
 from legal_api.services import STAFF_ROLE, colin, doc_service, flags, namex
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.request_context import get_request_context
-from legal_api.services.utils import NO_POSTAL_CODE_COUNTRY_CODES, get_date, get_str
+from legal_api.services.utils import CANADIAN_POSTAL_CODE_REGEX, NO_POSTAL_CODE_COUNTRY_CODES, get_date, get_str
 from legal_api.utils.auth import jwt
 
 # streetAddress, addressCity, and addressCountry no-leading/trailing-whitespace are enforced by
@@ -44,11 +44,6 @@ from legal_api.utils.auth import jwt
 # so it is still whitespace-validated here.
 WHITESPACE_VALIDATED_ADDRESS_FIELDS = (
     "postalCode",
-)
-
-CANADIAN_POSTAL_CODE_REGEX = re.compile(
-    r"^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z] ?\d[ABCEGHJ-NPRSTV-Z]\d$",
-    re.IGNORECASE
 )
 
 PARTY_NAME_MAX_LENGTH = 30

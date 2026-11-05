@@ -65,8 +65,8 @@ def factory_address(address_type: str,
                     street='some street',
                     city='victoria',
                     country='CA',
-                    postal_code='v512a9',
-                    region='akjsdf'):
+                    postal_code='V8V 1V1',
+                    region='BC'):
     address = Address(address_type=address_type,
                       street=street,
                       city=city,

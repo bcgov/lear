@@ -329,7 +329,7 @@ def test_validate_office_allows_only_flagged_fields(session):
 
     assert err is not None
     assert err.msg == [{
-        'error': 'Only fields flagged as missing can be changed.',
+        'error': 'Only fields flagged as missing or invalid can be changed.',
         'path': '/filing/reviewImportedData/offices/registeredOffice/mailingAddress/addressCity',
     }]
 
@@ -362,7 +362,7 @@ def test_validate_director_allows_only_flagged_fields(session):
 
     assert err is not None
     assert err.msg == [{
-        'error': 'Only fields flagged as missing can be changed.',
+        'error': 'Only fields flagged as missing or invalid can be changed.',
         'path': '/filing/reviewImportedData/relationships/0/mailingAddress/streetAddress',
     }]
 
@@ -370,11 +370,89 @@ def test_validate_director_allows_only_flagged_fields(session):
     assert validate(business, _build_filing({'relationships': [relationship]})) is None
 
 
+def test_validate_ignores_postal_code_formatting(session):
+    """The UI reformats an untouched postal code, which must not count as a change."""
+    business = _setup_business()
+    _setup_office(business, 'registeredOffice', {**STORED_ADDRESS, 'postal_code': 'v5k 0a1', 'city': ''}, STORED_ADDRESS)
+    office = _valid_office()
+    office['mailingAddress']['postalCode'] = 'V5K0A1'
+
+    assert validate(business, _build_filing({'offices': {'registeredOffice': office}})) is None
+
+    office['mailingAddress']['postalCode'] = 'V5K 0A2'
+    err = validate(business, _build_filing({'offices': {'registeredOffice': office}}))
+    assert err is not None
+    assert err.msg == [{
+        'error': 'Only fields flagged as missing or invalid can be changed.',
+        'path': '/filing/reviewImportedData/offices/registeredOffice/mailingAddress/postalCode',
+    }]
+
+
+def test_validate_flagged_country_unlocks_region_and_postal_code(session):
+    """A missing country also lets the region and postal code change, since they depend on it."""
+    business = _setup_business()
+    _setup_office(
+        business, 'registeredOffice',
+        {**STORED_ADDRESS, 'country': '', 'region': 'WA', 'postal_code': '98101'}, STORED_ADDRESS)
+    office = _valid_office()
+
+    assert validate(business, _build_filing({'offices': {'registeredOffice': office}})) is None
+
+    office['mailingAddress']['addressCity'] = 'Victoria'
+    err = validate(business, _build_filing({'offices': {'registeredOffice': office}}))
+    assert err is not None
+    assert [e['path'] for e in err.msg] == [
+        '/filing/reviewImportedData/offices/registeredOffice/mailingAddress/addressCity',
+    ]
+
+
+def test_validate_invalid_fields_are_editable(session):
+    """A field on record that the filing would reject (bad postal code, non BC office region) may be changed."""
+    business = _setup_business()
+    _setup_office(
+        business, 'registeredOffice',
+        {**STORED_ADDRESS, 'postal_code': '12345'}, {**STORED_ADDRESS, 'region': 'AB'})
+    office = _valid_office()
+
+    assert validate(business, _build_filing({'offices': {'registeredOffice': office}})) is None
+
+    office['deliveryAddress']['addressCity'] = 'Victoria'
+    err = validate(business, _build_filing({'offices': {'registeredOffice': office}}))
+    assert err is not None
+    assert [e['path'] for e in err.msg] == [
+        '/filing/reviewImportedData/offices/registeredOffice/deliveryAddress/addressCity',
+    ]
+
+
+def test_validate_skips_po_box_rule_on_locked_street(session):
+    """A PO Box already on record in a street that is not flagged cannot be fixed here, so it is not rejected."""
+    business = _setup_business()
+    _setup_office(
+        business, 'registeredOffice',
+        STORED_ADDRESS, {**STORED_ADDRESS, 'street': 'PO Box 123', 'postal_code': ''})
+    office = _valid_office()
+    office['deliveryAddress']['streetAddress'] = 'PO Box 123'
+
+    assert validate(business, _build_filing({'offices': {'registeredOffice': office}})) is None
+
+
 @pytest.mark.parametrize('street', ['PO Box 123', 'P.O. Box 123', 'Post Office Box 9', '123 Main St, PO Box 4'])
 def test_validate_rejects_po_box_delivery_address(session, street):
-    """A delivery address street cannot be a PO Box, for offices and directors alike."""
+    """An editable delivery address street cannot be a PO Box, for offices and directors alike."""
     business = _setup_business()
-    party_id = _setup_active_director(business)
+    # the office has no record and the director has no delivery street, so both streets are editable
+    role = factory_party_role(
+        Address.create_address({**VALID_ADDRESS, 'streetAddress': ''}),
+        Address.create_address(VALID_ADDRESS),
+        {'firstName': 'Joe', 'lastName': 'Swanson', 'middleInitial': 'P', 'partyType': 'person',
+         'organizationName': ''},
+        (datetime.utcnow() - datedelta.datedelta(years=5)).date().isoformat(),
+        None,
+        PartyRole.RoleTypes.DIRECTOR,
+    )
+    business.party_roles.append(role)
+    business.save()
+    party_id = role.party_id
     office = _valid_office()
     office['deliveryAddress']['streetAddress'] = street
     relationship = _valid_relationship(party_id)

@@ -19,7 +19,12 @@ from business_model.models import Address, Office, OfficeType, PartyRole
 from tests.unit.models import factory_business, factory_business_office, factory_party_role
 from tests.unit.services.warnings import factory_address
 from legal_api.services.warnings.business.business_checks import BusinessWarningReferers, WarningType
-from legal_api.services.warnings.business.business_checks.corps import check_business, check_directors, check_offices
+from legal_api.services.warnings.business.business_checks.corps import (
+    check_address_validity,
+    check_business,
+    check_directors,
+    check_offices,
+)
 from legal_api.services.warnings.business.business_checks.firms import check_address
 
 
@@ -389,3 +394,59 @@ def test_check_business_missing_info_gated_by_feature_flag(session, monkeypatch,
                                                      'NO_DIRECTOR_MAILING_ADDRESS_STREET']
     else:
         assert missing_info == []
+
+
+@pytest.mark.parametrize('referer, address_type, overrides, expected_codes', [
+    # valid addresses raise nothing
+    (BusinessWarningReferers.REGISTERED_OFFICE, 'delivery', {}, []),
+    (BusinessWarningReferers.DIRECTOR, 'mailing', {'country': 'US', 'region': 'WA', 'postal_code': '98101'}, []),
+    # an office mailing address may be anywhere
+    (BusinessWarningReferers.REGISTERED_OFFICE, 'mailing', {'country': 'US', 'region': 'WA', 'postal_code': '98101'},
+     []),
+    (BusinessWarningReferers.RECORDS_OFFICE, 'mailing', {'country': 'not a country'}, []),
+    # an office delivery address must be in BC, Canada
+    (BusinessWarningReferers.REGISTERED_OFFICE, 'delivery', {'region': 'AB'},
+     ['INVALID_REGISTERED_OFFICE_DELIVERY_ADDRESS_REGION']),
+    (BusinessWarningReferers.RECORDS_OFFICE, 'delivery', {'country': 'US', 'postal_code': '98101'},
+     ['INVALID_RECORDS_OFFICE_DELIVERY_ADDRESS_COUNTRY']),
+    # a director's country must be recognisable
+    (BusinessWarningReferers.DIRECTOR, 'delivery', {'country': 'not a country'},
+     ['INVALID_DIRECTOR_DELIVERY_ADDRESS_COUNTRY']),
+    # postal codes: Canadian format, no surrounding whitespace
+    (BusinessWarningReferers.REGISTERED_OFFICE, 'mailing', {'postal_code': '12345'},
+     ['INVALID_REGISTERED_OFFICE_MAILING_ADDRESS_POSTAL_CODE']),
+    (BusinessWarningReferers.DIRECTOR, 'mailing', {'postal_code': ' V8V 1V1'},
+     ['INVALID_DIRECTOR_MAILING_ADDRESS_POSTAL_CODE']),
+    (BusinessWarningReferers.DIRECTOR, 'mailing', {'country': 'US', 'region': 'WA', 'postal_code': 'ABC'}, []),
+    # missing values are left to the NO_ codes
+    (BusinessWarningReferers.REGISTERED_OFFICE, 'delivery', {'country': None, 'postal_code': None, 'region': None},
+     []),
+])
+def test_check_address_validity(session, referer, address_type, overrides, expected_codes):
+    """Assert address data the reviewImportedData filing would reject is flagged with an INVALID_ code."""
+    address = factory_address(address_type, **overrides)
+
+    result = check_address_validity(address, address_type, referer)
+
+    assert [x['code'] for x in result] == expected_codes
+    assert all(x['warningType'] == WarningType.MISSING_REQUIRED_BUSINESS_INFO for x in result)
+
+
+def test_check_address_validity_no_address(session):
+    """Assert a missing address is left to the NO_ codes."""
+    assert check_address_validity(None, 'mailing', BusinessWarningReferers.DIRECTOR) == []
+
+
+def test_check_offices_and_directors_include_invalid_codes(session):
+    """Assert invalid office and director address data is reported with the same data as the missing codes."""
+    business = factory_business(identifier="BC1234567", entity_type="BC")
+    add_office(business, OfficeType.REGISTERED, factory_address('mailing'), factory_address('delivery', region='AB'))
+    add_office(business, OfficeType.RECORDS, factory_address('mailing'), factory_address('delivery'))
+    director = add_director(business, factory_address('mailing', postal_code='12345'), factory_address('delivery'))
+
+    assert [(x['code'], x['data']) for x in check_offices(business)] == [
+        ('INVALID_REGISTERED_OFFICE_DELIVERY_ADDRESS_REGION', {'officeType': 'registeredOffice'}),
+    ]
+    assert [(x['code'], x['data']) for x in check_directors(business)] == [
+        ('INVALID_DIRECTOR_MAILING_ADDRESS_POSTAL_CODE', {'partyId': director.party.id}),
+    ]

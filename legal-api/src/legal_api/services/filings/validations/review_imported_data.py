@@ -26,7 +26,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_parties_countries,
 )
 from legal_api.services.warnings.business.business_checks import BusinessWarningReferers
-from legal_api.services.warnings.business.business_checks.firms import check_address
+from legal_api.services.warnings.business.business_checks.corps import check_address_data
 
 
 def validate(business: Business, imported_data: dict) -> Error:
@@ -102,7 +102,7 @@ def validate_active_directors(business: Business, imported_data: dict) -> list:
 
 
 def validate_office_address_changes(business: Business, imported_data: dict) -> list:
-    """Only the office address fields the business warnings flag as missing may change."""
+    """Only the office address fields the business warnings flag as missing or invalid may change."""
     referers = {
         "registeredOffice": BusinessWarningReferers.REGISTERED_OFFICE,
         "recordsOffice": BusinessWarningReferers.RECORDS_OFFICE,
@@ -130,7 +130,7 @@ def validate_office_address_changes(business: Business, imported_data: dict) -> 
 
 
 def validate_relationship_address_changes(business: Business, imported_data: dict) -> list:
-    """Only the director address fields the business warnings flag as missing may change."""
+    """Only the director address fields the business warnings flag as missing or invalid may change."""
     filing_type = "reviewImportedData"
     msg = []
     relationships = imported_data["filing"][filing_type]["relationships"]
@@ -158,7 +158,7 @@ def validate_relationship_address_changes(business: Business, imported_data: dic
 
 def _validate_address_changes(submitted: dict, existing: Address, address_type: str,
                               referer: BusinessWarningReferers, path: str) -> list:
-    """Mirror the UI's locked address form: unflagged fields must be unchanged, delivery cannot be a PO Box."""
+    """Mirror the UI's locked address form: only flagged fields may change, an editable delivery street is no PO Box."""
     json_fields = {
         "streetAddress": "street",
         "streetAddressAdditional": "street_additional",
@@ -178,22 +178,32 @@ def _validate_address_changes(submitted: dict, existing: Address, address_type: 
     po_box = re.compile(r"\b(?:p\.?\s*o\.?|post\s+office)\s*box\b", re.IGNORECASE)
     msg = []
 
-    if address_type == Address.DELIVERY and po_box.search(submitted.get("streetAddress") or ""):
+    # an address with no record at all is entered from scratch, so every field may be set
+    editable = set(json_fields)
+    if existing:
+        editable = set()
+        for warning in check_address_data(existing, address_type, referer):
+            code = str(getattr(warning["code"], "value", warning["code"]))
+            editable.update(field for suffix, field in flagged_fields.items() if code.endswith(suffix))
+        # what is valid for the region and postal code depends on the country entered
+        if "addressCountry" in editable:
+            editable.update(("addressRegion", "postalCode"))
+
+    if (address_type == Address.DELIVERY and "streetAddress" in editable
+            and po_box.search(submitted.get("streetAddress") or "")):
         msg.append({"error": "Address cannot be a PO Box.", "path": f"{path}/streetAddress"})
 
-    # an address with no record at all is entered from scratch, so every field may be set
-    if not existing:
-        return msg
-
-    flagged = set()
-    for warning in check_address(existing, address_type, referer):
-        code = str(getattr(warning["code"], "value", warning["code"]))
-        flagged.update(field for suffix, field in flagged_fields.items() if code.endswith(suffix))
-
     for json_field, attribute in json_fields.items():
-        if json_field in flagged:
+        if json_field in editable:
             continue
-        if (submitted.get(json_field) or "") != (getattr(existing, attribute) or ""):
-            msg.append({"error": "Only fields flagged as missing can be changed.", "path": f"{path}/{json_field}"})
+        submitted_value = submitted.get(json_field) or ""
+        existing_value = getattr(existing, attribute) or ""
+        if json_field == "postalCode":
+            # the UI reformats an untouched postal code (v1q2w4 -> V1Q 2W4)
+            submitted_value = re.sub(r"\s", "", submitted_value).upper()
+            existing_value = re.sub(r"\s", "", existing_value).upper()
+        if submitted_value != existing_value:
+            msg.append({"error": "Only fields flagged as missing or invalid can be changed.",
+                        "path": f"{path}/{json_field}"})
 
     return msg
