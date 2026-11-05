@@ -1,62 +1,85 @@
 <div class="gap-y">
-  <table class="business-details-container business-details-table" style="padding: 0.5rem 1rem 0.5rem 1rem !important;" role="presentation">
+  <table class="business-details-container business-details-table" style="padding: 0.5rem 1rem 1rem 1rem !important;" role="presentation">
     <tr>
       <td class="col-33 gap-y-2">
         <div class="bold">Incorporation Number:</div>
-        <div class="bold">Business Number:</div>
+        {% if subType != 'liquidationReport' %}
+          <div class="bold">Business Number:</div>
+        {% endif %}
         <div class="bold">Incorporation Date and Time:</div>
         <div class="bold">{{ reportDateAndTimeTitle }}</div>
-        <div class="bold">Company Status:</div>
+        {% if subType != 'liquidationReport' %}
+          <div class="bold">Company Status:</div>
+          {% if commencementDate %}
+            <div class="bold">Liquidation Commencement Date:</div>
+          {% endif %}
+        {% endif %}
+        {% if subType == 'liquidationReport' %}
+          <div class="bold">Liquidation Report Date:</div>
+        {% endif %}
       </td>
       
       <td class="col-67 gap-y-2">
         <div>{{ business.identifier }}</div>
         
-        <div>
-          {% if business.taxId is defined and business.taxId|length > 9 %}
-            <span>{{ business.taxId }}</span>
-          {% else %}
-            <span>Not Available</span>
-          {% endif %}
-        </div>
+        {% if subType != 'liquidationReport' %}
+          <div>
+            {% if business.taxId is defined and business.taxId|length > 9 %}
+              <span>{{ business.taxId }}</span>
+            {% else %}
+              <span>Not Available</span>
+            {% endif %}
+          </div>
+        {% endif %}
         
         <div>{{ recognition_date_time }}</div>
         
         <div>{{ effective_date_time }}</div>
         
-        <div>
-          {% if business.inLiquidation %}
-            <span>IN LIQUIDATION</span>
-          {% else %}
-            <span class="uppercase-text">{{ business.state }}</span>
+        {% if subType != 'liquidationReport' %}
+          <div>
+            {% if business.inLiquidation %}
+              <span>IN LIQUIDATION</span>
+            {% else %}
+              <span class="uppercase-text">{{ business.state }}</span>
+            {% endif %}
+          </div>
+
+          {% if commencementDate %}
+            <div>{{ commencementDate }}</div>
           {% endif %}
-        </div>
+        {% endif %}
+        {% if subType == 'liquidationReport' %}
+          <div>{{ colDate }}</div>
+        {% endif %}
       </td>
     </tr>
   </table>
-  <div class="container">
-    <dl class="data-list section-data gap-y-2">
-      <div>
-        <dt class="bold">Liquidation Report:</dt>
-        <dd>{{ lastReportDate if lastReportDate else 'Not Available' }}</dd>
-      </div>
+  {% if subType != 'liquidationReport' %}
+    <div class="container">
+      <dl class="data-list section-data gap-y-2">
+        <div>
+          <dt class="bold">Liquidation Report:</dt>
+          <dd>{{ lastReportDate if lastReportDate else 'Not Available' }}</dd>
+        </div>
 
-      <div>
-        <dt class="bold">Receiver:</dt>
-        <dd>{{ 'Yes' if hasReceivers else 'No' }}</dd>
-      </div>
+        <div>
+          <dt class="bold">Receiver:</dt>
+          <dd>{{ 'Yes' if hasReceivers else 'No' }}</dd>
+        </div>
 
-      <div>
-        <dt class="bold">Plan of Arrangement:</dt>
-        <dd>{{ 'Yes' if hasPoa else 'No' }}</dd>
-      </div>
+        <div>
+          <dt class="bold">Plan of Arrangement:</dt>
+          <dd>{{ 'Yes' if hasPoa else 'No' }}</dd>
+        </div>
 
-      <div>
-        <dt class="bold">Court Order:</dt>
-        <dd>{{ courtOrderNumber if courtOrderNumber else 'N/A' }}</dd>
-      </div>
-    </dl>
-  </div>
+        <div>
+          <dt class="bold">Court Order:</dt>
+          <dd>{{ courtOrderNumber if courtOrderNumber else 'N/A' }}</dd>
+        </div>
+      </dl>
+    </div>
+  {% endif %} 
 </div>
 
 <!-- this block is hidden but is needed for the footer: -->

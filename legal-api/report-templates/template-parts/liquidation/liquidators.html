@@ -4,12 +4,25 @@
     {% for rel in relationships[key]["items"] %}
       <table class="section-data section-data-table">
           <tr class="no-page-break">
-            <td class="upper-text section-sub-title">
-              {% if rel.entity.businessName %}
-                <span>{{ rel.entity.businessName }}</span>
-              {% else %}
-                <span>{{ rel.entity.familyName }}{% if rel.entity.givenName %}, {{ rel.entity.givenName }}{% endif %}</span>
-              {% endif %}
+            <td>
+              <div class="section-sub-title mb-2">
+                {% if rel.entity.businessName %}
+                  <span>{{ rel.entity.businessName }}</span>
+                {% else %}
+                  <span>{{ rel.entity.familyName }}{% if rel.entity.givenName %}, {{ rel.entity.givenName }}{% endif %}</span>
+                {% endif %}
+              </div>
+              <div>
+                {% if rel.meta and rel.meta.appointmentMethod %}
+                  Appointed by {{ rel.meta.appointmentMethod | capitalize }}
+                  {% if rel.meta.appointmentMethod == 'court' and rel.meta.courtOrderNumber %}
+                    <br>
+                    # {{ rel.meta.courtOrderNumber }}
+                  {% endif %}
+                {% else %}
+                  Appointed by Not Available
+                {% endif %}
+              </div>
             </td>
             <td>
               <div class="section-sub-title mb-2">
@@ -52,6 +65,12 @@
               {% else %}
                 <div>Not Available</div>
               {% endif %}
+            </td>
+            <td>
+              <div class="section-sub-title mb-2">
+                Effective Date{% if " to" in rel.effectiveDateDisplay %}s{% endif %}
+              </div>
+              <div>{{ rel.effectiveDateDisplay | safe }}</div>
             </td>
           </tr>
       </table>

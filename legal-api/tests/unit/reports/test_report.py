@@ -1038,7 +1038,7 @@ def test_format_appoint_liquidator_data(session):
     filing_data = current_filing_json['filing']
     report._format_liquidator_data(filing_data)
 
-    assert filing_data['reportTitle'] == 'Notice to Appoint Liquidators'
+    assert filing_data['reportTitle'] == 'Liquidator Appointment'
     assert filing_data['reportDateAndTimeTitle'] == 'Appointed Date and Time:'
     assert filing_data['lastReportDate'] == 'May 15, 2026'
     assert filing_data['hasReceivers'] is False
@@ -1059,6 +1059,7 @@ def test_format_appoint_liquidator_data(session):
 
     assert 'mailingAddress' in first_liquidator
     assert 'deliveryAddress' in first_liquidator
+    assert 'meta' in first_liquidator
 
     second_liquidator = appointed_items[1]
     assert second_liquidator['entity']['businessName'] == 'Test Business'
@@ -1092,7 +1093,7 @@ def test_format_cease_liquidator_data(session):
     filing_data = current_filing_json['filing']
     report._format_liquidator_data(filing_data)
 
-    assert filing_data['reportTitle'] == 'Notice to Cease Liquidators'
+    assert filing_data['reportTitle'] == 'Liquidator Cessation'
     assert filing_data['reportDateAndTimeTitle'] == 'Ceased Date and Time:'
     assert filing_data['lastReportDate'] == 'May 15, 2026'
     assert filing_data['hasReceivers'] is False
@@ -1113,9 +1114,11 @@ def test_format_cease_liquidator_data(session):
 
     assert 'mailingAddress' in first_liquidator
     assert 'deliveryAddress' in first_liquidator
+    assert 'meta' in first_liquidator
 
     second_liquidator = ceased_items[1]
     assert second_liquidator['entity']['businessName'] == 'Test Business'
+    assert 'meta' in second_liquidator
 
     effective_items = rels['effectiveDate']['items']
     existing_liquidator_found = any(
@@ -1298,7 +1301,7 @@ def test_format_change_address_liquidator_data(session, mocker):
     filing_data = current_filing_json['filing']
     report._format_liquidator_data(filing_data)
 
-    assert filing_data['reportTitle'] == 'Liquidators Change of Address'
+    assert filing_data['reportTitle'] == 'Liquidator (or Records) Address Change'
     assert filing_data['reportDateAndTimeTitle'] == 'Change Date and Time:'
     assert filing_data['lastReportDate'] == 'May 15, 2026'
     assert filing_data['hasReceivers'] is False

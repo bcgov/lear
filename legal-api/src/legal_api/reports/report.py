@@ -24,7 +24,7 @@ import requests
 from dateutil.relativedelta import relativedelta
 from flask import current_app, jsonify
 
-from business_common.utils.datetime import datetime
+from business_common.utils.datetime import date, datetime
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_common.utils.relationship_director import relationship_to_director
 from business_common.utils.relationship_party import (
@@ -259,6 +259,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             "incorporation-application/nameRequest",
             "incorporation-application/cooperativeAssociationType",
             "liquidation/liquidators",
+            "liquidation/legalObligations",
             "liquidation/meta",
             "liquidation/recordsOffice",
             "restoration-application/nameRequest",
@@ -1429,8 +1430,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_resolution_dates(self, resolution_dates: list[str | dict]) -> list[dict]:
         formatted_dates = []
-        for date in resolution_dates:
-            date_str = date.get("date") if isinstance(date, dict) else date
+        for rd in resolution_dates:
+            date_str = rd.get("date") if isinstance(rd, dict) else rd
             formatted_dates.append({"date": datetime.fromisoformat(date_str).strftime(OUTPUT_DATE_FORMAT)})
 
         return formatted_dates
@@ -1583,14 +1584,20 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
 
     def _format_liquidator_data(self, filing): # noqa: PLR0912, PLR0915
         self._set_dates(filing) # required to use effective_date inside this method
+        business = self._business
         col = filing.get("changeOfLiquidators", {})
         sub_type = col.get("type")
+        col_date = col.get("changeOfLiquidatorsDate")
+
+        filing["subType"] = sub_type
+        filing["colDate"] = LegislationDatetime.as_legislation_timezone_from_date_str(col_date).strftime(OUTPUT_DATE_FORMAT)
 
         report_title_config = {
-            "appointLiquidator": "Notice to Appoint Liquidators",
-            "ceaseLiquidator": "Notice to Cease Liquidators",
-            "changeAddressLiquidator": "Liquidators Change of Address",
-            "intentToLiquidate": "Statement of Intent to Liquidate"
+            "appointLiquidator": "Liquidator Appointment",
+            "ceaseLiquidator": "Liquidator Cessation",
+            "changeAddressLiquidator": "Liquidator (or Records) Address Change",
+            "intentToLiquidate": "Statement of Intent to Liquidate",
+            "liquidationReport": f"{date.fromisoformat(col_date).year} Liquidation Report" if col_date else "Liquidation Report"
         }
 
         filing["reportTitle"] = report_title_config[sub_type]
@@ -1599,33 +1606,34 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             "appointLiquidator": "Appointed Date and Time:",
             "ceaseLiquidator": "Ceased Date and Time:",
             "changeAddressLiquidator": "Change Date and Time:",
-            "intentToLiquidate": "Summary Date and Time:"
+            "intentToLiquidate": "Summary Date and Time:",
+            "liquidationReport": "Filed Date and Time:"
         }
 
         filing["reportDateAndTimeTitle"] = report_date_and_time_title_config[sub_type]
 
-        # format last liquidationReportDate
-        if latest_lr_filing := Filing.get_most_recent_filing(business_id=self._business.id, filing_type="changeOfLiquidators", filing_sub_type="liquidationReport"):
+        # All sub-types: format last liquidationReportDate
+        if latest_lr_filing := Filing.get_most_recent_filing(business_id=business.id, filing_type="changeOfLiquidators", filing_sub_type="liquidationReport"):
             last_lr_date = LegislationDatetime.as_legislation_timezone(latest_lr_filing.effective_date)
             filing["lastReportDate"] = last_lr_date.strftime(OUTPUT_DATE_FORMAT)
 
-        # Check if business has Receivers
+        # All sub-types: check if business has Receivers
         filing["hasReceivers"] = bool(PartyRole.get_party_roles(
-            business_id=self._business.id,
+            business_id=business.id,
             end_date=datetime.utcnow().date(),
             role=PartyRole.RoleTypes.RECEIVER.value
         ))
 
-        # check for Court Order and Plan of Arrangment
+        # All sub-types: check for Court Order and Plan of Arrangment
         court_order = col.get("courtOrder", {})
         filing["hasPoa"] = court_order.get("hasPlanOfArrangement", False)
         filing["courtOrderNumber"] = court_order.get("fileNumber", False)
 
-        # format liquidationRecordsOffice from the filing or db if not in filing json
+        # All sub-types: format liquidationRecordsOffice from the filing or db if not in filing json
         filing_offices = (col.get("offices") or {}).get("liquidationRecordsOffice")
         if not filing_offices:
             filing_offices = {}
-            if existing_office := self._business.offices.filter_by(office_type=OfficeType.LIQUIDATION, deactivated_date=None).first():
+            if existing_office := business.offices.filter_by(office_type=OfficeType.LIQUIDATION, deactivated_date=None).first():
                 for address in existing_office.addresses.all():
                     filing_offices[f"{address.address_type}Address"] = address.json
 
@@ -1644,50 +1652,93 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             if "deliveryAddress" in rel:
                 rel["deliveryAddress"] = self._format_address(rel["deliveryAddress"])
 
+        # intent or appoint (if not yet in liquidation): display commencement date
+        is_intent = sub_type == "intentToLiquidate"
+        is_first_appointment = False
+
+        if sub_type == "appointLiquidator":
+            prev_filing = Filing.get_previous_completed_filing(self._filing)
+            versioned_business = VersionedBusinessDetailsService.get_business_revision_obj(prev_filing, self._business.id)
+            is_first_appointment = bool(versioned_business and not versioned_business.in_liquidation)
+
+        if is_intent or is_first_appointment:
+            filing["commencementDate"] = (
+                LegislationDatetime.as_legislation_timezone_from_date_str(col_date).strftime(OUTPUT_DATE_FORMAT)
+                if col_date
+                else filing["effective_date"]
+            )
+
+        fallback_date_str = LegislationDatetime.as_legislation_timezone(self._filing.effective_date).strftime("%Y-%m-%d")
         filing["relationships"] = {}
 
+        # intent or appoint: get appointed liquidators
         if sub_type in {"appointLiquidator", "intentToLiquidate"}:
-            appointed = [
-                rel for rel in relationships_submitted
-                if any(
-                    role.get("roleType") == "Liquidator"
-                    and role.get("cessationDate") is None # appointed relationships are submitted with no cessationDate
-                    for role in rel.get("roles", [])
+            appointed = []
+            for rel in relationships_submitted:
+                appointed_liquidator = next(
+                    (r for r in rel.get("roles", []) if r.get("roleType") == "Liquidator" and not r.get("cessationDate")),
+                    None,
                 )
-            ]
+                if not appointed_liquidator:
+                    continue
+
+                rel["effectiveDateDisplay"] = self._format_role_effective_date_display({
+                    "appointmentDate": appointed_liquidator.get("appointmentDate") or fallback_date_str
+                })
+
+                rel["meta"] = appointed_liquidator.get("meta")
+
+                appointed.append(rel)
+
             filing["relationships"]["appointed"] = {
                 "title": "Appointed Liquidators",
                 "items": appointed
             }
 
-        if sub_type in {"ceaseLiquidator"}:
-            ceased = [
-                rel for rel in relationships_submitted
-                if any(
-                    role.get("roleType") == "Liquidator"
-                    and role.get("cessationDate") is not None # ceased relationships are submitted with a cessationDate
-                    for role in rel.get("roles", [])
+        # cease: get ceased liquidators
+        if sub_type == "ceaseLiquidator":
+            ceased = []
+            for rel in relationships_submitted:
+                ceased_liquidator = next(
+                    (r for r in rel.get("roles", []) if r.get("roleType") == "Liquidator" and r.get("cessationDate")),
+                    None,
                 )
-            ]
+                if not ceased_liquidator:
+                    continue
+
+                rel_id = rel.get("entity", {}).get("identifier")
+                existing_role = next(
+                    (
+                        pr for pr in self._business.party_roles
+                        if str(pr.party_id) == str(rel_id) and pr.role.lower() == "liquidator"
+                    ),
+                    None,
+                ) if rel_id else None
+
+                appoint_date_str = existing_role.appointment_date.strftime("%Y-%m-%d") if existing_role else None
+                cease_date_str = ceased_liquidator.get("cessationDate") or fallback_date_str
+                rel["effectiveDateDisplay"] = self._format_role_effective_date_display({
+                    "appointmentDate": appoint_date_str,
+                    "cessationDate": cease_date_str
+                })
+
+                rel["meta"] = existing_role.meta if existing_role else None
+
+                ceased.append(rel)
+
             filing["relationships"]["ceased"] = {
                 "title": "Ceased Liquidators",
                 "items": ceased
             }
 
-        # we do not display effectiveDate liquidators for intentToLiquidate filing
+        # appoint, cease or change address: get active liquidators and liq records office as of filing effective date
         if sub_type in {"appointLiquidator", "ceaseLiquidator", "changeAddressLiquidator"}:
             roles = PartyRole.get_party_roles(
-                self._business.id,
+                business.id,
                 self._filing.effective_date,
                 PartyRole.RoleTypes.LIQUIDATOR.value
             )
             relationships_at_effective_date = self._map_party_roles_to_relationships_json(roles)
-
-            if sub_type in {"appointLiquidator", "ceaseLiquidator"}:
-                filing["relationships"]["effectiveDate"] = {
-                    "title": f"Liquidators as of {filing["effective_date"]}",
-                    "items": relationships_at_effective_date
-                }
 
             if sub_type in {"changeAddressLiquidator"}:
                 prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
@@ -1697,7 +1748,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     office_revision = VersionedBusinessDetailsService.get_office_revision(
                         prev_completed_filing.id,
                         prev_completed_filing.transaction_id,
-                        self._business.id
+                        business.id
                     )
 
                     mailing_changed = self._compare_address(
@@ -1756,10 +1807,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                                 if "deliveryAddress" in found_rel and delivery_address:
                                     found_rel["deliveryAddress"]["changed"] = delivery_changed
 
-                filing["relationships"]["effectiveDate"] = {
-                    "title": f"Liquidators as of {filing["effective_date"]}",
-                    "items": relationships_at_effective_date
-                }
+            filing["relationships"]["effectiveDate"] = {
+                "title": f"Liquidators as of {filing["effective_date"]}",
+                "items": relationships_at_effective_date
+            }
 
     def _set_meta_info(self, filing):
         filing["environment"] = f"{self._get_environment()} FILING #{self._filing.id}".lstrip()
@@ -1814,6 +1865,24 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             "roles": relationship.get("roles", [])
         }
 
+    @staticmethod
+    def _format_role_effective_date_display(role_json: dict) -> str:
+        """Format and return the effective date display string from a role dict."""
+        role_json = role_json or {}
+
+        appoint_display = None
+        if appoint_str := role_json.get("appointmentDate"):
+            appoint_display = LegislationDatetime.as_legislation_timezone_from_date_str(appoint_str).strftime(OUTPUT_DATE_FORMAT)
+
+        cease_display = None
+        if cease_str := role_json.get("cessationDate"):
+            cease_display = LegislationDatetime.as_legislation_timezone_from_date_str(cease_str).strftime(OUTPUT_DATE_FORMAT)
+
+        appoint_text = appoint_display or "Not Available"
+        if cease_display:
+            return f"{appoint_text} to<br/>{cease_display}"
+        return appoint_text
+
     def _map_party_roles_to_relationships_json(self, party_roles: list[PartyRole]):
         formatted_rels = []
         for role in party_roles:
@@ -1838,7 +1907,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 "mailingAddress": mailing_address,
                 "deliveryAddress": delivery_address,
                 "appointmentDate": p.get("appointmentDate"),
-                "cessationDate": p.get("cessationDate")
+                "cessationDate": p.get("cessationDate"),
+                "effectiveDateDisplay": self._format_role_effective_date_display(p),
+                "meta": p.get("meta")
             }
 
             formatted_rels.append(rel)
