@@ -835,6 +835,9 @@ def _create_existing_liquidator(session, business):
 def test_format_appoint_liquidator_data(session):
     """Assert _format_liquidator_data correctly formats an appointLiquidator filing."""
     business = factory_business(identifier='BC1234567', entity_type='BC')
+    business.in_liquidation = True
+    business.in_liquidation_date = datetime(2025, 1, 1)
+    business.save()
     _create_previous_liquidation_report(business)
     _create_existing_liquidator(session, business)
 
@@ -854,7 +857,7 @@ def test_format_appoint_liquidator_data(session):
     filing_data = current_filing_json['filing']
     report._format_liquidator_data(filing_data)
 
-    assert filing_data['reportTitle'] == 'Notice to Appoint Liquidators'
+    assert filing_data['reportTitle'] == 'Liquidator Appointment'
     assert filing_data['reportDateAndTimeTitle'] == 'Appointed Date and Time:'
     assert filing_data['lastReportDate'] == 'May 15, 2026'
     assert filing_data['hasReceivers'] is False
@@ -875,6 +878,7 @@ def test_format_appoint_liquidator_data(session):
 
     assert 'mailingAddress' in first_liquidator
     assert 'deliveryAddress' in first_liquidator
+    assert 'meta' in first_liquidator
 
     second_liquidator = appointed_items[1]
     assert second_liquidator['entity']['businessName'] == 'Test Business'
@@ -889,6 +893,9 @@ def test_format_appoint_liquidator_data(session):
 def test_format_cease_liquidator_data(session):
     """Assert _format_liquidator_data correctly formats a ceaseLiquidator filing."""
     business = factory_business(identifier='BC1234567', entity_type='BC')
+    business.in_liquidation = True
+    business.in_liquidation_date = datetime(2025, 1, 1)
+    business.save()
     _create_previous_liquidation_report(business)
     _create_existing_liquidator(session, business)
 
@@ -908,7 +915,7 @@ def test_format_cease_liquidator_data(session):
     filing_data = current_filing_json['filing']
     report._format_liquidator_data(filing_data)
 
-    assert filing_data['reportTitle'] == 'Notice to Cease Liquidators'
+    assert filing_data['reportTitle'] == 'Liquidator Cessation'
     assert filing_data['reportDateAndTimeTitle'] == 'Ceased Date and Time:'
     assert filing_data['lastReportDate'] == 'May 15, 2026'
     assert filing_data['hasReceivers'] is False
@@ -929,9 +936,11 @@ def test_format_cease_liquidator_data(session):
 
     assert 'mailingAddress' in first_liquidator
     assert 'deliveryAddress' in first_liquidator
+    assert 'meta' in first_liquidator
 
     second_liquidator = ceased_items[1]
     assert second_liquidator['entity']['businessName'] == 'Test Business'
+    assert 'meta' in second_liquidator
 
     effective_items = rels['effectiveDate']['items']
     existing_liquidator_found = any(
@@ -973,7 +982,14 @@ def test_format_intent_liquidator_data(session):
     report._business = business
 
     filing_data = current_filing_json['filing']
-    report._format_liquidator_data(filing_data)
+
+    mock_versioned_business = MagicMock()
+    mock_versioned_business.last_lr_year = None
+    mock_versioned_business.in_liquidation_date = datetime(2026, 1, 1)
+    mock_versioned_business.in_liquidation = False
+
+    with patch('legal_api.services.VersionedBusinessDetailsService.get_business_revision_obj', return_value=mock_versioned_business):
+        report._format_liquidator_data(filing_data)
 
     assert filing_data['reportTitle'] == 'Statement of Intent to Liquidate'
     assert filing_data['reportDateAndTimeTitle'] == 'Summary Date and Time:'
@@ -995,6 +1011,9 @@ def test_format_intent_liquidator_data(session):
 def test_format_change_address_liquidator_data(session, mocker):
     """Assert _format_liquidator_data correctly formats a changeAddressLiquidator filing."""
     business = factory_business(identifier='BC1234567', entity_type='BC')
+    business.in_liquidation = True
+    business.in_liquidation_date = datetime(2025, 1, 1)
+    business.save()
     _create_previous_liquidation_report(business)
 
     factory_business_office(business, "liquidationRecordsOffice")
@@ -1114,7 +1133,7 @@ def test_format_change_address_liquidator_data(session, mocker):
     filing_data = current_filing_json['filing']
     report._format_liquidator_data(filing_data)
 
-    assert filing_data['reportTitle'] == 'Liquidators Change of Address'
+    assert filing_data['reportTitle'] == 'Liquidator (or Records) Address Change'
     assert filing_data['reportDateAndTimeTitle'] == 'Change Date and Time:'
     assert filing_data['lastReportDate'] == 'May 15, 2026'
     assert filing_data['hasReceivers'] is False
