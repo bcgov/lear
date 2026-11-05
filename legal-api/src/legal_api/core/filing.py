@@ -456,6 +456,7 @@ class Filing:  # pylint: disable=too-many-public-methods
             "commentsLink": f"{base_url}/{business_identifier}/filings/{filing_storage.id}/comments",
             "documentsLink": f"{base_url}/{business_identifier}/filings/{filing_storage.id}/documents" if
             filing_storage.filing_type not in no_output_filing_types else None,
+            "filedByStaff": filing_storage.submitter_roles in [UserRoles.staff.value, UserRoles.system.value],
             "filingLink": f"{base_url}/{business_identifier}/filings/{filing_storage.id}",
             "isFutureEffective": filing.is_future_effective,
             "withdrawalPending": filing_storage.withdrawal_pending

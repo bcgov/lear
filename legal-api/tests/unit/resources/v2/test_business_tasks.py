@@ -26,13 +26,14 @@ import pytest
 from freezegun import freeze_time
 
 from business_model.models import Business
+from legal_api.resources.v2.business import business_tasks
 from legal_api.services import flags
-from legal_api.services.authz import STAFF_ROLE
+from legal_api.services.authz import PUBLIC_USER, STAFF_ROLE
 from legal_api.services.permissions import PermissionService
 from registry_schemas.example_data import ANNUAL_REPORT, FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
 from tests import integration_payment
 from tests.unit.models import factory_business, factory_business_mailing_address, factory_business_office, factory_completed_filing, factory_filing, factory_pending_filing
-from tests.unit.services.utils import create_header
+from tests.unit.services.utils import create_header, jwt_request_context
 from tests.unit.services.warnings import create_business
 
 
@@ -439,7 +440,8 @@ def test_construct_task_list_ta(app, session, client, jwt, test_name, identifier
                 factory_pending_filing(business, filing, restored_date)
 
         business.save()
-        tasks = construct_task_list(business)
+        with jwt_request_context(app, jwt, [STAFF_ROLE]):
+            tasks = construct_task_list(business)
 
         # check number of tasks
         assert len(tasks) == len(expected)
@@ -888,3 +890,93 @@ def test_get_tasks_staff_draft_lockout_keeps_payment_tasks_enabled(session, clie
     by_id = {x['task']['filing']['header']['filingId']: x for x in _filing_tasks(rv)}
     assert by_id[draft.id]['enabled'] is False
     assert by_id[other.id]['enabled'] is True
+
+
+def _draft_actions(rv, filing_id):
+    """Return the actions list of the filing task with the given id."""
+    return next(x for x in _filing_tasks(rv) if x['task']['filing']['header']['filingId'] == filing_id)['actions']
+
+
+@pytest.mark.parametrize('test_name, flag_on, caller, permissions, draft_roles, other_draft_roles, expected', [
+    ('flag_off_staff_own_draft', False, STAFF_ROLE, [], 'staff', None, ['resume', 'delete']),
+    ('flag_off_staff_on_user_draft', False, STAFF_ROLE, [], 'public_user', None, ['resume', 'delete']),
+    ('user_own_draft', True, PUBLIC_USER, [], 'public_user', None, ['resume', 'delete']),
+    ('user_legacy_null_draft', True, PUBLIC_USER, [], None, None, ['resume', 'delete']),
+    ('staff_own_draft', True, STAFF_ROLE, [BYPASS_PERMISSION], 'staff', None, ['resume', 'delete']),
+    ('staff_on_user_draft_view_only', True, STAFF_ROLE, [BYPASS_PERMISSION], 'public_user', None, ['view', 'delete']),
+    ('user_on_staff_draft_nothing', True, PUBLIC_USER, [], 'staff', None, []),
+    ('locked_out_user_own_draft_delete_only', True, PUBLIC_USER, [], 'public_user', 'staff', ['delete']),
+    ('staff_without_permission_locked_out_own_draft', True, STAFF_ROLE, [], 'staff', None, ['delete']),
+])
+def test_get_tasks_draft_actions(session, client, jwt, monkeypatch, test_name, flag_on, caller, permissions,
+                                 draft_roles, other_draft_roles, expected):
+    """Assert that a draft task lists the actions the caller may take on it (resume / view / delete)."""
+    _mock_draft_rebase_flag(monkeypatch, flag_on)
+    identifier = 'CP7654321'
+    business = _get_task_business(identifier)
+    draft = _create_task_filing(business, 'DRAFT', draft_roles)
+    if other_draft_roles:
+        _create_task_filing(business, 'DRAFT', other_draft_roles)
+
+    with patch.object(PermissionService, 'get_authorized_permissions_for_user', return_value=permissions), \
+            patch.object(business_tasks, 'is_allowed', return_value=True):
+        rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [caller], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert _draft_actions(rv, draft.id) == expected
+
+
+def test_get_tasks_draft_actions_no_resume_when_filing_not_allowed(session, client, jwt, monkeypatch):
+    """Assert that a draft the API would refuse to PUT (is_allowed False) offers delete only."""
+    _mock_draft_rebase_flag(monkeypatch, False)
+    identifier = 'CP7654321'
+    business = _get_task_business(identifier)
+    draft = _create_task_filing(business, 'DRAFT', 'staff')
+
+    with patch.object(business_tasks, 'is_allowed', return_value=False):
+        rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert _draft_actions(rv, draft.id) == ['delete']
+
+
+def test_get_tasks_draft_actions_no_delete_when_deletion_locked(session, client, jwt, monkeypatch):
+    """Assert that a deletion-locked draft offers resume only."""
+    _mock_draft_rebase_flag(monkeypatch, False)
+    identifier = 'CP7654321'
+    business = _get_task_business(identifier)
+    draft = _create_task_filing(business, 'DRAFT', 'staff')
+    draft.deletion_locked = True
+    draft.save()
+
+    with patch.object(business_tasks, 'is_allowed', return_value=True):
+        rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert _draft_actions(rv, draft.id) == ['resume']
+
+
+def test_get_tasks_draft_actions_uses_real_is_allowed(session, client, jwt, monkeypatch):
+    """Assert that an allowed draft resolves to resume + delete without mocking the authz gate."""
+    _mock_draft_rebase_flag(monkeypatch, False)
+    identifier = 'CP7654321'
+    business = _get_task_business(identifier)
+    draft = _create_task_filing(business, 'DRAFT', 'staff')
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert _draft_actions(rv, draft.id) == ['resume', 'delete']
+
+
+@pytest.mark.parametrize('status', ['PENDING', 'ERROR'])
+def test_get_tasks_non_draft_has_no_actions_key(session, client, jwt, monkeypatch, status):
+    """Assert that only draft tasks carry the actions list."""
+    _mock_draft_rebase_flag(monkeypatch, False)
+    identifier = 'CP7654321'
+    business = _get_task_business(identifier)
+    _create_task_filing(business, status, 'staff')
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    tasks = _filing_tasks(rv)
+    assert len(tasks) == 1
+    assert 'actions' not in tasks[0]

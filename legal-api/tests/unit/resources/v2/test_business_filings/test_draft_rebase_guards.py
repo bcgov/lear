@@ -128,6 +128,29 @@ def _reload(filing_id):
 
 
 # ---------------------------------------------------------------------------
+# draft provenance
+# ---------------------------------------------------------------------------
+
+@pytest.mark.parametrize('test_name, submitter_roles, expected', [
+    ('staff', 'staff', True),
+    ('system', 'system', True),
+    ('public_user', 'public_user', False),
+    ('legacy_null', None, False),
+])
+def test_get_draft_filing_filed_by_staff(session, client, jwt, test_name, submitter_roles, expected):
+    """Assert that the filing response reports whether staff filed it (common ledger items)."""
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    draft = _create_draft(business, submitter_roles)
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings/{draft.id}',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['filedByStaff'] is expected
+
+
+# ---------------------------------------------------------------------------
 # stamping
 # ---------------------------------------------------------------------------
 

@@ -27,11 +27,13 @@ from requests import exceptions
 
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business, Filing, UserRoles
+from legal_api.resources.v2.business.business_filings.business_filings import ListFilingResource
 from legal_api.services import check_warnings, namex
 from legal_api.services.authz import (
     FILE_OVER_EXISTING_DRAFT_PERMISSION,
     BusinessBlocker,
     business_blocker_check,
+    is_allowed,
     is_draft_rebase_checks_enabled,
     is_draft_rebase_scoped_filing,
 )
@@ -219,7 +221,24 @@ def _create_pending_filing_task(business: Business, filing: Filing, order: int,
         task["draftHasInterveningChanges"] = \
             None if (filing.base_transaction_id is None or watermark_transaction_id is None) \
             else filing.base_transaction_id < watermark_transaction_id
+        task["actions"] = _draft_task_actions(business, filing, locked_out=not enabled)
     return task
+
+
+def _draft_task_actions(business: Business, filing: Filing, locked_out: bool) -> list[str]:
+    """Return what the caller may do with a draft task: resume, view, delete."""
+    actions = []
+    if ListFilingResource.draft_ownership_mismatch(business, filing):
+        if ListFilingResource._current_user_special_role() in [UserRoles.staff, UserRoles.system]:
+            actions.append("view")
+    elif not locked_out and is_allowed(business, business.state, filing.filing_type, business.legal_type, jwt,
+                                       filing.filing_sub_type, filing):
+        actions.append("resume")
+
+    _, deletion_lock_code = ListFilingResource.is_filing_locked_from_deletion(business, filing)
+    if not deletion_lock_code and not ListFilingResource.draft_ownership_mismatch(business, filing, staff_exempt=True):
+        actions.append("delete")
+    return actions
 
 
 def _add_ar_tasks(business: Business, tasks: list, order: int, pending_filings: list):
