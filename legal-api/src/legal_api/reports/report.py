@@ -1650,22 +1650,22 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         fallback_date_str = LegislationDatetime.as_legislation_timezone(self._filing.effective_date).strftime("%Y-%m-%d")
         filing["relationships"] = {}
 
-        # intent or appoint: get appointed liquidators, conditionally add commencement date
-        if sub_type in {"appointLiquidator", "intentToLiquidate"}:
-            # intent or appoint (if not yet in liquidation): display commencement date
-            is_first_appointment = False
-            if sub_type == "appointLiquidator":
-                prev_filing = Filing.get_previous_completed_filing(self._filing)
-                versioned_business = VersionedBusinessDetailsService.get_business_revision_obj(prev_filing, self._business.id)
-                is_first_appointment = bool(versioned_business and not versioned_business.in_liquidation)
-    
-            if sub_type == "intentToLiquidate" or is_first_appointment:
-                filing["commencementDate"] = (
-                    LegislationDatetime.as_legislation_timezone(business.in_liquidation_date).strftime("%Y-%m-%d")
-                    if business.in_liquidation_date
-                    else 'Not Available'
-                )
+        # intent or appoint (if not yet in liquidation): display commencement date
+        is_first_appointment = False
+        if sub_type == "appointLiquidator":
+            prev_filing = Filing.get_previous_completed_filing(self._filing)
+            versioned_business = VersionedBusinessDetailsService.get_business_revision_obj(prev_filing, self._business.id)
+            is_first_appointment = bool(versioned_business and not versioned_business.in_liquidation)
 
+        if sub_type == "intentToLiquidate" or is_first_appointment:
+            filing["commencementDate"] = (
+                LegislationDatetime.as_legislation_timezone(business.in_liquidation_date).strftime("%Y-%m-%d")
+                if business.in_liquidation_date
+                else 'Not Available'
+            )
+
+        # intent or appoint: get appointed liquidators
+        if sub_type in {"appointLiquidator", "intentToLiquidate"}:
             appointed = []
             for rel in relationships_submitted:
                 appointed_liquidator = next(
