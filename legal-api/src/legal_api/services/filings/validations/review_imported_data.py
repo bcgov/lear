@@ -28,6 +28,17 @@ from legal_api.services.filings.validations.common_validations import (
 from legal_api.services.warnings.business.business_checks import BusinessWarningReferers
 from legal_api.services.warnings.business.business_checks.corps import check_address_data
 
+# filing address json field -> Address model attribute
+ADDRESS_JSON_FIELDS = {
+    "streetAddress": "street",
+    "streetAddressAdditional": "street_additional",
+    "addressCity": "city",
+    "addressRegion": "region",
+    "addressCountry": "country",
+    "postalCode": "postal_code",
+    "deliveryInstructions": "delivery_instructions",
+}
+
 
 def validate(business: Business, imported_data: dict) -> Error:
     """Validate the Review Imported Data filing."""
@@ -159,15 +170,26 @@ def validate_relationship_address_changes(business: Business, imported_data: dic
 def _validate_address_changes(submitted: dict, existing: Address, address_type: str,
                               referer: BusinessWarningReferers, path: str) -> list:
     """Mirror the UI's locked address form: only flagged fields may change, an editable delivery street is no PO Box."""
-    json_fields = {
-        "streetAddress": "street",
-        "streetAddressAdditional": "street_additional",
-        "addressCity": "city",
-        "addressRegion": "region",
-        "addressCountry": "country",
-        "postalCode": "postal_code",
-        "deliveryInstructions": "delivery_instructions",
-    }
+    po_box = re.compile(r"\b(?:p\.?\s*o\.?|post\s+office)\s*box\b", re.IGNORECASE)
+    editable = _get_editable_address_fields(existing, address_type, referer)
+    msg = []
+
+    if (address_type == Address.DELIVERY and "streetAddress" in editable
+            and po_box.search(submitted.get("streetAddress") or "")):
+        msg.append({"error": "Address cannot be a PO Box.", "path": f"{path}/streetAddress"})
+
+    for json_field, attribute in ADDRESS_JSON_FIELDS.items():
+        if json_field in editable:
+            continue
+        if _normalize(json_field, submitted.get(json_field)) != _normalize(json_field, getattr(existing, attribute)):
+            msg.append({"error": "Only fields flagged as missing or invalid can be changed.",
+                        "path": f"{path}/{json_field}"})
+
+    return msg
+
+
+def _get_editable_address_fields(existing: Address, address_type: str, referer: BusinessWarningReferers) -> set:
+    """Return the json fields of an address the filing may change: the ones flagged as missing or invalid."""
     flagged_fields = {
         "_STREET": "streetAddress",
         "_CITY": "addressCity",
@@ -175,35 +197,23 @@ def _validate_address_changes(submitted: dict, existing: Address, address_type: 
         "_POSTAL_CODE": "postalCode",
         "_REGION": "addressRegion",
     }
-    po_box = re.compile(r"\b(?:p\.?\s*o\.?|post\s+office)\s*box\b", re.IGNORECASE)
-    msg = []
-
     # an address with no record at all is entered from scratch, so every field may be set
-    editable = set(json_fields)
-    if existing:
-        editable = set()
-        for warning in check_address_data(existing, address_type, referer):
-            code = str(getattr(warning["code"], "value", warning["code"]))
-            editable.update(field for suffix, field in flagged_fields.items() if code.endswith(suffix))
-        # what is valid for the region and postal code depends on the country entered
-        if "addressCountry" in editable:
-            editable.update(("addressRegion", "postalCode"))
+    if not existing:
+        return set(ADDRESS_JSON_FIELDS)
 
-    if (address_type == Address.DELIVERY and "streetAddress" in editable
-            and po_box.search(submitted.get("streetAddress") or "")):
-        msg.append({"error": "Address cannot be a PO Box.", "path": f"{path}/streetAddress"})
+    editable = set()
+    for warning in check_address_data(existing, address_type, referer):
+        code = str(getattr(warning["code"], "value", warning["code"]))
+        editable.update(field for suffix, field in flagged_fields.items() if code.endswith(suffix))
+    # what is valid for the region and postal code depends on the country entered
+    if "addressCountry" in editable:
+        editable.update(("addressRegion", "postalCode"))
+    return editable
 
-    for json_field, attribute in json_fields.items():
-        if json_field in editable:
-            continue
-        submitted_value = submitted.get(json_field) or ""
-        existing_value = getattr(existing, attribute) or ""
-        if json_field == "postalCode":
-            # the UI reformats an untouched postal code (v1q2w4 -> V1Q 2W4)
-            submitted_value = re.sub(r"\s", "", submitted_value).upper()
-            existing_value = re.sub(r"\s", "", existing_value).upper()
-        if submitted_value != existing_value:
-            msg.append({"error": "Only fields flagged as missing or invalid can be changed.",
-                        "path": f"{path}/{json_field}"})
 
-    return msg
+def _normalize(json_field: str, value: str | None) -> str:
+    """Return a value for comparison; the UI reformats an untouched postal code (v1q2w4 -> V1Q 2W4, a 9 digit zip)."""
+    value = value or ""
+    if json_field == "postalCode":
+        return re.sub(r"[\s-]", "", value).upper()
+    return value

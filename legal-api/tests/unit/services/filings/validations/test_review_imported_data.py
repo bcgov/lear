@@ -388,6 +388,21 @@ def test_validate_ignores_postal_code_formatting(session):
     }]
 
 
+def test_validate_ignores_us_zip_formatting(session):
+    """The UI inserts the hyphen in a 9 digit US zip it did not touch (981011234 -> 98101-1234)."""
+    business = _setup_business()
+    party_id = _setup_director_missing_postal_code(business)
+    director = PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value)[0].party
+    director.delivery_address.country = 'US'
+    director.delivery_address.region = 'WA'
+    director.delivery_address.postal_code = '981011234'
+    director.save()
+    relationship = _valid_relationship(party_id)
+    relationship['deliveryAddress'].update({'addressCountry': 'US', 'addressRegion': 'WA', 'postalCode': '98101-1234'})
+
+    assert validate(business, _build_filing({'relationships': [relationship]})) is None
+
+
 def test_validate_flagged_country_unlocks_region_and_postal_code(session):
     """A missing country also lets the region and postal code change, since they depend on it."""
     business = _setup_business()

@@ -132,38 +132,46 @@ def check_address_validity(address: Address, address_type: str, referer: Busines
     if not address:
         return []
 
-    def warning(field: str, field_label: str) -> dict:
-        label = referer.value.replace("_", " ").lower()
-        return {
-            **WARNING_MESSAGE_BASE,
-            "code": BusinessWarningCodes(f"INVALID_{referer.value}_{address_type.upper()}_ADDRESS_{field}"),
-            "message": f"{field_label} is invalid for {label} {address_type} address.",
-        }
-
-    result = []
     is_office_delivery = referer in OFFICE_REFERERS and address_type == Address.DELIVERY
+    country_code = _get_country_code(address.country)
+    invalid_fields = []
 
-    country_code = None
-    if address.country:
-        try:
-            country_code = pycountry.countries.search_fuzzy(address.country)[0].alpha_2
-        except LookupError:
-            country_code = None
-        # an office mailing address may be anywhere and its country is not checked by the filing
-        if (is_office_delivery and country_code != "CA") or (
-                referer == BusinessWarningReferers.DIRECTOR and not country_code):
-            result.append(warning("COUNTRY", "Country"))
+    # an office mailing address may be anywhere and its country is not checked by the filing
+    if address.country and (
+            (is_office_delivery and country_code != "CA")
+            or (referer == BusinessWarningReferers.DIRECTOR and not country_code)):
+        invalid_fields.append(("COUNTRY", "Country"))
 
-    if address.postal_code and (
-        address.postal_code != address.postal_code.strip()
-        or (country_code == "CA" and not CANADIAN_POSTAL_CODE_REGEX.match(address.postal_code))
-    ):
-        result.append(warning("POSTAL_CODE", "Postal code"))
+    if _is_invalid_postal_code(address.postal_code, country_code):
+        invalid_fields.append(("POSTAL_CODE", "Postal code"))
 
     if is_office_delivery and address.region and address.region != "BC":
-        result.append(warning("REGION", "Region"))
+        invalid_fields.append(("REGION", "Region"))
 
-    return result
+    label = referer.value.replace("_", " ").lower()
+    return [{
+        **WARNING_MESSAGE_BASE,
+        "code": BusinessWarningCodes(f"INVALID_{referer.value}_{address_type.upper()}_ADDRESS_{field}"),
+        "message": f"{field_label} is invalid for {label} {address_type} address.",
+    } for field, field_label in invalid_fields]
+
+
+def _get_country_code(country: str | None) -> str | None:
+    """Return the ISO-2 code for a country, or None when it is missing or cannot be resolved."""
+    if not country:
+        return None
+    try:
+        return pycountry.countries.search_fuzzy(country)[0].alpha_2
+    except LookupError:
+        return None
+
+
+def _is_invalid_postal_code(postal_code: str | None, country_code: str | None) -> bool:
+    """Return True for a postal code the filing would reject: stray whitespace or not Canadian format in CA."""
+    if not postal_code:
+        return False
+    return postal_code != postal_code.strip() or (
+        country_code == "CA" and not CANADIAN_POSTAL_CODE_REGEX.match(postal_code))
 
 
 def check_transition_application(business: Business) -> list:
