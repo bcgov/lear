@@ -24,7 +24,7 @@ import requests
 from dateutil.relativedelta import relativedelta
 from flask import current_app, jsonify
 
-from business_common.utils.datetime import date, datetime
+from business_common.utils.datetime import datetime
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_common.utils.relationship_director import relationship_to_director
 from business_common.utils.relationship_party import (
@@ -1576,14 +1576,17 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         self._set_dates(filing) # required to use effective_date inside this method
         business = self._business
         col = filing.get("changeOfLiquidators", {})
-        sub_type = col.get("type")
-        col_date = col.get("changeOfLiquidatorsDate")
+        prev_filing = Filing.get_previous_completed_filing(self._filing)
+        versioned_business = VersionedBusinessDetailsService.get_business_revision_obj(prev_filing, business.id)
 
+        sub_type = col.get("type")
         filing["subType"] = sub_type
-        filing["colDate"] = (
-            LegislationDatetime.as_legislation_timezone_from_date_str(col_date).strftime(OUTPUT_DATE_FORMAT)
-            if col_date
-            else filing["effective_date"]
+
+        # matches logic in filer
+        lr_report_year = (
+            versioned_business.last_lr_year + 1
+            if versioned_business.last_lr_year
+            else LegislationDatetime.as_legislation_timezone(versioned_business.in_liquidation_date).date().year + 1
         )
 
         report_title_config = {
@@ -1591,7 +1594,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             "ceaseLiquidator": "Liquidator Cessation",
             "changeAddressLiquidator": "Liquidator (or Records) Address Change",
             "intentToLiquidate": "Statement of Intent to Liquidate",
-            "liquidationReport": f"{date.fromisoformat(col_date).year} Liquidation Report" if col_date else "Liquidation Report"
+            "liquidationReport": f"{lr_report_year} Liquidation Report"
         }
 
         filing["reportTitle"] = report_title_config[sub_type]
@@ -1605,6 +1608,21 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         }
 
         filing["reportDateAndTimeTitle"] = report_date_and_time_title_config[sub_type]
+
+        if sub_type == "liquidationReport":
+            founding_date = LegislationDatetime.as_legislation_timezone(versioned_business.founding_date).date()
+            in_liquidation_date = LegislationDatetime.as_legislation_timezone(versioned_business.in_liquidation_date).date()
+
+            # matches next_lr_min_date from business model
+            next_lr_year = in_liquidation_date.year + 1
+            if versioned_business.last_lr_year:
+                next_lr_year = versioned_business.last_lr_year + 1
+            
+            years_to_add = next_lr_year - founding_date.year
+            lr_report_date = founding_date + relativedelta(years=years_to_add)
+            filing["LRReportDate"] = lr_report_date.strftime(OUTPUT_DATE_FORMAT)
+
+            return # no further data needed for liquidationReport
 
         # All sub-types: format last liquidationReportDate
         if latest_lr_filing := Filing.get_most_recent_filing(business_id=business.id, filing_type="changeOfLiquidators", filing_sub_type="liquidationReport"):
@@ -1646,23 +1664,16 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             if "deliveryAddress" in rel:
                 rel["deliveryAddress"] = self._format_address(rel["deliveryAddress"])
 
-
-        fallback_date_str = LegislationDatetime.as_legislation_timezone(self._filing.effective_date).strftime("%Y-%m-%d")
-        filing["relationships"] = {}
-
-        # intent or appoint (if not yet in liquidation): display commencement date
-        is_first_appointment = False
-        if sub_type == "appointLiquidator":
-            prev_filing = Filing.get_previous_completed_filing(self._filing)
-            versioned_business = VersionedBusinessDetailsService.get_business_revision_obj(prev_filing, self._business.id)
-            is_first_appointment = bool(versioned_business and not versioned_business.in_liquidation)
-
-        if sub_type == "intentToLiquidate" or is_first_appointment:
+        # Display commencement date if not previously in liquidation
+        if versioned_business and not versioned_business.in_liquidation:
             filing["commencementDate"] = (
                 LegislationDatetime.as_legislation_timezone(business.in_liquidation_date).strftime("%Y-%m-%d")
                 if business.in_liquidation_date
-                else 'Not Available'
+                else "Not Available"
             )
+
+        fallback_date_str = LegislationDatetime.as_legislation_timezone(self._filing.effective_date).strftime("%Y-%m-%d")
+        filing["relationships"] = {}
 
         # intent or appoint: get appointed liquidators
         if sub_type in {"appointLiquidator", "intentToLiquidate"}:
