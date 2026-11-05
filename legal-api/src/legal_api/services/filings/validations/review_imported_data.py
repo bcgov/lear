@@ -12,18 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Validation for the Review Imported Data filing."""
+import re
 from datetime import UTC, datetime
 from http import HTTPStatus
 
 from flask_babel import _ as babel
 
-from business_model.models import Business, PartyRole
+from business_model.models import Address, Business, Party, PartyRole
 from legal_api.errors import Error
 from legal_api.services.filings.validations.common_validations import (
     validate_offices,
     validate_parties_addresses,
     validate_parties_countries,
 )
+from legal_api.services.warnings.business.business_checks import BusinessWarningReferers
+from legal_api.services.warnings.business.business_checks.firms import check_address
 
 
 def validate(business: Business, imported_data: dict) -> Error:
@@ -48,10 +51,12 @@ def validate(business: Business, imported_data: dict) -> Error:
                 bc_req=True,
             )
         )
+        msg.extend(validate_office_address_changes(business, imported_data))
 
     if filing_data.get("relationships"):
         msg.extend(validate_relationship_addresses(imported_data))
         msg.extend(validate_active_directors(business, imported_data))
+        msg.extend(validate_relationship_address_changes(business, imported_data))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
@@ -92,5 +97,103 @@ def validate_active_directors(business: Business, imported_data: dict) -> list:
                     f"{index}/entity/identifier"
                 ),
             })
+
+    return msg
+
+
+def validate_office_address_changes(business: Business, imported_data: dict) -> list:
+    """Only the office address fields the business warnings flag as missing may change."""
+    referers = {
+        "registeredOffice": BusinessWarningReferers.REGISTERED_OFFICE,
+        "recordsOffice": BusinessWarningReferers.RECORDS_OFFICE,
+    }
+    filing_type = "reviewImportedData"
+    msg = []
+    offices = imported_data["filing"][filing_type]["offices"]
+
+    for office_type, referer in referers.items():
+        if not (submitted := offices.get(office_type)):
+            continue
+        # an office with no record at all is entered from scratch, so every field may be set
+        office = business.offices.filter_by(office_type=office_type, deactivated_date=None).first()
+        addresses = office.addresses.all() if office else []
+        for json_type, address_type in ((Address.JSON_MAILING, Address.MAILING),
+                                        (Address.JSON_DELIVERY, Address.DELIVERY)):
+            if json_type not in submitted:
+                continue
+            existing = next((x for x in addresses if x.address_type == address_type), None)
+            msg.extend(_validate_address_changes(
+                submitted[json_type], existing, address_type, referer,
+                f"/filing/{filing_type}/offices/{office_type}/{json_type}"))
+
+    return msg
+
+
+def validate_relationship_address_changes(business: Business, imported_data: dict) -> list:
+    """Only the director address fields the business warnings flag as missing may change."""
+    filing_type = "reviewImportedData"
+    msg = []
+    relationships = imported_data["filing"][filing_type]["relationships"]
+
+    for index, relationship in enumerate(relationships):
+        identifier = str(relationship.get("entity", {}).get("identifier") or "")
+        # unknown identifiers are rejected by validate_active_directors
+        party = Party.find_by_id(int(identifier)) if identifier.isdigit() else None
+        if not party or party.id not in {
+            role.party_id for role in business.party_roles.filter(PartyRole.cessation_date.is_(None))
+        }:
+            continue
+        for json_type, address_type, existing in (
+            (Address.JSON_MAILING, Address.MAILING, party.mailing_address),
+            (Address.JSON_DELIVERY, Address.DELIVERY, party.delivery_address),
+        ):
+            if json_type not in relationship:
+                continue
+            msg.extend(_validate_address_changes(
+                relationship[json_type], existing, address_type, BusinessWarningReferers.DIRECTOR,
+                f"/filing/{filing_type}/relationships/{index}/{json_type}"))
+
+    return msg
+
+
+def _validate_address_changes(submitted: dict, existing: Address, address_type: str,
+                              referer: BusinessWarningReferers, path: str) -> list:
+    """Mirror the UI's locked address form: unflagged fields must be unchanged, delivery cannot be a PO Box."""
+    json_fields = {
+        "streetAddress": "street",
+        "streetAddressAdditional": "street_additional",
+        "addressCity": "city",
+        "addressRegion": "region",
+        "addressCountry": "country",
+        "postalCode": "postal_code",
+        "deliveryInstructions": "delivery_instructions",
+    }
+    flagged_fields = {
+        "_STREET": "streetAddress",
+        "_CITY": "addressCity",
+        "_COUNTRY": "addressCountry",
+        "_POSTAL_CODE": "postalCode",
+        "_REGION": "addressRegion",
+    }
+    po_box = re.compile(r"\b(?:p\.?\s*o\.?|post\s+office)\s*box\b", re.IGNORECASE)
+    msg = []
+
+    if address_type == Address.DELIVERY and po_box.search(submitted.get("streetAddress") or ""):
+        msg.append({"error": "Address cannot be a PO Box.", "path": f"{path}/streetAddress"})
+
+    # an address with no record at all is entered from scratch, so every field may be set
+    if not existing:
+        return msg
+
+    flagged = set()
+    for warning in check_address(existing, address_type, referer):
+        code = str(getattr(warning["code"], "value", warning["code"]))
+        flagged.update(field for suffix, field in flagged_fields.items() if code.endswith(suffix))
+
+    for json_field, attribute in json_fields.items():
+        if json_field in flagged:
+            continue
+        if (submitted.get(json_field) or "") != (getattr(existing, attribute) or ""):
+            msg.append({"error": "Only fields flagged as missing can be changed.", "path": f"{path}/{json_field}"})
 
     return msg

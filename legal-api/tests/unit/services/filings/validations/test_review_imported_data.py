@@ -20,7 +20,7 @@ import datedelta
 import pytest
 
 from business_common.utils import datetime
-from business_model.models import Address, Business, PartyRole
+from business_model.models import Address, Business, Office, PartyRole
 from legal_api.services.filings.validations.validation import validate
 from registry_schemas.example_data import FILING_HEADER
 from tests.unit.models import factory_business, factory_party_role
@@ -103,6 +103,47 @@ def _setup_active_director(business):
     business.party_roles.append(role)
     business.save()
     return role.party_id
+
+
+def _setup_office(business, office_type, mailing: dict, delivery: dict):
+    """Attach an office whose addresses may have fields missing (imported data)."""
+    office = Office(office_type=office_type)
+    office.addresses.append(Address(**mailing, address_type=Address.MAILING))
+    office.addresses.append(Address(**delivery, address_type=Address.DELIVERY))
+    business.offices.append(office)
+    business.save()
+
+
+def _setup_director_missing_postal_code(business):
+    """Create an active director whose mailing address has no postal code."""
+    mailing = Address.create_address({**VALID_ADDRESS, 'postalCode': ''})
+    officer = {
+        'firstName': 'Joe',
+        'lastName': 'Swanson',
+        'middleInitial': 'P',
+        'partyType': 'person',
+        'organizationName': '',
+    }
+    role = factory_party_role(
+        Address.create_address(VALID_ADDRESS),
+        mailing,
+        officer,
+        (datetime.utcnow() - datedelta.datedelta(years=5)).date().isoformat(),
+        None,
+        PartyRole.RoleTypes.DIRECTOR,
+    )
+    business.party_roles.append(role)
+    business.save()
+    return role.party_id
+
+
+STORED_ADDRESS = {
+    'street': '123 A St',
+    'city': 'Vancouver',
+    'region': 'BC',
+    'country': 'CA',
+    'postal_code': 'V5K0A1',
+}
 
 
 def test_validate_offices_only(session):
@@ -274,3 +315,86 @@ def test_validate_rejects_invalid_relationship_address(
         e['error'] == expected_message and e['path'] == expected_path
         for e in err.msg
     )
+
+
+def test_validate_office_allows_only_flagged_fields(session):
+    """Only the office address field flagged as missing may change; the rest must match the record."""
+    business = _setup_business()
+    _setup_office(business, 'registeredOffice', {**STORED_ADDRESS, 'postal_code': ''}, STORED_ADDRESS)
+    office = _valid_office()
+    office['mailingAddress']['addressCity'] = 'Victoria'
+    filing = _build_filing({'offices': {'registeredOffice': office}})
+
+    err = validate(business, filing)
+
+    assert err is not None
+    assert err.msg == [{
+        'error': 'Only fields flagged as missing can be changed.',
+        'path': '/filing/reviewImportedData/offices/registeredOffice/mailingAddress/addressCity',
+    }]
+
+    office['mailingAddress']['addressCity'] = 'Vancouver'
+    assert validate(business, _build_filing({'offices': {'registeredOffice': office}})) is None
+
+
+def test_validate_office_missing_address_is_fully_editable(session):
+    """An office address with no record at all can be entered from scratch."""
+    business = _setup_business()
+    office = Office(office_type='recordsOffice')
+    office.addresses.append(Address(**STORED_ADDRESS, address_type=Address.MAILING))
+    business.offices.append(office)
+    business.save()
+    submitted = _valid_office()
+    submitted['deliveryAddress']['streetAddress'] = '999 New St'
+
+    assert validate(business, _build_filing({'offices': {'recordsOffice': submitted}})) is None
+
+
+def test_validate_director_allows_only_flagged_fields(session):
+    """Only the director address field flagged as missing may change; the rest must match the record."""
+    business = _setup_business()
+    party_id = _setup_director_missing_postal_code(business)
+    relationship = _valid_relationship(party_id)
+    relationship['mailingAddress']['streetAddress'] = '456 B St'
+    filing = _build_filing({'relationships': [relationship]})
+
+    err = validate(business, filing)
+
+    assert err is not None
+    assert err.msg == [{
+        'error': 'Only fields flagged as missing can be changed.',
+        'path': '/filing/reviewImportedData/relationships/0/mailingAddress/streetAddress',
+    }]
+
+    relationship['mailingAddress']['streetAddress'] = '123 A St'
+    assert validate(business, _build_filing({'relationships': [relationship]})) is None
+
+
+@pytest.mark.parametrize('street', ['PO Box 123', 'P.O. Box 123', 'Post Office Box 9', '123 Main St, PO Box 4'])
+def test_validate_rejects_po_box_delivery_address(session, street):
+    """A delivery address street cannot be a PO Box, for offices and directors alike."""
+    business = _setup_business()
+    party_id = _setup_active_director(business)
+    office = _valid_office()
+    office['deliveryAddress']['streetAddress'] = street
+    relationship = _valid_relationship(party_id)
+    relationship['deliveryAddress']['streetAddress'] = street
+    filing = _build_filing({'offices': {'registeredOffice': office}, 'relationships': [relationship]})
+
+    err = validate(business, filing)
+
+    assert err is not None
+    paths = [e['path'] for e in err.msg if e['error'] == 'Address cannot be a PO Box.']
+    assert paths == [
+        '/filing/reviewImportedData/offices/registeredOffice/deliveryAddress/streetAddress',
+        '/filing/reviewImportedData/relationships/0/deliveryAddress/streetAddress',
+    ]
+
+
+def test_validate_allows_po_box_mailing_address(session):
+    """A mailing address may be a PO Box."""
+    business = _setup_business()
+    office = _valid_office()
+    office['mailingAddress']['streetAddress'] = 'PO Box 123'
+
+    assert validate(business, _build_filing({'offices': {'registeredOffice': office}})) is None
