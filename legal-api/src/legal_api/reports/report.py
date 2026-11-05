@@ -1580,7 +1580,11 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         col_date = col.get("changeOfLiquidatorsDate")
 
         filing["subType"] = sub_type
-        filing["colDate"] = LegislationDatetime.as_legislation_timezone_from_date_str(col_date).strftime(OUTPUT_DATE_FORMAT)
+        filing["colDate"] = (
+            LegislationDatetime.as_legislation_timezone_from_date_str(col_date).strftime(OUTPUT_DATE_FORMAT)
+            if col_date
+            else filing["effective_date"]
+        )
 
         report_title_config = {
             "appointLiquidator": "Liquidator Appointment",
