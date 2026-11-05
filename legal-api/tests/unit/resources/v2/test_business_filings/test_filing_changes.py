@@ -114,6 +114,31 @@ def test_changes_unauthorized_without_view_access(session, client, jwt, requests
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
 
 
+def test_changes_not_found_when_feature_off(session, client, jwt, monkeypatch):
+    """Assert that 404 is returned when draftRebaseChecks is off, telling the UI to resume as saved."""
+    monkeypatch.setattr('legal_api.resources.v2.business.business_filings.business_filings'
+                        '.is_draft_rebase_checks_enabled', lambda: False)
+    business = factory_business(IDENTIFIER, entity_type='BC')
+    draft = _draft_cod(business, [], None)
+
+    rv = _get_changes(client, jwt, draft)
+
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+    assert 'not enabled for this filing' in rv.json['message']
+
+
+def test_changes_not_found_when_filing_type_not_allowlisted(session, client, jwt, monkeypatch):
+    """Assert that 404 is returned for a draft whose filing type is outside the bypass allowlist."""
+    monkeypatch.setattr('legal_api.services.authz.staff_draft_bypass_flag_value', list)
+    business = factory_business(IDENTIFIER, entity_type='BC')
+    draft = _draft_cod(business, [], None)
+
+    rv = _get_changes(client, jwt, draft)
+
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+    assert 'not enabled for this filing' in rv.json['message']
+
+
 def test_changes_up_to_date_when_no_completed_filings(session, client, jwt):
     """Assert that the report is upToDate with empty lists when the watermark is None."""
     business = factory_business(IDENTIFIER, entity_type='BC')

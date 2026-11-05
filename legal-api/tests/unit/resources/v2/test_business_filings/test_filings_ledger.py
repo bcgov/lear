@@ -139,6 +139,7 @@ def test_ledger_search(app, session, client, jwt, monkeypatch, mock_drs_service,
     assert 'submitter' in alteration
     assert 'displayLedger' in alteration
     assert 'withdrawalPending' in alteration
+    assert 'filedByStaff' in alteration
     # assert alteration['commentsLink']
     # assert alteration['correctionLink']
     # assert alteration['filingLink']

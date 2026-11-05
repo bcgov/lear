@@ -145,6 +145,12 @@ def get_filing_changes(identifier: str, filing_id: int):
     if filing.status != Filing.Status.DRAFT.value:
         return jsonify({"message": "A changes report is only available for draft filings."}), HTTPStatus.BAD_REQUEST
 
+    # per-filing enablement: the allowlist is the readiness switch for a type's rebase UX,
+    # and a 404 tells the UI to resume the draft as saved (today's behaviour)
+    if not (is_draft_rebase_checks_enabled() and
+            is_draft_rebase_scoped_filing(filing.filing_type, filing.filing_sub_type)):
+        return jsonify({"message": "Draft rebase is not enabled for this filing."}), HTTPStatus.NOT_FOUND
+
     return jsonify(DraftRebaseService.get_changes_report(business, filing)), HTTPStatus.OK
 
 
