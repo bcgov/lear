@@ -12,10 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common utilities used by the services."""
+import re
 from datetime import date
 
 import dpath
 import pycountry
+
+CANADIAN_POSTAL_CODE_REGEX = re.compile(
+    r"^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z] ?\d[ABCEGHJ-NPRSTV-Z]\d$",
+    re.IGNORECASE
+)
 
 # ISO-2 codes of countries that do not use postal codes; mirrors the frontend address rules.
 NO_POSTAL_CODE_COUNTRY_CODES = {
