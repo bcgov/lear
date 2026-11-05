@@ -13,7 +13,7 @@
           <div>{{ business.identifier }}</div>
           <div>{{ recognition_date_time }}</div>
           <div>{{ effective_date_time }}</div>
-          <div>{{ colDate }}</div>
+          <div>{{ LRReportDate | default('Not Available') }}</div>
         </td>
       </tr>
     {% else %}
