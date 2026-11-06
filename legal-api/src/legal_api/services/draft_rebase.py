@@ -193,6 +193,8 @@ def _party_entities(parties: list | None) -> dict:
                           _norm_address(row.get("deliveryAddress")),
                           _norm_address(row.get("mailingAddress")),
                           _party_detail_norm(row))
+        if "REMOVED" in entity["actions"]:
+            entity["norm"] = None  # REMOVED: end state "gone", same as a staff cease
     return entities
 
 
@@ -394,19 +396,26 @@ def _entity_display_names(base_entities: dict, current_entities: dict, draft_ent
 
 
 def _ambiguous_entity_names(datasets: tuple, display_names: dict) -> set:
-    """Names two rows claim within one dataset (two real people).
+    """Names that pair by id, not by name.
 
-    The same name under different ids across datasets is id churn, not ambiguity.
+    - two rows, one dataset: two real people
+    - id-less draft row vs an id'd base party: new person, not the existing one
+    - id-less draft row vs a staff-added party: same person, pairs by name
+    - same name, different ids across datasets: id churn, pairs by name
     """
     ambiguous_names = set()
+    new_row_names = set()
     for entities in datasets:
         claimants = {}
         for entity in entities.values():
             name = display_names.get(entity["row_id"]) if entity["row_id"] is not None else entity["name_key"]
             if name:
                 claimants[name] = claimants.get(name, 0) + 1
+                if entity["row_id"] is None:
+                    new_row_names.add(name)
         ambiguous_names |= {name for name, count in claimants.items() if count > 1}
-    return ambiguous_names
+    base_names = {display_names.get(entity["row_id"]) for entity in datasets[0].values()}
+    return ambiguous_names | (new_row_names & base_names)
 
 
 def _canonical_entity_key(entity: dict, display_names: dict, ambiguous_names: set) -> str | None:
@@ -537,7 +546,7 @@ class DraftRebaseService:
         if draft_filing.filing_type in DraftRebaseService.BUSINESS_FIELD_PATHS:
             mapped_sections.add("business")
         for section in SNAPSHOT_SECTIONS:
-            base_entities, current_entities, draft_entities = DraftRebaseService._section_entities(
+            base_entities, current_entities, draft_entities, draft_tagged = DraftRebaseService._section_entities(
                 section, base_snapshot, current_snapshot, draft_sections, scopes)
 
             intervening_changed = DraftRebaseService._changed_keys(base_entities, current_entities)
@@ -546,7 +555,7 @@ class DraftRebaseService:
 
             draft_touched = DraftRebaseService._draft_touched_entities(
                 draft_entities, base_entities, section in draft_sections,
-                full_replacement=section not in _DELTA_SECTIONS)
+                full_replacement=section not in _DELTA_SECTIONS, tagged=draft_tagged)
             DraftRebaseService._classify_draft_overlaps(report, section, intervening_changed, draft_touched,
                                                         absorb=section in mapped_sections)
 
@@ -561,11 +570,14 @@ class DraftRebaseService:
         """Build the base/current/draft entities for one section, scoped to the filing type and id-aligned.
 
         - scopes: {"parties": role set | None, "offices": office type set | None}
+        - draft_tagged: read before scoping, so a dropped tagged row keeps the section a delta
         """
         build_entities = _SECTION_ENTITY_BUILDERS[section]
+        draft_entities = build_entities(draft_sections.get(section))
+        draft_tagged = any(entity["actions"] for entity in draft_entities.values())
         entity_sets = (build_entities(base_snapshot.get(section)),
                        build_entities(current_snapshot.get(section)),
-                       build_entities(draft_sections.get(section)))
+                       draft_entities)
         # parties: only the roles this filing type manages are in play
         if section == "parties" and (role_scope := scopes.get("parties")):
             entity_sets = tuple(_scope_party_entities(entities, role_scope) for entities in entity_sets)
@@ -574,7 +586,7 @@ class DraftRebaseService:
                                 for entities in entity_sets)
         if section in _ID_MATCHED_SECTIONS:
             entity_sets = _align_entities_by_row_id(*entity_sets)
-        return entity_sets
+        return (*entity_sets, draft_tagged)
 
     @staticmethod
     def _classify_draft_overlaps(report: dict, section: str, intervening_changed: dict, draft_touched: dict,
@@ -583,8 +595,7 @@ class DraftRebaseService:
 
         - draft touched it too, same end value: alreadyApplied
         - draft touched it too, different value: conflict
-        - draft left it alone: absorbed (mapped sections only) - the UI refreshes it, a full-list draft
-          section still holds its base value
+        - draft left it alone: absorbed (mapped sections only), the UI refreshes it
         """
         for entity_key, (base_entity, current_entity) in intervening_changed.items():
             if (draft_entity := draft_touched.get(entity_key)) is None:
@@ -758,16 +769,16 @@ class DraftRebaseService:
 
     @staticmethod
     def _draft_touched_entities(draft_entities: dict, base_entities: dict, section_present: bool,
-                                full_replacement: bool = True) -> dict:
+                                full_replacement: bool = True, tagged: bool | None = None) -> dict:
         """Return the entities the draft edits.
 
-        - rows carry UI action tags: the tagged rows
-        - no tags: rows whose norm differs from the base
-        - full replacement: a base entity missing from the draft is a removal (not for business fields / offices)
+        - tagged (flag or any row): tagged rows only
+        - untagged: rows whose norm differs from the base
+        - full replacement: base entity missing from the draft = removal (not business fields / offices)
         """
         if not section_present:
             return {}
-        if any(entity["actions"] for entity in draft_entities.values()):
+        if tagged or any(entity["actions"] for entity in draft_entities.values()):
             return {key: entity for key, entity in draft_entities.items() if entity["actions"]}
 
         touched = {}

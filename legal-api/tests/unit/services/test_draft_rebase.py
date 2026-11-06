@@ -166,6 +166,30 @@ def test_draft_added_row_stays_separate_bare_name_entity():
     assert not conflicts
 
 
+def test_delta_draft_added_row_does_not_pair_with_a_same_named_existing_party():
+    """Assert an id-less ADDED row stays a bare-name entity when the delta draft omits the same-named existing party."""
+    changed, touched, conflicts, already = classify(
+        [snap(101, 'Jane', 'Smith', 'Victoria')],
+        [snap(101, 'Jane', 'Smith', 'Surrey')],
+        [party('', 'Jane', 'Smith', 'Kelowna', actions=['ADDED'], entity_shape=True)])
+
+    assert set(changed) == {'SMITH, JANE #101'}
+    assert set(touched) == {'SMITH, JANE'}
+    assert not conflicts
+    assert not already
+
+
+def test_draft_removal_of_a_party_staff_ceased_is_already_applied():
+    """Assert a REMOVED draft row and a party missing from current agree on the end state."""
+    changed, touched, conflicts, already = classify(
+        [snap(101, 'Jane', 'Smith', 'Victoria')],
+        [],
+        [party(101, 'Jane', 'Smith', 'Victoria', actions=['REMOVED'], entity_shape=True)])
+
+    assert already == ['SMITH, JANE']
+    assert not conflicts
+
+
 def test_alias_renamed_by_both_sides_is_one_conflict_keyed_by_current_name():
     """Assert an alias renamed by staff and the draft pairs by id into one conflict."""
     changed, touched, conflicts, already = classify(
@@ -836,6 +860,26 @@ def test_report_absorbs_a_staff_added_party_the_draft_never_saw(session):
     assert absorbed['rowId'] == bob.id
     assert absorbed['currentValue']['entity']['identifier'] == bob.id
     assert absorbed['currentValue']['roles'][0]['roleType'] == 'Director'
+
+
+def test_report_keeps_a_tagged_delta_when_the_scope_drops_its_only_tagged_row(session):
+    """Assert a correction draft holding only an ADDED completing party absorbs a staff director edit instead of removing every director."""
+    business = factory_business(IDENTIFIER, entity_type='BC')
+    jane, _ = _add_party(business, 'Jane', 'Smith')
+    base_filing = _complete(business)
+    jane.delivery_address.city = 'Nanaimo'
+    jane.delivery_address.save()
+    _complete(business)
+    completing_party = {'entity': {'givenName': 'Pat', 'familyName': 'Filer'},
+                        'roles': [{'roleType': 'Completing Party'}], 'actions': ['ADDED']}
+    draft = _draft(business, 'correction', {'relationships': [completing_party]}, base_filing.transaction_id)
+
+    report = DraftRebaseService.get_changes_report(business, draft)
+
+    assert report['changedSections'] == ['parties']
+    assert report['conflicts'] == []
+    assert report['alreadyApplied'] == []
+    assert [entry['rowId'] for entry in report['absorbed']] == [jane.id]
 
 
 def test_report_conflicts_a_corrected_name_with_a_staff_rename(session):
