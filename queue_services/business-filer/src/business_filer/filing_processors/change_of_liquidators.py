@@ -82,26 +82,60 @@ def _update_last_lr_year(business: Business):
         business.last_lr_year = in_liquidation_date.year + 1
 
 
+def _get_last_liquidation_report_date(business_id: int) -> str | None:
+    """Retrieve the effective date string of the latest prior liquidationReport filing."""
+    prior_lr = Filing.get_most_recent_filing(
+        business_id=business_id,
+        filing_type="changeOfLiquidators",
+        filing_sub_type="liquidationReport",
+    )
+    if prior_lr and prior_lr.effective_date:
+        return LegislationDatetime.as_legislation_timezone(prior_lr.effective_date).date().isoformat()
+    return None
+
+
 def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the changeOfLiquidators onto the business model objects."""
     filing_json = copy.deepcopy(filing_rec.filing_json)
     relationships = filing_json["filing"]["changeOfLiquidators"].get("relationships", [])
     offices = filing_json["filing"]["changeOfLiquidators"].get("offices", {})
 
+    was_in_liquidation = bool(business.in_liquidation)
+
     if filing_rec.filing_sub_type in ["intentToLiquidate", "appointLiquidator"]:
         create_relationships(relationships, business, filing_rec)
         update_or_create_offices(business, offices)
         _init_liquidation(business, filing_meta, filing_json)
 
+        col_meta = {}
+        if not was_in_liquidation and business.in_liquidation and business.in_liquidation_date:
+            col_meta["commencementDate"] = LegislationDatetime.as_legislation_timezone(
+                business.in_liquidation_date
+            ).date().isoformat()
+        if last_lr_date := _get_last_liquidation_report_date(business.id):
+            col_meta["lastLiquidationReportDate"] = last_lr_date
+        if col_meta:
+            filing_meta.change_of_liquidators = col_meta
+
     elif filing_rec.filing_sub_type == "ceaseLiquidator":
         cease_relationships(relationships, business, [PartyRole.RoleTypes.LIQUIDATOR.value], filing_meta.application_date)
-    
+        if last_lr_date := _get_last_liquidation_report_date(business.id):
+            filing_meta.change_of_liquidators = {"lastLiquidationReportDate": last_lr_date}
+
     elif filing_rec.filing_sub_type == "changeAddressLiquidator":
         update_relationship_addresses(relationships, business)
         update_or_create_offices(business, offices)
-    
+        if last_lr_date := _get_last_liquidation_report_date(business.id):
+            filing_meta.change_of_liquidators = {"lastLiquidationReportDate": last_lr_date}
+
     elif filing_rec.filing_sub_type == "liquidationReport":
+        lr_date = business.next_lr_min_date
         _update_last_lr_year(business)
+        if lr_date:
+            filing_meta.change_of_liquidators = {
+                "liquidationReportDate": lr_date.isoformat(),
+                "liquidationReportYear": lr_date.year,
+            }
 
     # update court order, if any is present
     if court_order := filing_json["filing"]["changeOfLiquidators"].get("courtOrder"):

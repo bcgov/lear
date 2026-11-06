@@ -201,6 +201,9 @@ def test_process_col_filing(app, session, mocker):
 
     # assert changes
     _assert_common_data(business, intent_filing, expected_in_liquidation_date, None, 2025)
+    assert intent_filing.meta_data["changeOfLiquidators"] == {
+        "commencementDate": LegislationDatetime.as_legislation_timezone(expected_in_liquidation_date).date().isoformat()
+    }
     check_drs_publish(drs_publish_mock, app, business, intent_filing, '')
     drs_publish_mock.reset_mock()
 
@@ -252,6 +255,7 @@ def test_process_col_filing(app, session, mocker):
 
     # assert changes
     _assert_common_data(business, cease_filing, expected_in_liquidation_date, None, 2025)
+    assert "changeOfLiquidators" not in cease_filing.meta_data
     check_drs_publish(drs_publish_mock, app, business, cease_filing, '')
     drs_publish_mock.reset_mock()
 
@@ -314,6 +318,7 @@ def test_process_col_filing(app, session, mocker):
 
     # assert changes
     _assert_common_data(business, change_address_filing, expected_in_liquidation_date, None, 2025)
+    assert "changeOfLiquidators" not in change_address_filing.meta_data
     check_drs_publish(drs_publish_mock, app, business, change_address_filing, '')
     drs_publish_mock.reset_mock()
 
@@ -360,6 +365,7 @@ def test_process_col_filing(app, session, mocker):
 
     # assert changes
     _assert_common_data(business, change_address_filing, expected_in_liquidation_date, None, 2025)
+    assert "changeOfLiquidators" not in change_address_filing.meta_data
     check_drs_publish(drs_publish_mock, app, business, change_address_filing, '')
     drs_publish_mock.reset_mock()
 
@@ -403,6 +409,7 @@ def test_process_col_filing(app, session, mocker):
 
     # assert changes
     _assert_common_data(business, change_address_filing, expected_in_liquidation_date, None, 2025)
+    assert "changeOfLiquidators" not in change_address_filing.meta_data
     check_drs_publish(drs_publish_mock, app, business, change_address_filing, '')
     drs_publish_mock.reset_mock()
 
@@ -465,6 +472,7 @@ def test_process_col_filing(app, session, mocker):
 
     # assert changes
     _assert_common_data(business, appoint_filing, expected_in_liquidation_date, None, 2025)
+    assert "changeOfLiquidators" not in appoint_filing.meta_data
     check_drs_publish(drs_publish_mock, app, business, appoint_filing, new_document_id)
     drs_publish_mock.reset_mock()
 
@@ -509,6 +517,11 @@ def test_process_col_filing(app, session, mocker):
 
     # assert changes
     _assert_common_data(business, lr_filing_1, expected_in_liquidation_date, expected_last_lr_year, 2026)
+    expected_lr_date_1 = LegislationDatetime.as_legislation_timezone(business.founding_date).date().replace(year=expected_last_lr_year).isoformat()
+    assert lr_filing_1.meta_data["changeOfLiquidators"] == {
+        "liquidationReportDate": expected_lr_date_1,
+        "liquidationReportYear": expected_last_lr_year,
+    }
     check_drs_publish(drs_publish_mock, app, business, lr_filing_1, '')
     drs_publish_mock.reset_mock()
     
@@ -534,7 +547,46 @@ def test_process_col_filing(app, session, mocker):
 
     # assert changes
     _assert_common_data(business, lr_filing_2, expected_in_liquidation_date, second_expected_last_lr_year, 2027)
+    expected_lr_date_2 = LegislationDatetime.as_legislation_timezone(business.founding_date).date().replace(year=second_expected_last_lr_year).isoformat()
+    assert lr_filing_2.meta_data["changeOfLiquidators"] == {
+        "liquidationReportDate": expected_lr_date_2,
+        "liquidationReportYear": second_expected_last_lr_year,
+    }
     check_drs_publish(drs_publish_mock, app, business, lr_filing_2, '')
+    drs_publish_mock.reset_mock()
+
+    # Test cease liquidator after liquidation reports exist
+    filing['filing']['changeOfLiquidators'] = {
+        'type': 'ceaseLiquidator',
+        'relationships': [
+            {
+                'entity': {
+                    'identifier': party_id_2
+                },
+                'roles': [
+                    {
+                        'roleType': 'Liquidator',
+                        'cessationDate': '2025-11-12'
+                    }
+                ]
+            }
+        ]
+    }
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    effective_date = datetime(2025, 11, 12, 10, 0, 0, tzinfo=timezone.utc)
+
+    filing_rec = create_filing(payment_id, filing, business.id)
+    filing_rec.effective_date = effective_date
+    filing_rec.save()
+    filing_msg = FilingMessage(filing_identifier=filing_rec.id)
+
+    process_filing(filing_msg)
+
+    cease_filing_with_lr: Filing = Filing.find_by_id(filing_rec.id)
+    expected_prior_lr_effective_date = LegislationDatetime.as_legislation_timezone(lr_filing_2.effective_date).date().isoformat()
+    assert cease_filing_with_lr.meta_data["changeOfLiquidators"] == {
+        "lastLiquidationReportDate": expected_prior_lr_effective_date,
+    }
     drs_publish_mock.reset_mock()
 
 
@@ -570,6 +622,9 @@ def test_process_col_filing_initiated_with_appoint(app, session, mocker):
 
     # assert changes
     _assert_common_data(business, appoint_filing, expected_in_liquidation_date, None, 2024)
+    assert appoint_filing.meta_data["changeOfLiquidators"] == {
+        "commencementDate": LegislationDatetime.as_legislation_timezone(expected_in_liquidation_date).date().isoformat()
+    }
     check_drs_publish(drs_publish_mock, app, business, appoint_filing, '')
     drs_publish_mock.reset_mock()
 
@@ -709,3 +764,42 @@ def test_init_liquidation_date(
     assert local_legislation_dt.minute == 0
     assert local_legislation_dt.second == 0
     assert local_legislation_dt.microsecond == 0
+
+
+def test_liquidation_report_feb_29_founding_date(app, session, mocker):
+    """Assert that a liquidationReport filing handles a business founded on Feb 29 (leap year)."""
+    drs_publish_mock = mocker.patch('business_filer.services.gcp_queue.publish', return_value=None)
+    identifier = 'BC9999999'
+
+    # Business founded on leap day 2020-02-29
+    business = create_business(identifier)
+    business.founding_date = datetime(2020, 2, 29, 12, 0, 0, tzinfo=UTC)
+    business.in_liquidation = True
+    business.in_liquidation_date = datetime(2024, 3, 1, 8, 0, 0, tzinfo=UTC)
+    business.last_lr_year = None
+    business.save()
+
+    filing = copy.deepcopy(FILING_TEMPLATE)
+    filing['filing']['header']['name'] = 'changeOfLiquidators'
+    filing['filing']['business']['identifier'] = identifier
+    filing['filing']['changeOfLiquidators'] = {
+        'type': 'liquidationReport',
+    }
+
+    payment_id = str(random.SystemRandom().getrandbits(0x58))
+    effective_date = datetime(2025, 4, 1, 10, 0, 0, tzinfo=timezone.utc)
+    filing_rec = create_filing(payment_id, filing, business.id)
+    filing_rec.effective_date = effective_date
+    filing_rec.save()
+
+    filing_msg = FilingMessage(filing_identifier=filing_rec.id)
+    process_filing(filing_msg)
+
+    processed_filing: Filing = Filing.find_by_id(filing_rec.id)
+    updated_business: Business = Business.find_by_internal_id(business.id)
+
+    assert updated_business.last_lr_year == 2025
+    assert processed_filing.meta_data["changeOfLiquidators"] == {
+        "liquidationReportDate": "2025-03-01",
+        "liquidationReportYear": 2025,
+    }
