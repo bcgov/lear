@@ -149,7 +149,7 @@ def test_changes_up_to_date_when_no_completed_filings(session, client, jwt):
     assert rv.status_code == HTTPStatus.OK
     assert rv.json['upToDate'] is True
     assert rv.json['currentTransactionId'] is None
-    for key in ('interveningFilings', 'changedSections', 'draftSections', 'conflicts', 'alreadyApplied'):
+    for key in ('interveningFilings', 'changedSections', 'draftSections', 'conflicts', 'alreadyApplied', 'absorbed'):
         assert rv.json[key] == []
 
 
