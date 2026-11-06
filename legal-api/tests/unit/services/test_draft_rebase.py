@@ -881,7 +881,8 @@ def test_report_scopes_offices_to_the_filing_type(session):
 
     assert report['upToDate'] is False
     assert 'offices' not in report['changedSections']
-    assert report['conflicts'] == [] and report['absorbed'] == []
+    assert report['conflicts'] == []
+    assert report['absorbed'] == []
 
 
 def test_report_does_not_absorb_a_section_the_filing_type_cannot_edit(session):
