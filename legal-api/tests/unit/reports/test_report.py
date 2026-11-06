@@ -371,6 +371,190 @@ def test_set_directors_flags_address_changed_without_officer_id(session, mocker)
     assert director['deliveryAddress']['changed'] is True
 
 
+def _factory_cod_report_with_director(business, director, with_previous_filing=True):
+    """Create a COD containing the director (and optionally a prior COD), and a Report for it."""
+    if with_previous_filing:
+        previous_filing_json = copy.deepcopy(FILING_HEADER)
+        previous_filing_json['filing']['header']['name'] = 'changeOfDirectors'
+        previous_filing_json['filing']['business']['identifier'] = business.identifier
+        previous_filing_json['filing']['business']['legalType'] = business.legal_type
+        previous_filing_json['filing']['changeOfDirectors'] = {'directors': []}
+        factory_completed_filing(business, previous_filing_json, filing_date=datetime(2020, 1, 1))
+
+    current_filing_json = copy.deepcopy(FILING_HEADER)
+    current_filing_json['filing']['header']['name'] = 'changeOfDirectors'
+    current_filing_json['filing']['business']['identifier'] = business.identifier
+    current_filing_json['filing']['business']['legalType'] = business.legal_type
+    current_filing_json['filing']['changeOfDirectors'] = {'directors': [director]}
+    filing = factory_completed_filing(business, current_filing_json, filing_date=datetime(2020, 1, 2))
+
+    report = Report(filing)
+    report._business = business
+    report._report_key = 'changeOfDirectors'
+    return filing, report
+
+
+def test_set_directors_flags_address_changed_without_mailing_address(session, mocker):
+    """Assert a director with no mailingAddress (optional on older CP filings) does not error."""
+    business = factory_business(identifier='CP1234567', entity_type='CP')
+    delivery_address = {
+        'streetAddress': 'New Delivery Street',
+        'addressCity': 'Victoria',
+        'addressRegion': 'BC',
+        'addressCountry': 'CA',
+        'postalCode': 'V8W1P7'
+    }
+    filing, report = _factory_cod_report_with_director(business, {
+        'officer': {'id': '123', 'firstName': 'Jane', 'lastName': 'Smith'},
+        'actions': ['addressChanged'],
+        'deliveryAddress': delivery_address
+    })
+
+    old_delivery_address = {**delivery_address, 'streetAddress': 'Old Delivery Street'}
+    mocker.patch('legal_api.services.VersionedBusinessDetailsService.get_party_revision', return_value=object())
+    # party_revision_json backfills mailingAddress from deliveryAddress when the party has none
+    mocker.patch('legal_api.services.VersionedBusinessDetailsService.party_revision_json', return_value={
+        'mailingAddress': old_delivery_address,
+        'deliveryAddress': old_delivery_address
+    })
+
+    report._set_directors(filing.filing_json['filing'])
+
+    director = filing.filing_json['filing']['listOfDirectors']['directors'][0]
+    assert 'mailingAddress' not in director
+    assert director['deliveryAddress']['changed'] is True
+
+
+def test_set_directors_address_changed_without_previous_director_match(session, mocker):
+    """Assert no error when the director cannot be matched to a previous director by name."""
+    business = factory_business(identifier='BC1234567', entity_type='BC')
+    filing, report = _factory_cod_report_with_director(business, {
+        'officer': {'firstName': 'Jane', 'lastName': 'Smith-Jones'},
+        'actions': ['addressChanged'],
+        'deliveryAddress': {
+            'streetAddress': 'New Delivery Street',
+            'addressCity': 'Victoria',
+            'addressRegion': 'BC',
+            'addressCountry': 'CA',
+            'postalCode': 'V8W1P7'
+        }
+    })
+    mocker.patch('legal_api.services.VersionedBusinessDetailsService.get_party_role_revision', return_value=[])
+    get_party_revision = mocker.patch('legal_api.services.VersionedBusinessDetailsService.get_party_revision')
+
+    report._set_directors(filing.filing_json['filing'])
+
+    director = filing.filing_json['filing']['listOfDirectors']['directors'][0]
+    get_party_revision.assert_not_called()
+    assert 'changed' not in director['deliveryAddress']
+
+
+def test_set_directors_address_changed_without_previous_filing(session, mocker):
+    """Assert no error when the filing has no previous completed filing to compare against."""
+    business = factory_business(identifier='BC1234567', entity_type='BC')
+    filing, report = _factory_cod_report_with_director(business, {
+        'officer': {'id': '123', 'firstName': 'Jane', 'lastName': 'Smith'},
+        'actions': ['addressChanged'],
+        'deliveryAddress': {
+            'streetAddress': 'New Delivery Street',
+            'addressCity': 'Victoria',
+            'addressRegion': 'BC',
+            'addressCountry': 'CA',
+            'postalCode': 'V8W1P7'
+        }
+    }, with_previous_filing=False)
+    get_party_revision = mocker.patch('legal_api.services.VersionedBusinessDetailsService.get_party_revision')
+
+    report._set_directors(filing.filing_json['filing'])
+
+    director = filing.filing_json['filing']['listOfDirectors']['directors'][0]
+    get_party_revision.assert_not_called()
+    assert 'changed' not in director['deliveryAddress']
+
+
+def test_set_directors_address_changed_without_previous_party_revision(session, mocker):
+    """Assert no error when the previous party revision cannot be found."""
+    business = factory_business(identifier='BC1234567', entity_type='BC')
+    filing, report = _factory_cod_report_with_director(business, {
+        'officer': {'id': '123', 'firstName': 'Jane', 'lastName': 'Smith'},
+        'actions': ['addressChanged'],
+        'deliveryAddress': {
+            'streetAddress': 'New Delivery Street',
+            'addressCity': 'Victoria',
+            'addressRegion': 'BC',
+            'addressCountry': 'CA',
+            'postalCode': 'V8W1P7'
+        }
+    })
+    mocker.patch('legal_api.services.VersionedBusinessDetailsService.get_party_revision', return_value=None)
+    party_revision_json = mocker.patch('legal_api.services.VersionedBusinessDetailsService.party_revision_json')
+
+    report._set_directors(filing.filing_json['filing'])
+
+    director = filing.filing_json['filing']['listOfDirectors']['directors'][0]
+    party_revision_json.assert_not_called()
+    assert 'changed' not in director['deliveryAddress']
+
+
+def test_set_directors_coop_annual_report_director_without_id_or_mailing_address(session, mocker):
+    """Assert an old CP AR director (no officer.id, no mailingAddress) is matched by name and flagged."""
+    business = factory_business(identifier='CP1234567', entity_type='CP')
+    delivery_address = {
+        'streetAddress': 'New Delivery Street',
+        'addressCity': 'Victoria',
+        'addressRegion': 'BC',
+        'addressCountry': 'CA',
+        'postalCode': 'V8W1P7'
+    }
+    previous_filing_json = copy.deepcopy(ANNUAL_REPORT)
+    previous_filing_json['filing']['business']['identifier'] = business.identifier
+    factory_completed_filing(business, previous_filing_json, filing_date=datetime(2019, 1, 1))
+
+    current_filing_json = copy.deepcopy(ANNUAL_REPORT)
+    current_filing_json['filing']['business']['identifier'] = business.identifier
+    current_filing_json['filing']['annualReport']['directors'] = [{
+        'officer': {'firstName': 'Jane', 'lastName': 'Smith'},
+        'actions': ['addressChanged'],
+        'deliveryAddress': delivery_address,
+        'appointmentDate': '2018-01-01',
+        'cessationDate': None
+    }]
+    filing = factory_completed_filing(business, current_filing_json, filing_date=datetime(2020, 1, 2))
+    report = Report(filing)
+    report._business = business
+    report._report_key = 'annualReport'
+
+    old_delivery_address = {**delivery_address, 'streetAddress': 'Old Delivery Street'}
+    mocker.patch('legal_api.services.VersionedBusinessDetailsService.get_party_role_revision', return_value=[{
+        'id': '123',
+        'officer': {'firstName': 'Jane', 'lastName': 'Smith'},
+        'cessationDate': None
+    }])
+    mocker.patch('legal_api.services.VersionedBusinessDetailsService.get_party_revision', return_value=object())
+    mocker.patch('legal_api.services.VersionedBusinessDetailsService.party_revision_json', return_value={
+        'mailingAddress': old_delivery_address,
+        'deliveryAddress': old_delivery_address
+    })
+
+    report._set_directors(filing.filing_json['filing'])
+
+    director = filing.filing_json['filing']['listOfDirectors']['directors'][0]
+    assert 'mailingAddress' not in director
+    assert director['deliveryAddress']['changed'] is True
+
+
+@pytest.mark.parametrize('new_address, existing_address, expected', [
+    (None, None, False),
+    ({'streetAddress': 'a'}, None, True),
+    (None, {'streetAddress': 'a'}, False),
+    ({'streetAddress': 'a'}, {'streetAddress': 'a'}, False),
+    ({'streetAddress': 'b'}, {'streetAddress': 'a'}, True),
+])
+def test_compare_address(new_address, existing_address, expected):
+    """Assert address comparison handles missing addresses on either side."""
+    assert Report._compare_address(new_address, existing_address) is expected
+
+
 def test_set_directors_from_relationships(session, mocker):
     """Assert a relationships-shaped COD is converted for the legacy report template."""
     business = factory_business(identifier='BC1234567', entity_type='BC')
