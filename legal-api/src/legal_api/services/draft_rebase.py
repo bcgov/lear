@@ -353,7 +353,8 @@ def _party_role_scope(filing_type: str, legal_type: str) -> set | None:
 def _scope_party_entities(entities: dict, scope_roles: set) -> dict:
     """Drop entities outside the role scope and re-norm the rest to their in-scope roles.
 
-    Entities with no role data (legacy rows whose role is implied by the section) are kept.
+    - no role data (legacy row, role implied by the section): kept
+    - REMOVED entity (norm None): stays None
     """
     scoped = {}
     for key, entity in entities.items():
@@ -364,7 +365,8 @@ def _scope_party_entities(entities: dict, scope_roles: set) -> dict:
         if in_scope_roles != entity["roles"]:
             scoped_entity = {**entity, "roles": in_scope_roles,
                              "json": _scope_party_json(entity["json"], scope_roles),
-                             "norm": (entity["norm"][0], tuple(sorted(in_scope_roles)), *entity["norm"][2:])}
+                             "norm": None if entity["norm"] is None
+                             else (entity["norm"][0], tuple(sorted(in_scope_roles)), *entity["norm"][2:])}
         scoped[key] = scoped_entity
     return scoped
 
@@ -430,8 +432,9 @@ def _canonical_entity_key(entity: dict, display_names: dict, ambiguous_names: se
 def _align_entities_by_row_id(base_entities: dict, current_entities: dict, draft_entities: dict) -> tuple:
     """Rekey entities so the same party pairs up across base, current and draft.
 
-    Pairs by id where possible (a rename stays one entity) and by name when ids
-    differ (delete+recreate id churn); duplicate same-named rows keep the id in the key.
+    - same id: pairs by id (a rename stays one entity)
+    - same name, different ids: pairs by name (delete+recreate id churn)
+    - ambiguous name (_ambiguous_entity_names): id'd rows key "NAME #id", id-less rows the bare name
 
     Example (entities shown as row_id/name_key; staff renamed id 101, draft added a Smith):
         base    {101: (101, "SMITH, JANE")}              -> {"DOE, JANE": ...}

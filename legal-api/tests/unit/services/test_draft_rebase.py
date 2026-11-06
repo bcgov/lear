@@ -190,6 +190,18 @@ def test_draft_removal_of_a_party_staff_ceased_is_already_applied():
     assert not conflicts
 
 
+def test_removed_multi_role_row_survives_role_scoping():
+    """Assert a REMOVED legacy row still holding an out-of-scope role scopes without error and is already applied."""
+    changed, touched, conflicts, already = classify(
+        [snap(101, 'Jane', 'Smith', 'Victoria')],
+        [],
+        [party(101, 'Jane', 'Smith', 'Victoria', roles=('director', 'incorporator'), actions=['REMOVED'])],
+        scope={'director', 'custodian', 'liquidator', 'receiver'})
+
+    assert already == ['SMITH, JANE']
+    assert not conflicts
+
+
 def test_alias_renamed_by_both_sides_is_one_conflict_keyed_by_current_name():
     """Assert an alias renamed by staff and the draft pairs by id into one conflict."""
     changed, touched, conflicts, already = classify(
