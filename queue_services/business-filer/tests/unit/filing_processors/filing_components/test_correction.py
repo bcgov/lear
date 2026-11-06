@@ -597,3 +597,25 @@ def test_correct_corp_data_applies_every_section_when_an_earlier_one_changed(app
     assert Address.find_by_id(address.id).street == DELIVERY_ADDRESS['streetAddress']
     assert ShareClass.find_by_share_class_id(share_class.id).name == 'Corrected Shares'
     assert filing_meta.correction['hasNoa'] is True
+
+
+def test_correct_corp_data_parties_applies_every_party_after_the_first_director(app, session, business, filing_rec):
+    """Test every legacy `parties` row is created when an earlier row already flagged a director change."""
+    filing_meta = _create_filing_meta()
+
+    def _director(first, last):
+        return {
+            'officer': {'firstName': first, 'lastName': last, 'partyType': 'person'},
+            'deliveryAddress': copy.deepcopy(DELIVERY_ADDRESS),
+            'mailingAddress': copy.deepcopy(MAILING_ADDRESS),
+            'roles': [{'roleType': 'Director', 'appointmentDate': '2023-07-01'}]
+        }
+
+    correction_filing = {'correction': {'parties': [_director('Jane', 'Smith'), _director('Bob', 'Lee')]}}
+
+    correct_corp_data(business, filing_rec, correction_filing, filing_meta)
+    session.commit()
+
+    directors = PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value)
+    assert sorted(role.party.last_name for role in directors) == ['LEE', 'SMITH']
+    assert filing_meta.correction['hasNoa'] is True

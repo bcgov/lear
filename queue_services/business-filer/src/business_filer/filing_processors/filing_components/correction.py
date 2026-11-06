@@ -506,10 +506,10 @@ def update_parties(business: Business, parties: list, correction_filing_rec: Fil
         # The backend will have an id of type int
         if not party_info.get("officer").get("id") or \
                 (party_info.get("officer").get("id") and not isinstance(party_info.get("officer").get("id"), int)):
-            updated = updated or _create_party_info(business, correction_filing_rec, party_info)
+            updated = _create_party_info(business, correction_filing_rec, party_info) or updated
         else:
             # Update if id is present
-            updated = updated or _update_party(party_info)
+            updated = _update_party(party_info) or updated
     return updated
 
 
