@@ -339,12 +339,12 @@ def correct_corp_data(business: Business,
     # Update offices if present
     with suppress(IndexError, KeyError, TypeError):
         offices_structure = dpath.get(correction_filing, CORRECTION_OFFICES_PATH)
-        has_noa = has_noa or _update_addresses(offices_structure)
+        has_noa = _update_addresses(offices_structure) or has_noa
 
     # Update parties
     with suppress(IndexError, KeyError, TypeError):
         party_json = dpath.get(correction_filing, CORRECTION_PARTIES_PATH)
-        has_noa = has_noa or update_parties(business, party_json, correction_filing_rec)
+        has_noa = update_parties(business, party_json, correction_filing_rec) or has_noa
 
     # Update relationships (newer schema for parties)
     with suppress(IndexError, KeyError, TypeError):
@@ -367,7 +367,7 @@ def correct_corp_data(business: Business,
         update_relationship_entity_info(relationships, business)
         _set_lear_only(correction_filing, correction_filing_rec, relationships, business)
 
-    has_noa = has_noa or _update_share_structure(correction_filing, business)
+    has_noa = _update_share_structure(correction_filing, business) or has_noa
 
     with suppress(IndexError, KeyError, TypeError):
         amalgamation = dpath.get(correction_filing, "/correction/amalgamation")
@@ -377,7 +377,7 @@ def correct_corp_data(business: Business,
     with suppress(IndexError, KeyError, TypeError):
         continuation_in = dpath.get(correction_filing, "/correction/continuationIn")
         if continuation_in:
-            has_noa = has_noa or update_continuation_in(business, continuation_in, filing_meta)
+            has_noa = update_continuation_in(business, continuation_in, filing_meta) or has_noa
     filing_meta.correction = {
         **filing_meta.correction,
         "hasNoa": has_noa
@@ -581,7 +581,7 @@ def _update_share_structure(correction_filing: dict, business: Business) -> bool
         share_structure = dpath.get(correction_filing, CORRECTION_SHARE_STRUCTURE_PATH)
         shares.update_share_structure_correction(business, share_structure)
         # NOA if share classes are updated.
-        updated = share_structure and share_structure.get("shareClasses")
+        updated = bool(share_structure and share_structure.get("shareClasses"))
     return updated
 
 
