@@ -31,7 +31,9 @@ from legal_api.services.business_details_version import VersionedBusinessDetails
 _ADDRESS_MATCH_FIELDS: Final = ("streetAddress", "streetAddressAdditional", "addressCity", "addressRegion",
                                 "addressCountry", "postalCode", "deliveryInstructions")
 
-SNAPSHOT_SECTIONS: Final = ("parties", "offices", "shareClasses", "nameTranslations", "resolutions")
+SNAPSHOT_SECTIONS: Final = ("parties", "offices", "shareClasses", "nameTranslations", "resolutions", "business")
+# business-level fields a filing can change; one entity per field so a name edit and a type change diff apart
+BUSINESS_FIELDS: Final = ("legalName", "legalType")
 
 # 'identifier' is the party id in the relationships shape; id churn is not a data change
 DIFF_IGNORE_KEYS: Final = ["id", "identifier", "actions", "isEditing"]
@@ -240,6 +242,24 @@ def _share_class_entities(share_classes: list | None) -> dict:
     return entities
 
 
+def _business_entities(business: dict | None) -> dict:
+    """One entity per tracked business field present on the row (absence is not a value)."""
+    entities = {}
+    for field in BUSINESS_FIELDS:
+        value = (business or {}).get(field)
+        if (norm := _norm_value(value)) is not None:
+            entities[field] = {"json": {"field": field, "value": value}, "norm": norm, "actions": []}
+    return entities
+
+
+def _get_path(row: dict, path: str):
+    """Walk a 'a/b/c' path through nested dicts, None when any step is missing."""
+    for key in path.split("/"):
+        if not isinstance(row, dict) or (row := row.get(key)) is None:
+            return None
+    return row
+
+
 def _name_translation_entities(name_translations: list | None) -> dict:
     entities = {}
     for row in name_translations or []:
@@ -406,6 +426,7 @@ _SECTION_ENTITY_BUILDERS: Final = {
     "shareClasses": _share_class_entities,
     "nameTranslations": _name_translation_entities,
     "resolutions": _resolution_entities,
+    "business": _business_entities,
 }
 
 
@@ -418,7 +439,7 @@ class DraftRebaseService:
         "alteration": {"shareStructure": "shareClasses", "nameTranslations": "nameTranslations"},
         "changeOfAddress": {"offices": "offices"},
         "changeOfDirectors": {"directors": "parties", "relationships": "parties"},
-        "changeOfLiquidators": {"relationships": "parties"},
+        "changeOfLiquidators": {"relationships": "parties", "offices": "offices"},
         "changeOfOfficers": {"relationships": "parties"},
         "changeOfReceivers": {"relationships": "parties"},
         "changeOfRegistration": {"parties": "parties", "relationships": "parties", "offices": "offices"},
@@ -429,6 +450,11 @@ class DraftRebaseService:
                        "shareStructure": "shareClasses", "nameTranslations": "nameTranslations"},
         "transition": {"parties": "parties", "relationships": "parties", "offices": "offices",
                        "shareStructure": "shareClasses", "nameTranslations": "nameTranslations"},
+    }
+    # where a draft edits a business field (filer paths): correction only renames, alteration also retypes
+    BUSINESS_FIELD_PATHS: Final = {
+        "correction": {"legalName": "nameRequest/legalName"},
+        "alteration": {"legalName": "nameRequest/legalName", "legalType": "business/legalType"},
     }
 
     @staticmethod
@@ -449,6 +475,7 @@ class DraftRebaseService:
             "draftSections": [],
             "conflicts": [],
             "alreadyApplied": [],
+            "absorbed": [],
             "staleIds": DraftRebaseService.find_stale_ids(business, draft_filing.filing_json),
         }
 
@@ -482,6 +509,10 @@ class DraftRebaseService:
             base_snapshot["business"], current_snapshot["business"])
 
         party_role_scope = _party_role_scope(draft_filing.filing_type, business.legal_type)
+        # only sections this filing type can edit are absorbed; the rest stay a changedSections hint
+        mapped_sections = set(DraftRebaseService.FILING_SECTION_MAP.get(draft_filing.filing_type, {}).values())
+        if draft_filing.filing_type in DraftRebaseService.BUSINESS_FIELD_PATHS:
+            mapped_sections.add("business")
         for section in SNAPSHOT_SECTIONS:
             base_entities, current_entities, draft_entities = DraftRebaseService._section_entities(
                 section, base_snapshot, current_snapshot, draft_sections, party_role_scope)
@@ -491,8 +522,9 @@ class DraftRebaseService:
                 report["changedSections"].append(section)
 
             draft_touched = DraftRebaseService._draft_touched_entities(
-                draft_entities, base_entities, section in draft_sections)
-            DraftRebaseService._classify_draft_overlaps(report, section, intervening_changed, draft_touched)
+                draft_entities, base_entities, section in draft_sections, full_replacement=section != "business")
+            DraftRebaseService._classify_draft_overlaps(report, section, intervening_changed, draft_touched,
+                                                        absorb=section in mapped_sections)
 
         return report
 
@@ -515,10 +547,25 @@ class DraftRebaseService:
         return entity_sets
 
     @staticmethod
-    def _classify_draft_overlaps(report: dict, section: str, intervening_changed: dict, draft_touched: dict):
-        """Entities both sides touched: same end value = alreadyApplied, else conflict."""
+    def _classify_draft_overlaps(report: dict, section: str, intervening_changed: dict, draft_touched: dict,
+                                 absorb: bool = True):
+        """Classify the entities the intervening filings changed.
+
+        - draft touched it too, same end value: alreadyApplied
+        - draft touched it too, different value: conflict
+        - draft left it alone: absorbed (mapped sections only) - the UI refreshes it, a full-list draft
+          section still holds its base value
+        """
         for entity_key, (base_entity, current_entity) in intervening_changed.items():
             if (draft_entity := draft_touched.get(entity_key)) is None:
+                if not absorb:
+                    continue
+                report["absorbed"].append({
+                    "section": section,
+                    "entityKey": entity_key,
+                    "rowId": _first_row_id(current_entity, base_entity),
+                    "currentValue": current_entity["json"] if current_entity else None,  # None = staff removed it
+                })
                 continue
             current_norm = current_entity["norm"] if current_entity else None
             if draft_entity["norm"] == current_norm:
@@ -662,6 +709,10 @@ class DraftRebaseService:
             if draft_key == "shareStructure" and (value := value.get("shareClasses")) is None:
                 continue
             sections[snapshot_section] = value
+        field_paths = DraftRebaseService.BUSINESS_FIELD_PATHS.get(draft_filing.filing_type, {})
+        if business := {field: value for field, path in field_paths.items()
+                        if (value := _get_path(filing_body, path)) is not None}:
+            sections["business"] = business
         return sections
 
     @staticmethod
@@ -676,11 +727,13 @@ class DraftRebaseService:
         return changed
 
     @staticmethod
-    def _draft_touched_entities(draft_entities: dict, base_entities: dict, section_present: bool) -> dict:
+    def _draft_touched_entities(draft_entities: dict, base_entities: dict, section_present: bool,
+                                full_replacement: bool = True) -> dict:
         """Return the entities the draft edits.
 
-        Prefers the UI action tags embedded in the draft rows; falls back to a normalized
-        diff against the base snapshot when a full-replacement section carries no tags.
+        - rows carry UI action tags: the tagged rows
+        - no tags: rows whose norm differs from the base
+        - full replacement: a base entity missing from the draft is a removal (not for business fields)
         """
         if not section_present:
             return {}
@@ -692,7 +745,7 @@ class DraftRebaseService:
             base_entity = base_entities.get(key)
             if base_entity is None or base_entity["norm"] != entity["norm"]:
                 touched[key] = entity
-        for key in base_entities.keys() - draft_entities.keys():
+        for key in base_entities.keys() - draft_entities.keys() if full_replacement else ():
             # section presence means full replacement: a missing base entity is a removal
             touched[key] = {"json": None, "norm": None, "actions": ["REMOVED"]}
         return touched
