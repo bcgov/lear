@@ -827,7 +827,8 @@ def test_report_absorbs_a_staff_added_party_the_draft_never_saw(session):
     report = DraftRebaseService.get_changes_report(business, draft)
 
     assert report['changedSections'] == ['parties']
-    assert report['conflicts'] == [] and report['alreadyApplied'] == []
+    assert report['conflicts'] == []
+    assert report['alreadyApplied'] == []
     assert len(report['absorbed']) == 1
     absorbed = report['absorbed'][0]
     assert absorbed['section'] == 'parties'
@@ -861,6 +862,26 @@ def test_report_conflicts_a_corrected_name_with_a_staff_rename(session):
     assert conflict['currentValue'] == {'field': 'legalName', 'value': 'NEWCO INC.'}
     assert conflict['draftValue'] == {'field': 'legalName', 'value': 'ACME LTD.'}
     assert report['absorbed'] == []
+
+
+def test_report_scopes_offices_to_the_filing_type(session):
+    """Assert a liquidator draft (liquidation office only) sees neither a removal nor a change on the other offices."""
+    business = factory_business(IDENTIFIER, entity_type='BC')
+    factory_business_office(business, 'registeredOffice')
+    base_filing = _complete(business)
+    factory_business_office(business, 'recordsOffice')
+    _complete(business)
+    draft = _draft(business, 'changeOfLiquidators',
+                   {'type': 'appointLiquidator',
+                    'offices': {'liquidationRecordsOffice': {'deliveryAddress': _address('Victoria'),
+                                                             'mailingAddress': _address('Victoria')}}},
+                   base_filing.transaction_id)
+
+    report = DraftRebaseService.get_changes_report(business, draft)
+
+    assert report['upToDate'] is False
+    assert 'offices' not in report['changedSections']
+    assert report['conflicts'] == [] and report['absorbed'] == []
 
 
 def test_report_does_not_absorb_a_section_the_filing_type_cannot_edit(session):

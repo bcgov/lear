@@ -317,6 +317,25 @@ _FILING_PARTY_ROLE_SCOPE: Final = {
 }
 
 
+# office types a filing type edits
+_FILING_OFFICE_TYPE_SCOPE: Final = {
+    "changeOfAddress": {"registeredOffice", "recordsOffice"},
+    "changeOfLiquidators": {"liquidationRecordsOffice"},
+    "changeOfRegistration": {"businessOffice"},
+    "reviewImportedData": {"registeredOffice", "recordsOffice"},
+    "transition": {"registeredOffice", "recordsOffice"},
+}
+
+
+def _office_type_scope(filing_type: str, legal_type: str) -> set | None:
+    """Return the office types the filing type manages; None means every type is in scope."""
+    if filing_type == "correction":
+        if legal_type in (Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value):
+            return {"businessOffice"}
+        return {"registeredOffice", "recordsOffice"}
+    return _FILING_OFFICE_TYPE_SCOPE.get(filing_type)
+
+
 def _party_role_scope(filing_type: str, legal_type: str) -> set | None:
     """Return the party roles the filing type manages; None means every role is in scope."""
     if filing_type == "correction":
@@ -508,14 +527,15 @@ class DraftRebaseService:
         report["businessChanges"] = DraftRebaseService._business_changes(
             base_snapshot["business"], current_snapshot["business"])
 
-        party_role_scope = _party_role_scope(draft_filing.filing_type, business.legal_type)
+        scopes = {"parties": _party_role_scope(draft_filing.filing_type, business.legal_type),
+                  "offices": _office_type_scope(draft_filing.filing_type, business.legal_type)}
         # only sections this filing type can edit are absorbed; the rest stay a changedSections hint
         mapped_sections = set(DraftRebaseService.FILING_SECTION_MAP.get(draft_filing.filing_type, {}).values())
         if draft_filing.filing_type in DraftRebaseService.BUSINESS_FIELD_PATHS:
             mapped_sections.add("business")
         for section in SNAPSHOT_SECTIONS:
             base_entities, current_entities, draft_entities = DraftRebaseService._section_entities(
-                section, base_snapshot, current_snapshot, draft_sections, party_role_scope)
+                section, base_snapshot, current_snapshot, draft_sections, scopes)
 
             intervening_changed = DraftRebaseService._changed_keys(base_entities, current_entities)
             if intervening_changed:
@@ -533,15 +553,21 @@ class DraftRebaseService:
                           base_snapshot: dict,
                           current_snapshot: dict,
                           draft_sections: dict,
-                          party_role_scope: set | None) -> tuple:
-        """Build the base/current/draft entities for one section, role-scoped and id-aligned."""
+                          scopes: dict) -> tuple:
+        """Build the base/current/draft entities for one section, scoped to the filing type and id-aligned.
+
+        scopes: {"parties": role set | None, "offices": office type set | None}
+        """
         build_entities = _SECTION_ENTITY_BUILDERS[section]
         entity_sets = (build_entities(base_snapshot.get(section)),
                        build_entities(current_snapshot.get(section)),
                        build_entities(draft_sections.get(section)))
         # parties: only the roles this filing type manages are in play
-        if section == "parties" and party_role_scope:
-            entity_sets = tuple(_scope_party_entities(entities, party_role_scope) for entities in entity_sets)
+        if section == "parties" and (role_scope := scopes.get("parties")):
+            entity_sets = tuple(_scope_party_entities(entities, role_scope) for entities in entity_sets)
+        if section == "offices" and (office_scope := scopes.get("offices")):
+            entity_sets = tuple({key: entity for key, entity in entities.items() if key in office_scope}
+                                for entities in entity_sets)
         if section in _ID_MATCHED_SECTIONS:
             entity_sets = _align_entities_by_row_id(*entity_sets)
         return entity_sets
