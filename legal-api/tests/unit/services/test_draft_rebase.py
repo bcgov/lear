@@ -864,6 +864,29 @@ def test_report_conflicts_a_corrected_name_with_a_staff_rename(session):
     assert report['absorbed'] == []
 
 
+def test_report_treats_offices_as_a_delta_and_scopes_a_correction_to_its_correctable_offices(session):
+    """Assert a correction's liquidation office edit conflicts with a staff change while an omitted office is absorbed, not removed."""
+    business = factory_business(IDENTIFIER, entity_type='BC')
+    factory_business_office(business, 'liquidationRecordsOffice')
+    base_filing = _complete(business)
+    liquidation_office = next(office for office in business.offices if office.office_type == 'liquidationRecordsOffice')
+    for address in liquidation_office.addresses:
+        address.city = 'Nanaimo'
+        address.save()
+    factory_business_office(business, 'registeredOffice')
+    _complete(business)
+    draft = _draft(business, 'correction',
+                   {'offices': {'liquidationRecordsOffice': {'deliveryAddress': _address('Surrey'),
+                                                             'mailingAddress': _address('Surrey')}}},
+                   base_filing.transaction_id)
+
+    report = DraftRebaseService.get_changes_report(business, draft)
+
+    assert [(entry['section'], entry['entityKey']) for entry in report['conflicts']] == [('offices', 'liquidationRecordsOffice')]
+    assert report['conflicts'][0]['draftValue'] is not None
+    assert [(entry['section'], entry['entityKey']) for entry in report['absorbed']] == [('offices', 'registeredOffice')]
+
+
 def test_report_scopes_offices_to_the_filing_type(session):
     """Assert a liquidator draft (liquidation office only) sees neither a removal nor a change on the other offices."""
     business = factory_business(IDENTIFIER, entity_type='BC')

@@ -317,7 +317,9 @@ _FILING_PARTY_ROLE_SCOPE: Final = {
 }
 
 
-# office types a filing type edits
+# sections where a missing entity is untouched, not removed: every rebased filer updates offices per type / id
+_DELTA_SECTIONS: Final = ("business", "offices")
+# office types a filing type edits; out-of-scope offices are neither diffed nor reported
 _FILING_OFFICE_TYPE_SCOPE: Final = {
     "changeOfAddress": {"registeredOffice", "recordsOffice"},
     "changeOfLiquidators": {"liquidationRecordsOffice"},
@@ -332,7 +334,8 @@ def _office_type_scope(filing_type: str, legal_type: str) -> set | None:
     if filing_type == "correction":
         if legal_type in (Business.LegalTypes.SOLE_PROP.value, Business.LegalTypes.PARTNERSHIP.value):
             return {"businessOffice"}
-        return {"registeredOffice", "recordsOffice"}
+        # corps corrections of a liquidator filing edit the liquidation office too (getCorrectableOfficeTypes)
+        return {"registeredOffice", "recordsOffice", "liquidationRecordsOffice"}
     return _FILING_OFFICE_TYPE_SCOPE.get(filing_type)
 
 
@@ -542,7 +545,8 @@ class DraftRebaseService:
                 report["changedSections"].append(section)
 
             draft_touched = DraftRebaseService._draft_touched_entities(
-                draft_entities, base_entities, section in draft_sections, full_replacement=section != "business")
+                draft_entities, base_entities, section in draft_sections,
+                full_replacement=section not in _DELTA_SECTIONS)
             DraftRebaseService._classify_draft_overlaps(report, section, intervening_changed, draft_touched,
                                                         absorb=section in mapped_sections)
 
@@ -556,7 +560,7 @@ class DraftRebaseService:
                           scopes: dict) -> tuple:
         """Build the base/current/draft entities for one section, scoped to the filing type and id-aligned.
 
-        scopes: {"parties": role set | None, "offices": office type set | None}
+        - scopes: {"parties": role set | None, "offices": office type set | None}
         """
         build_entities = _SECTION_ENTITY_BUILDERS[section]
         entity_sets = (build_entities(base_snapshot.get(section)),
@@ -759,7 +763,7 @@ class DraftRebaseService:
 
         - rows carry UI action tags: the tagged rows
         - no tags: rows whose norm differs from the base
-        - full replacement: a base entity missing from the draft is a removal (not for business fields)
+        - full replacement: a base entity missing from the draft is a removal (not for business fields / offices)
         """
         if not section_present:
             return {}
