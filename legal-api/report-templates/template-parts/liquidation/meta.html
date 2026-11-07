@@ -13,7 +13,7 @@
           <div>{{ business.identifier }}</div>
           <div>{{ recognition_date_time }}</div>
           <div>{{ effective_date_time }}</div>
-          <div>{{ LRReportDate | default('Not Available') }}</div>
+          <div>{{ liquidationReportDate | default('Not Available') }}</div>
         </td>
       </tr>
     {% else %}
@@ -59,7 +59,7 @@
       <dl class="data-list section-data gap-y-2">
         <div>
           <dt class="bold">Liquidation Report:</dt>
-          <dd>{{ lastReportDate if lastReportDate else 'Not Available' }}</dd>
+          <dd>{{ lastLiquidationReportDate if lastLiquidationReportDate else 'Not Available' }}</dd>
         </div>
 
         <div>

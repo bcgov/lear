@@ -1586,25 +1586,18 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         self._set_dates(filing) # required to use effective_date inside this method
         business = self._business
         col = filing.get("changeOfLiquidators", {})
-        prev_filing = Filing.get_previous_completed_filing(self._filing)
-        versioned_business = VersionedBusinessDetailsService.get_business_revision_obj(prev_filing, business.id)
+        meta_data = (self._filing.meta_data or {}).get("changeOfLiquidators", {})
 
         sub_type = col.get("type")
         filing["subType"] = sub_type
 
-        # matches logic in filer
-        lr_report_year = (
-            versioned_business.last_lr_year + 1
-            if versioned_business.last_lr_year
-            else LegislationDatetime.as_legislation_timezone(versioned_business.in_liquidation_date).date().year + 1
-        )
-
+        lr_report_year = meta_data.get("liquidationReportYear")
         report_title_config = {
             "appointLiquidator": "Liquidator Appointment",
             "ceaseLiquidator": "Liquidator Cessation",
             "changeAddressLiquidator": "Liquidator (or Records) Address Change",
             "intentToLiquidate": "Statement of Intent to Liquidate",
-            "liquidationReport": f"{lr_report_year} Liquidation Report"
+            "liquidationReport": f"{lr_report_year} Liquidation Report" if lr_report_year else "Liquidation Report"
         }
 
         filing["reportTitle"] = report_title_config[sub_type]
@@ -1620,24 +1613,18 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
         filing["reportDateAndTimeTitle"] = report_date_and_time_title_config[sub_type]
 
         if sub_type == "liquidationReport":
-            founding_date = LegislationDatetime.as_legislation_timezone(versioned_business.founding_date).date()
-            in_liquidation_date = LegislationDatetime.as_legislation_timezone(versioned_business.in_liquidation_date).date()
-
-            # matches next_lr_min_date from business model
-            next_lr_year = in_liquidation_date.year + 1
-            if versioned_business.last_lr_year:
-                next_lr_year = versioned_business.last_lr_year + 1
-            
-            years_to_add = next_lr_year - founding_date.year
-            lr_report_date = founding_date + relativedelta(years=years_to_add)
-            filing["LRReportDate"] = lr_report_date.strftime(OUTPUT_DATE_FORMAT)
+            if lr_report_date_str := meta_data.get("liquidationReportDate"):
+                lr_report_date = LegislationDatetime.as_legislation_timezone_from_date_str(lr_report_date_str)
+                filing["liquidationReportDate"] = lr_report_date.strftime(OUTPUT_DATE_FORMAT)
+            else:
+                filing["liquidationReportDate"] = "Not Available"
 
             return # no further data needed for liquidationReport
 
-        # All sub-types: format last liquidationReportDate
-        if latest_lr_filing := Filing.get_most_recent_filing(business_id=business.id, filing_type="changeOfLiquidators", filing_sub_type="liquidationReport"):
-            last_lr_date = LegislationDatetime.as_legislation_timezone(latest_lr_filing.effective_date)
-            filing["lastReportDate"] = last_lr_date.strftime(OUTPUT_DATE_FORMAT)
+        # All other sub-types: format lastLiquidationReportDate from metadata
+        if last_lr_date_str := meta_data.get("lastLiquidationReportDate"):
+            last_lr_date = LegislationDatetime.as_legislation_timezone_from_date_str(last_lr_date_str)
+            filing["lastLiquidationReportDate"] = last_lr_date.strftime(OUTPUT_DATE_FORMAT)
 
         # All sub-types: check if business has Receivers
         filing["hasReceivers"] = bool(PartyRole.get_party_roles(
@@ -1674,13 +1661,10 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             if "deliveryAddress" in rel:
                 rel["deliveryAddress"] = self._format_address(rel["deliveryAddress"])
 
-        # Display commencement date if not previously in liquidation
-        if versioned_business and not versioned_business.in_liquidation:
-            filing["commencementDate"] = (
-                LegislationDatetime.as_legislation_timezone(business.in_liquidation_date).strftime("%Y-%m-%d")
-                if business.in_liquidation_date
-                else "Not Available"
-            )
+        # Display commencement date from metadata if present
+        if commencement_date_str := meta_data.get("commencementDate"):
+            commencement_date = LegislationDatetime.as_legislation_timezone_from_date_str(commencement_date_str)
+            filing["commencementDate"] = commencement_date.strftime(OUTPUT_DATE_FORMAT)
 
         fallback_date_str = LegislationDatetime.as_legislation_timezone(self._filing.effective_date).strftime("%Y-%m-%d")
         filing["relationships"] = {}
