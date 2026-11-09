@@ -582,18 +582,26 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                     self._set_director_address_changed_flag(director)
 
     def _set_director_address_changed_flag(self, director):
-        prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
+        if not (prev_completed_filing := Filing.get_previous_completed_filing(self._filing)):
+            return
         if not (party_id := director["officer"].get("id")):
             # fallback: id is not available for older/colin filings
             party_id = self._find_director_id_using_name(director, prev_completed_filing)
+        if not party_id:
+            return  # no previous director to compare against (e.g. renamed in the same filing)
 
         prev_party = VersionedBusinessDetailsService.get_party_revision(prev_completed_filing, party_id)
+        if not prev_party:
+            return
         prev_party_json = VersionedBusinessDetailsService.party_revision_json(
             prev_completed_filing.transaction_id, prev_party, True)
-        if self._compare_address(director.get("mailingAddress"), prev_party_json.get("mailingAddress")):
-            director["mailingAddress"]["changed"] = True
-        if self._compare_address(director.get("deliveryAddress"), prev_party_json.get("deliveryAddress")):
-            director["deliveryAddress"]["changed"] = True
+        # mailingAddress is optional on directors (older CP filings omit it)
+        if (mailing_address := director.get("mailingAddress")) and \
+                self._compare_address(mailing_address, prev_party_json.get("mailingAddress")):
+            mailing_address["changed"] = True
+        if (delivery_address := director.get("deliveryAddress")) and \
+                self._compare_address(delivery_address, prev_party_json.get("deliveryAddress")):
+            delivery_address["changed"] = True
 
     def _find_director_id_using_name(self, director, prev_completed_filing):
         director_name = "".join([
@@ -1285,6 +1293,8 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             return False
         if new_address and not existing_address:
             return True
+        if not new_address:
+            return False  # optional address omitted from the filing: nothing to compare
 
         changed = False
         excluded_keys = ["addressCountryDescription", "addressType", "addressCountry"]
