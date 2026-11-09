@@ -98,12 +98,14 @@ def _process_appointment_or_intent(
     business: Business,
     filing_rec: Filing,
     filing_meta: FilingMeta,
-    relationships: list,
-    offices: dict,
     filing_json: dict,
     was_in_liquidation: bool,
 ):
     """Process intentToLiquidate or appointLiquidator sub-types."""
+    col_data = filing_json["filing"]["changeOfLiquidators"]
+    relationships = col_data.get("relationships", [])
+    offices = col_data.get("offices", {})
+
     create_relationships(relationships, business, filing_rec)
     update_or_create_offices(business, offices)
     _init_liquidation(business, filing_meta, filing_json)
@@ -156,7 +158,7 @@ def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
 
     if sub_type in ["intentToLiquidate", "appointLiquidator"]:
         _process_appointment_or_intent(
-            business, filing_rec, filing_meta, relationships, offices, filing_json, was_in_liquidation
+            business, filing_rec, filing_meta, filing_json, was_in_liquidation
         )
     elif sub_type == "ceaseLiquidator":
         _process_cease(business, filing_meta, relationships)
