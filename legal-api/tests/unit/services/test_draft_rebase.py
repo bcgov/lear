@@ -17,6 +17,7 @@ Test-Suite to ensure that the draft rebase entity matching, stale-id guard and c
 """
 import time
 from datetime import UTC, date, datetime, timedelta
+from types import SimpleNamespace
 
 import pytest
 
@@ -24,6 +25,7 @@ from business_model.models import Address, Alias, Filing, Party, PartyRole, Reso
 from legal_api.services.draft_rebase import (
     DraftRebaseService,
     _align_entities_by_row_id,
+    _business_entities,
     _name_translation_entities,
     _party_entities,
     _party_role_scope,
@@ -33,7 +35,7 @@ from legal_api.services.draft_rebase import (
     _share_class_norm,
 )
 from registry_schemas.example_data import ANNUAL_REPORT
-from tests.unit.models import factory_business, factory_completed_filing, factory_filing
+from tests.unit.models import factory_business, factory_business_office, factory_completed_filing, factory_filing
 
 
 # ---------------------------------------------------------------------------
@@ -161,6 +163,42 @@ def test_draft_added_row_stays_separate_bare_name_entity():
     assert set(changed) == {'SMITH, JANE #101'}
     assert set(touched) == {'SMITH, JANE'}
     assert touched['SMITH, JANE']['row_id'] is None
+    assert not conflicts
+
+
+def test_delta_draft_added_row_does_not_pair_with_a_same_named_existing_party():
+    """Assert an id-less ADDED row stays a bare-name entity when the delta draft omits the same-named existing party."""
+    changed, touched, conflicts, already = classify(
+        [snap(101, 'Jane', 'Smith', 'Victoria')],
+        [snap(101, 'Jane', 'Smith', 'Surrey')],
+        [party('', 'Jane', 'Smith', 'Kelowna', actions=['ADDED'], entity_shape=True)])
+
+    assert set(changed) == {'SMITH, JANE #101'}
+    assert set(touched) == {'SMITH, JANE'}
+    assert not conflicts
+    assert not already
+
+
+def test_draft_removal_of_a_party_staff_ceased_is_already_applied():
+    """Assert a REMOVED draft row and a party missing from current agree on the end state."""
+    changed, touched, conflicts, already = classify(
+        [snap(101, 'Jane', 'Smith', 'Victoria')],
+        [],
+        [party(101, 'Jane', 'Smith', 'Victoria', actions=['REMOVED'], entity_shape=True)])
+
+    assert already == ['SMITH, JANE']
+    assert not conflicts
+
+
+def test_removed_multi_role_row_survives_role_scoping():
+    """Assert a REMOVED legacy row still holding an out-of-scope role scopes without error and is already applied."""
+    changed, touched, conflicts, already = classify(
+        [snap(101, 'Jane', 'Smith', 'Victoria')],
+        [],
+        [party(101, 'Jane', 'Smith', 'Victoria', roles=('director', 'incorporator'), actions=['REMOVED'])],
+        scope={'director', 'custodian', 'liquidator', 'receiver'})
+
+    assert already == ['SMITH, JANE']
     assert not conflicts
 
 
@@ -363,6 +401,91 @@ def test_already_applied_carries_row_identity():
     assert entry['entityKey'] == 'DOE, JOHN'
     assert entry['rowId'] == 348
     assert entry['draftValue']['entity']['familyName'] == 'Doe'
+
+
+def test_absorbed_lists_rows_only_the_intervening_filings_changed():
+    """Assert intervening-only rows are absorbed with their current value, while overlaps stay conflicts."""
+    base, current, draft = _align_entities_by_row_id(
+        _party_entities([snap(101, 'Jane', 'Smith', 'Victoria'), snap(102, 'Bob', 'Lee', 'Burnaby')]),
+        _party_entities([snap(101, 'Jane', 'Smith', 'Vancouver'), snap(104, 'Dan', 'Ng', 'Surrey')]),
+        _party_entities([party(101, 'Jane', 'Smith', 'Nanaimo', actions=['EDITED'])]))
+    changed = DraftRebaseService._changed_keys(base, current)
+    touched = DraftRebaseService._draft_touched_entities(draft, base, True)
+
+    report = {'alreadyApplied': [], 'conflicts': [], 'absorbed': []}
+    DraftRebaseService._classify_draft_overlaps(report, 'parties', changed, touched)
+
+    assert [entry['entityKey'] for entry in report['conflicts']] == ['SMITH, JANE']
+    absorbed = {entry['entityKey']: entry for entry in report['absorbed']}
+    assert set(absorbed) == {'LEE, BOB', 'NG, DAN'}
+    assert absorbed['LEE, BOB'] == {'section': 'parties', 'entityKey': 'LEE, BOB', 'rowId': 102, 'currentValue': None}
+    assert absorbed['NG, DAN']['rowId'] == 104
+    assert absorbed['NG, DAN']['currentValue']['deliveryAddress']['addressCity'] == 'Surrey'
+
+
+def test_absorbed_is_skipped_for_sections_the_filing_type_does_not_map():
+    """Assert absorb=False leaves intervening-only rows out of the report (changedSections still names the section)."""
+    base, current, draft = _align_entities_by_row_id(
+        _party_entities([snap(101, 'Jane', 'Smith', 'Victoria')]),
+        _party_entities([snap(101, 'Jane', 'Smith', 'Vancouver')]),
+        _party_entities([]))
+    changed = DraftRebaseService._changed_keys(base, current)
+    touched = DraftRebaseService._draft_touched_entities(draft, base, False)
+
+    report = {'alreadyApplied': [], 'conflicts': [], 'absorbed': []}
+    DraftRebaseService._classify_draft_overlaps(report, 'parties', changed, touched, absorb=False)
+
+    assert report == {'alreadyApplied': [], 'conflicts': [], 'absorbed': []}
+
+
+def test_business_field_edited_by_both_sides_conflicts_and_an_omitted_field_is_not_a_removal():
+    """Assert business fields pair per field: a name both sides changed conflicts, a type only staff changed is absorbed."""
+    base = _business_entities({'legalName': 'ACME LTD', 'legalType': 'BC'})
+    current = _business_entities({'legalName': 'NEWCO INC.', 'legalType': 'BEN'})
+    draft = _business_entities({'legalName': 'ACME LTD.'})
+    changed = DraftRebaseService._changed_keys(base, current)
+    touched = DraftRebaseService._draft_touched_entities(draft, base, True, full_replacement=False)
+
+    report = {'alreadyApplied': [], 'conflicts': [], 'absorbed': []}
+    DraftRebaseService._classify_draft_overlaps(report, 'business', changed, touched)
+
+    assert set(touched) == {'legalName'}
+    assert [entry['entityKey'] for entry in report['conflicts']] == ['legalName']
+    assert report['conflicts'][0]['currentValue'] == {'field': 'legalName', 'value': 'NEWCO INC.'}
+    assert report['conflicts'][0]['draftValue'] == {'field': 'legalName', 'value': 'ACME LTD.'}
+    assert [entry['entityKey'] for entry in report['absorbed']] == ['legalType']
+    assert report['absorbed'][0]['currentValue'] == {'field': 'legalType', 'value': 'BEN'}
+
+
+@pytest.mark.parametrize('filing_type,body,expected', [
+    ('correction', {'nameRequest': {'legalName': 'ACME LTD.', 'nrNumber': ''}}, {'legalName': 'ACME LTD.'}),
+    ('correction', {'nameRequest': {'nrNumber': 'NR 1'}, 'legalType': 'BEN'}, None),
+    ('alteration', {'business': {'identifier': 'BC1', 'legalType': 'BEN'}, 'nameRequest': {'legalName': 'NEWCO INC.'}},
+     {'legalName': 'NEWCO INC.', 'legalType': 'BEN'}),
+    ('transition', {'nameRequest': {'legalName': 'X'}}, None),
+])
+def test_extract_draft_sections_reads_business_fields_from_the_filer_paths(filing_type, body, expected):
+    """Assert business fields are read from where the filer reads them, and only for types that can edit them."""
+    draft = SimpleNamespace(filing_type=filing_type, filing_json=_filing_json(filing_type, body))
+
+    sections = DraftRebaseService._extract_draft_sections(draft)
+
+    assert sections.get('business') == expected
+
+
+@pytest.mark.parametrize('filing_type,expected', [
+    ('correction', {'shareClasses': [], 'resolutions': [{'id': 1, 'date': '2024-05-01'}]}),
+    ('transition', {'shareClasses': [], 'resolutions': [{'id': 1, 'date': '2024-05-01'}]}),
+    ('alteration', {'shareClasses': []}),
+])
+def test_extract_draft_sections_reads_resolution_dates_only_for_full_list_types(filing_type, expected):
+    """Assert shareStructure.resolutionDates is a draft section only where the draft holds the full list."""
+    body = {'shareStructure': {'shareClasses': [], 'resolutionDates': [{'id': 1, 'date': '2024-05-01'}]}}
+    draft = SimpleNamespace(filing_type=filing_type, filing_json=_filing_json(filing_type, body))
+
+    sections = DraftRebaseService._extract_draft_sections(draft)
+
+    assert sections == expected
 
 
 def test_stale_error_path_names_payload_keys():
@@ -741,6 +864,159 @@ def test_report_pairs_a_rename_as_one_conflict_with_row_id(session):
     assert conflict['currentValue']['roles'][0]['roleType'] == 'Director'
     assert conflict['draftValue']['deliveryAddress']['addressCity'] == 'Nanaimo'
     assert not report['alreadyApplied']
+
+
+def test_report_absorbs_a_staff_added_party_the_draft_never_saw(session):
+    """Assert a party added by an intervening filing is absorbed in relationships shape, not conflicted."""
+    business = factory_business(IDENTIFIER, entity_type='BC')
+    _add_party(business, 'Jane', 'Smith')
+    base_filing = _complete(business)
+    bob, _ = _add_party(business, 'Bob', 'Lee')
+    _complete(business)
+    draft = _draft(business, 'changeOfDirectors', {'directors': []}, base_filing.transaction_id)
+
+    report = DraftRebaseService.get_changes_report(business, draft)
+
+    assert report['changedSections'] == ['parties']
+    assert report['conflicts'] == []
+    assert report['alreadyApplied'] == []
+    assert len(report['absorbed']) == 1
+    absorbed = report['absorbed'][0]
+    assert absorbed['section'] == 'parties'
+    assert absorbed['entityKey'] == 'LEE, BOB'
+    assert absorbed['rowId'] == bob.id
+    assert absorbed['currentValue']['entity']['identifier'] == bob.id
+    assert absorbed['currentValue']['roles'][0]['roleType'] == 'Director'
+
+
+def test_report_absorbs_a_staff_added_resolution_the_draft_never_saw(session):
+    """Assert a resolution added by an intervening filing is absorbed into a correction draft rather than left as a removal."""
+    business = factory_business(IDENTIFIER, entity_type='BC')
+    existing = Resolution(resolution_date=date(2024, 5, 1), resolution_type='SPECIAL', business_id=business.id)
+    existing.save()
+    base_filing = _complete(business)
+    added = Resolution(resolution_date=date(2025, 1, 15), resolution_type='SPECIAL', business_id=business.id)
+    added.save()
+    _complete(business)
+    body = {'shareStructure': {'resolutionDates': [{'id': existing.id, 'date': '2024-05-01', 'type': 'SPECIAL'}]}}
+    draft = _draft(business, 'correction', body, base_filing.transaction_id)
+
+    report = DraftRebaseService.get_changes_report(business, draft)
+
+    assert report['changedSections'] == ['resolutions']
+    assert report['conflicts'] == []
+    assert report['alreadyApplied'] == []
+    assert report['absorbed'] == [{
+        'section': 'resolutions',
+        'entityKey': '2025-01-15 (SPECIAL)',
+        'rowId': added.id,
+        'currentValue': {'id': added.id, 'date': 'January 15, 2025', 'type': 'SPECIAL'},
+    }]
+
+
+def test_report_keeps_a_tagged_delta_when_the_scope_drops_its_only_tagged_row(session):
+    """Assert a correction draft holding only an ADDED completing party absorbs a staff director edit instead of removing every director."""
+    business = factory_business(IDENTIFIER, entity_type='BC')
+    jane, _ = _add_party(business, 'Jane', 'Smith')
+    base_filing = _complete(business)
+    jane.delivery_address.city = 'Nanaimo'
+    jane.delivery_address.save()
+    _complete(business)
+    completing_party = {'entity': {'givenName': 'Pat', 'familyName': 'Filer'},
+                        'roles': [{'roleType': 'Completing Party'}], 'actions': ['ADDED']}
+    draft = _draft(business, 'correction', {'relationships': [completing_party]}, base_filing.transaction_id)
+
+    report = DraftRebaseService.get_changes_report(business, draft)
+
+    assert report['changedSections'] == ['parties']
+    assert report['conflicts'] == []
+    assert report['alreadyApplied'] == []
+    assert [entry['rowId'] for entry in report['absorbed']] == [jane.id]
+
+
+def test_report_conflicts_a_corrected_name_with_a_staff_rename(session):
+    """Assert a correction draft's name edit conflicts with a staff rename and the current name is reported."""
+    business = factory_business(IDENTIFIER, entity_type='BC')
+    base_filing = _complete(business)
+    business.legal_name = 'NEWCO INC.'
+    business.save()
+    _complete(business)
+    draft = _draft(business, 'correction', {'nameRequest': {'legalName': 'ACME LTD.', 'nrNumber': ''}},
+                   base_filing.transaction_id)
+
+    report = DraftRebaseService.get_changes_report(business, draft)
+
+    assert report['changedSections'] == ['business']
+    assert report['draftSections'] == ['business']
+    assert report['businessChanges']['legalName'] == {'baseValue': f'legal_name-{IDENTIFIER}', 'currentValue': 'NEWCO INC.'}
+    assert len(report['conflicts']) == 1
+    conflict = report['conflicts'][0]
+    assert conflict['section'] == 'business'
+    assert conflict['entityKey'] == 'legalName'
+    assert conflict['rowId'] is None
+    assert conflict['paths'] == ['/value']
+    assert conflict['currentValue'] == {'field': 'legalName', 'value': 'NEWCO INC.'}
+    assert conflict['draftValue'] == {'field': 'legalName', 'value': 'ACME LTD.'}
+    assert report['absorbed'] == []
+
+
+def test_report_treats_offices_as_a_delta_and_scopes_a_correction_to_its_correctable_offices(session):
+    """Assert a correction's liquidation office edit conflicts with a staff change while an omitted office is absorbed, not removed."""
+    business = factory_business(IDENTIFIER, entity_type='BC')
+    factory_business_office(business, 'liquidationRecordsOffice')
+    base_filing = _complete(business)
+    liquidation_office = next(office for office in business.offices if office.office_type == 'liquidationRecordsOffice')
+    for address in liquidation_office.addresses:
+        address.city = 'Nanaimo'
+        address.save()
+    factory_business_office(business, 'registeredOffice')
+    _complete(business)
+    draft = _draft(business, 'correction',
+                   {'offices': {'liquidationRecordsOffice': {'deliveryAddress': _address('Surrey'),
+                                                             'mailingAddress': _address('Surrey')}}},
+                   base_filing.transaction_id)
+
+    report = DraftRebaseService.get_changes_report(business, draft)
+
+    assert [(entry['section'], entry['entityKey']) for entry in report['conflicts']] == [('offices', 'liquidationRecordsOffice')]
+    assert report['conflicts'][0]['draftValue'] is not None
+    assert [(entry['section'], entry['entityKey']) for entry in report['absorbed']] == [('offices', 'registeredOffice')]
+
+
+def test_report_scopes_offices_to_the_filing_type(session):
+    """Assert a liquidator draft (liquidation office only) sees neither a removal nor a change on the other offices."""
+    business = factory_business(IDENTIFIER, entity_type='BC')
+    factory_business_office(business, 'registeredOffice')
+    base_filing = _complete(business)
+    factory_business_office(business, 'recordsOffice')
+    _complete(business)
+    draft = _draft(business, 'changeOfLiquidators',
+                   {'type': 'appointLiquidator',
+                    'offices': {'liquidationRecordsOffice': {'deliveryAddress': _address('Victoria'),
+                                                             'mailingAddress': _address('Victoria')}}},
+                   base_filing.transaction_id)
+
+    report = DraftRebaseService.get_changes_report(business, draft)
+
+    assert report['upToDate'] is False
+    assert 'offices' not in report['changedSections']
+    assert report['conflicts'] == []
+    assert report['absorbed'] == []
+
+
+def test_report_does_not_absorb_a_section_the_filing_type_cannot_edit(session):
+    """Assert a staff office change is only a changedSections hint to a directors draft, not an absorbed row."""
+    business = factory_business(IDENTIFIER, entity_type='BC')
+    base_filing = _complete(business)
+    factory_business_office(business, 'registeredOffice')
+    _complete(business)
+    draft = _draft(business, 'changeOfDirectors', {'relationships': []}, base_filing.transaction_id)
+
+    report = DraftRebaseService.get_changes_report(business, draft)
+
+    assert 'offices' in report['changedSections']
+    assert [entry['section'] for entry in report['absorbed']] == []
+    assert report['conflicts'] == []
 
 
 def test_report_degrades_id_churn_to_name_matching(session):

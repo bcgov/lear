@@ -35,12 +35,12 @@
 import copy
 from datetime import datetime, timezone
 import pytest
-from business_model.models import Address, Business, Filing, Party, PartyRole
+from business_model.models import Address, Business, Filing, Party, PartyRole, ShareClass
 
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors.filing_components import create_address
 from business_filer.filing_processors.filing_components.correction import correct_corp_data
-from tests.unit import create_business, create_filing
+from tests.unit import create_business, create_filing, create_share_class
 
 DELIVERY_ADDRESS = {
     'streetAddress': '123 Delivery St',
@@ -553,3 +553,69 @@ def test_correct_corp_data_relationships_director_meta_ignored(app, session, bus
 
     updated = PartyRole.find_by_internal_id(dir_role.id)
     assert updated.meta is None
+
+
+def test_correct_corp_data_applies_every_section_when_an_earlier_one_changed(app, session, business, filing_rec):
+    """Test name, offices and shares all apply in one correction (no short-circuit on has_noa)."""
+    create_share_class(business, no_of_shares=1, no_of_series_in_each_share=1)
+    business.save()
+    address = business.offices[0].addresses[0]
+    share_class = business.share_classes[0]
+    filing_meta = _create_filing_meta()
+    correction_filing = {
+        'correction': {
+            'nameRequest': {'legalName': 'CORRECTED NAME LTD.'},
+            'offices': {
+                'registeredOffice': {
+                    'deliveryAddress': {**copy.deepcopy(DELIVERY_ADDRESS), 'id': address.id},
+                    'mailingAddress': copy.deepcopy(MAILING_ADDRESS)
+                }
+            },
+            'shareStructure': {
+                'shareClasses': [{
+                    'id': share_class.id,
+                    'name': 'Corrected Shares',
+                    'priority': 1,
+                    'hasMaximumShares': True,
+                    'maxNumberOfShares': 777,
+                    'hasRightsOrRestrictions': False,
+                    'hasParValue': True,
+                    'parValue': 10,
+                    'currency': 'CAD',
+                    'currencyAdditional': None,
+                    'series': []
+                }],
+                'resolutionDates': []
+            }
+        }
+    }
+
+    correct_corp_data(business, filing_rec, correction_filing, filing_meta)
+    session.commit()
+
+    assert business.legal_name == 'CORRECTED NAME LTD.'
+    assert Address.find_by_id(address.id).street == DELIVERY_ADDRESS['streetAddress']
+    assert ShareClass.find_by_share_class_id(share_class.id).name == 'Corrected Shares'
+    assert filing_meta.correction['hasNoa'] is True
+
+
+def test_correct_corp_data_parties_applies_every_party_after_the_first_director(app, session, business, filing_rec):
+    """Test every legacy `parties` row is created when an earlier row already flagged a director change."""
+    filing_meta = _create_filing_meta()
+
+    def _director(first, last):
+        return {
+            'officer': {'firstName': first, 'lastName': last, 'partyType': 'person'},
+            'deliveryAddress': copy.deepcopy(DELIVERY_ADDRESS),
+            'mailingAddress': copy.deepcopy(MAILING_ADDRESS),
+            'roles': [{'roleType': 'Director', 'appointmentDate': '2023-07-01'}]
+        }
+
+    correction_filing = {'correction': {'parties': [_director('Jane', 'Smith'), _director('Bob', 'Lee')]}}
+
+    correct_corp_data(business, filing_rec, correction_filing, filing_meta)
+    session.commit()
+
+    directors = PartyRole.get_parties_by_role(business.id, PartyRole.RoleTypes.DIRECTOR.value)
+    assert sorted(role.party.last_name for role in directors) == ['LEE', 'SMITH']
+    assert filing_meta.correction['hasNoa'] is True
