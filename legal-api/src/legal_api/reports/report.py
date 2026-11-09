@@ -1647,90 +1647,88 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             ceased.append(rel)
         return ceased
 
+    def _diff_records_office_address(self, records_office, office_revision):
+        """Flag changed addresses for liquidation records office."""
+        liq_records = office_revision.get("liquidationRecordsOffice", {})
+        mailing_changed = self._compare_address(
+            liq_records.get("mailingAddress"),
+            records_office.get("mailingAddress"),
+        )
+        delivery_changed = self._compare_address(
+            liq_records.get("deliveryAddress"),
+            records_office.get("deliveryAddress"),
+        )
+        delivery_same_as_mailing = not self._compare_address(
+            records_office.get("mailingAddress"),
+            records_office.get("deliveryAddress"),
+        )
+
+        if "mailingAddress" in records_office:
+            records_office["mailingAddress"]["changed"] = mailing_changed
+        if "deliveryAddress" in records_office:
+            records_office["deliveryAddress"]["changed"] = delivery_changed and not delivery_same_as_mailing
+
+    def _diff_relationship_address(self, prev_completed_filing, rel, relationships_at_effective_date):
+        """Flag changed addresses for a single submitted relationship."""
+        try:
+            rel_id = int(rel.get("entity", {}).get("identifier", ""))
+        except (ValueError, TypeError):
+            return
+
+        party_revision = VersionedBusinessDetailsService.get_party_revision(prev_completed_filing, rel_id)
+        if not party_revision:
+            return
+
+        party_json = VersionedBusinessDetailsService.party_revision_json(
+            prev_completed_filing.transaction_id, party_revision, True
+        )
+
+        mailing_address = rel.get("mailingAddress")
+        mailing_changed = self._compare_address(party_json.get("mailingAddress"), mailing_address) if mailing_address else False
+
+        delivery_address = rel.get("deliveryAddress")
+        delivery_changed = False
+        if delivery_address:
+            changed = self._compare_address(party_json.get("deliveryAddress"), delivery_address)
+            same_as_mail = not self._compare_address(mailing_address, delivery_address) if mailing_address else False
+            delivery_changed = changed and not same_as_mail
+
+        found_rel = next(
+            (item for item in relationships_at_effective_date if str(item.get("entity", {}).get("identifier")) == str(rel_id)),
+            None,
+        )
+        if found_rel:
+            if "mailingAddress" in found_rel and mailing_address:
+                found_rel["mailingAddress"]["changed"] = mailing_changed
+            if "deliveryAddress" in found_rel and delivery_address:
+                found_rel["deliveryAddress"]["changed"] = delivery_changed
+
     def _format_address_diffs(self, filing, col, relationships_submitted, relationships_at_effective_date):
         """Flag changed addresses for records office and liquidators against the previous filing."""
         prev_completed_filing = Filing.get_previous_completed_filing(self._filing)
         records_office = filing.get("recordsOffice", {})
 
-        # Compare office addresses if submitted
         if col.get("offices"):
             office_revision = VersionedBusinessDetailsService.get_office_revision(
                 prev_completed_filing.id,
                 prev_completed_filing.transaction_id,
                 self._business.id,
             )
-            mailing_changed = self._compare_address(
-                office_revision.get("liquidationRecordsOffice", {}).get("mailingAddress"),
-                records_office.get("mailingAddress"),
-            )
-            delivery_changed = self._compare_address(
-                office_revision.get("liquidationRecordsOffice", {}).get("deliveryAddress"),
-                records_office.get("deliveryAddress"),
-            )
-            delivery_same_as_mailing = not self._compare_address(
-                records_office.get("mailingAddress"),
-                records_office.get("deliveryAddress"),
-            )
+            self._diff_records_office_address(records_office, office_revision)
 
-            if "mailingAddress" in records_office:
-                records_office["mailingAddress"]["changed"] = mailing_changed
-            if "deliveryAddress" in records_office:
-                records_office["deliveryAddress"]["changed"] = delivery_changed and not delivery_same_as_mailing
+        if relationships_submitted:
+            for rel in relationships_submitted:
+                self._diff_relationship_address(prev_completed_filing, rel, relationships_at_effective_date)
 
-        # Compare relationships if submitted
-        if not relationships_submitted:
-            return
-
-        for rel in relationships_submitted:
-            try:
-                rel_id = int(rel.get("entity", {}).get("identifier", ""))
-            except (ValueError, TypeError):
-                continue
-
-            party_revision = VersionedBusinessDetailsService.get_party_revision(prev_completed_filing, rel_id)
-            if not party_revision:
-                continue
-
-            party_json = VersionedBusinessDetailsService.party_revision_json(
-                prev_completed_filing.transaction_id, party_revision, True
-            )
-
-            mailing_address = rel.get("mailingAddress")
-            mailing_changed = self._compare_address(party_json.get("mailingAddress"), mailing_address) if mailing_address else False
-
-            delivery_address = rel.get("deliveryAddress")
-            delivery_changed = False
-            if delivery_address:
-                changed = self._compare_address(party_json.get("deliveryAddress"), delivery_address)
-                same_as_mail = not self._compare_address(mailing_address, delivery_address) if mailing_address else False
-                delivery_changed = changed and not same_as_mail
-
-            found_rel = next(
-                (item for item in relationships_at_effective_date if str(item.get("entity", {}).get("identifier")) == str(rel_id)),
-                None,
-            )
-            if found_rel:
-                if "mailingAddress" in found_rel and mailing_address:
-                    found_rel["mailingAddress"]["changed"] = mailing_changed
-                if "deliveryAddress" in found_rel and delivery_address:
-                    found_rel["deliveryAddress"]["changed"] = delivery_changed
-
-    def _format_liquidator_data(self, filing):
-        self._set_dates(filing) # required to use effective_date inside this method
-        business = self._business
-        col = filing.get("changeOfLiquidators", {})
-        meta_data = (self._filing.meta_data or {}).get("changeOfLiquidators", {})
-
-        sub_type = col.get("type")
-        filing["subType"] = sub_type
-
+    def _set_liquidator_titles(self, filing, sub_type, meta_data):
+        """Set reportTitle and reportDateAndTimeTitle for liquidator filings."""
         lr_report_year = meta_data.get("liquidationReportYear")
         report_title_config = {
             "appointLiquidator": "Liquidator Appointment",
             "ceaseLiquidator": "Liquidator Cessation",
             "changeAddressLiquidator": "Liquidator (or Records) Address Change",
             "intentToLiquidate": "Statement of Intent to Liquidate",
-            "liquidationReport": f"{lr_report_year} Liquidation Report" if lr_report_year else "Liquidation Report"
+            "liquidationReport": f"{lr_report_year} Liquidation Report" if lr_report_year else "Liquidation Report",
         }
         filing["reportTitle"] = report_title_config[sub_type]
 
@@ -1739,9 +1737,75 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             "ceaseLiquidator": "Ceased Date and Time:",
             "changeAddressLiquidator": "Change Date and Time:",
             "intentToLiquidate": "Summary Date and Time:",
-            "liquidationReport": "Filed Date and Time:"
+            "liquidationReport": "Filed Date and Time:",
         }
         filing["reportDateAndTimeTitle"] = report_date_and_time_title_config[sub_type]
+
+    def _populate_liquidator_common_meta(self, filing, business, col, meta_data):
+        """Populate common metadata flags and records office for non-liquidationReport filings."""
+        if last_lr_date_str := meta_data.get("lastLiquidationReportDate"):
+            last_lr_date = LegislationDatetime.as_legislation_timezone_from_date_str(last_lr_date_str)
+            filing["lastLiquidationReportDate"] = last_lr_date.strftime(OUTPUT_DATE_FORMAT)
+
+        filing["hasReceivers"] = bool(PartyRole.get_party_roles(
+            business_id=business.id,
+            end_date=datetime.utcnow().date(),
+            role=PartyRole.RoleTypes.RECEIVER.value,
+        ))
+
+        court_order = col.get("courtOrder", {})
+        filing["hasPoa"] = court_order.get("hasPlanOfArrangement", False)
+        filing["courtOrderNumber"] = court_order.get("fileNumber", False)
+
+        if commencement_date_str := meta_data.get("commencementDate"):
+            commencement_date = LegislationDatetime.as_legislation_timezone_from_date_str(commencement_date_str)
+            filing["commencementDate"] = commencement_date.strftime(OUTPUT_DATE_FORMAT)
+
+        filing["recordsOffice"] = self._format_liquidation_records_office(business, col)
+
+    def _set_liquidator_relationships(self, filing, business, sub_type, col, relationships_submitted):
+        """Set relationship sections (appointed, ceased, effectiveDate) on the filing."""
+        fallback_date_str = LegislationDatetime.as_legislation_timezone(self._filing.effective_date).strftime("%Y-%m-%d")
+        filing["relationships"] = {}
+
+        if sub_type in {"appointLiquidator", "intentToLiquidate"}:
+            filing["relationships"]["appointed"] = {
+                "title": "Appointed Liquidators",
+                "items": self._format_appointed_liquidators(relationships_submitted, fallback_date_str),
+            }
+
+        if sub_type == "ceaseLiquidator":
+            filing["relationships"]["ceased"] = {
+                "title": "Ceased Liquidators",
+                "items": self._format_ceased_liquidators(relationships_submitted, fallback_date_str),
+            }
+
+        if sub_type in {"appointLiquidator", "ceaseLiquidator", "changeAddressLiquidator"}:
+            roles = PartyRole.get_party_roles(
+                business.id,
+                self._filing.effective_date,
+                PartyRole.RoleTypes.LIQUIDATOR.value,
+            )
+            relationships_at_effective_date = self._map_party_roles_to_relationships_json(roles)
+
+            if sub_type == "changeAddressLiquidator":
+                self._format_address_diffs(filing, col, relationships_submitted, relationships_at_effective_date)
+
+            filing["relationships"]["effectiveDate"] = {
+                "title": f"Liquidators as of {filing['effective_date']}",
+                "items": relationships_at_effective_date,
+            }
+
+    def _format_liquidator_data(self, filing):
+        self._set_dates(filing)  # required to use effective_date inside this method
+        business = self._business
+        col = filing.get("changeOfLiquidators", {})
+        meta_data = (self._filing.meta_data or {}).get("changeOfLiquidators", {})
+
+        sub_type = col.get("type")
+        filing["subType"] = sub_type
+
+        self._set_liquidator_titles(filing, sub_type, meta_data)
 
         if sub_type == "liquidationReport":
             if lr_report_date_str := meta_data.get("liquidationReportDate"):
@@ -1749,33 +1813,9 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
                 filing["liquidationReportDate"] = lr_report_date.strftime(OUTPUT_DATE_FORMAT)
             else:
                 filing["liquidationReportDate"] = "Not Available"
-            return # no further data needed for liquidationReport
+            return  # no further data needed for liquidationReport
 
-        # All other sub-types: format lastLiquidationReportDate from metadata
-        if last_lr_date_str := meta_data.get("lastLiquidationReportDate"):
-            last_lr_date = LegislationDatetime.as_legislation_timezone_from_date_str(last_lr_date_str)
-            filing["lastLiquidationReportDate"] = last_lr_date.strftime(OUTPUT_DATE_FORMAT)
-
-        # All sub-types: check if business has Receivers
-        filing["hasReceivers"] = bool(PartyRole.get_party_roles(
-            business_id=business.id,
-            end_date=datetime.utcnow().date(),
-            role=PartyRole.RoleTypes.RECEIVER.value
-        ))
-
-        # All sub-types: check for Court Order and Plan of Arrangment
-        court_order = col.get("courtOrder", {})
-        filing["hasPoa"] = court_order.get("hasPlanOfArrangement", False)
-        filing["courtOrderNumber"] = court_order.get("fileNumber", False)
-
-        # Display commencement date from metadata if present
-        if commencement_date_str := meta_data.get("commencementDate"):
-            commencement_date = LegislationDatetime.as_legislation_timezone_from_date_str(commencement_date_str)
-            filing["commencementDate"] = commencement_date.strftime(OUTPUT_DATE_FORMAT)
-
-        # All sub-types: format liquidationRecordsOffice from the filing or db if not in filing json
-        filing_offices = self._format_liquidation_records_office(business, col)
-        filing["recordsOffice"] = filing_offices
+        self._populate_liquidator_common_meta(filing, business, col, meta_data)
 
         relationships_submitted = col.get("relationships", [])
         for rel in relationships_submitted:
@@ -1784,39 +1824,7 @@ class Report:  # pylint: disable=too-few-public-methods, too-many-lines
             if "deliveryAddress" in rel:
                 rel["deliveryAddress"] = self._format_address(rel["deliveryAddress"])
 
-        fallback_date_str = LegislationDatetime.as_legislation_timezone(self._filing.effective_date).strftime("%Y-%m-%d")
-        filing["relationships"] = {}
-
-        # intent or appoint: get appointed liquidators
-        if sub_type in {"appointLiquidator", "intentToLiquidate"}:
-            filing["relationships"]["appointed"] = {
-                "title": "Appointed Liquidators",
-                "items": self._format_appointed_liquidators(relationships_submitted, fallback_date_str),
-            }
-
-        # cease: get ceased liquidators
-        if sub_type == "ceaseLiquidator":
-            filing["relationships"]["ceased"] = {
-                "title": "Ceased Liquidators",
-                "items": self._format_ceased_liquidators(relationships_submitted, fallback_date_str),
-            }
-
-        # appoint, cease or change address: get active liquidators and liq records office as of filing effective date
-        if sub_type in {"appointLiquidator", "ceaseLiquidator", "changeAddressLiquidator"}:
-            roles = PartyRole.get_party_roles(
-                business.id,
-                self._filing.effective_date,
-                PartyRole.RoleTypes.LIQUIDATOR.value
-            )
-            relationships_at_effective_date = self._map_party_roles_to_relationships_json(roles)
-
-            if sub_type == "changeAddressLiquidator":
-                self._format_address_diffs(filing, col, relationships_submitted, relationships_at_effective_date)
-
-            filing["relationships"]["effectiveDate"] = {
-                "title": f"Liquidators as of {filing["effective_date"]}",
-                "items": relationships_at_effective_date
-            }
+        self._set_liquidator_relationships(filing, business, sub_type, col, relationships_submitted)
 
     def _set_meta_info(self, filing):
         filing["environment"] = f"{self._get_environment()} FILING #{self._filing.id}".lstrip()

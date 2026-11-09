@@ -1,6 +1,6 @@
 [project]
 name = "legal-api"
-version = "3.1.65"
+version = "3.1.66"
 description = ""
 authors = [
     {name = "thor",email = "1042854+thorwolpert@users.noreply.github.com"}
@@ -31,7 +31,7 @@ dependencies = [
     "html-sanitizer (==2.4.1)",
     "lxml (>=6.1.1)",
 
-    "business-model @ git+https://github.com/bcgov/lear.git@35429-liquidation-outputs#subdirectory=python/common/business-registry-model",
+    "business-model @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-model",
     "business-registry-account @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-account",
     "business-registry-common @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-common",
     "business-registry-digital-credentials @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-digital-credentials",
