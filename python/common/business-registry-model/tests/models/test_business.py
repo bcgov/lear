@@ -1041,7 +1041,8 @@ def test_public_user_dod_filings(session, test_name, dods, expected_dod_indxs):
 @pytest.mark.parametrize('test_name, founding_date, in_liquidation_date, last_lr_year, expected_lr_min_date', [
     ('NOT_IN_LIQUIDATION', datetime.now(), None, None, None),
     ('IN_LIQUIDATION', FOUNDING_DATE, IN_LIQUIDATION_DATE, None, date(2025, 3, 2)),
-    ('IN_LIQUIDATION_lr_year', FOUNDING_DATE, IN_LIQUIDATION_DATE, 2025, date(2026, 3, 2))
+    ('IN_LIQUIDATION_lr_year', FOUNDING_DATE, IN_LIQUIDATION_DATE, 2025, date(2026, 3, 2)),
+    ('IN_LIQUIDATION_LEAP_YEAR_FOUNDING', datetime(2020, 2, 29, 12, 0), datetime(2020, 5, 1, 12, 0), None, date(2021, 3, 1)),
 ])
 def test_next_lr_min_date(session, test_name, founding_date, in_liquidation_date, last_lr_year, expected_lr_min_date):
     """Assert next_lr_min_date works as expected."""
