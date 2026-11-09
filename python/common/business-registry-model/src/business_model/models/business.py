@@ -466,7 +466,8 @@ class Business(db.Model, Versioned):  # pylint: disable=too-many-instance-attrib
                 next_lr_year = self.last_lr_year + 1
 
             # min date for liquidation report is based on the anniversary date
-            return founding_date.replace(year=next_lr_year)
+            years_to_add = next_lr_year - founding_date.year
+            return founding_date + datedelta.datedelta(years=years_to_add)
 
     def get_ar_dates(self, next_ar_year):
         """Get ar min and max date for the specific year."""
