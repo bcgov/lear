@@ -1019,6 +1019,9 @@ def _create_existing_liquidator(session, business):
 def test_format_appoint_liquidator_data(session):
     """Assert _format_liquidator_data correctly formats an appointLiquidator filing."""
     business = factory_business(identifier='BC1234567', entity_type='BC')
+    business.in_liquidation = True
+    business.in_liquidation_date = datetime(2025, 1, 1)
+    business.save()
     _create_previous_liquidation_report(business)
     _create_existing_liquidator(session, business)
 
@@ -1031,6 +1034,13 @@ def test_format_appoint_liquidator_data(session):
 
     current_filing_json = _get_col_filing_json(business, col)
     current_filing = factory_completed_filing(business, current_filing_json, filing_date=datetime(2026, 1, 2))
+    current_filing._meta_data = {
+        'changeOfLiquidators': {
+            'lastLiquidationReportDate': '2026-05-15',
+            'commencementDate': '2025-01-01'
+        }
+    }
+    current_filing.save()
 
     report = Report(current_filing)
     report._business = business
@@ -1038,9 +1048,10 @@ def test_format_appoint_liquidator_data(session):
     filing_data = current_filing_json['filing']
     report._format_liquidator_data(filing_data)
 
-    assert filing_data['reportTitle'] == 'Notice to Appoint Liquidators'
+    assert filing_data['reportTitle'] == 'Liquidator Appointment'
     assert filing_data['reportDateAndTimeTitle'] == 'Appointed Date and Time:'
-    assert filing_data['lastReportDate'] == 'May 15, 2026'
+    assert filing_data['lastLiquidationReportDate'] == 'May 15, 2026'
+    assert filing_data['commencementDate'] == 'January 1, 2025'
     assert filing_data['hasReceivers'] is False
     assert filing_data['hasPoa'] is True
     assert filing_data['courtOrderNumber'] == '12345678'
@@ -1059,6 +1070,7 @@ def test_format_appoint_liquidator_data(session):
 
     assert 'mailingAddress' in first_liquidator
     assert 'deliveryAddress' in first_liquidator
+    assert 'meta' in first_liquidator
 
     second_liquidator = appointed_items[1]
     assert second_liquidator['entity']['businessName'] == 'Test Business'
@@ -1073,6 +1085,9 @@ def test_format_appoint_liquidator_data(session):
 def test_format_cease_liquidator_data(session):
     """Assert _format_liquidator_data correctly formats a ceaseLiquidator filing."""
     business = factory_business(identifier='BC1234567', entity_type='BC')
+    business.in_liquidation = True
+    business.in_liquidation_date = datetime(2025, 1, 1)
+    business.save()
     _create_previous_liquidation_report(business)
     _create_existing_liquidator(session, business)
 
@@ -1085,6 +1100,12 @@ def test_format_cease_liquidator_data(session):
 
     current_filing_json = _get_col_filing_json(business, col)
     current_filing = factory_completed_filing(business, current_filing_json, filing_date=datetime(2026, 1, 2))
+    current_filing._meta_data = {
+        'changeOfLiquidators': {
+            'lastLiquidationReportDate': '2026-05-15'
+        }
+    }
+    current_filing.save()
 
     report = Report(current_filing)
     report._business = business
@@ -1092,9 +1113,9 @@ def test_format_cease_liquidator_data(session):
     filing_data = current_filing_json['filing']
     report._format_liquidator_data(filing_data)
 
-    assert filing_data['reportTitle'] == 'Notice to Cease Liquidators'
+    assert filing_data['reportTitle'] == 'Liquidator Cessation'
     assert filing_data['reportDateAndTimeTitle'] == 'Ceased Date and Time:'
-    assert filing_data['lastReportDate'] == 'May 15, 2026'
+    assert filing_data['lastLiquidationReportDate'] == 'May 15, 2026'
     assert filing_data['hasReceivers'] is False
     assert filing_data['hasPoa'] is False
     assert filing_data['courtOrderNumber'] is False
@@ -1113,9 +1134,11 @@ def test_format_cease_liquidator_data(session):
 
     assert 'mailingAddress' in first_liquidator
     assert 'deliveryAddress' in first_liquidator
+    assert 'meta' in first_liquidator
 
     second_liquidator = ceased_items[1]
     assert second_liquidator['entity']['businessName'] == 'Test Business'
+    assert 'meta' in second_liquidator
 
     effective_items = rels['effectiveDate']['items']
     existing_liquidator_found = any(
@@ -1152,15 +1175,23 @@ def test_format_intent_liquidator_data(session):
 
     current_filing_json = _get_col_filing_json(business, col)
     current_filing = factory_completed_filing(business, current_filing_json, filing_date=datetime(2026, 1, 2))
+    current_filing._meta_data = {
+        'changeOfLiquidators': {
+            'commencementDate': '2026-01-01'
+        }
+    }
+    current_filing.save()
 
     report = Report(current_filing)
     report._business = business
 
     filing_data = current_filing_json['filing']
+
     report._format_liquidator_data(filing_data)
 
     assert filing_data['reportTitle'] == 'Statement of Intent to Liquidate'
     assert filing_data['reportDateAndTimeTitle'] == 'Summary Date and Time:'
+    assert filing_data['commencementDate'] == 'January 1, 2026'
     assert 'lastReportDate' not in filing_data
     assert filing_data['hasReceivers'] is True
     assert filing_data['hasPoa'] is False
@@ -1179,6 +1210,9 @@ def test_format_intent_liquidator_data(session):
 def test_format_change_address_liquidator_data(session, mocker):
     """Assert _format_liquidator_data correctly formats a changeAddressLiquidator filing."""
     business = factory_business(identifier='BC1234567', entity_type='BC')
+    business.in_liquidation = True
+    business.in_liquidation_date = datetime(2025, 1, 1)
+    business.save()
     _create_previous_liquidation_report(business)
 
     factory_business_office(business, "liquidationRecordsOffice")
@@ -1291,6 +1325,12 @@ def test_format_change_address_liquidator_data(session, mocker):
 
     current_filing_json = _get_col_filing_json(business, col)
     current_filing = factory_completed_filing(business, current_filing_json, filing_date=datetime(2026, 1, 2))
+    current_filing._meta_data = {
+        'changeOfLiquidators': {
+            'lastLiquidationReportDate': '2026-05-15'
+        }
+    }
+    current_filing.save()
 
     report = Report(current_filing)
     report._business = business
@@ -1298,9 +1338,9 @@ def test_format_change_address_liquidator_data(session, mocker):
     filing_data = current_filing_json['filing']
     report._format_liquidator_data(filing_data)
 
-    assert filing_data['reportTitle'] == 'Liquidators Change of Address'
+    assert filing_data['reportTitle'] == 'Liquidator (or Records) Address Change'
     assert filing_data['reportDateAndTimeTitle'] == 'Change Date and Time:'
-    assert filing_data['lastReportDate'] == 'May 15, 2026'
+    assert filing_data['lastLiquidationReportDate'] == 'May 15, 2026'
     assert filing_data['hasReceivers'] is False
     assert filing_data['hasPoa'] is False
     assert filing_data['courtOrderNumber'] is False
@@ -1319,6 +1359,78 @@ def test_format_change_address_liquidator_data(session, mocker):
     assert 'recordsOffice' in filing_data
     assert filing_data['recordsOffice']['mailingAddress']['changed'] is True
     assert filing_data['recordsOffice']['deliveryAddress']['changed'] is True
+
+
+@pytest.mark.parametrize('founding_date, lr_year, lr_date_str, expected_lr_date_display', [
+    (datetime(2020, 5, 10, tzinfo=UTC), 2025, '2025-05-10', 'May 10, 2025'),
+    (datetime(2020, 2, 29, tzinfo=UTC), 2025, '2025-03-01', 'March 1, 2025'),
+])
+def test_format_liquidation_report_data(session, founding_date, lr_year, lr_date_str, expected_lr_date_display):
+    """Assert _format_liquidator_data correctly formats a liquidationReport filing including Feb 29 founding date."""
+    business = factory_business(identifier='BC7654321', entity_type='BC')
+    business.founding_date = founding_date
+    business.in_liquidation = True
+    business.in_liquidation_date = datetime(2024, 3, 1, tzinfo=UTC)
+    business.last_lr_year = lr_year
+    business.save()
+
+    col = {
+        'type': 'liquidationReport'
+    }
+
+    current_filing_json = _get_col_filing_json(business, col)
+    current_filing = factory_completed_filing(business, current_filing_json, filing_date=datetime(2025, 4, 1))
+    current_filing._meta_data = {
+        'changeOfLiquidators': {
+            'liquidationReportDate': lr_date_str,
+            'liquidationReportYear': lr_year
+        }
+    }
+    current_filing.save()
+
+    report = Report(current_filing)
+    report._business = business
+
+    filing_data = current_filing_json['filing']
+    report._format_liquidator_data(filing_data)
+
+    assert filing_data['reportTitle'] == f'{lr_year} Liquidation Report'
+    assert filing_data['reportDateAndTimeTitle'] == 'Filed Date and Time:'
+    assert filing_data['liquidationReportDate'] == expected_lr_date_display
+    assert 'recordsOffice' not in filing_data
+    assert 'relationships' not in filing_data
+
+
+def test_format_liquidator_data_no_crash_when_prev_in_liquidation_date_none(session):
+    """Assert _format_liquidator_data does not crash when in_liquidation_date is None on initial intent/appoint."""
+    business = factory_business(identifier='BC1111111', entity_type='BC')
+    business.in_liquidation = False
+    business.in_liquidation_date = None
+    business.save()
+
+    col = copy.deepcopy(CHANGE_OF_LIQUIDATORS)
+    col['type'] = 'intentToLiquidate'
+
+    current_filing_json = _get_col_filing_json(business, col)
+    current_filing = factory_completed_filing(business, current_filing_json, filing_date=datetime(2026, 1, 2))
+    # On first intentToLiquidate, filer adds commencementDate to metadata
+    current_filing._meta_data = {
+        'changeOfLiquidators': {
+            'commencementDate': '2026-01-02'
+        }
+    }
+    current_filing.save()
+
+    report = Report(current_filing)
+    report._business = business
+
+    filing_data = current_filing_json['filing']
+    # Must not raise an exception even though business.in_liquidation_date is None
+    report._format_liquidator_data(filing_data)
+
+    assert filing_data['reportTitle'] == 'Statement of Intent to Liquidate'
+    assert filing_data['commencementDate'] == 'January 2, 2026'
+    assert 'lastLiquidationReportDate' not in filing_data
 
 @pytest.mark.parametrize(
     "agm_location, expected_location",
