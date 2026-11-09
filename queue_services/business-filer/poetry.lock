@@ -314,14 +314,14 @@ pg8000 = ">=1.31.2,<2.0.0"
 pycountry = ">=24.6.1,<25.0.0"
 pydantic = ">=2.10.6,<3.0.0"
 pytz = ">=2026.2,<2027.0"
-registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.90"}
+registry-schemas = {git = "https://github.com/bcgov/business-schemas.git", rev = "2.18.91"}
 sql-versioning = {git = "https://github.com/bcgov/lear.git", rev = "main", subdirectory = "python/common/sql-versioning-alt"}
 
 [package.source]
 type = "git"
-url = "https://github.com/deetz99/lear.git"
-reference = "35429-liquidation-outputs"
-resolved_reference = "0cc02785d7a5e753d9db5fcec9ce16500f1b8330"
+url = "https://github.com/bcgov/lear.git"
+reference = "main"
+resolved_reference = "ce830be8e63a636514655ff0e1be6835f3eaf0a7"
 subdirectory = "python/common/business-registry-model"
 
 [[package]]
@@ -2832,8 +2832,8 @@ strict-rfc3339 = "*"
 [package.source]
 type = "git"
 url = "https://github.com/bcgov/business-schemas.git"
-reference = "2.18.90"
-resolved_reference = "1e9deb90f3c08aee04335f34eb1d932ac25758f1"
+reference = "2.18.91"
+resolved_reference = "3af518fed22db3ab25f1b52ee0661477a131f733"
 
 [[package]]
 name = "requests"
@@ -3796,4 +3796,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.13,<3.14"
-content-hash = "44d7742348ba1f2d29f0a3d8974293bfa05584e23672005943fcfa188a720d3b"
+content-hash = "7c77a3d26ffb074fd0b2b98bae3e29cc4becd17a7a5d7d8effcd54a2544bdfd6"

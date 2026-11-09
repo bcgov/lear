@@ -1,6 +1,6 @@
 [project]
 name = "business-filer"
-version = "3.0.48"
+version = "3.0.49"
 description = "Business Registry Filer Service"
 authors = [
     {name = "thor",email = "1042854+thorwolpert@users.noreply.github.com"}
@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.13,<3.14"
 
 dependencies = [
-    "business-model @ git+https://github.com/deetz99/lear.git@35429-liquidation-outputs#subdirectory=python/common/business-registry-model",
+    "business-model @ git+https://github.com/bcgov/lear.git@main#subdirectory=python/common/business-registry-model",
     "structured-logging @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/structured-logging",
     "gcp-queue @ git+https://github.com/bcgov/sbc-connect-common.git@main#subdirectory=python/gcp-queue",
     "flask (>=3.1.0,<4.0.0)",
