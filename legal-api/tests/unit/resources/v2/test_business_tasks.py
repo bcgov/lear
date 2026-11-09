@@ -734,7 +734,7 @@ def _get_task_business(identifier='CP7654321'):
     ('staff', 'staff', True),
     ('system', 'system', True),
     ('public_user', 'public_user', False),
-    ('null', None, False),
+    ('null', None, None),
 ])
 @pytest.mark.parametrize('status', ['DRAFT', 'PENDING', 'ERROR'])
 def test_get_tasks_filed_by_staff(session, client, jwt, monkeypatch, test_name, submitter_roles, expected, status):

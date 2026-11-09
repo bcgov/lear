@@ -473,6 +473,21 @@ def test_extract_draft_sections_reads_business_fields_from_the_filer_paths(filin
     assert sections.get('business') == expected
 
 
+@pytest.mark.parametrize('filing_type,expected', [
+    ('correction', {'shareClasses': [], 'resolutions': [{'id': 1, 'date': '2024-05-01'}]}),
+    ('transition', {'shareClasses': [], 'resolutions': [{'id': 1, 'date': '2024-05-01'}]}),
+    ('alteration', {'shareClasses': []}),
+])
+def test_extract_draft_sections_reads_resolution_dates_only_for_full_list_types(filing_type, expected):
+    """Assert shareStructure.resolutionDates is a draft section only where the draft holds the full list."""
+    body = {'shareStructure': {'shareClasses': [], 'resolutionDates': [{'id': 1, 'date': '2024-05-01'}]}}
+    draft = SimpleNamespace(filing_type=filing_type, filing_json=_filing_json(filing_type, body))
+
+    sections = DraftRebaseService._extract_draft_sections(draft)
+
+    assert sections == expected
+
+
 def test_stale_error_path_names_payload_keys():
     """Assert stale-id error paths point at the payload key, not the snapshot section name."""
     directors_body = {'directors': [{'officer': {'id': 1}}]}
@@ -872,6 +887,31 @@ def test_report_absorbs_a_staff_added_party_the_draft_never_saw(session):
     assert absorbed['rowId'] == bob.id
     assert absorbed['currentValue']['entity']['identifier'] == bob.id
     assert absorbed['currentValue']['roles'][0]['roleType'] == 'Director'
+
+
+def test_report_absorbs_a_staff_added_resolution_the_draft_never_saw(session):
+    """Assert a resolution added by an intervening filing is absorbed into a correction draft rather than left as a removal."""
+    business = factory_business(IDENTIFIER, entity_type='BC')
+    existing = Resolution(resolution_date=date(2024, 5, 1), resolution_type='SPECIAL', business_id=business.id)
+    existing.save()
+    base_filing = _complete(business)
+    added = Resolution(resolution_date=date(2025, 1, 15), resolution_type='SPECIAL', business_id=business.id)
+    added.save()
+    _complete(business)
+    body = {'shareStructure': {'resolutionDates': [{'id': existing.id, 'date': '2024-05-01', 'type': 'SPECIAL'}]}}
+    draft = _draft(business, 'correction', body, base_filing.transaction_id)
+
+    report = DraftRebaseService.get_changes_report(business, draft)
+
+    assert report['changedSections'] == ['resolutions']
+    assert report['conflicts'] == []
+    assert report['alreadyApplied'] == []
+    assert report['absorbed'] == [{
+        'section': 'resolutions',
+        'entityKey': '2025-01-15 (SPECIAL)',
+        'rowId': added.id,
+        'currentValue': {'id': added.id, 'date': 'January 15, 2025', 'type': 'SPECIAL'},
+    }]
 
 
 def test_report_keeps_a_tagged_delta_when_the_scope_drops_its_only_tagged_row(session):

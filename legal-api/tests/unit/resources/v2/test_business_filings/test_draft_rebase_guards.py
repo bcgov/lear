@@ -135,7 +135,7 @@ def _reload(filing_id):
     ('staff', 'staff', True),
     ('system', 'system', True),
     ('public_user', 'public_user', False),
-    ('legacy_null', None, False),
+    ('legacy_null', None, None),
 ])
 def test_get_draft_filing_filed_by_staff(session, client, jwt, test_name, submitter_roles, expected):
     """Assert that the filing response reports whether staff filed it (common ledger items)."""

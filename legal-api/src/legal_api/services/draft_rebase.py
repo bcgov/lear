@@ -23,9 +23,10 @@ by natural keys only.
 from datetime import date, datetime
 from typing import Final
 
-from business_model.models import Alias, Business, Filing, PartyRole, Resolution, UserRoles, db
+from business_model.models import Alias, Business, Filing, PartyRole, Resolution, db
 from business_model.models.db import Transaction
 from legal_api.core.utils import diff_dict, diff_list
+from legal_api.services.authz import filed_by_staff
 from legal_api.services.business_details_version import VersionedBusinessDetailsService
 
 _ADDRESS_MATCH_FIELDS: Final = ("streetAddress", "streetAddressAdditional", "addressCity", "addressRegion",
@@ -297,11 +298,13 @@ def _resolution_entities(resolutions: list | None) -> dict:
             row = raw_row
             key = f'{_norm_resolution_date(raw_row.get("date"))} ({raw_row.get("type") or "SPECIAL"})'
             actions = _row_actions(raw_row)
+            row_id = _int_or_none(raw_row.get("id"))
         else:  # resolutionDates payloads can be plain date strings
             key = f"{_norm_resolution_date(raw_row)} (SPECIAL)"
             row = {"date": raw_row}
             actions = []
-        entities[key] = {"json": row, "norm": key, "actions": actions}
+            row_id = None
+        entities[key] = {"json": row, "row_id": row_id, "norm": key, "actions": actions}
     return entities
 
 
@@ -321,6 +324,10 @@ _FILING_PARTY_ROLE_SCOPE: Final = {
 
 # sections where a missing entity is untouched, not removed: every rebased filer updates offices per type / id
 _DELTA_SECTIONS: Final = ("business", "offices")
+# filing types whose shareStructure.resolutionDates is the full list (rows carry ids)
+# - alteration drafts hold new dates only, so their list is not a rebaseable section
+# - add alteration after moved to business-ui and the filer uses the correction-style resolution updater
+_RESOLUTION_LIST_FILING_TYPES: Final = ("correction", "transition")
 # office types a filing type edits; out-of-scope offices are neither diffed nor reported
 _FILING_OFFICE_TYPE_SCOPE: Final = {
     "changeOfAddress": {"registeredOffice", "recordsOffice"},
@@ -546,6 +553,8 @@ class DraftRebaseService:
                   "offices": _office_type_scope(draft_filing.filing_type, business.legal_type)}
         # only sections this filing type can edit are absorbed; the rest stay a changedSections hint
         mapped_sections = set(DraftRebaseService.FILING_SECTION_MAP.get(draft_filing.filing_type, {}).values())
+        if draft_filing.filing_type in _RESOLUTION_LIST_FILING_TYPES:
+            mapped_sections.add("resolutions")
         if draft_filing.filing_type in DraftRebaseService.BUSINESS_FIELD_PATHS:
             mapped_sections.add("business")
         for section in SNAPSHOT_SECTIONS:
@@ -727,7 +736,7 @@ class DraftRebaseService:
                                                        filing.filing_type,
                                                        filing.filing_sub_type),
             "effectiveDate": filing.effective_date.isoformat() if filing.effective_date else None,
-            "filedByStaff": filing.submitter_roles in [UserRoles.staff.value, UserRoles.system.value],
+            "filedByStaff": filed_by_staff(filing),
         } for filing in Filing.get_completed_filings_after_transaction(business.id, base_transaction_id)]
 
     @staticmethod
@@ -750,7 +759,8 @@ class DraftRebaseService:
         for draft_key, snapshot_section in section_map.items():
             if (value := filing_body.get(draft_key)) is None:
                 continue
-            if draft_key == "shareStructure" and (value := value.get("shareClasses")) is None:
+            if draft_key == "shareStructure":
+                sections.update(_share_structure_sections(draft_filing.filing_type, value))
                 continue
             sections[snapshot_section] = value
         field_paths = DraftRebaseService.BUSINESS_FIELD_PATHS.get(draft_filing.filing_type, {})
@@ -830,6 +840,17 @@ def _strict_party_row_id(row: dict):
     if entity := row.get("entity"):
         return _int_or_none(entity.get("identifier"))
     return _int_or_none((row.get("officer") or {}).get("id"))
+
+
+def _share_structure_sections(filing_type: str, share_structure: dict) -> dict:
+    """Snapshot sections held in a draft's shareStructure; resolutionDates only where the draft holds the full list."""
+    sections = {}
+    if (share_classes := share_structure.get("shareClasses")) is not None:
+        sections["shareClasses"] = share_classes
+    if filing_type in _RESOLUTION_LIST_FILING_TYPES and \
+            (resolution_dates := share_structure.get("resolutionDates")) is not None:
+        sections["resolutions"] = resolution_dates
+    return sections
 
 
 def _embedded_party_ids(filing_type: str, filing_body: dict) -> set:
