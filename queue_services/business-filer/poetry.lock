@@ -294,7 +294,7 @@ files = [
 
 [[package]]
 name = "business-model"
-version = "3.4.27"
+version = "3.4.29"
 description = ""
 optional = false
 python-versions = ">=3.13,<3.14"
@@ -321,7 +321,7 @@ sql-versioning = {git = "https://github.com/bcgov/lear.git", rev = "main", subdi
 type = "git"
 url = "https://github.com/bcgov/lear.git"
 reference = "main"
-resolved_reference = "2d0830ae62d5620e2f3716a025d444fd35dc5e88"
+resolved_reference = "ce830be8e63a636514655ff0e1be6835f3eaf0a7"
 subdirectory = "python/common/business-registry-model"
 
 [[package]]
@@ -2814,7 +2814,7 @@ rpds-py = ">=0.7.0"
 
 [[package]]
 name = "registry_schemas"
-version = "2.18.89"
+version = "2.18.90"
 description = "A short description of the project"
 optional = false
 python-versions = ">=3.6"

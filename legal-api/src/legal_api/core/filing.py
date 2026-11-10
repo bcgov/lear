@@ -27,7 +27,7 @@ from business_model.models import Business, UserRoles
 from business_model.models import Filing as FilingStorage
 from legal_api.core.meta import FilingMeta
 from legal_api.services import VersionedBusinessDetailsService
-from legal_api.services.authz import has_any_roles, is_competent_authority
+from legal_api.services.authz import filed_by_staff, has_any_roles, is_competent_authority
 from legal_api.utils.util import is_temp_reg_identifier
 
 from .constants import REDACTED_STAFF_SUBMITTER
@@ -456,7 +456,7 @@ class Filing:  # pylint: disable=too-many-public-methods
             "commentsLink": f"{base_url}/{business_identifier}/filings/{filing_storage.id}/comments",
             "documentsLink": f"{base_url}/{business_identifier}/filings/{filing_storage.id}/documents" if
             filing_storage.filing_type not in no_output_filing_types else None,
-            "filedByStaff": filing_storage.submitter_roles in [UserRoles.staff.value, UserRoles.system.value],
+            "filedByStaff": filed_by_staff(filing_storage),
             "filingLink": f"{base_url}/{business_identifier}/filings/{filing_storage.id}",
             "isFutureEffective": filing.is_future_effective,
             "withdrawalPending": filing_storage.withdrawal_pending
@@ -516,7 +516,6 @@ class Filing:  # pylint: disable=too-many-public-methods
     def _has_no_outputs_except_receipt(filing) -> bool:
         receipt_only_filings = [Filing.FilingTypes.CHANGEOFRECEIVERS.value, Filing.FilingTypes.REVIEWIMPORTEDDATA.value]
         receipt_only_sub_filings = [
-            (Filing.FilingTypes.CHANGEOFLIQUIDATORS.value, "liquidationReport"),
             (Filing.FilingTypes.DISSOLUTION.value, "delay")
         ]
 

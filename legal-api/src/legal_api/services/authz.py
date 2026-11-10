@@ -25,7 +25,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from business_common.utils.legislation_datetime import LegislationDatetime
-from business_model.models import Business, Filing
+from business_model.models import Business, Filing, UserRoles
 from flask_jwt_oidc import JwtManager
 from legal_api.services import flags
 from legal_api.services.cache import cache
@@ -990,6 +990,13 @@ def staff_draft_bypass_flag_value() -> list:
                                       request_context.user,
                                       request_context.account_id)
     return bypass_filing_types if isinstance(bypass_filing_types, list) else []
+
+
+def filed_by_staff(filing: Filing) -> bool | None:
+    """Return the filing's submitter side: True staff/system, False public user, None when never recorded."""
+    if filing.submitter_roles is None:
+        return None
+    return filing.submitter_roles in [UserRoles.staff.value, UserRoles.system.value]
 
 
 def is_draft_rebase_scoped_filing(filing_type: str, filing_sub_type: str | None = None) -> bool:

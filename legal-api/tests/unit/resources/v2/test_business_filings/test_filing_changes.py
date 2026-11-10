@@ -149,7 +149,7 @@ def test_changes_up_to_date_when_no_completed_filings(session, client, jwt):
     assert rv.status_code == HTTPStatus.OK
     assert rv.json['upToDate'] is True
     assert rv.json['currentTransactionId'] is None
-    for key in ('interveningFilings', 'changedSections', 'draftSections', 'conflicts', 'alreadyApplied'):
+    for key in ('interveningFilings', 'changedSections', 'draftSections', 'conflicts', 'alreadyApplied', 'absorbed'):
         assert rv.json[key] == []
 
 
@@ -229,6 +229,8 @@ def test_changes_accumulates_multiple_intervening_filings(session, client, jwt):
     person.delivery_address.save()
     _add_director(business, first='Bob', last='Lee', city='Burnaby')
     second_filing = factory_completed_filing(business, ANNUAL_REPORT)
+    second_filing.submitter_roles = 'public_user'
+    second_filing.save()
 
     rv = _get_changes(client, jwt, draft)
 

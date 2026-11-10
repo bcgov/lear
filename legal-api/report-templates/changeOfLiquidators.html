@@ -41,10 +41,14 @@
          [[liquidation/meta.html]]
          <div class="container gap-y">
             <div class="separator"></div>
-            [[liquidation/recordsOffice.html]]
-            <div class="separator"></div>
-            [[liquidation/liquidators.html]]
-            <div class="separator"></div>
+            {% if subType == 'liquidationReport' %}
+              [[liquidation/legalObligations.html]]
+            {% else %}
+               [[liquidation/recordsOffice.html]]
+               <div class="separator"></div>
+               [[liquidation/liquidators.html]]
+               <div class="separator"></div>
+            {% endif %}
          </div>
       </div>
    </body>
