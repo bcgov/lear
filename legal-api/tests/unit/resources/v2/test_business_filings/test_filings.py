@@ -19,7 +19,7 @@ Test-Suite to ensure that the /businesses endpoint is working as expected.
 import copy
 import json
 import random
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta, timezone
 from http import HTTPStatus
 from typing import Final
 from unittest.mock import patch
