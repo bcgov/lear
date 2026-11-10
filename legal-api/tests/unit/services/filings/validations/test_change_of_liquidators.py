@@ -18,6 +18,7 @@ from http import HTTPStatus
 import pytest
 
 from business_common.utils.legislation_datetime import LegislationDatetime
+from business_model.models import Party, PartyRole
 from legal_api.services.filings import validate
 from tests.unit.services.filings.validations import lists_are_equal
 from tests.unit.models import factory_business
@@ -224,6 +225,92 @@ def test_validate_col_offices(
     err = validate(business, f)
 
     if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, expected_msg)
+    else:
+        assert err is None
+
+
+@pytest.mark.parametrize(
+    'test_name, sub_type, in_liquidation, pop_offices, expected_code, expected_msg',
+    [
+        (
+            'Missing offices for appointLiquidator when not in liquidation',
+            'appointLiquidator',
+            False,
+            True,
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    'error': "Missing required offices ['liquidationRecordsOffice'].",
+                    'path': '/filing/changeOfLiquidators/offices'
+                }
+            ]
+        ),
+        (
+            'Valid appointLiquidator without offices when already in liquidation',
+            'appointLiquidator',
+            True,
+            True,
+            None,
+            None
+        ),
+        (
+            'Invalid office on ceaseLiquidator (offices not allowed)',
+            'ceaseLiquidator',
+            True,
+            False,
+            HTTPStatus.BAD_REQUEST,
+            [
+                {
+                    'error': "Invalid office liquidationRecordsOffice. Only [] are allowed.",
+                    'path': '/filing/changeOfLiquidators/offices'
+                }
+            ]
+        ),
+    ]
+)
+def test_validate_col_required_offices(
+    session, test_name, sub_type, in_liquidation, pop_offices, expected_code, expected_msg
+):
+    """Assert offices are required for appointLiquidator when not in liquidation."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier)
+    business.in_liquidation = in_liquidation
+
+    f = copy.deepcopy(FILING_HEADER)
+    f['filing']['header']['date'] = date.today().isoformat()
+    f['filing']['header']['name'] = 'changeOfLiquidators'
+    f['filing']['business']['identifier'] = identifier
+
+    col = copy.deepcopy(CHANGE_OF_LIQUIDATORS)
+    col['type'] = sub_type
+    if pop_offices:
+        col.pop('offices', None)
+
+    if sub_type == 'ceaseLiquidator':
+        party = Party(
+            party_type=Party.PartyTypes.PERSON.value,
+            first_name='TEST',
+            last_name='LIQUIDATOR'
+        )
+        party.save()
+        party_role = PartyRole(
+            role=PartyRole.RoleTypes.LIQUIDATOR.value,
+            appointment_date=date.today(),
+            business_id=business.id,
+            party_id=party.id
+        )
+        party_role.save()
+        col['relationships'] = [col['relationships'][0]]
+        col['relationships'][0]['entity']['identifier'] = str(party.id)
+
+    f['filing']['changeOfLiquidators'] = col
+
+    err = validate(business, f)
+
+    if expected_code:
+        assert err is not None
         assert err.code == expected_code
         assert lists_are_equal(err.msg, expected_msg)
     else:
