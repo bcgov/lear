@@ -103,8 +103,14 @@ def _process_appointment_or_intent(
 ):
     """Process intentToLiquidate or appointLiquidator sub-types."""
     col_data = filing_json["filing"]["changeOfLiquidators"]
-    relationships = col_data.get("relationships", [])
+    raw_relationships = col_data.get("relationships", [])
     offices = col_data.get("offices", {})
+
+    # appointLiquidator and intentToLiquidate only set appointment_date; ignore any submitted cessationDate
+    relationships = copy.deepcopy(raw_relationships)
+    for rel in relationships:
+        for role in rel.get("roles", []):
+            role.pop("cessationDate", None)
 
     create_relationships(relationships, business, filing_rec)
     update_or_create_offices(business, offices)
@@ -123,7 +129,19 @@ def _process_appointment_or_intent(
 
 def _process_cease(business: Business, filing_meta: FilingMeta, relationships: list):
     """Process ceaseLiquidator sub-type."""
-    cease_relationships(relationships, business, [PartyRole.RoleTypes.LIQUIDATOR.value], filing_meta.application_date)
+    # ceaseLiquidator only sets cessation_date; ignore any submitted appointmentDate
+    cease_rels = copy.deepcopy(relationships)
+    for rel in cease_rels:
+        for role in rel.get("roles", []):
+            role.pop("appointmentDate", None)
+
+    cease_relationships(
+        cease_rels,
+        business,
+        [PartyRole.RoleTypes.LIQUIDATOR.value],
+        filing_meta.application_date,
+        allow_submitted_dates=True,
+    )
     if last_lr_date := _get_last_liquidation_report_date(business.id):
         filing_meta.change_of_liquidators = {"lastLiquidationReportDate": last_lr_date}
 

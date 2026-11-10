@@ -267,8 +267,54 @@ def test_correct_corp_data_relationships_update_appointment_date(app, session, b
 
     # Director appointment date is updated
     assert PartyRole.find_by_internal_id(dir_role.id).appointment_date == new_appt
-    # Receiver appointment date is NOT updated (only DIRECTOR allowed)
+    # Receiver appointment date is NOT updated (only DIRECTOR and LIQUIDATOR allowed)
     assert PartyRole.find_by_internal_id(rec_role.id).appointment_date == original_appt
+
+
+def test_correct_corp_data_relationships_update_liquidator_dates(app, session, business, filing_rec):
+    """Test updating appointment and cessation dates on an existing liquidator role via correction."""
+    filing_meta = _create_filing_meta()
+
+    original_appt = datetime(2020, 1, 1, tzinfo=timezone.utc)
+    original_cease = datetime(2022, 1, 1, tzinfo=timezone.utc)
+    new_appt = datetime(2019, 5, 10, tzinfo=timezone.utc)
+    new_cease = datetime(2022, 8, 15, tzinfo=timezone.utc)
+
+    liq_party = Party(first_name='LIQ', last_name='CORRECTED')
+    liq_party.save()
+    liq_role = PartyRole(
+        role=PartyRole.RoleTypes.LIQUIDATOR.value,
+        party_id=liq_party.id,
+        business_id=business.id,
+        appointment_date=original_appt,
+        cessation_date=original_cease,
+    )
+    liq_role.save()
+    session.commit()
+
+    correction_filing = {
+        'correction': {
+            'relationships': [
+                {
+                    'entity': {'identifier': str(liq_party.id)},
+                    'roles': [
+                        {
+                            'roleType': 'Liquidator',
+                            'appointmentDate': new_appt,
+                            'cessationDate': new_cease,
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+
+    correct_corp_data(business, filing_rec, correction_filing, filing_meta)
+    session.commit()
+
+    updated = PartyRole.find_by_internal_id(liq_role.id)
+    assert updated.appointment_date == new_appt
+    assert updated.cessation_date == new_cease
 
 
 def test_correct_corp_data_relationships_update_cessation_date(app, session, business, filing_rec):

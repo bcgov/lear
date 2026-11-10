@@ -211,6 +211,10 @@ def test_process_col_filing(app, session, mocker):
     assert len(party_roles) == 2
     for role in party_roles:
         assert role.appointment_date
+        if role.party.first_name == 'PHILLIP TANDY':
+            assert role.appointment_date.date().isoformat() == '2018-01-01'
+        else:
+            assert role.appointment_date == intent_filing.effective_date
         assert not role.cessation_date
         assert role.role == PartyRole.RoleTypes.LIQUIDATOR.value
     
@@ -231,7 +235,6 @@ def test_process_col_filing(app, session, mocker):
                 'roles': [
                     {
                         'roleType': 'Liquidator',
-                        # NOTE: will be overriden by filing effective date
                         'cessationDate': '2025-03-04'
                     }
                 ]
@@ -264,7 +267,7 @@ def test_process_col_filing(app, session, mocker):
 
     for role in party_roles:
         if role.party_id == party_id_1:
-            assert role.cessation_date == cease_filing.effective_date
+            assert role.cessation_date.date().isoformat() == '2025-03-04'
         else:
             assert role.party_id == party_id_2
             assert role.cessation_date is None

@@ -71,6 +71,11 @@ ALLOWED_ROLE_META_PROPERTIES = {
     PartyRole.RoleTypes.LIQUIDATOR.value: {"appointmentMethod", "courtOrderNumber"},
 }
 
+# Roles that support rendering submitted appointment/cessation dates
+ROLES_SUPPORTING_SUBMITTED_DATES = {
+    PartyRole.RoleTypes.LIQUIDATOR.value,
+}
+
 
 def _extract_role_meta(role: str, role_info: dict) -> dict | None:
     """Extract and filter meta properties allowed for the role."""
@@ -127,10 +132,14 @@ def _create_role(party: Party,
                  role_class: PartyClassType | None) -> PartyRole:
     """Create a new party role and link to party."""
     role = RELATIONSHIP_ROLE_CONVERTER.get((role_info.get("roleType") or "").lower(), "")
+    if role in ROLES_SUPPORTING_SUBMITTED_DATES and role_info.get("appointmentDate"):
+        appointment_date = role_info.get("appointmentDate")
+    else:
+        appointment_date = default_appointment or role_info.get("appointmentDate")
+
     party_role = PartyRole(
         role=role,
-        # FUTURE: use appointmentDate instead of default when given (api validation needs to be updated first for officers, receivers, liquidators)
-        appointment_date=default_appointment or role_info.get("appointmentDate"),
+        appointment_date=appointment_date,
         cessation_date=role_info.get("cessationDate"),
         party=party,
         meta=_extract_role_meta(role, role_info)
@@ -214,18 +223,22 @@ def cease_relationships(
     relationships: list[dict],
     business: Business,
     allowed_roles: list[str],
-    date_time: datetime.datetime | None = None):
+    date_time: datetime.datetime | None = None,
+    allow_submitted_dates: bool = False):
     """Cease the party role types for the given parties for a business.
     
     Assumption: The structure has already been validated, upon submission.
     """
-    date_time = date_time or datetime.datetime.now(datetime.UTC)
+    default_cessation = date_time or datetime.datetime.now(datetime.UTC)
 
-    def has_ceased_role(roles: list[dict], role: str):
-        return any(
-            ceased_role for ceased_role in roles
-            if RELATIONSHIP_ROLE_CONVERTER.get(ceased_role.get("roleType", "").lower(), "") == role and
-            ceased_role.get("cessationDate")
+    def get_ceased_role_info(roles: list[dict], role: str):
+        return next(
+            (
+                ceased_role for ceased_role in roles
+                if RELATIONSHIP_ROLE_CONVERTER.get(ceased_role.get("roleType", "").lower(), "") == role and
+                ceased_role.get("cessationDate")
+            ),
+            None
         )
     
     existing_relationships = [
@@ -239,10 +252,17 @@ def cease_relationships(
 
         for party_role in party_roles:
             if (party_role.role in allowed_roles
-                and has_ceased_role(relationship.get("roles", []), party_role.role)
+                and (ceased_info := get_ceased_role_info(relationship.get("roles", []), party_role.role))
                 and not party_role.cessation_date
             ):
-                party_role.cessation_date = date_time
+                if (
+                    allow_submitted_dates
+                    and party_role.role in ROLES_SUPPORTING_SUBMITTED_DATES
+                    and ceased_info.get("cessationDate")
+                ):
+                    party_role.cessation_date = ceased_info.get("cessationDate")
+                else:
+                    party_role.cessation_date = default_cessation
 
 
 def update_relationships_appointment_date(
