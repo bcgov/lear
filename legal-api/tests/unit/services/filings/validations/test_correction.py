@@ -13,7 +13,7 @@
 # limitations under the License.
 """Test Correction validations."""
 import copy
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from http import HTTPStatus
 
 import datedelta
@@ -817,3 +817,45 @@ def test_legal_name_correction_existing_db_name_lacks_designation(session, app, 
         e['error'] == 'Legal name edits are disabled: existing designation could not be verified.'
         for e in err.msg
     )
+
+
+def test_correction_liquidator_dates_validation(session, app, jwt):
+    """Test validation of appointmentDate and cessationDate for liquidators in correction relationships."""
+    identifier = 'BC1234567'
+    business = factory_business(identifier, entity_type='BC')
+    business.founding_date = datetime(2020, 1, 1, tzinfo=timezone.utc)
+    business.save()
+    factory_business_mailing_address(business)
+
+    filing_template = copy.deepcopy(FILING_TEMPLATE)
+    filing_template['filing']['header']['name'] = 'changeOfLiquidators'
+    filing_template['filing']['changeOfLiquidators'] = CHANGE_OF_LIQUIDATORS
+    corrected_filing = factory_completed_filing(business, filing_template)
+
+    # 1. Missing appointmentDate when cessationDate is present
+    f = copy.deepcopy(CORRECTION_COL)
+    f['filing']['header']['identifier'] = identifier
+    f['filing']['correction']['correctedFilingId'] = corrected_filing.id
+    f['filing']['correction']['type'] = 'STAFF'
+    f['filing']['correction'].pop('nameRequest', None)
+    role = f['filing']['correction']['relationships'][0]['roles'][0]
+    role['cessationDate'] = '2023-01-01'
+    role.pop('appointmentDate', None)
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        err = validate(business, f)
+    assert err is not None
+    assert any(e['error'] == 'Appointment date is required when cessation date is present.' for e in err.msg)
+
+    # 2. Appointment date after cessation date
+    role['appointmentDate'] = '2024-01-01'
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        err = validate(business, f)
+    assert err is not None
+    assert any(e['error'] == 'Appointment date cannot be after cessation date.' for e in err.msg)
+
+    # 3. Valid appointment date and cessation date
+    role['appointmentDate'] = '2022-01-01'
+    with jwt_request_context(app, jwt, [STAFF_ROLE]):
+        err = validate(business, f)
+    assert err is None

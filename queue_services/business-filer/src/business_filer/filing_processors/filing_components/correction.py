@@ -360,8 +360,16 @@ def correct_corp_data(business: Business,
                             ],
                             filing_meta.application_date)
 
-        update_relationships_appointment_date(relationships, business, [PartyRole.RoleTypes.DIRECTOR.value])
-        update_relationships_cessation_date(relationships, business, [PartyRole.RoleTypes.DIRECTOR.value])
+        update_relationships_appointment_date(
+            relationships,
+            business,
+            [PartyRole.RoleTypes.DIRECTOR.value, PartyRole.RoleTypes.LIQUIDATOR.value],
+        )
+        update_relationships_cessation_date(
+            relationships,
+            business,
+            [PartyRole.RoleTypes.DIRECTOR.value, PartyRole.RoleTypes.LIQUIDATOR.value],
+        )
         update_relationships_meta(relationships, business, [PartyRole.RoleTypes.LIQUIDATOR.value])
         update_relationship_addresses(relationships, business)
         update_relationship_entity_info(relationships, business)

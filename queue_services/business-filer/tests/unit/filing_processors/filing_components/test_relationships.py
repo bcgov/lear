@@ -214,6 +214,38 @@ def test_create_role_dates_and_class_type(app, session):
     assert party_role.party_class_type == PartyClassType.OFFICER
 
 
+def test_create_role_liquidator_submitted_date(app, session):
+    """Test that Liquidator uses submitted appointmentDate instead of default."""
+    party = Party(first_name='LIQ', last_name='USER')
+    party.save()
+
+    default_dt = datetime(2025, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+    role_info = {
+        'roleType': 'Liquidator',
+        'appointmentDate': '2020-06-15'
+    }
+    party_role = _create_role(party, role_info, default_appointment=default_dt, role_class=None)
+
+    assert party_role.role == PartyRole.RoleTypes.LIQUIDATOR.value
+    assert party_role.appointment_date == '2020-06-15'
+
+
+def test_create_role_director_default_date_retained(app, session):
+    """Test that non-configured roles (e.g., Director) still use default_appointment even if date is submitted."""
+    party = Party(first_name='DIR', last_name='USER')
+    party.save()
+
+    default_dt = datetime(2025, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+    role_info = {
+        'roleType': 'Director',
+        'appointmentDate': '2020-06-15'
+    }
+    party_role = _create_role(party, role_info, default_appointment=default_dt, role_class=None)
+
+    assert party_role.role == PartyRole.RoleTypes.DIRECTOR.value
+    assert party_role.appointment_date == default_dt
+
+
 def test_create_relationships_empty_and_none(app, session, business, filing):
     """Test create_relationships with None and empty list returns empty errors."""
     assert create_relationships(None, business, filing) == []
@@ -547,6 +579,42 @@ def test_cease_relationships_default_date_time(app, session, business):
     updated_role = PartyRole.find_by_internal_id(role.id)
     assert updated_role.cessation_date is not None
     assert before <= updated_role.cessation_date <= after
+
+
+def test_cease_relationships_liquidator_submitted_date(app, session, business):
+    """Test that Liquidator uses submitted cessationDate instead of default date_time."""
+    party = Party(first_name='LIQ', last_name='CEASED')
+    party.save()
+    role = PartyRole(
+        role=PartyRole.RoleTypes.LIQUIDATOR.value,
+        party_id=party.id,
+        business_id=business.id,
+        appointment_date=datetime(2020, 1, 1, tzinfo=timezone.utc),
+        cessation_date=None
+    )
+    role.save()
+    session.commit()
+
+    submitted_date_str = '2023-05-15'
+    relationships = [
+        {
+            'entity': {'identifier': str(party.id)},
+            'roles': [{'roleType': 'Liquidator', 'cessationDate': submitted_date_str}]
+        }
+    ]
+
+    default_cease_dt = datetime(2025, 1, 1, tzinfo=timezone.utc)
+    cease_relationships(
+        relationships=relationships,
+        business=business,
+        allowed_roles=[PartyRole.RoleTypes.LIQUIDATOR.value],
+        date_time=default_cease_dt,
+        allow_submitted_dates=True,
+    )
+    session.commit()
+
+    updated_role = PartyRole.find_by_internal_id(role.id)
+    assert updated_role.cessation_date.date().isoformat() == submitted_date_str
 
 
 def test_cease_relationships_not_in_allowed_roles(app, session, business):
