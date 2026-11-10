@@ -74,6 +74,33 @@ def validate(business: Business, filing_json: dict) -> Error | None:
     return None
 
 
+def _check_role_dates(
+    business: Business,
+    rel: dict,
+    role: dict,
+    role_path: str,
+    filing_sub_type: str | None,
+) -> list:
+    """Validate required dates for a single liquidator role."""
+    msg = []
+    if filing_sub_type in ["appointLiquidator", "intentToLiquidate"]:
+        if not role.get("appointmentDate"):
+            msg.append({
+                "error": _("Appointment date is required for this filing."),
+                "path": f"{role_path}/appointmentDate",
+            })
+    elif filing_sub_type == "ceaseLiquidator":
+        cessation_str = role.get("cessationDate")
+        if not cessation_str:
+            msg.append({
+                "error": _("Cessation date is required for this filing."),
+                "path": f"{role_path}/cessationDate",
+            })
+        elif entity_id := rel.get("entity", {}).get("identifier"):
+            msg.extend(_validate_cease_not_before_appointment(business, entity_id, cessation_str, role_path))
+    return msg
+
+
 def _check_required_liquidator_dates(
     business: Business,
     relationships: list[dict],
@@ -87,21 +114,7 @@ def _check_required_liquidator_dates(
         roles = rel.get("roles", [])
         for role_idx, role in enumerate(roles):
             role_path = f"{base_path}/{rel_idx}/roles/{role_idx}"
-            if filing_sub_type in ["appointLiquidator", "intentToLiquidate"]:
-                if not role.get("appointmentDate"):
-                    msg.append({
-                        "error": _("Appointment date is required for this filing."),
-                        "path": f"{role_path}/appointmentDate",
-                    })
-            elif filing_sub_type == "ceaseLiquidator":
-                cessation_str = role.get("cessationDate")
-                if not cessation_str:
-                    msg.append({
-                        "error": _("Cessation date is required for this filing."),
-                        "path": f"{role_path}/cessationDate",
-                    })
-                elif entity_id := rel.get("entity", {}).get("identifier"):
-                    msg.extend(_validate_cease_not_before_appointment(business, entity_id, cessation_str, role_path))
+            msg.extend(_check_role_dates(business, rel, role, role_path, filing_sub_type))
     return msg
 
 
