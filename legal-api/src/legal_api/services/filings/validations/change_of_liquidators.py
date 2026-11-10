@@ -118,31 +118,6 @@ def _check_required_liquidator_dates(
     return msg
 
 
-def _sanitize_relationships_for_validation(
-    raw_relationships: list[dict],
-    filing_sub_type: str | None,
-) -> list[dict]:
-    """Sanitize relationship roles by stripping dates irrelevant to the filing sub-type."""
-    sanitized_relationships = []
-    for rel in raw_relationships:
-        sanitized_rel = {**rel}
-        if "roles" in rel:
-            sanitized_roles = []
-            for role in rel["roles"]:
-                cleaned_role = {**role}
-                if filing_sub_type in ["appointLiquidator", "intentToLiquidate"]:
-                    cleaned_role.pop("cessationDate", None)
-                elif filing_sub_type == "ceaseLiquidator":
-                    cleaned_role.pop("appointmentDate", None)
-                elif filing_sub_type == "changeAddressLiquidator":
-                    cleaned_role.pop("appointmentDate", None)
-                    cleaned_role.pop("cessationDate", None)
-                sanitized_roles.append(cleaned_role)
-            sanitized_rel["roles"] = sanitized_roles
-        sanitized_relationships.append(sanitized_rel)
-    return sanitized_relationships
-
-
 def _validate_liquidator_relationships(
     business: Business,
     filing_json: dict,
@@ -157,21 +132,9 @@ def _validate_liquidator_relationships(
 
     msg = _check_required_liquidator_dates(business, raw_relationships, filing_type, filing_sub_type)
 
-    sanitized_relationships = _sanitize_relationships_for_validation(raw_relationships, filing_sub_type)
-    sanitized_filing = {
-        **filing_json,
-        "filing": {
-            **filing_json["filing"],
-            filing_type: {
-                **filing_json["filing"][filing_type],
-                "relationships": sanitized_relationships,
-            },
-        },
-    }
-
     msg.extend(validate_relationships(
         business,
-        sanitized_filing,
+        filing_json,
         filing_type,
         [PartyRole.RoleTypes.LIQUIDATOR],
         allow_new,
