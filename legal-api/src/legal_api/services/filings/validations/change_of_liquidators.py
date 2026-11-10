@@ -56,18 +56,19 @@ def validate(business: Business, filing_json: dict) -> Error | None:
     if filing_data.get("relationships"):
         msg.extend(_validate_liquidator_relationships(business, filing_json, filing_type, filing_sub_type))
 
-    if filing_data.get("offices"):
-        allowed_offices = []
-        required_offices = []
-        if filing_sub_type in ["intentToLiquidate", "changeAddressLiquidator"]:
-            allowed_offices = ["liquidationRecordsOffice"]
-            if filing_sub_type == "intentToLiquidate":
-                required_offices = ["liquidationRecordsOffice"]
-        elif filing_sub_type == "appointLiquidator" and not business.in_liquidation:
-            allowed_offices = ["liquidationRecordsOffice"]
-            required_offices = ["liquidationRecordsOffice"]
-
-        msg.extend(validate_offices(filing_json, filing_type, allowed_offices, required_offices, True))
+    offices = filing_data.get("offices")
+    if filing_sub_type == "appointLiquidator" and not business.in_liquidation and not offices:
+        msg.append({
+            "error": _("Missing required offices ['liquidationRecordsOffice']."),
+            "path": f"/filing/{filing_type}/offices"
+        })
+    elif offices:
+        allowed = (
+            ["liquidationRecordsOffice"]
+            if filing_sub_type in ["intentToLiquidate", "appointLiquidator", "changeAddressLiquidator"]
+            else []
+        )
+        msg.extend(validate_offices(filing_json, filing_type, allowed, allowed, True))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
