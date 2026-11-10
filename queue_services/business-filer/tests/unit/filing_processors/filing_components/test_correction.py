@@ -204,8 +204,9 @@ def test_correct_corp_data_relationships_cease_roles(app, session, business, fil
     correct_corp_data(business, filing_rec, correction_filing, filing_meta)
     session.commit()
 
-    # Liquidator and receiver are ceased with application_date (not updated by update_relationships_cessation_date)
-    assert PartyRole.find_by_internal_id(liq_role.id).cessation_date == app_date
+    # Liquidator cessation date is updated/corrected to payload's cessationDate via update_relationships_cessation_date
+    assert PartyRole.find_by_internal_id(liq_role.id).cessation_date.date().isoformat() == '2023-07-15'
+    # Receiver is ceased with application_date (not in update_relationships_cessation_date allowed_roles)
     assert PartyRole.find_by_internal_id(rec_role.id).cessation_date == app_date
 
     # Director cessation date is updated/corrected to the payload's cessationDate
