@@ -1027,17 +1027,18 @@ def validate_relationship_roles(relationship: dict,  # noqa: PLR0913
                                               min_date,
                                               min_date_reason))
 
-        msg.extend(_validate_director_dates(appointment_date,
-                                              cessation_date,
-                                              f"{path}/roles/{index}",
-                                              role))
+        msg.extend(_validate_role_dates(appointment_date,
+                                         cessation_date,
+                                         f"{path}/roles/{index}",
+                                         role))
         msg.extend(_validate_relationship_role_meta(role, f"{path}/roles/{index}"))
     return msg
 
-def _validate_director_dates(appointment_date: date, cessation_date: date, path: str, role: dict) -> list:
-    """Validate director dates."""
+def _validate_role_dates(appointment_date: date, cessation_date: date, path: str, role: dict) -> list:
+    """Validate role appointment and cessation dates."""
     msg = []
-    if role.get("roleType").lower() != PartyRole.RoleTypes.DIRECTOR.value:
+    role_type = (role.get("roleType") or "").lower()
+    if role_type not in (PartyRole.RoleTypes.DIRECTOR.value, PartyRole.RoleTypes.LIQUIDATOR.value):
         return msg
 
     date_path = f"{path}/appointmentDate"
@@ -1046,14 +1047,14 @@ def _validate_director_dates(appointment_date: date, cessation_date: date, path:
             "error": _("Appointment date is required when cessation date is present."),
             "path": date_path
         })
-    else:
-        msg.extend(_compare_director_dates(appointment_date, cessation_date, date_path))
+    elif appointment_date and cessation_date:
+        msg.extend(_compare_role_dates(appointment_date, cessation_date, date_path))
 
     return msg
 
 
-def _compare_director_dates(appointment_date: date, cessation_date: date, path: str) -> list:
-    """Validate director dates."""
+def _compare_role_dates(appointment_date: date, cessation_date: date, path: str) -> list:
+    """Validate appointment and cessation dates."""
     msg = []
     if appointment_date and cessation_date and appointment_date > cessation_date:
         msg.append({
