@@ -8,7 +8,7 @@ import sys
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from datetime import datetime
-from config import get_named_config
+from config import get_named_config, get_colin_mig_engine
 from checks.utils import colin_oracle_init, get_fallout_corp_nums, get_cutoff_timestamp_query, unfreeze_identifiers, get_identifiers_per_batch, corpnum_to_oracle_ids, get_updated_identifiers_for_batch
 
 
@@ -44,7 +44,8 @@ def get_fallen_identifiers(updated_corp_nums: list) -> list[dict]:
         return []
     cfg = get_named_config()
     corp_nums_prune_list_query = get_fallout_corp_nums('SAF', updated_corp_nums, target_schema=cfg.TARGET_SCHEMA)
-    with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).connect() as conn:
+    engine = get_colin_mig_engine(cfg)
+    with engine.connect() as conn:
         result = conn.execute(text(corp_nums_prune_list_query)).scalars().all()
         rows = [str(row).strip() for row in result]
     return rows
@@ -53,7 +54,8 @@ def get_cuttoff_timestamp() -> datetime:
 
     cfg = get_named_config()
     cuttoff_timestamp = get_cutoff_timestamp_query(cfg.TARGET_SCHEMA)
-    with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).begin() as conn:
+    engine = get_colin_mig_engine(cfg)
+    with engine.begin() as conn:
         cuttoff_timestamp_result = conn.execute(text(cuttoff_timestamp)).scalar()
     print(f"cuttoff timestamp is {cuttoff_timestamp_result}")
     return cuttoff_timestamp_result
@@ -61,7 +63,8 @@ def get_cuttoff_timestamp() -> datetime:
 
 def run_unfreeze_identifiers() -> None:
     cfg = get_named_config()
-    with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).begin() as conn:
+    engine = get_colin_mig_engine(cfg)
+    with engine.begin() as conn:
         result = conn.execute(text(unfreeze_identifiers(target_schema=cfg.TARGET_SCHEMA)))
     print(f'Unfroze corporation rows={result.rowcount}')
 
@@ -73,7 +76,8 @@ def get_updated_identifiers_colin(cutoff_timestamp: str, mig_batch_id: int, coli
     corp_list = ''
     if scope == 'batch':
         mig_sql = get_identifiers_per_batch(mig_batch_id, target_schema=cfg.TARGET_SCHEMA)
-        with create_engine(cfg.SQLALCHEMY_DATABASE_URI_COLIN_MIGR).connect() as conn:
+        engine = get_colin_mig_engine(cfg)
+        with engine.connect() as conn:
             row = conn.execute(text(mig_sql)).fetchone()
     
         corp_list = corpnum_to_oracle_ids(row[0]) if row else None    
