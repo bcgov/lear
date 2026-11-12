@@ -48,7 +48,7 @@ from registry_schemas.example_data import INCORPORATION_FILING_TEMPLATE
 from business_filer.filing_meta import FilingMeta
 from business_filer.filing_processors import incorporation_filing
 from business_filer.filing_processors.filing_components import business_info
-from tests.unit import create_filing
+from tests.unit import create_business, create_filing
 # from tests.utils import assert_pdf_contains_text, upload_file
 
 
@@ -293,3 +293,23 @@ def test_incorporation_filing_bc_company_from_colin(app, session, legal_type, le
     assert len(business.offices.all()) == 2  # One office is created in create_business method.
     assert len(business.share_classes.all()) == 2
     assert len(business.party_roles.all()) == 1
+
+
+@pytest.mark.parametrize('responses,expected', [
+    ([1234567, 1234568], 'BC1234568'),
+    ([1234567] * business_info.MAX_CORP_NUM_ATTEMPTS, None),
+])
+def test_get_next_corp_num_skips_used_identifier(requests_mock, mocker, app, session, responses, expected):
+    """Assert that a corp num already used by a business is skipped."""
+    from flask import current_app
+    mocker.patch('business_filer.filing_processors.filing_components.business_info.AccountService.get_bearer_token',
+                 return_value='token')
+    create_business('BC1234567', 'BC', 'Existing Business')
+    colin_api = current_app.config.get('COLIN_API', 'http://test.test')
+    mock_colin = requests_mock.post(f'{colin_api}/businesses/BC',
+                                    [{'json': {'corpNum': str(num)}} for num in responses])
+
+    corp_num = business_info.get_next_corp_num('BC')
+
+    assert corp_num == expected
+    assert mock_colin.call_count == len(responses)
