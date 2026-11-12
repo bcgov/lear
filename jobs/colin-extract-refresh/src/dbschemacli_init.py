@@ -2,15 +2,15 @@ from pathlib import Path
 import subprocess
 from config import _Config
  
-def get_cloudsql_login_token(service_account_email: str) -> str:
-    """Generate a short-lived access token for Cloud SQL IAM authentication."""
-    result = subprocess.run(
-        ['gcloud', 'sql', 'generate-login-token'],
-        capture_output=True,
-        text=True,
-        check=True
-    )
-    return result.stdout.strip()
+# def get_cloudsql_login_token(service_account_email: str) -> str:
+#     """Generate a short-lived access token for Cloud SQL IAM authentication."""
+#     result = subprocess.run(
+#         ['gcloud', 'sql', 'generate-login-token'],
+#         capture_output=True,
+#         text=True,
+#         check=True
+#     )
+#     return result.stdout.strip()
  
 def write_dbschema_init(cfg: _Config) -> Path:
     init_dir = Path.home() / '.DbSchema' / 'cli'
@@ -22,10 +22,10 @@ def write_dbschema_init(cfg: _Config) -> Path:
     name = cfg.DB_NAME_COLIN_MIGR
     
     # Generate IAM login token for password-less auth
-    try:
-        password = get_cloudsql_login_token(user)
-    except subprocess.CalledProcessError as e:
-        raise RuntimeError(f'Failed to generate Cloud SQL login token: {e.stderr}') from e
+    # try:
+    #     password = get_cloudsql_login_token(user)
+    # except subprocess.CalledProcessError as e:
+    #     raise RuntimeError(f'Failed to generate Cloud SQL login token: {e.stderr}') from e
  
     ora_user = cfg.DB_USER_COLIN_ORACLE
     ora_password = cfg.DB_PASSWORD_COLIN_ORACLE
@@ -36,7 +36,7 @@ def write_dbschema_init(cfg: _Config) -> Path:
     lines = [
         'register driver PostgreSql org.postgresql.Driver jdbc:postgresql://<host>:<port>/<db>?reWriteBatchedInserts=true "port=5432"',
         'register driver Oracle oracle.jdbc.OracleDriver jdbc:oracle:thin:@<host>:<port>:<db> "port=1521"',
-        f'connection my_proxy_test -d PostgreSql -u {user} -p {password} -h {host} -P {port} -D {name}',
+        f'connection my_proxy_test -d PostgreSql -u {user}  -h {host} -P {port} -D {name}',
         f'connection cprd -d Oracle -u {ora_user} -p {ora_password} -h {ora_host} -P {ora_port} -D {ora_name}',
 
     ]
