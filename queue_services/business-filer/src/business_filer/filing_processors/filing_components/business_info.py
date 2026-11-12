@@ -113,8 +113,28 @@ def update_naics_info(business: Business, naics: dict):
     business.naics_description = naics.get("naicsDescription")
 
 
+MAX_CORP_NUM_ATTEMPTS = 5
+
+
 def get_next_corp_num(legal_type: str):
-    """Retrieve the next available sequential corp-num from Lear or fallback to COLIN."""
+    """Retrieve the next corp-num, skipping any identifier already used by a business.
+
+    Non-prod COLIN/LEAR sequences can drift from the businesses table (eg: after a db refresh),
+    so a sequence value is not guaranteed to be free.
+    """
+    for _ in range(MAX_CORP_NUM_ATTEMPTS):
+        corp_num = _get_next_sequence_corp_num(legal_type)
+        if not corp_num or not Business.query.filter_by(identifier=corp_num).first():
+            return corp_num
+        current_app.logger.warning(f"Skipping corp num {corp_num}, identifier already in use.")
+
+    current_app.logger.error(f"Unable to get an unused corp num for {legal_type} "
+                             f"after {MAX_CORP_NUM_ATTEMPTS} attempts.")
+    return None
+
+
+def _get_next_sequence_corp_num(legal_type: str):
+    """Retrieve the next sequential corp-num from Lear or fallback to COLIN."""
     # this gets called if the new services are generating the Business.identifier.
     colin_sequence_type = legal_type
     if legal_type in (Business.LegalTypes.BCOMP.value,
@@ -130,7 +150,6 @@ def get_next_corp_num(legal_type: str):
         legal_type = "C"
         # 'C' types share the same colin sequence as 'BC'
         colin_sequence_type = "BC"
-        
 
     # when lear generating the identifier
     if (
