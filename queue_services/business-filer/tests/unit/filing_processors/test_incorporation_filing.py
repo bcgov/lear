@@ -203,7 +203,7 @@ def test_get_next_corp_num(requests_mock, mocker, app,
         colin_api = current_app.config.get("COLIN_API", "http://test.test")
 
         with app.app_context():
-            requests_mock.post(f'{colin_api}/businesses/BC', json={'corpNum': '1234567'})
+            requests_mock.post(f'{colin_api}/businesses/BC', json={'corpNum': '8888801'})
 
             corp_num = business_info.get_next_corp_num(business_type)
     
@@ -296,15 +296,15 @@ def test_incorporation_filing_bc_company_from_colin(app, session, legal_type, le
 
 
 @pytest.mark.parametrize('responses,expected', [
-    ([1234567, 1234568], 'BC1234568'),
-    ([1234567] * business_info.MAX_CORP_NUM_ATTEMPTS, None),
+    ([8888811, 8888812], 'BC8888812'),
+    ([8888811] * business_info.MAX_CORP_NUM_ATTEMPTS, None),
 ])
 def test_get_next_corp_num_skips_used_identifier(requests_mock, mocker, app, session, responses, expected):
     """Assert that a corp num already used by a business is skipped."""
     from flask import current_app
     mocker.patch('business_filer.filing_processors.filing_components.business_info.AccountService.get_bearer_token',
                  return_value='token')
-    create_business('BC1234567', 'BC', 'Existing Business')
+    create_business('BC8888811', 'BC', 'Existing Business')
     colin_api = current_app.config.get('COLIN_API', 'http://test.test')
     mock_colin = requests_mock.post(f'{colin_api}/businesses/BC',
                                     [{'json': {'corpNum': str(num)}} for num in responses])
