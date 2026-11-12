@@ -164,7 +164,7 @@ def get_colin_mig_conn(cfg: _Config):
         database=cfg.DB_NAME_COLIN_MIGR,
         user=cfg.DB_USER_COLIN_MIGR,
         ip_type=cfg.DATABASE_IP_TYPE,
-        schema="public"
+        schema=cfg.TARGET_SCHEMA
     )
     return getconn(config)
 
