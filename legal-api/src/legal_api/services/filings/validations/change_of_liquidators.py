@@ -32,6 +32,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 """Validation for the Change of Liquidators filing."""
+from datetime import date
 from http import HTTPStatus
 
 from flask_babel import _
@@ -53,31 +54,123 @@ def validate(business: Business, filing_json: dict) -> Error | None:
     msg.extend(_validate_liquidation_date(business, filing_json, filing_type, filing_sub_type))
 
     if filing_data.get("relationships"):
-        msg.extend(validate_relationships(
-            business,
-            filing_json,
-            filing_type,
-            [PartyRole.RoleTypes.LIQUIDATOR],
-            filing_sub_type in ["appointLiquidator", "intentToLiquidate"],
-            filing_sub_type in ["ceaseLiquidator", "changeAddressLiquidator"]
-        ))
+        msg.extend(_validate_liquidator_relationships(business, filing_json, filing_type, filing_sub_type))
 
-    if filing_data.get("offices"):
-        allowed_offices = []
-        required_offices = []
-        if filing_sub_type in ["intentToLiquidate", "changeAddressLiquidator"]:
-            allowed_offices = ["liquidationRecordsOffice"]
-            if filing_sub_type == "intentToLiquidate":
-                required_offices = ["liquidationRecordsOffice"]
-        elif filing_sub_type == "appointLiquidator" and not business.in_liquidation:
-            allowed_offices = ["liquidationRecordsOffice"]
-            required_offices = ["liquidationRecordsOffice"]
-
-        msg.extend(validate_offices(filing_json, filing_type, allowed_offices, required_offices, True))
+    offices = filing_data.get("offices")
+    if filing_sub_type == "appointLiquidator" and not business.in_liquidation and not offices:
+        msg.append({
+            "error": _("Missing required offices ['liquidationRecordsOffice']."),
+            "path": f"/filing/{filing_type}/offices"
+        })
+    elif offices:
+        allowed = (
+            ["liquidationRecordsOffice"]
+            if filing_sub_type in ["intentToLiquidate", "appointLiquidator", "changeAddressLiquidator"]
+            else []
+        )
+        msg.extend(validate_offices(filing_json, filing_type, allowed, allowed, True))
 
     if msg:
         return Error(HTTPStatus.BAD_REQUEST, msg)
     return None
+
+
+def _check_role_dates(
+    business: Business,
+    rel: dict,
+    role: dict,
+    role_path: str,
+    filing_sub_type: str | None,
+) -> list:
+    """Validate required dates for a single liquidator role."""
+    msg = []
+    if filing_sub_type in ["appointLiquidator", "intentToLiquidate"]:
+        if not role.get("appointmentDate"):
+            msg.append({
+                "error": _("Appointment date is required for this filing."),
+                "path": f"{role_path}/appointmentDate",
+            })
+    elif filing_sub_type == "ceaseLiquidator":
+        cessation_str = role.get("cessationDate")
+        if not cessation_str:
+            msg.append({
+                "error": _("Cessation date is required for this filing."),
+                "path": f"{role_path}/cessationDate",
+            })
+        elif entity_id := rel.get("entity", {}).get("identifier"):
+            msg.extend(_validate_cease_not_before_appointment(business, entity_id, cessation_str, role_path))
+    return msg
+
+
+def _check_required_liquidator_dates(
+    business: Business,
+    relationships: list[dict],
+    filing_type: str,
+    filing_sub_type: str | None,
+) -> list:
+    """Check required appointment and cessation dates for liquidators."""
+    msg = []
+    base_path = f"/filing/{filing_type}/relationships"
+    for rel_idx, rel in enumerate(relationships):
+        roles = rel.get("roles", [])
+        for role_idx, role in enumerate(roles):
+            role_path = f"{base_path}/{rel_idx}/roles/{role_idx}"
+            msg.extend(_check_role_dates(business, rel, role, role_path, filing_sub_type))
+    return msg
+
+
+def _validate_liquidator_relationships(
+    business: Business,
+    filing_json: dict,
+    filing_type: str,
+    filing_sub_type: str | None,
+) -> list:
+    """Validate relationships and role dates for changeOfLiquidators."""
+    allow_new = filing_sub_type in ["appointLiquidator", "intentToLiquidate"]
+    allow_edits = filing_sub_type in ["ceaseLiquidator", "changeAddressLiquidator"]
+
+    raw_relationships = filing_json["filing"][filing_type].get("relationships", [])
+
+    msg = _check_required_liquidator_dates(business, raw_relationships, filing_type, filing_sub_type)
+
+    msg.extend(validate_relationships(
+        business,
+        filing_json,
+        filing_type,
+        [PartyRole.RoleTypes.LIQUIDATOR],
+        allow_new,
+        allow_edits,
+    ))
+
+    return msg
+
+
+def _validate_cease_not_before_appointment(
+    business: Business, entity_id: str, cessation_str: str, role_path: str
+) -> list:
+    """Validate that cessation date is not before existing appointment date."""
+    msg = []
+    try:
+        cess_date = date.fromisoformat(str(cessation_str).strip())
+    except (ValueError, TypeError):
+        return msg
+
+    try:
+        party_id = int(entity_id)
+    except (ValueError, TypeError):
+        return msg
+
+    roles = PartyRole.get_party_roles_by_party_id(business.id, party_id)
+    liquidator_roles = [r for r in roles if r.role == PartyRole.RoleTypes.LIQUIDATOR.value and not r.cessation_date]
+    for r in liquidator_roles:
+        if r.appointment_date:
+            appt_date = LegislationDatetime.as_legislation_timezone(r.appointment_date).date()
+            if cess_date < appt_date:
+                msg.append({
+                    "error": _("Cessation date cannot be before appointment date."),
+                    "path": f"{role_path}/cessationDate",
+                })
+    return msg
 
 
 def _validate_liquidation_date(

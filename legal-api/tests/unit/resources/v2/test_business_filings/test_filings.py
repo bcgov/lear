@@ -19,7 +19,7 @@ Test-Suite to ensure that the /businesses endpoint is working as expected.
 import copy
 import json
 import random
-from datetime import UTC, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta, timezone
 from http import HTTPStatus
 from typing import Final
 from unittest.mock import patch
@@ -2376,6 +2376,9 @@ def test_col(session, requests_mock, client, jwt, monkeypatch, test_name, legal_
     col = copy.deepcopy(FILING_HEADER)
     col['filing']['header']['name'] = 'changeOfLiquidators'
     col['filing']['changeOfLiquidators'] = copy.deepcopy(CHANGE_OF_LIQUIDATORS)
+    for rel in col['filing']['changeOfLiquidators'].get('relationships', []):
+        for role in rel.get('roles', []):
+            role.setdefault('appointmentDate', date.today().isoformat())
 
     b = factory_business(identifier, (datetime.now() - datedelta.YEAR), None, legal_type)
     factory_business_mailing_address(b)

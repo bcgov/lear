@@ -167,7 +167,7 @@ def format_parties_data(data: dict, config=None) -> list[dict]:
         party['parties']['party_type'] = 'person' if party_info['cp_full_name'] else 'organization'
         party['parties']['title'] = ''
         party['parties']['organization_name'] = (party_info['cp_business_name'] if isinstance(party_info['cp_business_name'], str) else '').upper()
-        party['parties']['email'] = ''
+        party['parties']['email'] = (party_info['cp_email_address'] if isinstance(party_info['cp_email_address'], str) else '')
         party['parties']['identifier'] = ''
 
         # Format party role
@@ -1060,17 +1060,32 @@ def build_filing_json_meta_data(raw_filing_type: str,
                 if p.get('cp_party_typ_cd') != 'APP' or p.get('cp_start_event_id') != filing_data['e_event_id']:
                     continue
                 officer = {
-                    'firstName': (p.get('cp_first_name') or '')
+                    'email': (p.get('email') or None),
+                    'lastName': (p.get('cp_last_name') or ''),
+                    'firstName': (p.get('cp_first_name') or ''),
+                    'middleName': (p.get('cp_middle_name') or ''),
+                    'organizationName': (p.get('cp_business_name') or ''),
+                    'partyType': 'person' if p.get('cp_full_name') else 'organization'
+                    
                 }
+                mailing_address = {
+                    "postalCode": (p.get('ma_postal_cd') or ''),
+                    "addressCity": (p.get('ma_city') or ''),
+                    "addressRegion": (p.get('ma_city') or ''),
+                    "streetAddress": (p.get('ma_addr_line_1') or ''),
+                    "addressCountry": (p.get('ma_country_typ_cd') or ''),
+                }
+                
             parties.append({
                 'officer' : officer,
-                'roles': [{'roleType': 'applicant'}]
+                'mailingAddress': mailing_address,
+                'roles': [{'roleType': 'Applicant'}]
             })
             
             filing_json['filing']['restoration'] = {
                 **filing_json['filing']['restoration'],
                 'type': filing_subtype,
-                **({'partyRoles': parties} if parties else {}),
+                **({'parties': parties} if parties else {}),
             }
        
     elif filing_type == 'alteration':

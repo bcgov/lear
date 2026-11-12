@@ -33,6 +33,7 @@ from legal_api.services.authz import (
     FILE_OVER_EXISTING_DRAFT_PERMISSION,
     BusinessBlocker,
     business_blocker_check,
+    filed_by_staff,
     is_allowed,
     is_draft_rebase_checks_enabled,
     is_draft_rebase_scoped_filing,
@@ -126,7 +127,8 @@ def construct_task_list(business: Business):
     if has_draft_filing and is_draft_rebase_checks_enabled():
         # only staff drafts of bypass-allowlisted types lock users out
         staff_draft_exists = any(
-            _is_staff_filed(filing) and is_draft_rebase_scoped_filing(filing.filing_type, filing.filing_sub_type)
+            filed_by_staff(filing) is True
+            and is_draft_rebase_scoped_filing(filing.filing_type, filing.filing_sub_type)
             for filing in pending_filings if filing.status == Filing.Status.DRAFT.value)
         has_bypass_permission = FILE_OVER_EXISTING_DRAFT_PERMISSION in \
             (PermissionService.get_authorized_permissions_for_user() or [])
@@ -183,11 +185,6 @@ def _add_missing_info_task(business: Business, warnings: list, tasks: list, orde
     return tasks, order
 
 
-def _is_staff_filed(filing: Filing) -> bool:
-    """Return whether the filing was submitted by staff (NULL submitter_roles means user-filed)."""
-    return filing.submitter_roles in [UserRoles.staff.value, UserRoles.system.value]
-
-
 def _create_pending_filing_task(business: Business, filing: Filing, order: int,
                                 enabled: bool = True, watermark_transaction_id: int | None = None) -> dict | None:
     """Return the task for a draft/pending filing, or None when pay-api could not be reached."""
@@ -215,7 +212,7 @@ def _create_pending_filing_task(business: Business, filing: Filing, order: int,
                 f"Payment connection failure for {business.identifier} task list. ", err)
             return None
 
-    task = {"task": filing_json, "order": order, "enabled": enabled, "filedByStaff": _is_staff_filed(filing)}
+    task = {"task": filing_json, "order": order, "enabled": enabled, "filedByStaff": filed_by_staff(filing)}
     if filing.status == Filing.Status.DRAFT.value:
         # derived staleness: a filing completed under this draft; null when the base is unknown
         task["draftHasInterveningChanges"] = \

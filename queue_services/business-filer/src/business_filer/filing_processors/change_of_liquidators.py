@@ -82,26 +82,108 @@ def _update_last_lr_year(business: Business):
         business.last_lr_year = in_liquidation_date.year + 1
 
 
+def _get_last_liquidation_report_date(business_id: int) -> str | None:
+    """Retrieve the effective date string of the latest prior liquidationReport filing."""
+    prior_lr = Filing.get_most_recent_filing(
+        business_id=business_id,
+        filing_type="changeOfLiquidators",
+        filing_sub_type="liquidationReport",
+    )
+    if prior_lr and prior_lr.effective_date:
+        return LegislationDatetime.as_legislation_timezone(prior_lr.effective_date).date().isoformat()
+    return None
+
+
+def _process_appointment_or_intent(
+    business: Business,
+    filing_rec: Filing,
+    filing_meta: FilingMeta,
+    filing_json: dict,
+    was_in_liquidation: bool,
+):
+    """Process intentToLiquidate or appointLiquidator sub-types."""
+    col_data = filing_json["filing"]["changeOfLiquidators"]
+    raw_relationships = col_data.get("relationships", [])
+    offices = col_data.get("offices", {})
+
+    # appointLiquidator and intentToLiquidate only set appointment_date; ignore any submitted cessationDate
+    relationships = copy.deepcopy(raw_relationships)
+    for rel in relationships:
+        for role in rel.get("roles", []):
+            role.pop("cessationDate", None)
+
+    create_relationships(relationships, business, filing_rec)
+    update_or_create_offices(business, offices)
+    _init_liquidation(business, filing_meta, filing_json)
+
+    col_meta = {}
+    if not was_in_liquidation and business.in_liquidation and business.in_liquidation_date:
+        col_meta["commencementDate"] = LegislationDatetime.as_legislation_timezone(
+            business.in_liquidation_date
+        ).date().isoformat()
+    if last_lr_date := _get_last_liquidation_report_date(business.id):
+        col_meta["lastLiquidationReportDate"] = last_lr_date
+    if col_meta:
+        filing_meta.change_of_liquidators = col_meta
+
+
+def _process_cease(business: Business, filing_meta: FilingMeta, relationships: list):
+    """Process ceaseLiquidator sub-type."""
+    # ceaseLiquidator only sets cessation_date; ignore any submitted appointmentDate
+    cease_rels = copy.deepcopy(relationships)
+    for rel in cease_rels:
+        for role in rel.get("roles", []):
+            role.pop("appointmentDate", None)
+
+    cease_relationships(
+        cease_rels,
+        business,
+        [PartyRole.RoleTypes.LIQUIDATOR.value],
+        filing_meta.application_date,
+        allow_submitted_dates=True,
+    )
+    if last_lr_date := _get_last_liquidation_report_date(business.id):
+        filing_meta.change_of_liquidators = {"lastLiquidationReportDate": last_lr_date}
+
+
+def _process_change_address(business: Business, filing_meta: FilingMeta, relationships: list, offices: dict):
+    """Process changeAddressLiquidator sub-type."""
+    update_relationship_addresses(relationships, business)
+    update_or_create_offices(business, offices)
+    if last_lr_date := _get_last_liquidation_report_date(business.id):
+        filing_meta.change_of_liquidators = {"lastLiquidationReportDate": last_lr_date}
+
+
+def _process_liquidation_report(business: Business, filing_meta: FilingMeta):
+    """Process liquidationReport sub-type."""
+    lr_date = business.next_lr_min_date
+    _update_last_lr_year(business)
+    if lr_date:
+        filing_meta.change_of_liquidators = {
+            "liquidationReportDate": lr_date.isoformat(),
+            "liquidationReportYear": lr_date.year,
+        }
+
+
 def process(business: Business, filing_rec: Filing, filing_meta: FilingMeta):
     """Render the changeOfLiquidators onto the business model objects."""
     filing_json = copy.deepcopy(filing_rec.filing_json)
     relationships = filing_json["filing"]["changeOfLiquidators"].get("relationships", [])
     offices = filing_json["filing"]["changeOfLiquidators"].get("offices", {})
 
-    if filing_rec.filing_sub_type in ["intentToLiquidate", "appointLiquidator"]:
-        create_relationships(relationships, business, filing_rec)
-        update_or_create_offices(business, offices)
-        _init_liquidation(business, filing_meta, filing_json)
+    was_in_liquidation = bool(business.in_liquidation)
+    sub_type = filing_rec.filing_sub_type
 
-    elif filing_rec.filing_sub_type == "ceaseLiquidator":
-        cease_relationships(relationships, business, [PartyRole.RoleTypes.LIQUIDATOR.value], filing_meta.application_date)
-    
-    elif filing_rec.filing_sub_type == "changeAddressLiquidator":
-        update_relationship_addresses(relationships, business)
-        update_or_create_offices(business, offices)
-    
-    elif filing_rec.filing_sub_type == "liquidationReport":
-        _update_last_lr_year(business)
+    if sub_type in ["intentToLiquidate", "appointLiquidator"]:
+        _process_appointment_or_intent(
+            business, filing_rec, filing_meta, filing_json, was_in_liquidation
+        )
+    elif sub_type == "ceaseLiquidator":
+        _process_cease(business, filing_meta, relationships)
+    elif sub_type == "changeAddressLiquidator":
+        _process_change_address(business, filing_meta, relationships, offices)
+    elif sub_type == "liquidationReport":
+        _process_liquidation_report(business, filing_meta)
 
     # update court order, if any is present
     if court_order := filing_json["filing"]["changeOfLiquidators"].get("courtOrder"):
