@@ -21,7 +21,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from business_model.models import Address, Alias, Filing, Party, PartyRole, Resolution
+from business_model.models import Address, Alias, CourtOrder, Filing, Party, PartyRole, Resolution
 from legal_api.services.draft_rebase import (
     DraftRebaseService,
     _align_entities_by_row_id,
@@ -32,6 +32,8 @@ from legal_api.services.draft_rebase import (
     _party_row_id,
     _resolution_entities,
     _scope_party_entities,
+    _court_order_entities,
+    _share_class_entities,
     _share_class_norm,
 )
 from registry_schemas.example_data import ANNUAL_REPORT
@@ -384,6 +386,98 @@ def test_share_class_norm_includes_currency_additional_and_priority(field, value
     assert _share_class_norm(base_row) != _share_class_norm({**base_row, field: value})
 
 
+def _share_class(row_id, name, max_shares=1000):
+    return {'id': row_id, 'name': name, 'hasMaximumShares': True, 'maxNumberOfShares': max_shares,
+            'hasParValue': False, 'currency': None, 'priority': 1, 'hasRightsOrRestrictions': False, 'series': []}
+
+
+def test_share_class_rename_pairs_by_id():
+    """Assert a share class staff renamed (correction keeps the id) is one modified entity, not a removal plus an addition."""
+    base, current, draft = _align_entities_by_row_id(
+        _share_class_entities([_share_class('5', 'Common Shares')]),
+        _share_class_entities([_share_class('5', 'Ordinary Shares')]),
+        _share_class_entities([{**_share_class(5, 'Common Shares', 2000), 'actions': ['CHANGED']}]))
+    changed = DraftRebaseService._changed_keys(base, current)
+    touched = DraftRebaseService._draft_touched_entities(draft, base, True)
+
+    report = {'alreadyApplied': [], 'conflicts': [], 'absorbed': []}
+    DraftRebaseService._classify_draft_overlaps(report, 'shareClasses', changed, touched)
+
+    assert report['absorbed'] == []
+    assert [(entry['entityKey'], entry['rowId'], entry['change']) for entry in report['conflicts']] == \
+        [('ORDINARY SHARES', 5, 'modified')]
+    assert '/name' in report['conflicts'][0]['paths']
+
+
+def test_share_class_id_churn_pairs_by_name():
+    """Assert a share class recreated with a new id (alteration) still pairs with the draft's row by name."""
+    base, current, draft = _align_entities_by_row_id(
+        _share_class_entities([_share_class('5', 'Common Shares')]),
+        _share_class_entities([_share_class('9', 'Common Shares', 5000)]),
+        _share_class_entities([_share_class(5, 'Common Shares')]))
+    changed = DraftRebaseService._changed_keys(base, current)
+    touched = DraftRebaseService._draft_touched_entities(draft, base, True)
+
+    report = {'alreadyApplied': [], 'conflicts': [], 'absorbed': []}
+    DraftRebaseService._classify_draft_overlaps(report, 'shareClasses', changed, touched)
+
+    assert report['conflicts'] == []
+    assert [(entry['entityKey'], entry['rowId'], entry['change']) for entry in report['absorbed']] == \
+        [('COMMON SHARES', 9, 'modified')]
+
+
+def _court_order(row_id, file_number, details='Order details', effect=None):
+    return {'id': row_id, 'fileNumber': file_number, 'orderDetails': details, 'effectOfOrder': effect,
+            'filingId': 1}
+
+
+def test_court_orders_pair_by_id_and_missing_draft_rows_are_not_removals():
+    """Assert court orders both sides edited conflict, staff-only edits absorb, and an omitted row is untouched."""
+    base, current, draft = _align_entities_by_row_id(
+        _court_order_entities([_court_order('5', '12345'), _court_order('6', '67890')]),
+        _court_order_entities([_court_order('5', '12345', 'Staff details'),
+                               _court_order('6', '67890', effect='planOfArrangement')]),
+        _court_order_entities([_court_order(5, '12345', 'Draft details')]))
+    changed = DraftRebaseService._changed_keys(base, current)
+    touched = DraftRebaseService._draft_touched_entities(draft, base, True, full_replacement=False)
+
+    report = {'alreadyApplied': [], 'conflicts': [], 'absorbed': []}
+    DraftRebaseService._classify_draft_overlaps(report, 'courtOrders', changed, touched)
+
+    assert set(touched) == {'12345'}
+    assert [(entry['entityKey'], entry['rowId'], entry['change']) for entry in report['conflicts']] == \
+        [('12345', 5, 'modified')]
+    assert report['conflicts'][0]['paths'] == ['/orderDetails']
+    assert [(entry['entityKey'], entry['rowId'], entry['change']) for entry in report['absorbed']] == \
+        [('67890', 6, 'modified')]
+
+
+def test_court_order_report_for_a_correction_draft(session):
+    """Assert a staff-edited court order reaches the report through the versioned snapshot, with the draft's id resolved."""
+    business = factory_business(IDENTIFIER, entity_type='BC')
+    source_filing = factory_completed_filing(business, ANNUAL_REPORT)
+    court_order = CourtOrder(file_number='12345', order_details='Original', filing_id=source_filing.id,
+                             business_id=business.id)
+    court_order.save()
+    base_filing = _complete(business)
+    court_order.order_details = 'Staff edit'
+    court_order.save()
+    _complete(business)
+    body = {'courtOrders': [{'id': court_order.id, 'fileNumber': '12345', 'orderDetails': 'Draft edit',
+                             'filingId': source_filing.id}]}
+    draft = _draft(business, 'correction', body, base_filing.transaction_id)
+
+    report = DraftRebaseService.get_changes_report(business, draft)
+
+    assert report['changedSections'] == ['courtOrders']
+    assert report['draftSections'] == ['courtOrders']
+    assert [(entry['section'], entry['entityKey'], entry['rowId'], entry['change']) for entry in report['conflicts']] == \
+        [('courtOrders', '12345', court_order.id, 'modified')]
+    assert report['conflicts'][0]['currentValue']['orderDetails'] == 'Staff edit'
+    assert report['absorbed'] == []
+    assert report['staleIds']['courtOrders'] == []
+
+
 def test_already_applied_carries_row_identity():
     """Assert alreadyApplied entries carry rowId and draftValue so the UI can drop the draft row."""
     base, current, draft = _align_entities_by_row_id(
@@ -400,6 +494,7 @@ def test_already_applied_carries_row_identity():
     entry = report['alreadyApplied'][0]
     assert entry['entityKey'] == 'DOE, JOHN'
     assert entry['rowId'] == 348
+    assert entry['change'] == 'added'
     assert entry['draftValue']['entity']['familyName'] == 'Doe'
 
 
@@ -415,11 +510,13 @@ def test_absorbed_lists_rows_only_the_intervening_filings_changed():
     report = {'alreadyApplied': [], 'conflicts': [], 'absorbed': []}
     DraftRebaseService._classify_draft_overlaps(report, 'parties', changed, touched)
 
-    assert [entry['entityKey'] for entry in report['conflicts']] == ['SMITH, JANE']
+    assert [(entry['entityKey'], entry['change']) for entry in report['conflicts']] == [('SMITH, JANE', 'modified')]
     absorbed = {entry['entityKey']: entry for entry in report['absorbed']}
     assert set(absorbed) == {'LEE, BOB', 'NG, DAN'}
-    assert absorbed['LEE, BOB'] == {'section': 'parties', 'entityKey': 'LEE, BOB', 'rowId': 102, 'currentValue': None}
+    assert absorbed['LEE, BOB'] == {
+        'section': 'parties', 'entityKey': 'LEE, BOB', 'rowId': 102, 'change': 'removed', 'currentValue': None}
     assert absorbed['NG, DAN']['rowId'] == 104
+    assert absorbed['NG, DAN']['change'] == 'added'
     assert absorbed['NG, DAN']['currentValue']['deliveryAddress']['addressCity'] == 'Surrey'
 
 
@@ -604,7 +701,7 @@ def test_collect_embedded_ids_reads_officer_id_and_entity_identifier_only():
                                   {'entity': {'identifier': 'uuid-new', 'givenName': 'E', 'familyName': 'F'}},
                               ]}}}
 
-    party_ids, alias_ids, resolution_ids = DraftRebaseService._collect_embedded_ids(filing_json)
+    party_ids, alias_ids, resolution_ids, _ = DraftRebaseService._collect_embedded_ids(filing_json)
 
     assert party_ids == {12, 34}
     assert not alias_ids
@@ -618,11 +715,20 @@ def test_collect_embedded_ids_collects_alias_and_resolution_ids():
                                              'shareStructure': {'resolutionDates': [{'id': 3, 'date': '2024-05-01'},
                                                                                     '2024-06-01']}}}}
 
-    party_ids, alias_ids, resolution_ids = DraftRebaseService._collect_embedded_ids(filing_json)
+    party_ids, alias_ids, resolution_ids, court_order_ids = DraftRebaseService._collect_embedded_ids(filing_json)
 
     assert not party_ids
     assert alias_ids == {7}
     assert resolution_ids == {3}
+    assert not court_order_ids
+
+
+def test_collect_embedded_ids_collects_correction_court_order_ids():
+    """Assert a correction's courtOrders ids are collected (other types never carry the section)."""
+    body = {'courtOrders': [{'id': 9, 'fileNumber': '12345'}, {'fileNumber': 'NEW-1'}]}
+
+    assert DraftRebaseService._collect_embedded_ids(_filing_json('correction', body))[3] == {9}
+    assert DraftRebaseService._collect_embedded_ids(_filing_json('alteration', body))[3] == set()
 
 
 def test_collect_embedded_ids_ignores_unmapped_filing_types():
@@ -630,7 +736,7 @@ def test_collect_embedded_ids_ignores_unmapped_filing_types():
     filing_json = {'filing': {'header': {'name': 'annualReport'},
                               'annualReport': {'parties': [{'officer': {'id': 12}}]}}}
 
-    assert DraftRebaseService._collect_embedded_ids(filing_json) == (set(), set(), set())
+    assert DraftRebaseService._collect_embedded_ids(filing_json) == (set(), set(), set(), set())
 
 
 # ---------------------------------------------------------------------------
@@ -701,7 +807,8 @@ def test_find_stale_ids_flags_party_ids_not_on_the_business(session):
 
     stale = DraftRebaseService.find_stale_ids(business, filing_json)
 
-    assert stale == {'parties': sorted([other_party.id, 999999]), 'nameTranslations': [], 'resolutions': []}
+    assert stale == {'parties': sorted([other_party.id, 999999]), 'nameTranslations': [], 'resolutions': [],
+                     'courtOrders': []}
 
 
 @pytest.mark.parametrize('test_name,filing_type,role,ceased,expect_stale', [
@@ -740,7 +847,22 @@ def test_find_stale_ids_checks_alias_and_resolution_rows(session):
 
     stale = DraftRebaseService.find_stale_ids(business, filing_json)
 
-    assert stale == {'parties': [], 'nameTranslations': [888888], 'resolutions': [777777]}
+    assert stale == {'parties': [], 'nameTranslations': [888888], 'resolutions': [777777], 'courtOrders': []}
+
+
+def test_find_stale_ids_checks_court_order_rows(session):
+    """Assert a correction's courtOrders ids are checked against the business's CourtOrder rows."""
+    business = factory_business(IDENTIFIER, entity_type='BC')
+    filing = factory_completed_filing(business, ANNUAL_REPORT)
+    court_order = CourtOrder(file_number='12345', filing_id=filing.id, business_id=business.id)
+    court_order.save()
+    filing_json = _filing_json('correction', {
+        'courtOrders': [{'id': court_order.id, 'fileNumber': '12345', 'filingId': filing.id},
+                        {'id': 666666, 'fileNumber': '99999', 'filingId': filing.id}]})
+
+    stale = DraftRebaseService.find_stale_ids(business, filing_json)
+
+    assert stale == {'parties': [], 'nameTranslations': [], 'resolutions': [], 'courtOrders': [666666]}
 
 
 def test_find_stale_ids_is_empty_when_draft_has_no_embedded_ids(session):
@@ -749,7 +871,7 @@ def test_find_stale_ids_is_empty_when_draft_has_no_embedded_ids(session):
     filing_json = _filing_json('correction', {'parties': [_draft_director('uuid-new', 'Jane', 'Smith', 'Victoria')]})
 
     assert DraftRebaseService.find_stale_ids(business, filing_json) == \
-        {'parties': [], 'nameTranslations': [], 'resolutions': []}
+        {'parties': [], 'nameTranslations': [], 'resolutions': [], 'courtOrders': []}
 
 
 def test_validate_no_stale_ids_ignores_filing_types_outside_the_section_map(session):
@@ -910,6 +1032,7 @@ def test_report_absorbs_a_staff_added_resolution_the_draft_never_saw(session):
         'section': 'resolutions',
         'entityKey': '2025-01-15 (SPECIAL)',
         'rowId': added.id,
+        'change': 'added',
         'currentValue': {'id': added.id, 'date': 'January 15, 2025', 'type': 'SPECIAL'},
     }]
 
