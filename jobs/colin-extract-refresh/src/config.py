@@ -88,7 +88,7 @@ class _Config():  # pylint: disable=too-few-public-methods
     TARGET_CONNECTION = os.getenv('TARGET_CONNECTION', 'ctst_pg')
     TARGET_SCHEMA = os.getenv('TARGET_SCHEMA', '')
     MIG_BATCH_IDS = os.getenv('MIG_BATCH_IDS')
-    DATABASE_IP_TYPE = os.getenv('DATABASE_IP_TYPE', 'private').lower()
+    DATABASE_IP_TYPE = os.getenv('DATABASE_IP_TYPE', 'public').lower()
     if CLOUDSQL_INSTANCE_CONNECTION_NAME:
         SQLALCHEMY_DATABASE_URI_COLIN_MIGR = "postgresql+pg8000://"
 
@@ -164,7 +164,7 @@ def get_colin_mig_conn(cfg: _Config):
         database=cfg.DB_NAME_COLIN_MIGR,
         user=cfg.DB_USER_COLIN_MIGR,
         ip_type=cfg.DATABASE_IP_TYPE,
-        schema="public"
+        schema=cfg.TARGET_SCHEMA
     )
     return getconn(config)
 
