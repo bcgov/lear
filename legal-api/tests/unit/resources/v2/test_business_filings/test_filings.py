@@ -45,6 +45,7 @@ from business_model.models import (
     UserRoles,
 )
 from legal_api.resources.v2.business.business_filings.business_filings import ListFilingResource
+from legal_api.services import flags
 from legal_api.services.authz import BASIC_USER, PUBLIC_USER, STAFF_ROLE
 from legal_api.services.bootstrap import RegistrationBootstrapService
 from registry_schemas.example_data import (
@@ -239,6 +240,38 @@ def test_get_temp_business_filing(session, client, jwt, legal_type, filing_type,
     assert rv.status_code == HTTPStatus.OK
     assert rv.json['filing']['header']['name'] == filing_type
     assert rv.json['filing'][filing_type] == filing_json
+
+
+def test_get_completed_temp_business_filing_public_user(app, session, client, requests_mock, jwt, monkeypatch):
+    """Assert a public user can still read a bootstrap filing by temp identifier after the business is created."""
+    is_feature_flag_on = flags.is_on
+    monkeypatch.setattr(flags, 'is_on', lambda flag_name, *args, **kwargs:
+                        True if flag_name == 'enable-auth-v2-filing' else is_feature_flag_on(flag_name, *args, **kwargs))
+
+    temp_identifier = 'Tb31yQIuBw'
+    temp_reg = RegistrationBootstrap()
+    temp_reg._identifier = temp_identifier
+    temp_reg.save()
+    business = factory_business('BC1234567', entity_type='BEN')
+    json_data = copy.deepcopy(FILING_HEADER)
+    json_data['filing']['header']['name'] = 'incorporationApplication'
+    json_data['filing']['business'] = {'identifier': business.identifier}
+    json_data['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
+    filing = factory_completed_filing(business, json_data)
+    filing.temp_reg = temp_identifier
+    filing.save()
+
+    # auth has moved the affiliation from the temp identifier to the business
+    auth_url = app.config.get('AUTH_SVC_URL')
+    requests_mock.get(f'{auth_url}/entities/{temp_identifier}/authorizations', json={'roles': []})
+    requests_mock.get(f'{auth_url}/entities/{business.identifier}/authorizations', json={'roles': ['view']})
+
+    rv = client.get(f'/api/v2/businesses/{temp_identifier}/filings',
+                    headers=create_header(jwt, [PUBLIC_USER], temp_identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['filing']['header']['name'] == 'incorporationApplication'
+    assert rv.json['filing']['business']['identifier'] == business.identifier
 
 
 def test_get_filings_tramway_uses_ledger_listing(session, client, jwt, mocker):
