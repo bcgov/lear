@@ -268,6 +268,7 @@ def test_changes_reports_already_applied_when_draft_matches_current(session, cli
     assert rv.json['conflicts'] == []
     entry = rv.json['alreadyApplied'][0]
     assert (entry['section'], entry['entityKey'], entry['rowId']) == ('parties', 'SMITH, JANE', person.id)
+    assert entry['change'] == 'modified'
     assert entry['draftValue']['officer']['id'] == person.id
     assert rv.json['changedSections'] == ['parties']
 
@@ -360,4 +361,4 @@ def test_changes_populates_stale_ids(session, client, jwt, test_name, party_offs
 
     assert rv.status_code == HTTPStatus.OK
     assert rv.json['staleIds'] == {'parties': [party_id] if expect_stale else [],
-                                   'nameTranslations': [], 'resolutions': []}
+                                   'nameTranslations': [], 'resolutions': [], 'courtOrders': []}

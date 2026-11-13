@@ -15,15 +15,15 @@
 
 Reports what changed on a business between a draft filing's base transaction and the
 current watermark, and classifies conflicts between those changes and the draft's edits.
-Parties and name translations are matched by row id where both sides carry one (so a
-rename stays one entity), falling back to natural keys because several filer paths
-delete and recreate rows and new draft rows have no id yet; the other sections match
-by natural keys only.
+Parties, name translations, share classes and court orders are matched by row id where
+both sides carry one (so a rename stays one entity), falling back to natural keys because
+several filer paths delete and recreate rows (every share-structure filer but correction)
+and new draft rows have no id yet; the other sections match by natural keys only.
 """
 from datetime import date, datetime
 from typing import Final
 
-from business_model.models import Alias, Business, Filing, PartyRole, Resolution, db
+from business_model.models import Alias, Business, CourtOrder, Filing, PartyRole, Resolution, db
 from business_model.models.db import Transaction
 from legal_api.core.utils import diff_dict, diff_list
 from legal_api.services.authz import filed_by_staff
@@ -32,7 +32,8 @@ from legal_api.services.business_details_version import VersionedBusinessDetails
 _ADDRESS_MATCH_FIELDS: Final = ("streetAddress", "streetAddressAdditional", "addressCity", "addressRegion",
                                 "addressCountry", "postalCode", "deliveryInstructions")
 
-SNAPSHOT_SECTIONS: Final = ("parties", "offices", "shareClasses", "nameTranslations", "resolutions", "business")
+SNAPSHOT_SECTIONS: Final = ("parties", "offices", "shareClasses", "nameTranslations", "resolutions", "courtOrders",
+                            "business")
 # business-level fields a filing can change; one entity per field so a name edit and a type change diff apart
 BUSINESS_FIELDS: Final = ("legalName", "legalType")
 
@@ -239,9 +240,30 @@ def _share_series_norm(series: dict) -> tuple:
 def _share_class_entities(share_classes: list | None) -> dict:
     entities = {}
     for row in share_classes or []:
-        if not (name := _norm_value(row.get("name"))):
+        name = _norm_value(row.get("name"))
+        name_key = str(name).upper() if name else None
+        row_id = _int_or_none(row.get("id"))
+        if (key := row_id if row_id is not None else name_key) is None:
             continue
-        entities[str(name).upper()] = {"json": row, "norm": _share_class_norm(row), "actions": _row_actions(row)}
+        entities[key] = {"json": row, "row_id": row_id, "name_key": name_key,
+                         "norm": _share_class_norm(row), "actions": _row_actions(row)}
+    return entities
+
+
+def _court_order_entities(court_orders: list | None) -> dict:
+    """One entity per court order, keyed by id (file number when absent); documents are not compared."""
+    entities = {}
+    for row in court_orders or []:
+        if not isinstance(row, dict):
+            continue
+        file_number = _norm_value(row.get("fileNumber"))
+        name_key = str(file_number).upper() if file_number else None
+        row_id = _int_or_none(row.get("id"))
+        if (key := row_id if row_id is not None else name_key) is None:
+            continue
+        entities[key] = {"json": row, "row_id": row_id, "name_key": name_key,
+                         "norm": (name_key, _norm_value(row.get("effectOfOrder")), _norm_value(row.get("orderDetails"))),
+                         "actions": _row_actions(row)}
     return entities
 
 
@@ -323,7 +345,7 @@ _FILING_PARTY_ROLE_SCOPE: Final = {
 
 
 # sections where a missing entity is untouched, not removed: every rebased filer updates offices per type / id
-_DELTA_SECTIONS: Final = ("business", "offices")
+_DELTA_SECTIONS: Final = ("business", "offices", "courtOrders")
 # filing types whose shareStructure.resolutionDates is the full list (rows carry ids)
 # - alteration drafts hold new dates only, so their list is not a rebaseable section
 # - add alteration after moved to business-ui and the filer uses the correction-style resolution updater
@@ -386,6 +408,13 @@ def _scope_party_json(row: dict, scope_roles: set) -> dict:
     scoped_roles = [role for role in roles
                     if str(role.get("roleType") or "").replace("_", " ").strip().lower() in scope_roles]
     return {**row, "roles": scoped_roles} if len(scoped_roles) != len(roles) else row
+
+
+def _entity_change(base_entity: dict | None, current_entity: dict | None) -> str:
+    """What the intervening filings did to the entity: added / modified / removed."""
+    if base_entity is None:
+        return "added"
+    return "removed" if current_entity is None else "modified"
 
 
 def _first_row_id(*entities) -> int | None:
@@ -459,7 +488,7 @@ def _align_entities_by_row_id(base_entities: dict, current_entities: dict, draft
     )
 
 
-_ID_MATCHED_SECTIONS: Final = ("parties", "nameTranslations")
+_ID_MATCHED_SECTIONS: Final = ("parties", "nameTranslations", "shareClasses", "courtOrders")
 
 _SECTION_ENTITY_BUILDERS: Final = {
     "parties": _party_entities,
@@ -467,6 +496,7 @@ _SECTION_ENTITY_BUILDERS: Final = {
     "shareClasses": _share_class_entities,
     "nameTranslations": _name_translation_entities,
     "resolutions": _resolution_entities,
+    "courtOrders": _court_order_entities,
     "business": _business_entities,
 }
 
@@ -488,7 +518,8 @@ class DraftRebaseService:
         # types with two party keys carry them under the legacy key ('directors'/'parties')
         # or 'relationships' (business-ui shape); a draft only ever holds one of the two
         "correction": {"parties": "parties", "relationships": "parties", "offices": "offices",
-                       "shareStructure": "shareClasses", "nameTranslations": "nameTranslations"},
+                       "shareStructure": "shareClasses", "nameTranslations": "nameTranslations",
+                       "courtOrders": "courtOrders"},
         "transition": {"parties": "parties", "relationships": "parties", "offices": "offices",
                        "shareStructure": "shareClasses", "nameTranslations": "nameTranslations"},
     }
@@ -608,6 +639,7 @@ class DraftRebaseService:
         - draft touched it too, same end value: alreadyApplied
         - draft touched it too, different value: conflict
         - draft left it alone: absorbed (mapped sections only), the UI refreshes it
+        - every entry: `change` names what the intervening filings did (added / modified / removed)
         """
         for entity_key, (base_entity, current_entity) in intervening_changed.items():
             if (draft_entity := draft_touched.get(entity_key)) is None:
@@ -617,6 +649,7 @@ class DraftRebaseService:
                     "section": section,
                     "entityKey": entity_key,
                     "rowId": _first_row_id(current_entity, base_entity),
+                    "change": _entity_change(base_entity, current_entity),
                     "currentValue": current_entity["json"] if current_entity else None,  # None = staff removed it
                 })
                 continue
@@ -627,6 +660,7 @@ class DraftRebaseService:
                     "section": section,
                     "entityKey": entity_key,
                     "rowId": _first_row_id(current_entity, base_entity, draft_entity),
+                    "change": _entity_change(base_entity, current_entity),
                     "draftValue": draft_entity["json"],
                 })
             else:
@@ -641,6 +675,7 @@ class DraftRebaseService:
             "section": section,
             "entityKey": entity_key,
             "rowId": _first_row_id(current_entity, base_entity, draft_entity),  # current row wins
+            "change": _entity_change(base_entity, current_entity),
             "paths": DraftRebaseService._entity_diff_paths(base_entity, current_entity),
             "baseValue": base_entity["json"] if base_entity else None,
             "currentValue": current_entity["json"] if current_entity else None,
@@ -653,10 +688,10 @@ class DraftRebaseService:
 
         Only the ids the filer dereferences in place matter: party ids
         (changeOfDirectors / officer-type / changeOfRegistration / correction),
-        nameTranslations ids (aliases) and resolution ids.
+        nameTranslations ids (aliases), resolution ids and court order ids (correction).
         """
-        party_ids, alias_ids, resolution_ids = DraftRebaseService._collect_embedded_ids(filing_json)
-        stale = {"parties": [], "nameTranslations": [], "resolutions": []}
+        party_ids, alias_ids, resolution_ids, court_order_ids = DraftRebaseService._collect_embedded_ids(filing_json)
+        stale = {"parties": [], "nameTranslations": [], "resolutions": [], "courtOrders": []}
         if party_ids:
             party_query = db.session.query(PartyRole.party_id).filter(PartyRole.business_id == business.id)
             filing_type = (filing_json or {}).get("filing", {}).get("header", {}).get("name")
@@ -676,6 +711,10 @@ class DraftRebaseService:
             live_ids = {row.id for row in db.session.query(Resolution.id)
                         .filter(Resolution.business_id == business.id).all()}
             stale["resolutions"] = sorted(resolution_ids - live_ids)
+        if court_order_ids:
+            live_ids = {row.id for row in db.session.query(CourtOrder.id)
+                        .filter(CourtOrder.business_id == business.id).all()}
+            stale["courtOrders"] = sorted(court_order_ids - live_ids)
         return stale
 
     @staticmethod
@@ -686,7 +725,8 @@ class DraftRebaseService:
             return []
         stale = DraftRebaseService.find_stale_ids(business, filing_json)
         filing_body = filing_json.get("filing", {}).get(filing_type, {}) or {}
-        labels = {"parties": "party", "nameTranslations": "name translation", "resolutions": "resolution"}
+        labels = {"parties": "party", "nameTranslations": "name translation", "resolutions": "resolution",
+                  "courtOrders": "court order"}
         return [
             {"error": f"A {labels[section]} record in this filing (id {stale_id}) no longer exists "
                       "on the business. Reload the filing to pick up the current data and try again.",
@@ -814,7 +854,7 @@ class DraftRebaseService:
         return [node.json["path"] for node in nodes]
 
     @staticmethod
-    def _collect_embedded_ids(filing_json: dict) -> tuple[set, set, set]:
+    def _collect_embedded_ids(filing_json: dict) -> tuple[set, set, set, set]:
         """Collect the integer row ids embedded in the filing's rebaseable sections."""
         filing_type = (filing_json or {}).get("filing", {}).get("header", {}).get("name")
         filing_body = (filing_json or {}).get("filing", {}).get(filing_type, {}) or {}
@@ -822,7 +862,8 @@ class DraftRebaseService:
         party_ids = _embedded_party_ids(filing_type, filing_body)
         alias_ids = _embedded_row_ids(filing_body.get("nameTranslations"))
         resolution_ids = _embedded_row_ids((filing_body.get("shareStructure") or {}).get("resolutionDates"))
-        return party_ids, alias_ids, resolution_ids
+        court_order_ids = _embedded_row_ids(filing_body.get("courtOrders")) if filing_type == "correction" else set()
+        return party_ids, alias_ids, resolution_ids, court_order_ids
 
 
 def _int_or_none(value):

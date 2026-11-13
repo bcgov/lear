@@ -26,6 +26,7 @@ from business_model.models import (
     Address,
     Alias,
     Business,
+    CourtOrder,
     Filing,
     Jurisdiction,
     Office,
@@ -227,7 +228,9 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             "nameTranslations":
                 VersionedBusinessDetailsService.get_name_translations_revision(transaction_id, business_id),
             "resolutions":
-                VersionedBusinessDetailsService.get_resolution_dates_revision(transaction_id, business_id)
+                VersionedBusinessDetailsService.get_resolution_dates_revision(transaction_id, business_id),
+            "courtOrders":
+                VersionedBusinessDetailsService.get_court_orders_revision(transaction_id, business_id)
         }
 
     @staticmethod
@@ -505,6 +508,33 @@ class VersionedBusinessDetailsService:  # pylint: disable=too-many-public-method
             resolution_json = VersionedBusinessDetailsService.resolution_json(resolution)
             resolutions_arr.append(resolution_json)
         return resolutions_arr
+
+    @staticmethod
+    def get_court_orders_revision(transaction_id, business_id) -> list:
+        """Consolidate the court orders recorded on the business as of the given transaction id."""
+        court_order_version = VersioningProxy.version_class(db.session(), CourtOrder)
+        court_order_list = db.session.query(court_order_version) \
+            .filter(court_order_version.transaction_id <= transaction_id) \
+            .filter(court_order_version.operation_type != OPERATION_TYPE_DELETE) \
+            .filter(court_order_version.business_id == business_id) \
+            .filter(or_(court_order_version.end_transaction_id == None,
+                        court_order_version.end_transaction_id > transaction_id)) \
+            .order_by(court_order_version.transaction_id).all()
+        return [VersionedBusinessDetailsService.court_order_json(court_order) for court_order in court_order_list]
+
+    @staticmethod
+    def court_order_json(court_order_revision) -> dict:
+        """Return the court order revision as the GET court-orders row shape (minus filingType / files)."""
+        court_order = {
+            "id": court_order_revision.id,
+            "filingId": court_order_revision.filing_id,
+            "fileNumber": court_order_revision.file_number,
+            "effectOfOrder": court_order_revision.effect_of_order,
+            "orderDetails": court_order_revision.order_details
+        }
+        if court_order_revision.order_date:
+            court_order["orderDate"] = court_order_revision.order_date.isoformat()
+        return court_order
 
     @staticmethod
     def party_role_revision_json(filing, party_role, is_ia_or_after) -> dict:

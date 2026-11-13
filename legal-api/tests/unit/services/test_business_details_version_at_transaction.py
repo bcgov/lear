@@ -172,7 +172,9 @@ def test_company_details_at_transaction_returns_all_sections(session):
 
     details = VersionedBusinessDetailsService.get_company_details_at_transaction(filing.transaction_id, business.id)
 
-    assert set(details) == {'business', 'parties', 'offices', 'shareClasses', 'nameTranslations', 'resolutions'}
+    assert set(details) == {'business', 'parties', 'offices', 'shareClasses', 'nameTranslations', 'resolutions',
+                            'courtOrders'}
+    assert details['courtOrders'] == []
     assert details['business']['identifier'] == IDENTIFIER
     assert [row['id'] for row in details['parties']] == [str(person.id)]
     assert details['nameTranslations'] == [{'id': str(alias.id), 'name': 'ABC GMBH', 'type': 'TRANSLATION'}]
