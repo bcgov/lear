@@ -21,12 +21,16 @@ from business_model.models import Business
 from tests.unit import prep_incorp_filing
 
 
+SAF_INVITE = {'contextUrl': 'https://registry-home/?preset=bcscUser&token=abc', 'recipientEmail': 'saf@test.com'}
+
+
+@pytest.mark.parametrize('invite', [None, SAF_INVITE], ids=['affiliated', 'unaffiliated'])
 @pytest.mark.parametrize('test_name, legal_type, tax_id, expected_business_number', [
     ('BC_NO_BN', 'BC', None, None),
     ('BC_BN9_HIDDEN', 'BC', '123456789', None),
     ('BEN_BN15', 'BEN', '85684951BC0001', '85684951 BC0001'),
 ])
-def test_ar_reminder_notification(app, session, test_name, legal_type, tax_id, expected_business_number):
+def test_ar_reminder_notification(app, session, test_name, legal_type, tax_id, expected_business_number, invite):
     """Assert that the ar reminder notification can be processed."""
     # setup filing + business for email
     filing = prep_incorp_filing(session, 'BC1234567', 'COMPLETED')
@@ -37,7 +41,9 @@ def test_ar_reminder_notification(app, session, test_name, legal_type, tax_id, e
     token = 'token'
     # test processor
     with patch.object(ar_reminder_notification, 'get_recipient_from_auth', return_value='test@test.com') \
-            as mock_get_recipient_from_auth:
+            as mock_get_recipient_from_auth, \
+            patch.object(ar_reminder_notification, 'get_unaffiliated_invite', return_value=invite) \
+            as mock_get_unaffiliated_invite:
         email = ar_reminder_notification.process(
             {
               'businessId': filing.business_id,
@@ -46,10 +52,15 @@ def test_ar_reminder_notification(app, session, test_name, legal_type, tax_id, e
             }, token)
         assert email['content']['subject'] == 'test business - Annual Report Reminder'
 
-        assert 'test@test.com' in email['recipients']
         assert email['content']['attachments'] == []
-        assert mock_get_recipient_from_auth.call_args[0][0] == 'BC1234567'
-        assert mock_get_recipient_from_auth.call_args[0][1] == token
+        assert mock_get_unaffiliated_invite.call_args[0] == ('BC1234567', token)
+        if invite:
+            # unaffiliated: recipient comes from the invite, the entity lookup (403 for these) is skipped
+            assert email['recipients'] == 'saf@test.com'
+            mock_get_recipient_from_auth.assert_not_called()
+        else:
+            assert email['recipients'] == 'test@test.com'
+            assert mock_get_recipient_from_auth.call_args[0] == ('BC1234567', token)
 
         body = email['content']['body']
         assert body
@@ -64,7 +75,9 @@ def test_ar_reminder_notification(app, session, test_name, legal_type, tax_id, e
             assert '**Business Number:**' not in body
         assert '## Next Steps' in body
         assert 'You have 60 days to file your annual report' in body
-        assert f'[BC Business Registry account]({app.config.get("DASHBOARD_URL")}BC1234567)' in body
+        expected_access_url = invite['contextUrl'] if invite else f'{app.config.get("DASHBOARD_URL")}BC1234567'
+        assert f'1. [Access your business]({expected_access_url}).' in body
+        assert '[BC Business Registry account]' not in body
         assert 'The filing fee is $43.39 + $1.50 service fee.' in body
         assert '## Additional Resources' in body
         assert 'Service BC does not provide legal or financial advice' in body

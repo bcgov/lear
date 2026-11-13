@@ -19,7 +19,11 @@ from pathlib import Path
 from flask import current_app
 from jinja2 import Template
 
-from business_emailer.email_processors import get_recipient_from_auth, substitute_template_parts
+from business_emailer.email_processors import (
+    get_recipient_from_auth,
+    get_unaffiliated_invite,
+    substitute_template_parts,
+)
 from business_model.models import Business
 
 
@@ -39,21 +43,27 @@ def process(email_msg: dict, token: str) -> dict:
         # Only show if bn15 is saved, format for ux
         business_number = business.tax_id.replace("BC", " BC")
 
+    # unaffiliated business: SAF link + recipient from the invite; affiliated or invite failure: dashboard link
+    if invite := get_unaffiliated_invite(business.identifier, token):
+        recipients = invite["recipientEmail"]
+        access_url = invite["contextUrl"]
+    else:
+        recipients = get_recipient_from_auth(business.identifier, token)
+        access_url = current_app.config.get("DASHBOARD_URL") + business.identifier
+
     # render template with vars
     jnja_template = Template(filled_template, autoescape=True)
     body = jnja_template.render(
+        access_url=access_url,
         ar_fee=ar_fee,
         ar_year=ar_year,
         business_identifier=business.identifier,
         business_name=business.legal_name,
         business_number=business_number,
-        entity_dashboard_url=current_app.config.get("DASHBOARD_URL") + business.identifier,
         legal_type=business.legal_type,
         number_description="Incorporation"
     )
 
-    # get recipients
-    recipients = get_recipient_from_auth(business.identifier, token)
     subject = f"{business.legal_name} - Annual Report Reminder"
 
     return {

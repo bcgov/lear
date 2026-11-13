@@ -12,7 +12,7 @@
 
 You have 60 days to file your annual report to keep your business in good standing.
 
-1. Log onto your [BC Business Registry account]({{ entity_dashboard_url }}).
+1. [Access your business]({{ access_url | safe }}).{# safe: autoescape would turn the query '&' into '&amp;' #}
 2. Verify that your business addresses and directors are correct. Ensure that this information is updated before filing your annual report.
 3. File your annual report. (The filing fee is ${{ ar_fee }} + $1.50 service fee.)
 
