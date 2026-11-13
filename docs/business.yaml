@@ -21,15 +21,20 @@ info:
     | Annual Report | BC, BEN, C, CBEN, CC, CCC, CP, CUL, ULC |
     | Change of Address | BC, BEN, C, CBEN, CC, CCC, CP, CUL, ULC |
     | Change of Directors | BC, BEN, C, CBEN, CC, CCC, CP, CUL, ULC |
+    | Change of Officers | BC, BEN, C, CBEN, CC, CCC, CP, CUL, ULC |
     | Change of Registration | GP, SP |
     | Consent Continuation Out | BC, BEN, C, CBEN, CC, CCC, CUL, ULC |
-    | Conversion | GP, SP |
     | Dissolution | BC, BEN, C, CBEN, CC, CCC, CP, CUL, GP, SP, ULC |
-    | Notice of Withdrawal | BC, BEN, C, CBEN, CC, CCC, CUL, ULC |
-    | Registration (Sole Proprietorship, General Partnership) | GP, SP |
     | Special Resolution | CP |
 
-    All API requests must include a BC Registries issued API key and an Account ID.
+    All API requests must include a BC Registries issued API key (`x-apikey` header) and an Account ID (`Account-Id` header).
+
+    **Creating a new business is a two-step call.** `POST /businesses?draft=true` creates a temporary identifier (for example `TO12345678`) and returns it with the draft filing id. Submit the completed filing with `PUT /businesses/{temporary identifier}/filings/{filingId}`. A `POST /businesses` without `draft=true` is rejected, because the identifier in the body cannot match the temporary identifier the API creates during the call.
+
+    **Filing header rules for API users:**
+    - `filing.business.identifier` must equal the identifier in the URL whenever a filing is submitted or validated (the temporary identifier for a new business). Only a `draft=true` save is exempt from this check.
+    - `filing.header.authorizationReceived` must be `true` for corporation filings (BC, BEN, C, CBEN, CC, CCC, CUL, ULC) of these types: incorporation application, amalgamation application, continuation in, alteration, annual report, change of address, change of directors, consent continuation out, consent amalgamation out, continuation out, amalgamation out, AGM extension, AGM location change, voluntary dissolution, correction, restoration.
+    - `filing.header.certifiedBy` is required for API users on incorporation application, amalgamation application and consent continuation out. For cooperatives, sole proprietorships and general partnerships it is required on annual report, change of address, change of directors, registration, change of registration, special resolution, voluntary dissolution and client corrections. It is recommended on every other filing, as the name of the person submitting it.
   contact:
     name: BC Registry
     email: admin@daxiom.com
@@ -223,9 +228,8 @@ paths:
                         nameTranslations:
                           - name: API Specs Trans
                         shareStructure:
-                        resolutionDates: [
-                          '2024-07-12'
-                        ]
+                        resolutionDates:
+                          - date: '2024-07-12'
                         shareClasses:
                           - currency: CAD
                             hasMaximumShares: true
@@ -951,6 +955,7 @@ paths:
                 value:
                   filing:
                     header:
+                      authorizationReceived: true
                       name: agmExtension
                       certifiedBy: First Last
                       date: '2024-07-21'
@@ -960,7 +965,7 @@ paths:
                       identifier: BC0882365
                       legalName: 882365 B.C. LTD.
                       legalType: BC
-                    agmLocationChange:
+                    agmExtension:
                       year: '2024'
                       isFirstAgm: true
                       extReqForAgmYear: false
@@ -983,6 +988,7 @@ paths:
                 value:
                   filing:
                     header:
+                      authorizationReceived: true
                       date: '2024-07-18'
                       name: agmLocationChange
                       certifiedBy: First Last
@@ -1001,6 +1007,7 @@ paths:
                 value:
                   filing:
                     header:
+                      authorizationReceived: true
                       name: alteration
                       certifiedBy: First Last
                       date: '2024-07-25'
@@ -1024,9 +1031,8 @@ paths:
                         email: no_one@never.get
                         phone: '(111) 111-1111'
                       shareStructure:
-                        resolutionDates: [
-                          '2024-07-12'
-                        ]
+                        resolutionDates:
+                          - date: '2024-07-12'
                         shareClasses:
                           - currency: CAD
                             hasMaximumShares: true
@@ -1049,6 +1055,7 @@ paths:
                 value:
                   filing:
                     header:
+                      authorizationReceived: true
                       name: annualReport
                       certifiedBy: First Last
                       date: '2025-03-21'
@@ -1129,6 +1136,7 @@ paths:
                 value:
                     filing:
                       header:
+                        authorizationReceived: true
                         name: changeOfAddress
                         certifiedBy: "full name"
                         email: "no_one@never.get"
@@ -1192,6 +1200,7 @@ paths:
                 value:
                   filing:
                     header:
+                      authorizationReceived: true
                       name: changeOfDirectors
                       certifiedBy: First Last
                       date: '2025-03-25'
@@ -1264,6 +1273,7 @@ paths:
                 value:
                   filing:
                     header:
+                      authorizationReceived: true
                       name: changeOfOfficers
                       certifiedBy: First Last
                       date: '2025-03-25'
@@ -1309,6 +1319,7 @@ paths:
                 value:
                   filing:
                     header:
+                      authorizationReceived: true
                       name: consentContinuationOut
                       date: '2025-03-25'
                       certifiedBy: "First Last"
@@ -1326,10 +1337,11 @@ paths:
                         fileNumber: '12345'
                         effectOfOrder: planOfArrangement
               notice-of-withdrawal-request:
-                summary: Notice of Withdrawal Request
+                summary: Notice of Withdrawal Request (staff only)
                 value:
                   filing:
                     header:
+                      authorizationReceived: true
                       name: noticeOfWithdrawal
                       certifiedBy: Sample Certified Person
                       email: api.specs@example.com
@@ -1343,10 +1355,11 @@ paths:
                     noticeOfWithdrawal:
                       filingId: 123456
               notice-of-withdrawal-with-options-request:
-                summary: Notice of Withdrawal Request with Options
+                summary: Notice of Withdrawal Request with Options (staff only)
                 value:
                   filing:
                     header:
+                      authorizationReceived: true
                       name: noticeOfWithdrawal
                       certifiedBy: Sample Certified Person
                       email: api.specs@example.com
@@ -1369,6 +1382,7 @@ paths:
                 value:
                   filing:
                     header:
+                      authorizationReceived: true
                       date: '2025-03-25'
                       name: dissolution
                       certifiedBy: First Last
@@ -1382,34 +1396,168 @@ paths:
                       dissolutionDate: '2025-03-25'
                       dissolutionType: voluntary
                       parties:
-                        - party:
-                            deliveryAddress:
-                              addressCity: delivery_address city
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: H0H 0H0
-                              streetAddress: delivery_address - address line one
-                            inheritMailingAddress: true
-                            mailingAddress:
-                              addressCity: mailing_address city
-                              addressCountry: CA
-                              addressRegion: BC
-                              deliveryInstructions: ''
-                              postalCode: H0H 0H0
-                              streetAddress: mailing_address - address line one
-                            officer:
-                              email: api.specs@example.com
-                              firstName: First
-                              lastName: Last
-                              middleInitial: ''
-                              organizationName: ''
-                              partyType: person
-                            roles:
-                              - appointmentDate: '2025-03-25'
-                                roleType: Custodian
+                        - officer:
+                            firstName: First
+                            lastName: Last
+                            middleInitial: ''
+                            partyType: person
+                            email: no_one@never.get
+                          mailingAddress:
+                            streetAddress: 123 Main St
+                            streetAddressAdditional: ''
+                            addressCity: Victoria
+                            addressRegion: BC
+                            postalCode: V8W 1E5
+                            addressCountry: CA
+                          deliveryAddress:
+                            streetAddress: 123 Main St
+                            streetAddressAdditional: ''
+                            addressCity: Victoria
+                            addressRegion: BC
+                            postalCode: V8W 1E5
+                            addressCountry: CA
+                          roles:
+                          - roleType: Custodian
+                            appointmentDate: '2025-03-25'
                       courtOrder:
                         fileNumber: '12345'
+              change-of-registration-request:
+                summary: Change of Registration Request (Sole Proprietorship)
+                value:
+                  filing:
+                    header:
+                      name: changeOfRegistration
+                      date: '2026-11-12'
+                      certifiedBy: First Last
+                      accountId: 1234
+                    business:
+                      identifier: FM1234567
+                      legalType: SP
+                    changeOfRegistration:
+                      business:
+                        identifier: FM1234567
+                        naics:
+                          naicsCode: '919110'
+                          naicsDescription: International and other extra-territorial public administration
+                      offices:
+                        businessOffice:
+                          mailingAddress:
+                            id: 1
+                            streetAddress: 456 Updated Street
+                            streetAddressAdditional: ''
+                            addressCity: Victoria
+                            addressCountry: CA
+                            postalCode: V8V 2V2
+                            addressRegion: BC
+                          deliveryAddress:
+                            id: 2
+                            streetAddress: 456 Updated Street
+                            streetAddressAdditional: ''
+                            addressCity: Victoria
+                            addressCountry: CA
+                            postalCode: V8V 2V2
+                            addressRegion: BC
+                      contactPoint:
+                        email: no_one@never.get
+                        phone: (250) 123-4567
+                      parties:
+                      - officer:
+                          id: 1
+                          firstName: First
+                          lastName: Last
+                          partyType: person
+                          email: no_one@never.get
+                        mailingAddress:
+                          streetAddress: 123 Main St
+                          addressCity: Victoria
+                          addressRegion: BC
+                          postalCode: V8W 1E5
+                          addressCountry: CA
+                        roles:
+                        - roleType: Proprietor
+                          appointmentDate: '2026-01-01'
+                      - officer:
+                          firstName: First
+                          lastName: Last
+                          partyType: person
+                          email: no_one@never.get
+                        mailingAddress:
+                          streetAddress: 123 Main St
+                          addressCity: Victoria
+                          addressRegion: BC
+                          postalCode: V8W 1E5
+                          addressCountry: CA
+                        roles:
+                        - roleType: Completing Party
+                          appointmentDate: '2026-01-01'
+              special-resolution-request:
+                summary: Special Resolution Request (Cooperative)
+                value:
+                  filing:
+                    header:
+                      name: specialResolution
+                      date: '2026-11-12'
+                      certifiedBy: First Last
+                      accountId: 1234
+                    business:
+                      identifier: CP1234567
+                      legalType: CP
+                    alteration:
+                      business:
+                        identifier: CP1234567
+                        legalType: CP
+                      contactPoint:
+                        email: no_one@never.get
+                        phone: (250) 123-4567
+                      rulesInResolution: true
+                      memorandumInResolution: true
+                    specialResolution:
+                      resolution: Be it resolved that the rules of the association are amended as attached.
+                      resolutionDate: '2025-06-15'
+                      signingDate: '2025-06-15'
+                      signatory:
+                        givenName: Jane
+                        familyName: Doe
+                        additionalName: ''
+              voluntary-dissolution-firm-request:
+                summary: Voluntary Dissolution Request (Sole Proprietorship or General Partnership)
+                value:
+                  filing:
+                    header:
+                      name: dissolution
+                      date: '2026-11-12'
+                      certifiedBy: First Last
+                      accountId: 1234
+                    business:
+                      identifier: FM1234567
+                      legalType: SP
+                    dissolution:
+                      dissolutionType: voluntary
+                      dissolutionDate: '2026-11-12'
+                      parties:
+                      - officer:
+                          firstName: Jane
+                          lastName: Doe
+                          middleInitial: ''
+                          partyType: person
+                          email: no_one@never.get
+                        mailingAddress:
+                          streetAddress: 123 Main Street
+                          streetAddressAdditional: ''
+                          addressCity: Victoria
+                          addressCountry: CA
+                          postalCode: V8V 1V1
+                          addressRegion: BC
+                        deliveryAddress:
+                          streetAddress: 123 Main Street
+                          streetAddressAdditional: ''
+                          addressCity: Victoria
+                          addressCountry: CA
+                          postalCode: V8V 1V1
+                          addressRegion: BC
+                        roles:
+                        - roleType: Completing Party
+                          appointmentDate: '2026-11-12'
       parameters:
         - schema:
             type: boolean
@@ -1423,10 +1571,111 @@ paths:
           description: This parameter is used to submit a filing for validation only, no entity will be created. Use this to confirm that a filing is fully complete and correct prior to submission.
         - $ref: '#/components/parameters/accountId'
   '/businesses/{identifier}/filings/{filingId}':
-    description: to update a filing 
+    description: 'Retrieve, update or delete a single filing'
     parameters:
       - $ref: '#/components/parameters/identifier'
       - $ref: '#/components/parameters/filingId'
+    get:
+      summary: get a filing
+      tags:
+        - business
+      operationId: get-businesses-identifier-filings-filingId
+      description: Retrieve one filing (draft, pending or completed) with its status, payment details and links to its comments and documents. For a new business use the temporary identifier returned by `POST /businesses?draft=true`.
+      responses:
+        '200':
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Filing_response'
+              examples:
+                agm-location-change-completed:
+                  summary: Completed AGM Location Change
+                  value:
+                    commentsCount: 0
+                    commentsLink: https://api.connect.gov.bc.ca/business/api/v2/businesses/BC1234567/filings/112233/comments
+                    displayLedger: true
+                    documentsLink: https://api.connect.gov.bc.ca/business/api/v2/businesses/BC1234567/filings/112233/documents
+                    filedByStaff: false
+                    isFutureEffective: false
+                    filing:
+                      agmLocationChange:
+                        agmLocation:
+                          city: Toronto
+                          country: CA
+                          region: 'ON'
+                        reason: Members relocated
+                        year: '2026'
+                      business:
+                        identifier: BC1234567
+                        legalName: 1234567 B.C. LTD.
+                        legalType: BC
+                        foundingDate: '2026-10-23T16:47:49+00:00'
+                      header:
+                        name: agmLocationChange
+                        date: '2026-11-10'
+                        filingId: 112233
+                        status: COMPLETED
+                        certifiedBy: First Last
+                        effectiveDate: '2026-11-10T18:02:11+00:00'
+                        paymentToken: '0'
+                        submitter: api-user@example.com
+                        availableOnPaperOnly: false
+                        inColinOnly: false
+                        isCorrected: false
+                        isCorrectionPending: false
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+    delete:
+      summary: delete a draft filing
+      tags:
+        - business
+      operationId: delete-businesses-identifier-filings-filingId
+      description: Delete a filing that is still a draft. Submitted filings cannot be deleted, and a draft can only be deleted by the account that created it. For a new business that was never submitted, deleting the draft also removes the temporary business.
+      responses:
+        '200':
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+              examples:
+                deleted:
+                  value:
+                    message: Filing deleted.
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden. The filing is not a draft.
+        '404':
+          description: Not Found
+      parameters:
+        - $ref: '#/components/parameters/accountId'
     put:
       summary: updating filings
       tags:
@@ -1465,7 +1714,7 @@ paths:
                               fileName: Example_PDF.pdf
                         contactPoint:
                           email: test@test.com
-                          phone: 1234567890
+                          phone: '(250) 123-4567'
                         foreignJurisdiction:
                           country: US
                           identifier: TEST1234
@@ -1583,10 +1832,13 @@ paths:
                 value:
                   filing:
                     header:
+                      authorizationReceived: true
                       accountId: 1234
                       certifiedBy: First Last
                       date: '2025-03-21'
                       name: continuationIn
+                    business:
+                      identifier: TO12345678
                     continuationIn:
                         authorization:
                           files:
@@ -1594,7 +1846,7 @@ paths:
                               fileName: Example_PDF.pdf
                         contactPoint:
                           email: test@test.com
-                          phone: 1234567890
+                          phone: '(250) 123-4567'
                         foreignJurisdiction:
                           country: US
                           identifier: TEST1234
@@ -1679,6 +1931,18 @@ paths:
                               currency: null
                               hasRightsOrRestrictions: false
                               series: []
+      parameters:
+        - schema:
+            type: boolean
+          in: query
+          name: draft
+          description: Save the changes as a draft without submitting the filing.
+        - schema:
+            type: boolean
+          in: query
+          name: only_validate
+          description: Validate the filing body without submitting it. Use this to confirm a draft is complete and correct before the final PUT.
+        - $ref: '#/components/parameters/accountId'
   '/businesses/{identifier}/filings/{filingId}/documents':
     parameters:
       - $ref: '#/components/parameters/identifier'
@@ -2542,7 +2806,7 @@ paths:
         - $ref: '#/components/parameters/accountId'
   /businesses:
     post:
-      summary: save business creation filing
+      summary: start a new business filing (draft)
       operationId: post-business
       tags:
         - business
@@ -2962,7 +3226,7 @@ paths:
                                 fileName: Example_PDF.pdf
                         contactPoint: 
                             email: test@test.com
-                            phone: 1234567890
+                            phone: '(250) 123-4567'
                         foreignJurisdiction: 
                             country: US
                             identifier: TEST1234
@@ -3022,7 +3286,7 @@ paths:
                       incorporationApplication:
                         contactPoint:
                           email: no_one@never.get
-                          phone: 123-456-7890
+                          phone: '(250) 123-4567'
                         nameRequest:
                           legalType: BEN
                         nameTranslations: []
@@ -3119,7 +3383,10 @@ paths:
                         submitter: mocked submitter
                       registration: 
                         business: 
-                          natureOfBusiness: sample business
+                          identifier: TO12345678
+                          naics:
+                            naicsCode: '919110'
+                            naicsDescription: International and other extra-territorial public administration
                         businessType: SP
                         offices: 
                           businessOffice: 
@@ -3162,7 +3429,7 @@ paths:
                               lastName: Swanson
                               middleInitial: P
                               email: joe@email.com
-                              organizationName: 
+                              organizationName: ''
                               partyType: person
                             roles:
                               - appointmentDate: '2024-07-26'
@@ -3194,7 +3461,12 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: message:You are not authorized to submit a filing for TgtPxoS4FF.
-      description: '<p>Use this endpoint to create a new business. This endpoint supports creation of a new business entity by these filings:<ul><li>Incorporation Application</li><li>Amalgamation (Regular, Horizontal and Vertical)</li><li>Continuation In</li><li>Registration</li></ul></p>'
+      description: |-
+        Use this endpoint to start a new business. It supports these filings: Incorporation Application, Amalgamation (Regular, Short Form Horizontal and Short Form Vertical), Continuation In and Registration (Sole Proprietorship, General Partnership).
+
+        Always call it with `draft=true`. The API creates a temporary business identifier (for example `TO12345678`), saves the body as a draft and returns both the temporary identifier (`filing.business.identifier`) and the draft `filing.header.filingId`. Then submit with `PUT /businesses/{temporary identifier}/filings/{filingId}` using the same body with `filing.business.identifier` set to the temporary identifier. `PUT ...?only_validate=true` validates the body without submitting it, and `DELETE /businesses/{temporary identifier}/filings/{filingId}` removes an unwanted draft.
+
+        A `POST /businesses` without `draft=true` is rejected with 400, because the identifier in the body cannot match the temporary identifier the API creates during the call.
       requestBody:
         content:
           application/json:
@@ -3206,10 +3478,13 @@ paths:
                 value:
                   filing:
                     header:
+                      authorizationReceived: true
                       accountId: 1234
                       certifiedBy: First Last
                       date: '2024-07-26'
                       name: amalgamationApplication
+                    business:
+                      identifier: TO12345678
                     amalgamationApplication:
                       amalgamatingBusinesses:
                         - identifier: BC0883189
@@ -3317,10 +3592,13 @@ paths:
                   value:
                     filing:
                       header:
+                        authorizationReceived: true
                         accountId: 1234
                         certifiedBy: First Last
                         date: '2024-07-26'
                         name: amalgamationApplication
+                      business:
+                        identifier: TO12345678
                       amalgamationApplication:
                         amalgamatingBusinesses:
                           - identifier: BC0883189
@@ -3428,10 +3706,13 @@ paths:
                 value:
                   filing:
                     header:
+                      authorizationReceived: true
                       accountId: 1234
                       certifiedBy: First Last
                       date: '2024-07-26'
                       name: amalgamationApplication
+                    business:
+                      identifier: TO12345678
                     amalgamationApplication:
                       amalgamatingBusinesses:
                         - identifier: BC0883189
@@ -3539,10 +3820,13 @@ paths:
                 value:
                   filing:
                     header: 
+                      authorizationReceived: true
                       accountId: 1234
                       certifiedBy: First Last
                       date: '2025-03-21'
                       name: continuationIn
+                    business:
+                      identifier: TO12345678
                     continuationIn:
                       authorization: 
                           files: 
@@ -3550,7 +3834,7 @@ paths:
                                 fileName: Example_PDF.pdf
                       contactPoint: 
                           email: test@test.com
-                          phone: 1234567890
+                          phone: '(250) 123-4567'
                       foreignJurisdiction: 
                           country: US
                           identifier: TEST1234
@@ -3566,10 +3850,13 @@ paths:
                 value:
                   filing:
                     header:
+                      authorizationReceived: true
                       certifiedBy: First Last
                       name: incorporationApplication
                       date: '2025-03-20'
                       accountId: 1234
+                    business:
+                      identifier: TO12345678
                     incorporationApplication:
                       nameRequest:
                         legalType: BEN
@@ -3602,7 +3889,7 @@ paths:
                             addressRegion: BC
                       contactPoint:
                         email: no_one@never.get
-                        phone: 123-456-7890
+                        phone: '(250) 123-4567'
                       parties:
                         - roles:
                           - roleType: Completing Party
@@ -3655,9 +3942,15 @@ paths:
                       email: "no_one@never.get"
                       date: '2024-07-26'
                       name: registration
+                    business:
+                      identifier: TO12345678
+                      legalType: SP
                     registration: 
                       business: 
-                        natureOfBusiness: sample business
+                        identifier: TO12345678
+                        naics:
+                          naicsCode: '919110'
+                          naicsDescription: International and other extra-territorial public administration
                       businessType: SP
                       offices: 
                         businessOffice: 
@@ -3700,7 +3993,7 @@ paths:
                             lastName: Swanson
                             middleInitial: P
                             email: joe@email.com
-                            organizationName: 
+                            organizationName: ''
                             partyType: person
                           roles:
                             - appointmentDate: '2024-07-26'
@@ -3712,7 +4005,7 @@ paths:
             type: boolean
           in: query
           name: draft
-          description: This parameter is used to save a filing in Draft form which can be retrieved at a later time.
+          description: Save the filing as a draft under a new temporary business identifier. Required for API users; see the endpoint description for the two-step flow.
         - schema:
             type: boolean
           in: query
@@ -3752,11 +4045,16 @@ paths:
       description: Get all parties (Incorporator, Completing Party and Directors) associated with a business.
       parameters:
         - $ref: '#/components/parameters/accountId'
-  /businesses/search:
+  '/businesses/{identifier}/directors':
+    parameters:
+      - $ref: '#/components/parameters/identifier'
     get:
-      summary: business_autocomplete
+      summary: get business directors
       tags:
-        - search
+        - business
+      operationId: get-businesses-identifier-directors
+      description: |-
+        Returns the current directors of the business with their delivery and mailing addresses. Short form amalgamations must copy the primary or holding business's directors from this response.
       responses:
         '200':
           description: OK
@@ -3772,59 +4070,312 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                x-examples:
-                  example-1:
-                    responseHeader:
-                      status: 0
-                      QTime: 35
-                    suggest:
-                      elec:
-                        numFound: 3
-                        suggestions:
-                          - term: electronics and computer1
-                            weight: 2199
-                          - term: electronics
-                            weight: 649
-                          - term: electronics and stuff2
-                            weight: 279
-                properties:
-                  responseHeader:
-                    type: object
-                    properties:
-                      status:
-                        type: integer
-                        description: success state of the search
-                      QTime:
-                        type: integer
-                        description: Time the suggestion took to generate in ms.
-                  suggest:
-                    type: object
-                    properties:
-                      search-term:
-                        type: object
-                        description: The search term that was entered
-                        properties:
-                          numFound:
-                            type: integer
-                            description: number of suggestion weighted high enough to return
-                          suggestions:
-                            type: array
-                            description: Array of suggestion in weighted order
-                            items:
-                              $ref: '#/components/schemas/Suggestion_item'
-      operationId: get-businesses-search
-      description: The search resource returns autocomplete suggestions for matching businesses.
+                $ref: '#/components/schemas/Directors_response'
+              examples:
+                example-1:
+                  value:
+                    directors:
+                    - appointmentDate: '2026-10-23'
+                      cessationDate: null
+                      deliveryAddress:
+                        addressCity: Victoria
+                        addressCountry: CA
+                        addressRegion: BC
+                        deliveryInstructions: ''
+                        id: 1001
+                        postalCode: V8W 1E5
+                        streetAddress: 500 Fort St
+                        streetAddressAdditional: ''
+                      mailingAddress:
+                        addressCity: Victoria
+                        addressCountry: CA
+                        addressRegion: BC
+                        deliveryInstructions: ''
+                        id: 1002
+                        postalCode: V8W 1E5
+                        streetAddress: 500 Fort St
+                        streetAddressAdditional: ''
+                      officer:
+                        firstName: First
+                        lastName: Last
+                        middleInitial: ''
+                        partyType: person
+                      role: director
+                      id: 501
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
       parameters:
-        - schema:
-            type: string
-            minLength: 1
-          in: query
-          name: q
-          description: 'partial string of a business name, identifier or BN'
         - $ref: '#/components/parameters/accountId'
-      x-internal: false
-    parameters: []
+  '/businesses/{identifier}/share-classes':
+    parameters:
+      - $ref: '#/components/parameters/identifier'
+    get:
+      summary: get business share classes
+      tags:
+        - business
+      operationId: get-businesses-identifier-share-classes
+      description: |-
+        Returns the current share structure of the business. Short form amalgamations must copy the primary or holding business's share classes from this response.
+      responses:
+        '200':
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Share_classes_response'
+              examples:
+                example-1:
+                  value:
+                    shareClasses:
+                    - currency: null
+                      hasMaximumShares: true
+                      hasParValue: false
+                      hasRightsOrRestrictions: false
+                      id: 301
+                      maxNumberOfShares: 10000
+                      name: Common Shares
+                      parValue: null
+                      priority: 1
+                      series: []
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+  '/businesses/{identifier}/resolutions':
+    parameters:
+      - $ref: '#/components/parameters/identifier'
+    get:
+      summary: get business resolutions
+      tags:
+        - business
+      operationId: get-businesses-identifier-resolutions
+      description: |-
+        Returns the resolutions recorded on the business (for example share structure resolution dates and special resolutions). Short form amalgamations must copy the primary or holding business's resolution dates from this response.
+      responses:
+        '200':
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resolutions_response'
+              examples:
+                example-1:
+                  value:
+                    resolutions:
+                    - id: 701
+                      type: SPECIAL
+                      date: '2026-03-15'
+                      subType: memorandum
+                      signingDate: '2026-03-16'
+                      signatory:
+                        givenName: First
+                        familyName: Last
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+  '/businesses/{identifier}/aliases':
+    parameters:
+      - $ref: '#/components/parameters/identifier'
+    get:
+      summary: get business name translations
+      tags:
+        - business
+      operationId: get-businesses-identifier-aliases
+      description: |-
+        Returns the name translations (aliases) recorded on the business.
+      responses:
+        '200':
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Aliases_response'
+              examples:
+                example-1:
+                  value:
+                    aliases:
+                    - id: '801'
+                      name: NOM FRANÇAIS LTÉE
+                      type: TRANSLATION
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+  '/businesses/{identifier}/tasks':
+    parameters:
+      - $ref: '#/components/parameters/identifier'
+    get:
+      summary: get business tasks
+      tags:
+        - business
+      operationId: get-businesses-identifier-tasks
+      description: |-
+        Returns the to-do list for the business: draft, pending and future-effective filings, and outstanding annual reports. An empty list means nothing is outstanding. While a draft or pending filing is outstanding, most other filing types cannot be started.
+      responses:
+        '200':
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tasks_response'
+              examples:
+                example-1:
+                  value:
+                    tasks:
+                    - enabled: true
+                      order: 1
+                      task:
+                        todo:
+                          header:
+                            name: annualReport
+                            ARFilingYear: 2026
+                            status: NEW
+                            arMinDate: '2026-10-23'
+                            arMaxDate: '2026-12-22'
+                          business:
+                            identifier: BC1234567
+                            legalName: 1234567 B.C. LTD.
+                            legalType: BC
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+  '/businesses/{identifier}/comments':
+    parameters:
+      - $ref: '#/components/parameters/identifier'
+    get:
+      summary: get business comments
+      tags:
+        - business
+      operationId: get-businesses-identifier-comments
+      description: |-
+        Returns the comments staff have recorded on the business.
+      responses:
+        '200':
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comments_response'
+              examples:
+                example-1:
+                  value:
+                    comments:
+                    - comment:
+                        id: 901
+                        comment: Address confirmed with the business owner.
+                        commentType: STAFF
+                        submitterDisplayName: BC Registries Staff
+                        businessId: 123
+                        filingId: null
+                        timestamp: '2026-11-10T18:02:11+00:00'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+      parameters:
+        - $ref: '#/components/parameters/accountId'
+  '/businesses/{identifier}/filings/{filingId}/comments':
+    parameters:
+      - $ref: '#/components/parameters/identifier'
+      - $ref: '#/components/parameters/filingId'
+    get:
+      summary: get filing comments
+      tags:
+        - business
+      operationId: get-businesses-identifier-filings-filingId-comments
+      description: |-
+        Returns the comments recorded on one filing.
+      responses:
+        '200':
+          description: OK
+          headers:
+            Access-Control-Allow-Origin:
+              $ref: '#/components/headers/AccessControlAllowOrigin'
+            Access-Control-Allow-Methods:
+              $ref: '#/components/headers/AccessControlAllowMethods'
+            Access-Control-Allow-Headers:
+              $ref: '#/components/headers/AccessControlAllowHeaders'
+            Access-Control-Max-Age:
+              $ref: '#/components/headers/AccessControlMaxAge'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comments_response'
+              examples:
+                example-1:
+                  value:
+                    comments:
+                    - comment:
+                        id: 902
+                        comment: Filing reviewed.
+                        commentType: STAFF
+                        submitterDisplayName: BC Registries Staff
+                        businessId: 123
+                        filingId: 112233
+                        timestamp: '2026-11-10T18:02:11+00:00'
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+      parameters:
+        - $ref: '#/components/parameters/accountId'
   '/documents/client/{filingType}/{entityType}/{documentType}':
     post:
       tags:
@@ -4258,10 +4809,18 @@ components:
               properties:
                 resolutionDates:
                   type: array
-                  description: 'Date the resolution was adopted. '
+                  description: 'Dates the share structure resolutions were adopted. Each entry is an object with a `date` field. '
                   items:
-                    type: string
-                    format: date
+                    type: object
+                    required:
+                      - date
+                    properties:
+                      id:
+                        type: integer
+                        description: Id of an existing resolution date, returned by the API.
+                      date:
+                        type: string
+                        format: date
                 shareClasses:
                   type: array
                   description: 'example: Class A shares.'
@@ -4320,10 +4879,10 @@ components:
               - A translation of company name does not include company names that are specified in an English and/or French form.
             shareStructure:
               resolutionDates:
-                - '2019-08-24'
+                - date: '2019-08-24'
               shareClasses:
                 - resolutionDates:
-                    - '2019-08-24'
+                    - date: '2019-08-24'
                   shareClasses:
                     - name: Redeemable Shares
                       priority: 0
@@ -5398,7 +5957,7 @@ components:
                   title: Chief Executive Officer
             shareStructure:
               resolutionDates:
-                - '2019-08-24'
+                - date: '2019-08-24'
               shareClasses:
                 - name: Common A
                   priority: 3
@@ -6031,7 +6590,16 @@ components:
           description: 'Date of the filing. '
         certifiedBy:
           type: string
-          description: 'Staff certifying filing. '
+          description: |-
+            Name of the person certifying the filing.
+
+            **Note:** Required for API users on incorporation application, amalgamation application and consent continuation out. For cooperatives, sole proprietorships and general partnerships, required on annual report, change of address, change of directors, registration, change of registration, special resolution, voluntary dissolution and client corrections. Recommended on every other filing.
+        authorizationReceived:
+          type: boolean
+          description: |-
+            Indicates the client has authorized the filing submission.
+
+            **Note:** Required and must be `true` for corporation filings of these types: incorporation application, amalgamation application, continuation in, alteration, annual report, change of address, change of directors, consent continuation out, consent amalgamation out, continuation out, amalgamation out, AGM extension, AGM location change, voluntary dissolution, correction, restoration.
         email:
           type: string
           format: email
@@ -6316,7 +6884,7 @@ components:
                     title: string
               shareStructure:
                 resolutionDates:
-                  - '2019-08-24'
+                  - date: '2019-08-24'
                 shareClasses:
                   - name: string
                     priority: 0
@@ -6581,7 +7149,7 @@ components:
                   title: Chief Executive Officer
             shareStructure:
               resolutionDates:
-                - '2019-08-24'
+                - date: '2019-08-24'
               shareClasses:
                 - name: string
                   priority: 0
@@ -7573,14 +8141,17 @@ components:
           example: 2
         maxNumberOfShares:
           type: number
+          nullable: true
           title: 'Maximum number of shares in the class. '
           description: 'The maximum number of shares that a corporation can issue to the investors called authorized shares. If hasMaximumShares is false, set this field to null.'
         parValue:
           type: number
+          nullable: true
           title: 'Initial value of each share. '
           description: 'The value of a single common share as set by a corporation''s charter. If hasParValue is false, set this field to null.'
         currency:
           type: string
+          nullable: true
           description: The currency in which the Share is traded on the Exchange.
         hasMaximumShares:
           type: boolean
@@ -7661,10 +8232,18 @@ components:
       properties:
         resolutionDates:
           type: array
-          description: 'The date the share structure of the company was adopted. '
+          description: 'The dates the share structure of the company was adopted. Each entry is an object with a `date` field. '
           items:
-            type: string
-            format: date
+            type: object
+            required:
+              - date
+            properties:
+              id:
+                type: integer
+                description: Id of an existing resolution date, returned by the API.
+              date:
+                type: string
+                format: date
         shareClasses:
           type: array
           description: 'Designation that describes the different types of shares the company can issue, typically designated by letters of the alphabet, such as A or B. '
@@ -7675,7 +8254,7 @@ components:
       x-examples:
         Example 1:
           resolutionDates:
-            - '2019-08-24'
+            - date: '2019-08-24'
           shareClasses:
             - name: Redeemable shares
               priority: 2
@@ -7690,30 +8269,157 @@ components:
                   priority: 2
                   hasMaximumShares: true
                   hasRightsOrRestrictions: true
-    Suggestion_item:
+    Aliases_response:
       type: object
-      description: '***Item not used*** A suggestion from an auto-search'
+      title: Name translations
       properties:
-        name:
-          type: string
-          description: Matching term
-        identifier:
-          type: string
-        BN:
-          type: string
-        target:
-          type: string
-        weight:
+        aliases:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+                description: The translated name.
+              type:
+                type: string
+                example: TRANSLATION
+    Comments_response:
+      type: object
+      title: Comments
+      properties:
+        comments:
+          type: array
+          items:
+            type: object
+            properties:
+              comment:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  comment:
+                    type: string
+                  commentType:
+                    type: string
+                    example: STAFF
+                  submitterDisplayName:
+                    type: string
+                  businessId:
+                    type: integer
+                    nullable: true
+                  filingId:
+                    type: integer
+                    nullable: true
+                  timestamp:
+                    type: string
+                    format: date-time
+    Directors_response:
+      type: object
+      title: Directors
+      properties:
+        directors:
+          type: array
+          items:
+            $ref: '#/components/schemas/Director'
+    Filing_response:
+      type: object
+      title: Single filing
+      description: One filing as returned by GET /businesses/{identifier}/filings/{filingId}. The `filing` object has the same shape as the submitted body plus the server-side header fields (filingId, status, effectiveDate, paymentToken, submitter).
+      properties:
+        filing:
+          type: object
+          properties:
+            header:
+              $ref: '#/components/schemas/filing_header'
+            business:
+              $ref: '#/components/schemas/Business'
+          additionalProperties: true
+        commentsCount:
           type: integer
-          description: The weight of the search term is scored by the matching algorithm against the search term provided.
-      title: ''
-      x-examples:
-        Example 1:
-          name: string
-          identifier: string
-          BN: '123456789'
-          target: string
-          weight: 0
+        commentsLink:
+          type: string
+          format: uri
+        documentsLink:
+          type: string
+          format: uri
+        displayLedger:
+          type: boolean
+        filedByStaff:
+          type: boolean
+        isFutureEffective:
+          type: boolean
+    Resolutions_response:
+      type: object
+      title: Resolutions
+      properties:
+        resolutions:
+          type: array
+          items:
+            type: object
+            required:
+            - id
+            - type
+            - date
+            properties:
+              id:
+                type: integer
+              type:
+                type: string
+                description: ORDINARY or SPECIAL.
+              date:
+                type: string
+                format: date
+              subType:
+                type: string
+              resolution:
+                type: string
+              signingDate:
+                type: string
+                format: date
+              signatory:
+                type: object
+                properties:
+                  givenName:
+                    type: string
+                  familyName:
+                    type: string
+                  additionalName:
+                    type: string
+    Share_classes_response:
+      type: object
+      title: Share classes
+      properties:
+        shareClasses:
+          type: array
+          items:
+            $ref: '#/components/schemas/shareClass'
+    Tasks_response:
+      type: object
+      title: Tasks
+      properties:
+        tasks:
+          type: array
+          items:
+            type: object
+            properties:
+              enabled:
+                type: boolean
+                description: False when an earlier task must be completed first.
+              order:
+                type: integer
+              task:
+                type: object
+                description: Either a `todo` (an outstanding annual report or name request) or a `filing` (a draft, pending or future effective filing in the same shape as GET filing).
+                properties:
+                  todo:
+                    type: object
+                    additionalProperties: true
+                  filing:
+                    type: object
+                    additionalProperties: true
     Transition:
       type: object
       title: Transition Filing
@@ -7827,7 +8533,7 @@ components:
                   title: Chief Executive Officer
             shareStructure:
               resolutionDates:
-                - '2019-08-24'
+                - date: '2019-08-24'
               shareClasses:
                 - name: string
                   priority: 0
@@ -7988,7 +8694,5 @@ tags:
     description: business services
   - name: document
     description: document services
-  - name: search
-    description: search services
 security:
   - api_key: []
