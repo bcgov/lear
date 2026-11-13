@@ -133,7 +133,7 @@ def test_validate_col_relationships(
     # Ensure all relationships in the filing have appointmentDate so role/meta validations can be isolated
     for rel in col.get('relationships', []):
         for role in rel.get('roles', []):
-            role.setdefault('appointmentDate', date.today().isoformat())
+            role.setdefault('appointmentDate', LegislationDatetime.datenow().isoformat())
     f['filing']['changeOfLiquidators'] = col
 
     err = validate(business, f)
@@ -211,7 +211,7 @@ def test_validate_col_offices(
     # Ensure relationships have appointmentDate so office validation can run in isolation
     for rel in col.get('relationships', []):
         for role in rel.get('roles', []):
-            role.setdefault('appointmentDate', date.today().isoformat())
+            role.setdefault('appointmentDate', LegislationDatetime.datenow().isoformat())
 
     mailing_country = mailing_country_region[0]
     mailing_region = mailing_country_region[1]
@@ -293,6 +293,10 @@ def test_validate_col_required_offices(
 
     col = copy.deepcopy(CHANGE_OF_LIQUIDATORS)
     col['type'] = sub_type
+    # Ensure relationships have appointmentDate so office validation can run in isolation
+    for rel in col.get('relationships', []):
+        for role in rel.get('roles', []):
+            role.setdefault('appointmentDate', LegislationDatetime.datenow().isoformat())
     if pop_offices:
         col.pop('offices', None)
 
@@ -305,13 +309,15 @@ def test_validate_col_required_offices(
         party.save()
         party_role = PartyRole(
             role=PartyRole.RoleTypes.LIQUIDATOR.value,
-            appointment_date=date.today(),
+            appointment_date=LegislationDatetime.datenow().isoformat(),
             business_id=business.id,
             party_id=party.id
         )
         party_role.save()
         col['relationships'] = [col['relationships'][0]]
         col['relationships'][0]['entity']['identifier'] = str(party.id)
+        for role in col['relationships'][0].get('roles', []):
+            role['cessationDate'] = LegislationDatetime.datenow().isoformat()
 
     f['filing']['changeOfLiquidators'] = col
 
