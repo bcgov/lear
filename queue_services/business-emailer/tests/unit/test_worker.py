@@ -279,7 +279,8 @@ def test_process_ar_reminder_email(app, session):
     token = 'token'
     # test processor
     with patch.object(AccountService, 'get_bearer_token', return_value=token):
-        with patch.object(ar_reminder_notification, 'get_recipient_from_auth', return_value=CONTACT_POINT):
+        with patch.object(ar_reminder_notification, 'get_recipient_from_auth', return_value=CONTACT_POINT), \
+                patch.object(ar_reminder_notification, 'get_unaffiliated_invite', return_value=None):
             with patch.object(worker, 'send_email', return_value='success') as mock_send_email:
                 worker.process_email(
                     SimpleCloudEvent(
@@ -300,6 +301,7 @@ def test_process_ar_reminder_email(app, session):
                 assert call_args[0][0]['recipients'] == CONTACT_POINT
                 assert call_args[0][0]['content']['body']
                 assert 'Dye & Durham' not in call_args[0][0]['content']['body']
+                assert '1. [Access your business](' in call_args[0][0]['content']['body']
                 assert call_args[0][0]['content']['attachments'] == []
                 assert call_args[0][1] == token
 

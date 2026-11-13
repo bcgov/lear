@@ -112,6 +112,34 @@ def get_recipient_from_auth(identifier: str, token: str) -> str:
     return contacts[0]["email"]
 
 
+def get_unaffiliated_invite(identifier: str, token: str) -> dict | None:
+    """Create/refresh the SAF (simplified account flow) invitation for a business with no account affiliation.
+
+    - 201: return {"contextUrl", "recipientEmail"} (the entity lookup 403s for unaffiliated businesses)
+    - 409: already affiliated, return None
+    - any other response or error: log and return None so the caller falls back to the dashboard link
+    """
+    headers = {
+        "Accept": "application/json",
+        "Authorization": f"Bearer {token}"
+    }
+    url = f'{current_app.config.get("AUTH_URL")}/affiliationInvitations/unaffiliated/{identifier}'
+    timeout = int(current_app.config.get("ACCOUNT_SVC_TIMEOUT") or 20)
+    try:
+        res = requests.post(url, json={"sendEmail": False}, headers=headers, timeout=timeout)
+        if res.status_code == HTTPStatus.CONFLICT:
+            return None
+        if res.status_code == HTTPStatus.CREATED:
+            invite = res.json()
+            if invite.get("contextUrl") and invite.get("recipientEmail"):
+                return invite
+        current_app.logger.error(
+            "Queue Error: Unaffiliated invite for business (%s) failed: %s %s", identifier, res.status_code, res.text)
+    except Exception:
+        current_app.logger.error("Queue Error: Unaffiliated invite request for business (%s) failed.", identifier, exc_info=True)
+    return None
+
+
 def get_user_email_from_auth(user_name: str, token: str) -> str:
     """Get user email from auth."""
     user_info = get_user_from_auth(user_name, token)

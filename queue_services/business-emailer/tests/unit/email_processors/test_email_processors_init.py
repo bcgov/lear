@@ -13,6 +13,7 @@
 # limitations under the License.
 """Tests for helpers in business_emailer.email_processors package __init__."""
 import pytest
+import requests
 import requests_mock
 
 from business_model.models import Business
@@ -26,6 +27,7 @@ from business_emailer.email_processors import (
     get_party_emails,
     get_recipients,
     get_subject,
+    get_unaffiliated_invite,
     substitute_template_parts,
 )
 
@@ -410,3 +412,76 @@ def test_get_recipients_calls_get_recipient_from_auth(app):
             result = get_recipients('COMPLETED', filing_json, token='token')
     assert result == 'auth@example.com'
     mock_auth.assert_called_once_with('BC1234567', 'token')
+
+
+UNAFFILIATED_IDENTIFIER = 'BC1234567'
+SAF_INVITE = {
+    'contextUrl': 'https://registry-home/?preset=bcscUser&token=abc',
+    'expiresOn': '2026-11-20T23:59:59+00:00',
+    'recipientEmail': 'saf@test.com',
+}
+
+
+def _unaffiliated_url(auth_url):
+    return f'{auth_url}/affiliationInvitations/unaffiliated/{UNAFFILIATED_IDENTIFIER}'
+
+
+def test_get_unaffiliated_invite_returns_link_and_recipient(app, auth_url):
+    """Assert the SAF link and recipient are returned when auth creates the invitation."""
+    token = 'token'
+
+    with app.app_context(), requests_mock.Mocker() as m:
+        m.post(_unaffiliated_url(auth_url), json=SAF_INVITE, status_code=201)
+        result = get_unaffiliated_invite(UNAFFILIATED_IDENTIFIER, token)
+
+        assert result == SAF_INVITE
+        assert m.last_request.json() == {'sendEmail': False}
+        assert m.last_request.headers['Authorization'] == f'Bearer {token}'
+        assert m.last_request.headers['Accept'] == 'application/json'
+        assert m.last_request.timeout == int(app.config.get('ACCOUNT_SVC_TIMEOUT') or 20)
+
+
+def test_get_unaffiliated_invite_returns_none_when_already_affiliated(app, auth_url):
+    """Assert None is returned when auth reports an existing affiliation (409)."""
+    with app.app_context(), requests_mock.Mocker() as m:
+        m.post(_unaffiliated_url(auth_url),
+               json={'code': 'AFFILIATION_ALREADY_EXISTS', 'message': 'An affiliation already exists.'},
+               status_code=409)
+
+        assert get_unaffiliated_invite(UNAFFILIATED_IDENTIFIER, 'token') is None
+
+
+@pytest.mark.parametrize('response_json', [
+    {},
+    {'contextUrl': SAF_INVITE['contextUrl']},
+    {'recipientEmail': SAF_INVITE['recipientEmail']},
+], ids=['old-auth-api', 'missing-recipient', 'missing-link'])
+def test_get_unaffiliated_invite_returns_none_on_incomplete_201(app, auth_url, response_json):
+    """Assert None is returned when a 201 lacks the link or the recipient."""
+    with app.app_context(), requests_mock.Mocker() as m:
+        m.post(_unaffiliated_url(auth_url), json=response_json, status_code=201)
+
+        assert get_unaffiliated_invite(UNAFFILIATED_IDENTIFIER, 'token') is None
+
+
+@pytest.mark.parametrize('status_code, response_json', [
+    (403, {'message': 'Forbidden'}),
+    (404, {'message': 'Business not found.'}),
+    (400, {'code': 'INVALID_BUSINESS_EMAIL', 'message': 'Invalid business email.'}),
+    (500, {}),
+])
+def test_get_unaffiliated_invite_returns_none_on_failure(app, auth_url, status_code, response_json):
+    """Assert None is returned on any other auth failure so the caller falls back to the dashboard link."""
+    with app.app_context(), requests_mock.Mocker() as m:
+        m.post(_unaffiliated_url(auth_url), json=response_json, status_code=status_code)
+
+        assert get_unaffiliated_invite(UNAFFILIATED_IDENTIFIER, 'token') is None
+
+
+@pytest.mark.parametrize('exc', [requests.exceptions.ConnectionError, requests.exceptions.Timeout])
+def test_get_unaffiliated_invite_returns_none_on_request_exception(app, auth_url, exc):
+    """Assert None is returned when the auth request itself fails or times out."""
+    with app.app_context(), requests_mock.Mocker() as m:
+        m.post(_unaffiliated_url(auth_url), exc=exc)
+
+        assert get_unaffiliated_invite(UNAFFILIATED_IDENTIFIER, 'token') is None
