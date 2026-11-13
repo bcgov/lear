@@ -32,9 +32,9 @@ info:
     **Creating a new business is a two-step call.** `POST /businesses?draft=true` creates a temporary identifier (for example `TO12345678`) and returns it with the draft filing id. Submit the completed filing with `PUT /businesses/{temporary identifier}/filings/{filingId}`. A `POST /businesses` without `draft=true` is rejected, because the identifier in the body cannot match the temporary identifier the API creates during the call.
 
     **Filing header rules for API users:**
-    - `filing.business.identifier` must be present in every filing body and must equal the identifier in the URL (the temporary identifier for a new business).
-    - `filing.header.authorizationReceived` must be `true` for corporation filings (BC, BEN, C, CBEN, CC, CCC, CUL, ULC) of these types: incorporation application, amalgamation application, continuation in, alteration, annual report, change of address, change of directors, consent continuation out, AGM extension, AGM location change, voluntary dissolution, correction, restoration.
-    - `filing.header.certifiedBy` is required for API users on incorporation application, amalgamation application and consent continuation out, and for everyone on annual report, change of address, change of directors, registration, change of registration and special resolution.
+    - `filing.business.identifier` must equal the identifier in the URL whenever a filing is submitted or validated (the temporary identifier for a new business). Only a `draft=true` save is exempt from this check.
+    - `filing.header.authorizationReceived` must be `true` for corporation filings (BC, BEN, C, CBEN, CC, CCC, CUL, ULC) of these types: incorporation application, amalgamation application, continuation in, alteration, annual report, change of address, change of directors, consent continuation out, consent amalgamation out, continuation out, amalgamation out, AGM extension, AGM location change, voluntary dissolution, correction, restoration.
+    - `filing.header.certifiedBy` is required for API users on incorporation application, amalgamation application and consent continuation out. For cooperatives, sole proprietorships and general partnerships it is required on annual report, change of address, change of directors, registration, change of registration, special resolution, voluntary dissolution and client corrections. It is recommended on every other filing, as the name of the person submitting it.
   contact:
     name: BC Registry
     email: admin@daxiom.com
@@ -1417,8 +1417,8 @@ paths:
                             postalCode: V8W 1E5
                             addressCountry: CA
                           roles:
-                          - roleType: Completing Party
-                            appointmentDate: '2025-03-21'
+                          - roleType: Custodian
+                            appointmentDate: '2025-03-25'
                       courtOrder:
                         fileNumber: '12345'
               change-of-registration-request:
@@ -1644,7 +1644,7 @@ paths:
       tags:
         - business
       operationId: delete-businesses-identifier-filings-filingId
-      description: Delete a filing that is still a draft. Submitted filings cannot be deleted. For a new business that was never submitted, deleting the draft also removes the temporary business.
+      description: Delete a filing that is still a draft. Submitted filings cannot be deleted, and a draft can only be deleted by the account that created it. For a new business that was never submitted, deleting the draft also removes the temporary business.
       responses:
         '200':
           description: OK
@@ -4246,7 +4246,7 @@ paths:
         - business
       operationId: get-businesses-identifier-tasks
       description: |-
-        Returns the to-do list for the business: draft, pending and future-effective filings, and outstanding annual reports. An empty list means nothing is outstanding. A business with an open task cannot start another filing of most types.
+        Returns the to-do list for the business: draft, pending and future-effective filings, and outstanding annual reports. An empty list means nothing is outstanding. While a draft or pending filing is outstanding, most other filing types cannot be started.
       responses:
         '200':
           description: OK
@@ -6593,13 +6593,13 @@ components:
           description: |-
             Name of the person certifying the filing.
 
-            **Note:** Required for API users on incorporation application, amalgamation application and consent continuation out, and for all submitters on annual report, change of address, change of directors, registration, change of registration and special resolution.
+            **Note:** Required for API users on incorporation application, amalgamation application and consent continuation out. For cooperatives, sole proprietorships and general partnerships, required on annual report, change of address, change of directors, registration, change of registration, special resolution, voluntary dissolution and client corrections. Recommended on every other filing.
         authorizationReceived:
           type: boolean
           description: |-
             Indicates the client has authorized the filing submission.
 
-            **Note:** Required and must be `true` for corporation filings of these types: incorporation application, amalgamation application, continuation in, alteration, annual report, change of address, change of directors, consent continuation out, AGM extension, AGM location change, voluntary dissolution, correction, restoration.
+            **Note:** Required and must be `true` for corporation filings of these types: incorporation application, amalgamation application, continuation in, alteration, annual report, change of address, change of directors, consent continuation out, consent amalgamation out, continuation out, amalgamation out, AGM extension, AGM location change, voluntary dissolution, correction, restoration.
         email:
           type: string
           format: email
