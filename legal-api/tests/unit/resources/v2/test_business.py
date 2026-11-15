@@ -130,6 +130,67 @@ def test_create_bootstrap_minimal_draft_filing_mocked_affiliation(session, clien
     assert rv.json['filing']['header']['name'] == filing_name
 
 
+def _one_shot_incorporation(business_block):
+    """Return a complete numbered-company IA for POST /businesses, with the given business block (or none)."""
+    filing = copy.deepcopy(FILING_TEMPLATE)
+    filing['filing'].pop('business')
+    if business_block is not None:
+        filing['filing']['business'] = business_block
+    filing['filing']['incorporationApplication'] = copy.deepcopy(INCORPORATION)
+    filing['filing']['header']['name'] = 'incorporationApplication'
+    filing['filing']['header']['accountId'] = 28
+    filing['filing']['header'].pop('effectiveDate')
+    return filing
+
+
+@pytest.mark.parametrize('test_name, business_block', [
+    ('no business block', None),
+    ('placeholder the caller cannot resolve yet', {'identifier': '{{temp_identifier}}'}),
+    ('wrong identifier', {'identifier': 'BC1234567', 'legalType': 'BC'}),
+])
+def test_create_one_shot_only_validate(session, client, jwt, test_name, business_block):
+    """Assert POST /businesses validates a one-shot filing, using the temp identifier the API just created."""
+    filing = _one_shot_incorporation(business_block)
+
+    with patch.object(RegistrationBootstrapService, 'register_bootstrap', return_value=HTTPStatus.OK):
+        rv = client.post('/api/v2/businesses?only_validate=true',
+                         json=filing,
+                         headers=create_header(jwt, [STAFF_ROLE], None))
+
+    assert rv.status_code == HTTPStatus.OK, rv.json
+    assert not rv.json.get('errors')
+    temp_identifier = rv.json['filing']['business']['identifier']
+    assert temp_identifier.startswith('T')
+    assert RegistrationBootstrap.find_by_identifier(temp_identifier)
+    assert rv.json['filing']['header']['name'] == 'incorporationApplication'
+
+
+def test_create_one_shot_incorporation(app, session, client, jwt, requests_mock):
+    """Assert POST /businesses without draft=true files a new business in one call."""
+    filing = _one_shot_incorporation({'identifier': '{{temp_identifier}}'})
+    requests_mock.post(app.config.get('PAYMENT_SVC_URL'),
+                       json={'id': 21322, 'statusCode': 'CREATED', 'isPaymentActionRequired': False},
+                       status_code=HTTPStatus.CREATED)
+
+    with patch.object(RegistrationBootstrapService, 'register_bootstrap', return_value=HTTPStatus.OK):
+        rv = client.post('/api/v2/businesses',
+                         json=filing,
+                         headers=create_header(jwt, [STAFF_ROLE], None))
+
+    assert rv.status_code == HTTPStatus.CREATED, rv.json
+    assert not rv.json.get('errors')
+    temp_identifier = rv.json['filing']['business']['identifier']
+    assert temp_identifier.startswith('T')
+    assert rv.json['filing']['header']['filingId']
+    assert rv.json['filing']['header']['paymentToken'] == '21322'
+
+    saved = Filing.get_filing_by_payment_token(rv.json['filing']['header']['paymentToken'])
+    assert saved
+    assert saved.status == Filing.Status.PENDING.value
+    assert saved.temp_reg == temp_identifier
+    assert saved.filing_json['filing']['business']['identifier'] == temp_identifier
+
+
 @integration_affiliation
 @pytest.mark.parametrize('filing_name', [
     'incorporationApplication',
