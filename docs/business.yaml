@@ -1644,7 +1644,7 @@ paths:
       tags:
         - business
       operationId: delete-businesses-identifier-filings-filingId
-      description: Delete a filing that is still a draft. Submitted filings cannot be deleted, and a draft can only be deleted by the account that created it. For a new business that was never submitted, deleting the draft also removes the temporary business.
+      description: Delete a filing that is still a draft. Submitted filings cannot be deleted. Staff can delete any draft, but a client cannot delete a draft that staff started. For a new business that was never submitted, deleting the draft also removes the temporary business.
       responses:
         '200':
           description: OK
