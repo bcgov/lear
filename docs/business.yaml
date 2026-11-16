@@ -4246,7 +4246,7 @@ paths:
         - business
       operationId: get-businesses-identifier-tasks
       description: |-
-        Returns the to-do list for the business: draft, pending and future-effective filings, and outstanding annual reports. An empty list means nothing is outstanding. While a draft or pending filing is outstanding, most other filing types cannot be started.
+        Returns the to-do list for the business: draft, pending and future-effective filings, and outstanding annual reports. An empty list means nothing is outstanding; an identifier that does not exist also returns an empty list rather than 404. While a draft or pending filing is outstanding, most other filing types cannot be started.
       responses:
         '200':
           description: OK
@@ -4283,8 +4283,6 @@ paths:
                             legalType: BC
         '401':
           description: Unauthorized
-        '404':
-          description: Not Found
       parameters:
         - $ref: '#/components/parameters/accountId'
   '/businesses/{identifier}/comments':
