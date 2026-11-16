@@ -1,6 +1,6 @@
 [project]
 name = "sql-versioning"
-version = "0.5.0"
+version = "0.5.1"
 description = ""
 authors = [
     {name = "Hongjing Chen",email = "Hongjing.Chen@gov.bc.ca"},

@@ -36,7 +36,7 @@ from business_model.models import db as _db
 from legal_api import create_app, jwt as _jwt
 from legal_api.config import TestConfig
 
-postgres = PostgresContainer("postgres:16-alpine")
+postgres = PostgresContainer("postgres:18-alpine")
 
 
 # Models default many timestamp columns to ``func.now()`` which Postgres

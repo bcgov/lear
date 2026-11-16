@@ -61,7 +61,7 @@ from business_filer import create_app
 
 from . import FROZEN_DATETIME
 
-postgres = PostgresContainer("postgres:16-alpine")
+postgres = PostgresContainer("postgres:18-alpine")
 
 @contextmanager
 def not_raises(exception):
