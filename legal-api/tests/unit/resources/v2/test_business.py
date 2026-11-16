@@ -147,6 +147,7 @@ def _one_shot_incorporation(business_block):
     ('no business block', None),
     ('placeholder the caller cannot resolve yet', {'identifier': '{{temp_identifier}}'}),
     ('wrong identifier', {'identifier': 'BC1234567', 'legalType': 'BC'}),
+    ('business block that is not an object', 'BC1234567'),
 ])
 def test_create_one_shot_only_validate(session, client, jwt, test_name, business_block):
     """Assert POST /businesses validates a one-shot filing, using the temp identifier the API just created."""

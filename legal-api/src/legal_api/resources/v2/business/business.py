@@ -232,8 +232,9 @@ def post_businesses():
     # The temporary identifier was created in this request, so the caller cannot know it yet.
     # Write it into the body here (Flask returns this same cached object to every later get_json()),
     # so the identifier check, validation and save all see the one the API just created.
+    business_block = json_input["filing"].get("business")
     json_input["filing"]["business"] = {
-        **(json_input["filing"].get("business") or {}),
+        **(business_block if isinstance(business_block, dict) else {}),
         "identifier": bootstrap.identifier
     }
 
