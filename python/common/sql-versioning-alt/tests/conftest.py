@@ -21,11 +21,12 @@ from sqlalchemy import create_engine
 from sqlalchemy import text
 from sqlalchemy.orm import sessionmaker
 from testcontainers.postgres import PostgresContainer
+from urllib.parse import urlparse
 
 from sql_versioning import Base
 
 load_dotenv(find_dotenv())
-postgres = PostgresContainer("postgres:16-alpine")
+postgres = PostgresContainer("postgres:18-alpine")
 
 def get_db_uri():
     host = os.getenv("DB_HOST", "localhost")
@@ -39,6 +40,15 @@ def get_db_uri():
 @pytest.fixture(scope="session", autouse=True)
 def setup(request):
     postgres.start()
+    # point get_db_uri at the container instead of whatever DB_* happens to be in the env
+    url = urlparse(postgres.get_connection_url())
+    os.environ.update(
+        DB_HOST=url.hostname,
+        DB_PORT=str(url.port),
+        DB_USERNAME=url.username,
+        DB_PASSWORD=url.password,
+        DB_NAME=url.path.lstrip('/'),
+    )
 
     def remove_container():
         postgres.stop()

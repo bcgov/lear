@@ -27,7 +27,7 @@ import business_model_migrations
 from business_model.models import db as _db
 from config import Testing
 
-postgres = PostgresContainer("postgres:16-alpine")
+postgres = PostgresContainer("postgres:18-alpine")
 
 
 # Models default many timestamp columns to ``func.now()`` which Postgres
