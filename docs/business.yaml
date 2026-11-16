@@ -941,6 +941,12 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: message:Internal server error
+        '200':
+          description: Validation only (only_validate=true). The filing was checked and not saved; any errors are listed in the body.
+        '402':
+          description: Payment required. The invoice could not be created with the pay service; details in the body.
+        '409':
+          description: Conflict. A filing was completed after this draft's base transaction; reload the draft before saving.
       description: This is used to submit all filing types that are used to maintain or change the state of the Registration of any business entity in the Registry to which the user has access to.
       tags:
         - business
@@ -1821,6 +1827,20 @@ paths:
                         paymentToken: '1234567'
                         status: PENDING
                         submitter: mock submitter
+        '200':
+          description: Validation only (only_validate=true). The filing was checked and not saved; any errors are listed in the body.
+        '400':
+          description: Bad request. Malformed body, filing/business/identifier not matching the path, or validation errors listed in the body.
+        '401':
+          description: Unauthorized. No valid token, or the account is not affiliated with the business.
+        '402':
+          description: Payment required. The invoice could not be created with the pay service; details in the body.
+        '403':
+          description: Forbidden. The filing type is not allowed for this business in its current state, or a client is changing a draft that staff started.
+        '404':
+          description: Not found. The business or the filing does not exist.
+        '409':
+          description: Conflict. A filing was completed after this draft's base transaction; reload the draft before saving.
       requestBody:
         content:
           application/json:
@@ -3461,6 +3481,16 @@ paths:
                   value:
                     errorMessage: API backend third party service error.
                     rootCause: message:You are not authorized to submit a filing for TgtPxoS4FF.
+        '200':
+          description: Validation only (only_validate=true). The filing was checked and not saved; any errors are listed in the body.
+        '400':
+          description: Bad request. Malformed body, filing/business/identifier not matching the path, or validation errors listed in the body.
+        '402':
+          description: Payment required. The invoice could not be created with the pay service; details in the body.
+        '403':
+          description: Forbidden. The filing type is not allowed for this business in its current state, or a client is changing a draft that staff started.
+        '503':
+          description: Service unavailable. The temporary business or its account affiliation could not be created; try again later.
       description: |-
         Use this endpoint to start a new business. It supports these filings: Incorporation Application, Amalgamation (Regular, Short Form Horizontal and Short Form Vertical), Continuation In and Registration (Sole Proprietorship, General Partnership).
 
