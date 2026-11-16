@@ -26,13 +26,14 @@ import pytest
 from datedelta import datedelta
 from unittest.mock import patch, PropertyMock
 from flask import g, jsonify
+from requests import Response
 
 from business_common.utils.datetime import datetime
-from business_model.models import Business, Filing
+from business_model.models import Business, Filing, RegistrationBootstrap
 from legal_api import create_app
 from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, CONTACT_CENTRE_STAFF_ROLE , MAXIMUS_STAFF_ROLE, \
     PUBLIC_USER, STAFF_ROLE, SBC_STAFF_ROLE, \
-    authorized, is_allowed, get_allowed, get_allowed_filings, get_allowable_actions, get_allowable_filings_dict, \
+    authorized, get_auth_identifier, is_allowed, get_allowed, get_allowed_filings, get_allowable_actions, get_allowable_filings_dict, \
     get_staff_draft_bypass_filing_types, has_blocker_filing, is_draft_rebase_scoped_filing
 from legal_api.services.permissions import PermissionService
 from legal_api.services.warnings.business.business_checks import WarningType
@@ -50,6 +51,7 @@ from registry_schemas.example_data import (
     CORRECTION_AR,
     DISSOLUTION,
     FILING_TEMPLATE,
+    INCORPORATION_FILING_TEMPLATE,
     PUT_BACK_OFF,
     PUT_BACK_ON,
     RESTORATION,
@@ -533,6 +535,44 @@ def test_authorized_user_integ(monkeypatch, app, jwt,
         assert rv
     else:
         assert not rv
+
+
+@pytest.mark.parametrize(
+    'test_name, business_created, expected_auth_identifier',
+    [
+        ('completed bootstrap filing resolves to the business', True, 'BC1234567'),
+        ('pending bootstrap filing keeps the temp identifier', False, 'Tb31yQIuBw'),
+    ]
+)
+def test_authorized_temp_reg_identifier(monkeypatch, app, session, jwt, test_name, business_created,
+                                        expected_auth_identifier):
+    """Assert the auth lookup for a temp identifier moves to the business once the filing has created it."""
+    temp_identifier = 'Tb31yQIuBw'
+    temp_reg = RegistrationBootstrap()
+    temp_reg._identifier = temp_identifier
+    temp_reg.save()
+    business = factory_business('BC1234567', entity_type='BC') if business_created else None
+    filing = factory_filing(business, copy.deepcopy(INCORPORATION_FILING_TEMPLATE))
+    filing.temp_reg = temp_identifier
+    filing.save()
+
+    assert get_auth_identifier(temp_identifier) == expected_auth_identifier
+
+    called_paths = []
+
+    def mock_call_auth_api(path, token):  # pylint: disable=unused-argument
+        called_paths.append(path)
+        resp = Response()
+        resp.status_code = HTTPStatus.OK
+        resp.json = lambda **kwargs: {'roles': ['view']}
+        return resp
+
+    monkeypatch.setattr('legal_api.services.authz._call_auth_api', mock_call_auth_api)
+    with jwt_request_context(app, jwt, roles=[PUBLIC_USER]):
+        assert authorized(temp_identifier, jwt, ['view'])
+
+    entity_paths = [path for path in called_paths if path.startswith('entities/')]
+    assert entity_paths == [f'entities/{expected_auth_identifier}/authorizations']
 
 
 def test_authorized_missing_args():

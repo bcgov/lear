@@ -35,6 +35,7 @@ from legal_api.services.digital_credentials_auth import (
 )
 from legal_api.services.request_context import add_account_linking_key_header, get_request_context
 from legal_api.services.warnings.business.business_checks import WarningType
+from legal_api.utils.util import is_temp_reg_identifier
 
 SYSTEM_ROLE = "system"
 SBC_STAFF_ROLE = "sbc_staff"
@@ -149,11 +150,27 @@ def authorized(  # noqa: PLR0911
         if any(elem in action for elem in staff_only_actions):
             return False
 
-        rv = _call_auth_api(f"entities/{identifier}/authorizations", jwt.get_token_auth_header())
+        auth_identifier = get_auth_identifier(identifier)
+        rv = _call_auth_api(f"entities/{auth_identifier}/authorizations", jwt.get_token_auth_header())
         if rv and rv.status_code == HTTPStatus.OK and (roles := rv.json().get("roles")):
             return all(elem.lower() in roles for elem in action)
 
     return False
+
+
+def get_auth_identifier(identifier: str) -> str:
+    """Return the identifier auth holds the affiliation under.
+
+    - temp identifier whose filing created a business: that business identifier (auth drops the temp affiliation)
+    - anything else: unchanged
+    """
+    if not is_temp_reg_identifier(identifier):
+        return identifier
+
+    filing = Filing.get_temp_reg_filing(identifier)
+    if filing and filing.business_id and (business := Business.find_by_internal_id(filing.business_id)):
+        return business.identifier
+    return identifier
 
 
 def has_roles(jwt: JwtManager, roles: list[str]) -> bool:
