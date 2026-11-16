@@ -1,7 +1,7 @@
 version: "3"
 services:
   lear:
-    image: "postgres:11"
+    image: "postgres:18-alpine"
     volumes:
       - lear_vol:/var/lib/postgresql
     container_name: "lear-test"
