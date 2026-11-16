@@ -409,8 +409,51 @@ def test_registration_court_orders(app, session, jwt, test_status, file_number, 
     else:
         assert not err
 
+
+def test_registration_completing_party_email_permission_option(mocker, app, session):
+    """Test registration does not require permission to change the completing party email."""
+    account_id = '123456'
+    filing = copy.deepcopy(SP_REGISTRATION)
+
+    mocker.patch('legal_api.services.filings.validations.validation.validate_staff_payment', return_value=False)
+    mocker.patch('legal_api.services.filings.validations.registration.validate_name_request', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.registration.validate_tax_id', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.registration.validate_naics', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.registration.validate_business_type', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.registration.validate_party', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.registration.validate_parties_addresses', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.registration.validate_start_date', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.registration.validate_offices', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.registration.validate_offices_addresses', return_value=[])
+    mocker.patch('legal_api.services.filings.validations.registration.validate_registration_court_order', return_value=[])
+
+    mocker.patch.object(flags, 'is_on', return_value=True)
+    mock_validate_permission = mocker.patch(
+        'legal_api.services.filings.validations.registration.validate_permission_and_completing_party',
+        return_value=None
+    )
+
+    with app.test_request_context(headers={'account-id': account_id}):
+        err = validate(None, filing, account_id)
+
+    mock_validate_permission.assert_called_once()
+    call_args = mock_validate_permission.call_args
+
+    assert call_args[0][0] is None
+    assert call_args[0][1] == filing
+    assert call_args[0][2] == 'registration'
+
+    check_options = call_args[0][4]
+    assert check_options.get('check_name') is False
+    assert check_options.get('check_email') is False
+    assert check_options.get('check_address') is False
+    assert check_options.get('check_document_email') is False
+
+    assert err is None
+
+
 def test_registration_completing_party_validation(app, session, jwt):
-    """Assert that completing party validation works."""
+    """Assert that a changed completing party email does not require edit permission."""
     filing = copy.deepcopy(SP_REGISTRATION)
 
     completing_party_result = {
@@ -423,25 +466,23 @@ def test_registration_completing_party_validation(app, session, jwt):
     with patch.object(flags, 'is_on', return_value=True):
         with patch.object(NameXService, 'query_nr_number', return_value=_mock_nr_response('SP')):
             with patch.object(NaicsService, 'find_by_code', return_value=naics_response):
-                    with patch('legal_api.services.filings.validations.common_validations.validate_completing_party', return_value=completing_party_result):
-                        with patch('legal_api.services.filings.validations.common_validations.check_completing_party_permission') as mock_check_permission:
-                            def mock_check(permissions_msg, filing_type):
-                                permissions_msg.append({
-                                    "error": "Permission Denied: You do not have permission to edit the completing party.",
-                                    "path": f"/filing/{filing_type}/parties"
-                                })
-                            mock_check_permission.side_effect = mock_check
-                            with jwt_request_context(app, jwt, [BASIC_USER]):
-                                err = validate(None, filing)
+                with patch(
+                    'legal_api.services.filings.validations.common_validations.validate_completing_party',
+                    return_value=completing_party_result
+                ) as mock_validate_completing_party:
+                    with patch(
+                        'legal_api.services.filings.validations.common_validations.check_completing_party_permission',
+                        return_value=object()
+                    ):
+                        with jwt_request_context(app, jwt, [BASIC_USER]):
+                            err = validate(None, filing)
 
-    assert err is not None
-    permission_error = None
-    for msg in err.msg:
-        error_text = msg.get('error', '') or msg.get('message', '')
-        if 'Permission Denied' in error_text:
-            permission_error = msg
-            break
-    assert permission_error is not None, "Permission error not found in validation messages."
+    permission_errors = [
+        msg for msg in (err.msg if err else [])
+        if 'Permission Denied' in msg.get('error', '')
+    ]
+
+    assert not permission_errors
                 
 
 MISMATCH_ERROR = 'Completing party name must match the name of the logged in user.'

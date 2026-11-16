@@ -64,7 +64,7 @@ def validate(registration_json: dict) -> Error | None:
             filing_type,
             msg,
             {"check_name":False,
-            "check_email":True,
+            "check_email":False,
             "check_address":False,
             "check_document_email":False}
                             )
