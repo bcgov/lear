@@ -21,6 +21,7 @@ from typing import List, Union
 from business_model.models.address import Address
 from business_model.models.business import Business
 from business_model.models.party_role import PartyRole
+from legal_api.services import flags
 from tests.unit.models import factory_business, factory_party_role
 
 
@@ -73,6 +74,19 @@ def create_header(jwt_manager, roles: List[str] = [], username: str = 'test-user
         **kwargs,
     }
     return headers
+
+
+def mock_new_feature(monkeypatch, feature: str, enabled: bool):
+    """Set one value in the enable-new-feature flag, delegating every other flag."""
+    flag_value = flags.value
+
+    def _value(flag, *args, **kwargs):
+        if flag == 'enable-new-feature':
+            features = [f for f in (flag_value(flag, *args, **kwargs) or []) if f != feature]
+            return [*features, feature] if enabled else features
+        return flag_value(flag, *args, **kwargs)
+
+    monkeypatch.setattr('legal_api.services.flags.value', _value)
 
 
 @contextmanager

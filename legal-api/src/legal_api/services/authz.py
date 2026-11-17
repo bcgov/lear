@@ -18,7 +18,7 @@ from datetime import UTC, datetime
 from enum import Enum
 from http import HTTPStatus
 
-from flask import Response, current_app, request
+from flask import Response, current_app, g, request
 from flask.globals import request_ctx
 from requests import Session, exceptions
 from requests.adapters import HTTPAdapter
@@ -987,13 +987,42 @@ def get_allowed_filings(business: Business,   # noqa: PLR0913
     return allowable_filing_types
 
 
-def is_draft_rebase_checks_enabled() -> bool:
-    """Return True when draftRebaseChecks is in the enable-new-feature flag."""
+def is_new_feature_enabled(feature: str) -> bool:
+    """Return True when the feature is in the enable-new-feature flag."""
     request_context = get_request_context()
     enabled_features = flags.value("enable-new-feature",
                                    request_context.user,
                                    request_context.account_id) or []
-    return DRAFT_REBASE_CHECKS_FEATURE in enabled_features
+    return feature in enabled_features
+
+
+def _without_line_breaks(value) -> str:
+    """Return the value as one line, so request input cannot forge log entries."""
+    return str(value).replace("\r", "").replace("\n", "")
+
+
+def log_unauthorized_request(subject: str, identifier: str) -> None:
+    """Warn that an authenticated caller was denied."""
+    current_app.logger.warning(
+        "Unauthorized request for %s: %s, from username: %s, accountId: %s, app-name: %s",
+        subject,
+        _without_line_breaks(identifier),
+        g.jwt_oidc_token_info.get("preferred_username"),
+        _without_line_breaks(get_request_context().account_id),
+        _without_line_breaks(request.headers.get("app-name")))
+
+
+def auth_v2_denied(feature: str, subject: str, identifier: str, jwt: JwtManager, action: list[str]) -> bool:
+    """Return True (and log) when the auth-v2 gate is on and the caller is not authorized."""
+    if is_new_feature_enabled(feature) and not authorized(identifier, jwt, action):
+        log_unauthorized_request(subject, identifier)
+        return True
+    return False
+
+
+def is_draft_rebase_checks_enabled() -> bool:
+    """Return True when draftRebaseChecks is in the enable-new-feature flag."""
+    return is_new_feature_enabled(DRAFT_REBASE_CHECKS_FEATURE)
 
 
 def staff_draft_bypass_flag_value() -> list:

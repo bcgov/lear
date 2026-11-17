@@ -25,6 +25,7 @@ from business_model.models import Business, Comment, User, db
 from business_model.models import Filing as FilingModel
 from legal_api.exceptions import BusinessException
 from legal_api.services import authorized
+from legal_api.services.authz import auth_v2_denied
 from legal_api.services.comments import validate
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import is_temp_reg_identifier
@@ -47,6 +48,12 @@ def get_comments(identifier, comment_id=None):
     err_msg, err_code = _basic_checks(identifier, business, request)
     if err_msg:
         return jsonify(err_msg), err_code
+
+    # staff only, same as post
+    if auth_v2_denied("authV2Comments", "comments", identifier, jwt, ["add_comment"]):
+        return jsonify({"message":
+                        f"You are not authorized to view comments for {identifier}."}), \
+            HTTPStatus.FORBIDDEN
 
     comments = db.session.query(Comment).filter(Comment.business_id == business.id, Comment.filing_id.is_(None))
 

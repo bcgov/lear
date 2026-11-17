@@ -53,7 +53,7 @@ from registry_schemas.example_data import (
 from tests import integration_affiliation
 from tests.unit.models import factory_batch, factory_batch_processing, factory_business, factory_filing, factory_pending_filing
 from tests.unit.services.warnings import create_business
-from tests.unit.services.utils import create_header
+from tests.unit.services.utils import create_header, mock_new_feature
 from tests.unit.models import factory_completed_filing
 
 
@@ -522,17 +522,8 @@ def test_get_business_with_unauthoized_role(app, session, client, jwt, monkeypat
     Assert that the public users with no 'view' role cannot access the full business info.
     But they can access the slim data.
     """
-    # original function that check if a feature flag is on
-    is_feature_flag_on = flags.is_on
-
-    # mocked feature flag check function:
-    # when the flag is 'enable-auth-v2-business', whether it is on is controlled by 'auth_check_on'
-    def check_feature_flag(flag_name, *args, **kwargs):
-        if flag_name == 'enable-auth-v2-business':
-            return auth_check_on
-        else:
-            return is_feature_flag_on(flag_name, *args, **kwargs)
-    monkeypatch.setattr(flags, "is_on", check_feature_flag)
+    # whether authV2Business is in the enable-new-feature flag is controlled by 'auth_check_on'
+    mock_new_feature(monkeypatch, 'authV2Business', auth_check_on)
 
     identifier = 'CP7654321'
     legal_name = identifier + ' legal name'
@@ -553,7 +544,6 @@ def test_get_business_with_unauthoized_role(app, session, client, jwt, monkeypat
         assert rv.status_code == HTTPStatus.OK
     else:
         rv = client.get('/api/v2/businesses/' + identifier, headers=headers)
-        assert flags.is_on('enable-auth-v2-business') == auth_check_on
         assert rv.status_code == (HTTPStatus.UNAUTHORIZED if auth_check_on else HTTPStatus.OK)
 
 
@@ -1437,3 +1427,42 @@ def test_get_businesses_colin_snapshot_colin_failures(app, session, client, jwt,
 
     assert rv.status_code == expected_status
     assert rv.json['message'] == expected_message
+
+
+@pytest.mark.parametrize('test_name, method, role, auth_roles, flag_on, expected', [
+    ('get_unaffiliated', 'get', PUBLIC_USER, [], True, HTTPStatus.FORBIDDEN),
+    ('get_affiliated', 'get', PUBLIC_USER, ['view'], True, HTTPStatus.OK),
+    ('get_staff', 'get', STAFF_ROLE, [], True, HTTPStatus.OK),
+    ('get_flag_off', 'get', PUBLIC_USER, [], False, HTTPStatus.OK),
+    ('put_unaffiliated', 'put', PUBLIC_USER, [], True, HTTPStatus.FORBIDDEN),
+    ('put_view_only', 'put', PUBLIC_USER, ['view'], True, HTTPStatus.FORBIDDEN),
+    ('put_affiliated', 'put', PUBLIC_USER, ['view', 'edit'], True, HTTPStatus.OK),
+    ('put_staff', 'put', STAFF_ROLE, [], True, HTTPStatus.OK),
+    ('put_flag_off', 'put', PUBLIC_USER, [], False, HTTPStatus.OK),
+])
+def test_ar_reminder_authorization(app, session, client, jwt, monkeypatch, requests_mock,
+                                   test_name, method, role, auth_roles, flag_on, expected):
+    """Assert that the ar reminder is only read / updated by an authorized caller when authV2ArReminder is on."""
+    mock_new_feature(monkeypatch, 'authV2ArReminder', flag_on)
+    identifier = 'BC7654321'
+    business = factory_business_model(legal_name='legal_name',
+                                      identifier=identifier,
+                                      founding_date=datetime.fromtimestamp(0, UTC),
+                                      last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
+                                      last_modified=datetime.fromtimestamp(0, UTC),
+                                      fiscal_year_end_date=None,
+                                      tax_id=None,
+                                      dissolution_date=None)
+    business.send_ar_ind = True
+    business.save()
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations",
+                      json={'roles': auth_roles})
+
+    headers = create_header(jwt, [role], identifier)
+    if method == 'get':
+        rv = client.get(f'/api/v2/businesses/{identifier}/ar-reminder', headers=headers)
+    else:
+        rv = client.put(f'/api/v2/businesses/{identifier}/ar-reminder', json={'arReminder': False}, headers=headers)
+
+    assert rv.status_code == expected
+    assert Business.find_by_identifier(identifier).send_ar_ind is not (method == 'put' and expected == HTTPStatus.OK)

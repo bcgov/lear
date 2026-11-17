@@ -66,7 +66,7 @@ def _get_resolution(business, resolution_id=None):
     resolution = None
     if resolution_id:
         rv = Resolution.find_by_id(resolution_id=resolution_id)
-        if rv:
+        if rv and rv.business_id == business.id:
             resolution = {"resolution": rv.json}
 
     if not resolution:

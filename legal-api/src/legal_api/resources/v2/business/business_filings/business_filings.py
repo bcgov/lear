@@ -69,6 +69,7 @@ from legal_api.services import (
     namex,
 )
 from legal_api.services.authz import (
+    auth_v2_denied,
     business_blocker_check,
     is_allowed,
     is_draft_rebase_checks_enabled,
@@ -112,13 +113,7 @@ def get_filings(identifier: str, filing_id: int | None = None):
         if str(request.args.get("public", None)).lower() == "true":
             return ListFilingResource.get_single_filing_public_json(filing_id)
 
-        if flags.is_on("enable-auth-v2-filing") and not authorized(identifier, jwt, action=["view"]):
-            current_app.logger.warning(
-                "Unauthorized request for filing: %s, from username: %s, accountId: %s, app-name: %s",
-                identifier,
-                g.jwt_oidc_token_info.get("preferred_username"),
-                request.args.get("account"),
-                request.headers.get("app-name"))
+        if auth_v2_denied("authV2Filing", "filing", identifier, jwt, ["view"]):
             return jsonify({"message":
                             f"You are not authorized to view filing {identifier}."}), \
                 HTTPStatus.UNAUTHORIZED

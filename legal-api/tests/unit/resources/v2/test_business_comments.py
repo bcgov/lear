@@ -20,14 +20,15 @@ import copy
 from http import HTTPStatus
 
 from datetime import UTC
+import pytest
 from freezegun import freeze_time
 
 from business_common.utils import datetime
 from business_model.models import User
-from legal_api.services.authz import BASIC_USER, STAFF_ROLE
+from legal_api.services.authz import BASIC_USER, PUBLIC_USER, STAFF_ROLE
 from registry_schemas.example_data import COMMENT_BUSINESS
 from tests.unit.models import factory_business, factory_business_comment
-from tests.unit.services.utils import create_header
+from tests.unit.services.utils import create_header, mock_new_feature
 
 
 # prep sample post data for single comment
@@ -107,7 +108,7 @@ def test_business_comment_json_output(session, client, jwt):
     """Assert the json output of a comment is correctly formatted."""
     identifier = 'CP7654321'
     b = factory_business(identifier)
-    u = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
+    u = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='456', login_source='IDIR')
     u.save()
 
     now = datetime(1970, 1, 1, 0, 0).replace(tzinfo=UTC)
@@ -234,3 +235,28 @@ def test_post_comment_invalid_business_error(session, client, jwt):
 
     assert HTTPStatus.NOT_FOUND == rv.status_code
     assert 'CP2222222 not found' == rv.json.get('message')
+
+
+@pytest.mark.parametrize('test_name, role, auth_roles, flag_on, expected', [
+    ('unaffiliated', PUBLIC_USER, [], True, HTTPStatus.FORBIDDEN),
+    ('affiliated_is_not_staff', PUBLIC_USER, ['view', 'edit'], True, HTTPStatus.FORBIDDEN),
+    ('staff', STAFF_ROLE, [], True, HTTPStatus.OK),
+    ('flag_off', PUBLIC_USER, [], False, HTTPStatus.OK),
+])
+@pytest.mark.parametrize('by_id', [False, True])
+def test_get_business_comments_authorization(app, session, client, jwt, monkeypatch, requests_mock,
+                                             test_name, role, auth_roles, flag_on, expected, by_id):
+    """Assert that business comments are staff only when authV2Comments is on."""
+    mock_new_feature(monkeypatch, 'authV2Comments', flag_on)
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    c = factory_business_comment(b)
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations",
+                      json={'roles': auth_roles})
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/comments' + (f'/{c.id}' if by_id else ''),
+                    headers=create_header(jwt, [role]))
+
+    assert expected == rv.status_code
+    if expected == HTTPStatus.FORBIDDEN:
+        assert {'message': f'You are not authorized to view comments for {identifier}.'} == rv.json

@@ -40,6 +40,7 @@ from legal_api.services.authz import (
     CONTACT_CENTRE_STAFF_ROLE,
     MAXIMUS_STAFF_ROLE,
     SBC_STAFF_ROLE,
+    auth_v2_denied,
     authorized,
     get_allowable_actions,
     get_allowed,
@@ -73,13 +74,7 @@ def get_businesses(identifier: str):
         return jsonify({"message": f"{identifier} not found"}), HTTPStatus.NOT_FOUND
 
     # check authorization if required
-    if flags.is_on("enable-auth-v2-business") and not authorized(identifier, jwt, action=["view"]):
-        current_app.logger.warning(
-            "Unauthorized request for business: %s, from username: %s, accountId: %s, app-name: %s",
-            identifier,
-            g.jwt_oidc_token_info.get("preferred_username"),
-            request.args.get("account"),
-            request.headers.get("app-name"))
+    if auth_v2_denied("authV2Business", "business", identifier, jwt, ["view"]):
         return jsonify({"message":
                         f"You are not authorized to view business {identifier}."}), \
             HTTPStatus.UNAUTHORIZED
@@ -253,6 +248,11 @@ def get_ar_reminder(identifier):
     if not business:
         return {"message": f"{identifier} not found"}, HTTPStatus.NOT_FOUND
 
+    if auth_v2_denied("authV2ArReminder", "ar-reminder", identifier, jwt, ["view"]):
+        return jsonify({"message":
+                        f"You are not authorized to view the ar reminder for {identifier}."}), \
+            HTTPStatus.FORBIDDEN
+
     return {"arReminder": business.send_ar_ind}, HTTPStatus.OK
 
 
@@ -263,6 +263,11 @@ def set_ar_reminder(identifier):
     """Update send ar reminder flag."""
     if identifier.startswith("T"):
         return {"message": "Cannot update ar reminder for temp registrations."}, HTTPStatus.BAD_REQUEST
+
+    if auth_v2_denied("authV2ArReminder", "ar-reminder", identifier, jwt, ["edit"]):
+        return jsonify({"message":
+                        f"You are not authorized to update the ar reminder for {identifier}."}), \
+            HTTPStatus.FORBIDDEN
 
     if (
         flags.is_on("enable-permissions-for-action") and

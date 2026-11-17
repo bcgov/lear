@@ -20,14 +20,15 @@ import copy
 from datetime import UTC
 from http import HTTPStatus
 
+import pytest
 from freezegun import freeze_time
 
 from business_common.utils import datetime
 from business_model.models import Comment, User
-from legal_api.services.authz import BASIC_USER, STAFF_ROLE
+from legal_api.services.authz import BASIC_USER, PUBLIC_USER, STAFF_ROLE
 from registry_schemas.example_data import ANNUAL_REPORT, COMMENT_FILING
 from tests.unit.models import factory_business, factory_comment, factory_filing
-from tests.unit.services.utils import create_header
+from tests.unit.services.utils import create_header, mock_new_feature
 
 
 # prep sample post data for single comment
@@ -97,7 +98,7 @@ def test_comment_json_output(session, client, jwt):
     identifier = 'CP7654321'
     b = factory_business(identifier)
     f = factory_filing(b, ANNUAL_REPORT)
-    u = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='123', login_source='IDIR')
+    u = User(username='username', firstname='firstname', lastname='lastname', sub='sub', iss='iss', idp_userid='456', login_source='IDIR')
     u.save()
 
     now = datetime(1970, 1, 1, 0, 0).replace(tzinfo=UTC)
@@ -357,3 +358,29 @@ def test_comments_in_filing_response(session, client, jwt):
     assert rv.status_code == HTTPStatus.OK
     assert None is not rv.json['filing']['header'].get('comments')
     assert 2 == len(rv.json['filing']['header'].get('comments'))
+
+
+@pytest.mark.parametrize('test_name, role, auth_roles, flag_on, expected', [
+    ('unaffiliated', PUBLIC_USER, [], True, HTTPStatus.FORBIDDEN),
+    ('affiliated', PUBLIC_USER, ['view'], True, HTTPStatus.OK),
+    ('staff', STAFF_ROLE, [], True, HTTPStatus.OK),
+    ('flag_off', PUBLIC_USER, [], False, HTTPStatus.OK),
+])
+@pytest.mark.parametrize('by_id', [False, True])
+def test_get_filing_comments_authorization(app, session, client, jwt, monkeypatch, requests_mock,
+                                           test_name, role, auth_roles, flag_on, expected, by_id):
+    """Assert that filing comments are only returned to an authorized caller when authV2FilingComments is on."""
+    mock_new_feature(monkeypatch, 'authV2FilingComments', flag_on)
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    f = factory_filing(b, ANNUAL_REPORT)
+    c = factory_comment(b, f)
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations",
+                      json={'roles': auth_roles})
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings/{f.id}/comments' + (f'/{c.id}' if by_id else ''),
+                    headers=create_header(jwt, [role]))
+
+    assert expected == rv.status_code
+    if expected == HTTPStatus.FORBIDDEN:
+        assert {'message': f'You are not authorized to view comments for {identifier}.'} == rv.json

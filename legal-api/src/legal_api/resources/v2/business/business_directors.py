@@ -65,7 +65,7 @@ def _get_director(business, director_id=None):
     director = None
     if director_id:
         rv = PartyRole.find_by_internal_id(internal_id=director_id)
-        if rv:
+        if rv and rv.business_id == business.id:
             director = {"director": rv.json}
 
     if not director:

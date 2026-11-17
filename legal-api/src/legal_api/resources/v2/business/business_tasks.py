@@ -32,6 +32,7 @@ from legal_api.services import check_warnings, namex
 from legal_api.services.authz import (
     FILE_OVER_EXISTING_DRAFT_PERMISSION,
     BusinessBlocker,
+    auth_v2_denied,
     business_blocker_check,
     filed_by_staff,
     is_allowed,
@@ -51,6 +52,9 @@ from .bp import bp
 @jwt.requires_auth
 def get_tasks(identifier):
     """Return a JSON object with meta information about the Service."""
+    if auth_v2_denied("authV2Tasks", "tasks", identifier, jwt, ["view"]):
+        return jsonify({"message": f"You are not authorized to view tasks for {identifier}."}), HTTPStatus.FORBIDDEN
+
     business = Business.find_by_identifier(identifier)
     is_nr = identifier.startswith("NR")
 
@@ -68,13 +72,8 @@ def get_tasks(identifier):
             }), HTTPStatus.FORBIDDEN
 
     if not business:
-        # Create Incorporate using NR to-do item
-        if is_nr:
-            rv = []
-            rv.append(create_incorporate_nr_todo(nr_response.json(), 1, True))
-        # business does not exist and not an nr so return empty task list
-        else:
-            rv = []
+        # Incorporate using NR to-do item, or an empty task list when not an nr
+        rv = [create_incorporate_nr_todo(nr_response.json(), 1, True)] if is_nr else []
     else:
         rv = construct_task_list(business)
         if not rv and is_nr:

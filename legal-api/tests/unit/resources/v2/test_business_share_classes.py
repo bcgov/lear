@@ -123,3 +123,16 @@ def test_get_share_classes_unauthorized(app, session, client, jwt, requests_mock
     # check
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
     assert rv.json == {'message': f'You are not authorized to view share classes for {identifier}.'}
+
+
+def test_get_business_share_class_by_id_of_another_business(session, client, jwt):
+    """Assert that a share class of another business is not returned."""
+    identifier = 'CP7654321'
+    factory_business(identifier)
+    share_class = factory_share_class('CP1234567')
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/share-classes/{share_class.id}',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+    assert rv.json == {'message': f'{identifier} share class not found'}

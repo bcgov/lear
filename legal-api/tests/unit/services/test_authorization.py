@@ -4278,3 +4278,54 @@ def test_has_blocker_filing_draft_status_only(app, session, test_name, filing_st
                              filing_type='annualReport')
 
     assert has_blocker_filing(business, ignore_drafts, draft_status_only=draft_only) is expected
+
+
+@pytest.mark.parametrize('test_name, flag_value, expected', [
+    ('feature_present', ['reviewImportedData', 'authV2Tasks'], True),
+    ('feature_absent', ['reviewImportedData'], False),
+    ('flag_value_none', None, False),
+])
+def test_is_new_feature_enabled(monkeypatch, app, jwt, test_name, flag_value, expected):
+    """Assert that a feature is enabled only when it is in the enable-new-feature flag."""
+    from legal_api.services.authz import is_new_feature_enabled
+    with jwt_request_context(app, jwt, roles=[PUBLIC_USER]):
+        monkeypatch.setattr('legal_api.services.flags.value',
+                            lambda flag, _user, _account_id: flag_value if flag == 'enable-new-feature' else '')
+        assert is_new_feature_enabled('authV2Tasks') is expected
+
+
+def test_log_unauthorized_request_logs_account_id_header(app, jwt, caplog):
+    """Assert that the denial warning carries the Account-Id header, username and app-name."""
+    from legal_api.services.authz import log_unauthorized_request
+    headers = {'app-name': 'business-dashboard-ui'}
+    with jwt_request_context(app, jwt, roles=[PUBLIC_USER], account_id='2468', **headers), \
+            caplog.at_level('WARNING'):
+        log_unauthorized_request('tasks', 'CP7654321')
+
+    assert 'Unauthorized request for tasks: CP7654321, from username: ' in caplog.text
+    assert 'accountId: 2468, app-name: business-dashboard-ui' in caplog.text
+
+
+def test_log_unauthorized_request_strips_line_breaks(app, jwt, caplog):
+    """Assert that line breaks in request input cannot start a new log entry."""
+    from legal_api.services.authz import log_unauthorized_request
+    with jwt_request_context(app, jwt, roles=[PUBLIC_USER]), caplog.at_level('WARNING'):
+        log_unauthorized_request('tasks', 'CP7654321\r\nforged entry')
+
+    assert 'Unauthorized request for tasks: CP7654321forged entry, from username: ' in caplog.text
+
+
+@pytest.mark.parametrize('test_name, flag_on, is_authorized, expected', [
+    ('gate_on_not_authorized', True, False, True),
+    ('gate_on_authorized', True, True, False),
+    ('gate_off_not_authorized', False, False, False),
+])
+def test_auth_v2_denied(monkeypatch, app, jwt, caplog, test_name, flag_on, is_authorized, expected):
+    """Assert that the auth-v2 gate denies (and logs) only when it is on and the caller is not authorized."""
+    from legal_api.services import authz
+    monkeypatch.setattr(authz, 'is_new_feature_enabled', lambda feature: flag_on)
+    monkeypatch.setattr(authz, 'authorized', lambda identifier, jwt, action: is_authorized)
+    with jwt_request_context(app, jwt, roles=[PUBLIC_USER]), caplog.at_level('WARNING'):
+        assert authz.auth_v2_denied('authV2Tasks', 'tasks', 'CP7654321', jwt, ['view']) is expected
+
+    assert ('Unauthorized request for tasks: CP7654321' in caplog.text) is expected
