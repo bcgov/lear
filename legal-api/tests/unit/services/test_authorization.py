@@ -4306,6 +4306,15 @@ def test_log_unauthorized_request_logs_account_id_header(app, jwt, caplog):
     assert 'accountId: 2468, app-name: business-dashboard-ui' in caplog.text
 
 
+def test_log_unauthorized_request_strips_line_breaks(app, jwt, caplog):
+    """Assert that line breaks in request input cannot start a new log entry."""
+    from legal_api.services.authz import log_unauthorized_request
+    with jwt_request_context(app, jwt, roles=[PUBLIC_USER]), caplog.at_level('WARNING'):
+        log_unauthorized_request('tasks', 'CP7654321\r\nforged entry')
+
+    assert 'Unauthorized request for tasks: CP7654321forged entry, from username: ' in caplog.text
+
+
 @pytest.mark.parametrize('test_name, flag_on, is_authorized, expected', [
     ('gate_on_not_authorized', True, False, True),
     ('gate_on_authorized', True, True, False),

@@ -249,7 +249,9 @@ def get_ar_reminder(identifier):
         return {"message": f"{identifier} not found"}, HTTPStatus.NOT_FOUND
 
     if auth_v2_denied("authV2ArReminder", "ar-reminder", identifier, jwt, ["view"]):
-        return {"message": f"You are not authorized to view the ar reminder for {identifier}."}, HTTPStatus.FORBIDDEN
+        return jsonify({"message":
+                        f"You are not authorized to view the ar reminder for {identifier}."}), \
+            HTTPStatus.FORBIDDEN
 
     return {"arReminder": business.send_ar_ind}, HTTPStatus.OK
 
@@ -263,7 +265,9 @@ def set_ar_reminder(identifier):
         return {"message": "Cannot update ar reminder for temp registrations."}, HTTPStatus.BAD_REQUEST
 
     if auth_v2_denied("authV2ArReminder", "ar-reminder", identifier, jwt, ["edit"]):
-        return {"message": f"You are not authorized to update the ar reminder for {identifier}."}, HTTPStatus.FORBIDDEN
+        return jsonify({"message":
+                        f"You are not authorized to update the ar reminder for {identifier}."}), \
+            HTTPStatus.FORBIDDEN
 
     if (
         flags.is_on("enable-permissions-for-action") and

@@ -996,15 +996,20 @@ def is_new_feature_enabled(feature: str) -> bool:
     return feature in enabled_features
 
 
+def _without_line_breaks(value) -> str:
+    """Return the value as one line, so request input cannot forge log entries."""
+    return str(value).replace("\r", "").replace("\n", "")
+
+
 def log_unauthorized_request(subject: str, identifier: str) -> None:
     """Warn that an authenticated caller was denied."""
     current_app.logger.warning(
         "Unauthorized request for %s: %s, from username: %s, accountId: %s, app-name: %s",
         subject,
-        identifier,
+        _without_line_breaks(identifier),
         g.jwt_oidc_token_info.get("preferred_username"),
-        get_request_context().account_id,
-        request.headers.get("app-name"))
+        _without_line_breaks(get_request_context().account_id),
+        _without_line_breaks(request.headers.get("app-name")))
 
 
 def auth_v2_denied(feature: str, subject: str, identifier: str, jwt: JwtManager, action: list[str]) -> bool:
