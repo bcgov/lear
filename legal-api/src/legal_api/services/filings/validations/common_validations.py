@@ -1101,8 +1101,8 @@ def get_name_request(nr_number: str, nr_number_path: str) -> tuple[dict | None, 
                         "path": nr_number_path}]
     try:
         nr_response = namex.query_nr_number(nr_number)
-    except requests.exceptions.RequestException as err:
-        current_app.logger.error("Error fetching %s from namex: %s", nr_number, err)
+    except requests.exceptions.RequestException:
+        current_app.logger.exception("Error fetching %s from namex", nr_number)
         return None, unavailable_msg
 
     if nr_response.status_code == HTTPStatus.NOT_FOUND:
@@ -1134,9 +1134,9 @@ def validate_name_request(filing_json: dict,  # noqa: PLR0913 # pylint: disable=
             return []  # It's numbered company
         # CP, SP, GP doesn't support numbered company
         return [{"error": _("Legal name and nrNumber is missing in nameRequest."), "path": nr_path}]
-    if nr_number and not legal_name:
+    if not legal_name:
         return [{"error": _("Legal name is missing in nameRequest."), "path": legal_name_path}]
-    if not nr_number and legal_name:
+    if not nr_number:
         # expecting nrNumber when legalName provided
         return [{
             "error": _("nrNumber is missing for the legal name provided in nameRequest."),
