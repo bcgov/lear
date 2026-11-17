@@ -17,11 +17,13 @@ from datetime import date, datetime
 from http import HTTPStatus
 from unittest.mock import patch
 
+import requests
+
 from legal_api.core.filing import Filing as CoreFiling
 from legal_api.errors import Error
 from business_model.models import Business, Filing, Party, PartyRole, ShareClass
 from business_model.models.share_series import ShareSeries
-from legal_api.services import flags
+from legal_api.services import NameXService, flags
 from legal_api.services.permissions import PermissionService
 import pytest
 import registry_schemas
@@ -47,6 +49,7 @@ from registry_schemas.example_data import (
     RESTORATION,
 )
 
+from tests.unit import MockResponse
 from tests.unit.models import factory_business, factory_party_role, factory_pending_filing
 
 from legal_api.services.filings.validations.common_validations import (
@@ -62,6 +65,7 @@ from legal_api.services.filings.validations.common_validations import (
     validate_certified_by,
     validate_court_order,
     validate_foreign_jurisdiction,
+    validate_name_request,
     validate_offices,
     validate_offices_addresses,
     validate_relationships,
@@ -2625,3 +2629,32 @@ def test_validate_relationships_configurable_allowed_meta_properties(session):
         ALLOWED_ROLE_META_PROPERTIES.clear()
         ALLOWED_ROLE_META_PROPERTIES.update(original_config)
 
+
+
+@pytest.mark.parametrize('test_name, nr_response, expected_error', [
+    ('NOT_FOUND', MockResponse({'message': 'NR 9999999 not found'}, HTTPStatus.NOT_FOUND),
+     'Name Request NR 9999999 was not found.'),
+    ('SERVICE_ERROR', MockResponse({'message': 'error'}, HTTPStatus.INTERNAL_SERVER_ERROR),
+     'Name Request service is unavailable, please try again later.'),
+    ('SERVICE_DOWN', requests.exceptions.ConnectionError(),
+     'Name Request service is unavailable, please try again later.'),
+])
+def test_validate_name_request_namex_errors(session, test_name, nr_response, expected_error):
+    """Assert a namex lookup failure returns a single error on the nrNumber path."""
+    filing_json = {
+        'filing': {
+            'alteration': {
+                'nameRequest': {
+                    'nrNumber': 'NR 9999999',
+                    'legalName': 'Test Name Inc.',
+                    'legalType': 'BC'
+                }
+            }
+        }
+    }
+    kwargs = {'side_effect': nr_response} if isinstance(nr_response, Exception) else {'return_value': nr_response}
+
+    with patch.object(NameXService, 'query_nr_number', **kwargs):
+        errs = validate_name_request(filing_json, 'BC', 'alteration')
+
+    assert errs == [{'error': expected_error, 'path': '/filing/alteration/nameRequest/nrNumber'}]

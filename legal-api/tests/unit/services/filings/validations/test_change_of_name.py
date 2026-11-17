@@ -119,3 +119,24 @@ def test_validate_nr(session, use_nr, new_name, legal_type, nr_type, should_pass
         assert err
         assert HTTPStatus.BAD_REQUEST == err.code
         assert len(err.msg) == num_errors
+
+
+def test_validate_nr_not_found(session):
+    """Assert an unknown NR returns the not found error on the nrNumber path."""
+    business = factory_business('CP1234567')
+    filing = copy.deepcopy(FILING_HEADER)
+    filing['filing']['changeOfName'] = {
+        'nameRequest': {
+            'nrNumber': 'NR 9999999',
+            'legalName': 'legal_name-CP1234568',
+            'legalType': 'CP'
+        },
+    }
+    nr_response = MockResponse({'message': 'NR 9999999 not found'}, HTTPStatus.NOT_FOUND)
+
+    with patch.object(NameXService, 'query_nr_number', return_value=nr_response):
+        err = validate(business, filing)
+
+    assert err.code == HTTPStatus.BAD_REQUEST
+    assert err.msg == [{'error': 'Name Request NR 9999999 was not found.',
+                        'path': '/filing/changeOfName/nameRequest/nrNumber'}]

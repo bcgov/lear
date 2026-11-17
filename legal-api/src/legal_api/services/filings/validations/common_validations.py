@@ -21,6 +21,7 @@ from http import HTTPStatus
 from typing import Final
 
 import pycountry
+import requests
 from flask import current_app, g, has_request_context, request
 from flask.globals import request_ctx
 from flask_babel import _
@@ -1090,6 +1091,29 @@ def _validate_relationship_date(date_value: date,
     return msg
 
 
+def get_name_request(nr_number: str, nr_number_path: str) -> tuple[dict | None, list]:
+    """Fetch the name request from namex.
+
+    Return the name request json and an empty error list, or None and the error
+    when the name request was not found or the namex service did not answer.
+    """
+    unavailable_msg = [{"error": _("Name Request service is unavailable, please try again later."),
+                        "path": nr_number_path}]
+    try:
+        nr_response = namex.query_nr_number(nr_number)
+    except requests.exceptions.RequestException as err:
+        current_app.logger.error("Error fetching %s from namex: %s", nr_number, err)
+        return None, unavailable_msg
+
+    if nr_response.status_code == HTTPStatus.NOT_FOUND:
+        return None, [{"error": _(f"Name Request {nr_number} was not found."), "path": nr_number_path}]
+    if nr_response.status_code != HTTPStatus.OK:
+        current_app.logger.error("Error fetching %s from namex: %s", nr_number, nr_response.status_code)
+        return None, unavailable_msg
+
+    return nr_response.json(), []
+
+
 def validate_name_request(filing_json: dict,  # noqa: PLR0913 # pylint: disable=too-many-locals
                           legal_type: str,
                           filing_type: str,
@@ -1119,10 +1143,11 @@ def validate_name_request(filing_json: dict,  # noqa: PLR0913 # pylint: disable=
             "path": nr_number_path
         }]
 
-    msg = []
+    nr_response_json, msg = get_name_request(nr_number, nr_number_path)
+    if msg:
+        return msg
+
     # ensure NR is approved or conditionally approved
-    nr_response = namex.query_nr_number(nr_number)
-    nr_response_json = nr_response.json()
     validation_result = namex.validate_nr(nr_response_json)
     if not validation_result["is_consumable"]:
         msg.append({"error": _("Name Request is not approved."), "path": nr_number_path})

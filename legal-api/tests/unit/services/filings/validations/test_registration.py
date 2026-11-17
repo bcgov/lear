@@ -107,9 +107,10 @@ naics_response = {
 class MockResponse:
     """Mock http response."""
 
-    def __init__(self, json_data):
+    def __init__(self, json_data, status_code=200):
         """Initialize mock http response."""
         self.json_data = json_data
+        self.status_code = status_code
 
     def json(self):
         """Return mock json data."""
