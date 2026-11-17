@@ -75,3 +75,30 @@ def test_get_share_classes_unauthorized(app, session, client, jwt, requests_mock
     # check
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
     assert rv.json == {'message': f'You are not authorized to view resolutions for {identifier}.'}
+
+
+@pytest.mark.parametrize('test_name, own_resolution, expected', [
+    ('own_resolution', True, HTTPStatus.OK),
+    ('resolution_of_another_business', False, HTTPStatus.NOT_FOUND),
+])
+def test_get_business_resolution_by_id(session, client, jwt, test_name, own_resolution, expected):
+    """Assert that a resolution is returned by id only for the business it belongs to."""
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    other_business = factory_business('CP1234567')
+    resolution = Resolution(resolution_date=FROZEN_DATETIME,
+                            resolution_type=Resolution.ResolutionType.SPECIAL.value,
+                            signing_date=FROZEN_DATETIME,
+                            resolution='bla bla')
+    owner = business if own_resolution else other_business
+    owner.resolutions = [resolution]
+    owner.save()
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/resolutions/{resolution.id}',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == expected
+    if expected == HTTPStatus.NOT_FOUND:
+        assert rv.json == {'message': f'{identifier} resolution not found'}
+    else:
+        assert rv.json == {'resolution': resolution.json}

@@ -56,7 +56,7 @@ def _get_alias(business, alias_id=None):
     alias = None
     if alias_id:
         rv = Alias.find_by_id(alias_id=alias_id)
-        if rv:
+        if rv and rv.business_id == business.id:
             alias = {"alias": rv.json}
 
     if not alias:

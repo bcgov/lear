@@ -147,3 +147,20 @@ def test_get_business_court_order_by_id_not_found(app, session, client, jwt, req
 
     assert rv.status_code == HTTPStatus.NOT_FOUND
     assert rv.json == {'message': f'{identifier} court order not found'}
+
+
+def test_get_business_court_order_by_id_of_another_business(app, session, client, jwt):
+    """Assert that a court order of another business is not returned."""
+    identifier = 'CP7654321'
+    factory_business(identifier)
+    other_business = factory_business('CP1234567')
+    filing_dict = copy.deepcopy(FILING_TEMPLATE)
+    filing_dict['filing']['header']['name'] = 'courtOrder'
+    filing = factory_completed_filing(other_business, filing_dict)
+    court_order, _ = create_court_order_and_documents(other_business, filing)
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/court-orders/{court_order.id}',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+    assert rv.json == {'message': f'{identifier} court order not found'}

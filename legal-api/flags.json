@@ -9,7 +9,16 @@
     "enable-document-records": false,
     "enable-involuntary-dissolution-filter": false,
     "enable-new-ben-statements": false,
-    "enable-new-feature": ["reviewImportedData", "draftRebaseChecks"],
+    "enable-new-feature": [
+      "reviewImportedData",
+      "draftRebaseChecks",
+      "authV2Business",
+      "authV2Filing",
+      "authV2Tasks",
+      "authV2ArReminder",
+      "authV2Comments",
+      "authV2FilingComments"
+    ],
     "enable-staff-draft-filing-bypass": [
       "agmLocationChange",
       "annualReport",
@@ -33,8 +42,6 @@
       "dissolution.delay",
       "transition"
     ],
-    "enable-auth-v2-business": true,
-    "enable-auth-v2-filing": true,
     "enable-permissions-for-action": false,
     "enabled-deeper-permission-action": false,
     "enable-edit-completing-party-permission": false,

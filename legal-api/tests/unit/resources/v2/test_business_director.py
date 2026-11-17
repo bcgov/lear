@@ -264,3 +264,27 @@ def test_directors_unauthorized(app, session, client, jwt, requests_mock):
     # check
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
     assert rv.json == {'message': f'You are not authorized to view directors for {identifier}.'}
+
+
+def test_get_business_director_by_id_of_another_business(session, client, jwt):
+    """Assert that a director of another business is not returned."""
+    identifier = 'CP7654321'
+    factory_business(identifier)
+    other_business = factory_business('CP1234567')
+    officer = {
+        'firstName': 'Michael',
+        'lastName': 'Crane',
+        'middleInitial': 'Joe',
+        'partyType': 'person',
+        'organizationName': ''
+    }
+    party_role = factory_party_role(None, None, officer, datetime.datetime(2017, 5, 17), None,
+                                    PartyRole.RoleTypes.DIRECTOR)
+    other_business.party_roles.append(party_role)
+    other_business.save()
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/directors/{party_role.id}',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+    assert rv.json == {'message': f'{identifier} director not found'}

@@ -89,7 +89,7 @@ from tests.unit.models import (  # noqa:E501,I001
     factory_pending_filing,
     factory_user,
 )
-from tests.unit.services.utils import create_header
+from tests.unit.services.utils import create_header, mock_new_feature
 
 
 def test_trim_strings_whitespace_only_becomes_empty():
@@ -244,9 +244,7 @@ def test_get_temp_business_filing(session, client, jwt, legal_type, filing_type,
 
 def test_get_completed_temp_business_filing_public_user(app, session, client, requests_mock, jwt, monkeypatch):
     """Assert a public user can still read a bootstrap filing by temp identifier after the business is created."""
-    is_feature_flag_on = flags.is_on
-    monkeypatch.setattr(flags, 'is_on', lambda flag_name, *args, **kwargs:
-                        True if flag_name == 'enable-auth-v2-filing' else is_feature_flag_on(flag_name, *args, **kwargs))
+    mock_new_feature(monkeypatch, 'authV2Filing', True)
 
     temp_identifier = 'Tb31yQIuBw'
     temp_reg = RegistrationBootstrap()

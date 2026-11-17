@@ -32,6 +32,7 @@ from legal_api.services import check_warnings, namex
 from legal_api.services.authz import (
     FILE_OVER_EXISTING_DRAFT_PERMISSION,
     BusinessBlocker,
+    auth_v2_denied,
     business_blocker_check,
     filed_by_staff,
     is_allowed,
@@ -51,6 +52,9 @@ from .bp import bp
 @jwt.requires_auth
 def get_tasks(identifier):
     """Return a JSON object with meta information about the Service."""
+    if auth_v2_denied("authV2Tasks", "tasks", identifier, jwt, ["view"]):
+        return jsonify({"message": f"You are not authorized to view tasks for {identifier}."}), HTTPStatus.FORBIDDEN
+
     business = Business.find_by_identifier(identifier)
     is_nr = identifier.startswith("NR")
 

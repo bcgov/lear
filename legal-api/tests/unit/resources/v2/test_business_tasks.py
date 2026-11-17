@@ -33,7 +33,7 @@ from legal_api.services.permissions import PermissionService
 from registry_schemas.example_data import ANNUAL_REPORT, FILING_HEADER, RESTORATION, TRANSITION_FILING_TEMPLATE
 from tests import integration_payment
 from tests.unit.models import factory_business, factory_business_mailing_address, factory_business_office, factory_completed_filing, factory_filing, factory_pending_filing
-from tests.unit.services.utils import create_header, jwt_request_context
+from tests.unit.services.utils import create_header, jwt_request_context, mock_new_feature
 from tests.unit.services.warnings import create_business
 
 
@@ -908,11 +908,13 @@ def _draft_actions(rv, filing_id):
     ('locked_out_user_own_draft_delete_only', True, PUBLIC_USER, [], 'public_user', 'staff', ['delete']),
     ('staff_without_permission_locked_out_own_draft', True, STAFF_ROLE, [], 'staff', None, ['delete']),
 ])
-def test_get_tasks_draft_actions(session, client, jwt, monkeypatch, test_name, flag_on, caller, permissions,
-                                 draft_roles, other_draft_roles, expected):
+def test_get_tasks_draft_actions(app, session, client, jwt, monkeypatch, requests_mock, test_name, flag_on, caller,
+                                 permissions, draft_roles, other_draft_roles, expected):
     """Assert that a draft task lists the actions the caller may take on it (resume / view / delete)."""
     _mock_draft_rebase_flag(monkeypatch, flag_on)
     identifier = 'CP7654321'
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations",
+                      json={'roles': ['view']})
     business = _get_task_business(identifier)
     draft = _create_task_filing(business, 'DRAFT', draft_roles)
     if other_draft_roles:
@@ -980,3 +982,40 @@ def test_get_tasks_non_draft_has_no_actions_key(session, client, jwt, monkeypatc
     tasks = _filing_tasks(rv)
     assert len(tasks) == 1
     assert 'actions' not in tasks[0]
+
+
+@pytest.mark.parametrize('test_name, role, auth_roles, flag_on, expected', [
+    ('unaffiliated', PUBLIC_USER, [], True, HTTPStatus.FORBIDDEN),
+    ('affiliated', PUBLIC_USER, ['view'], True, HTTPStatus.OK),
+    ('staff', STAFF_ROLE, [], True, HTTPStatus.OK),
+    ('flag_off', PUBLIC_USER, [], False, HTTPStatus.OK),
+])
+def test_get_tasks_authorization(app, session, client, jwt, monkeypatch, requests_mock,
+                                 test_name, role, auth_roles, flag_on, expected):
+    """Assert that tasks are only returned to an authorized caller when authV2Tasks is on."""
+    mock_new_feature(monkeypatch, 'authV2Tasks', flag_on)
+    identifier = 'CP7654321'
+    factory_business(identifier)
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations",
+                      json={'roles': auth_roles})
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/tasks', headers=create_header(jwt, [role], identifier))
+
+    assert rv.status_code == expected
+    if expected == HTTPStatus.FORBIDDEN:
+        assert rv.json == {'message': f'You are not authorized to view tasks for {identifier}.'}
+    else:
+        assert 'tasks' in rv.json
+
+
+def test_get_tasks_unauthorized_unversioned_path(app, session, client, jwt, requests_mock):
+    """Assert that the unversioned /api path is held to the same check."""
+    identifier = 'CP7654321'
+    factory_business(identifier)
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
+
+    rv = client.get(f'/api/businesses/{identifier}/tasks',
+                    headers=create_header(jwt, [PUBLIC_USER], identifier),
+                    follow_redirects=True)
+
+    assert rv.status_code == HTTPStatus.FORBIDDEN

@@ -165,3 +165,18 @@ def test_get_business_alias_by_invalid_type(session, client, jwt):
     assert rv.status_code == HTTPStatus.OK
     assert 'aliases' in rv.json
     assert rv.json['aliases'] == []
+
+
+def test_get_business_alias_by_id_of_another_business(session, client, jwt):
+    """Assert that an alias of another business is not returned."""
+    identifier = 'CP7654321'
+    factory_business(identifier)
+    other_business = factory_business('CP1234567')
+    alias = Alias(alias='ABC Ltd.', type='TRANSLATION', business_id=other_business.id)
+    alias.save()
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/aliases/{alias.id}',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+    assert rv.json == {'message': f'{identifier} alias not found'}

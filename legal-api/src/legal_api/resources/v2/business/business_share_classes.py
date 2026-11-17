@@ -59,7 +59,7 @@ def _get_share_class(business, share_class_id=None):
     share_class = None
     if share_class_id:
         rv = ShareClass.find_by_share_class_id(share_class_id)
-        if rv:
+        if rv and rv.business_id == business.id:
             share_class = {"shareClass": rv.json}
 
     if not share_class:

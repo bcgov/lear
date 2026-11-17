@@ -56,7 +56,7 @@ def get_court_orders(identifier, court_order_id=None):
 
 
 def _get_court_order(business, court_order_id):
-    if court_order := CourtOrder.get_by_id(court_order_id):
+    if (court_order := CourtOrder.get_by_id(court_order_id)) and court_order.business_id == business.id:
         court_order_json = court_order.json
         _include_court_order_files(court_order_json, business)
 
