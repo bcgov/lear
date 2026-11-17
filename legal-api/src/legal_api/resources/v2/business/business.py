@@ -76,8 +76,8 @@ def get_businesses(identifier: str):
     # check authorization if required
     if auth_v2_denied("authV2Business", "business", identifier, jwt, ["view"]):
         return jsonify({"message":
-                        f"You are not allowed to view business {identifier}."}), \
-            HTTPStatus.FORBIDDEN
+                        f"You are not authorized to view business {identifier}."}), \
+            HTTPStatus.UNAUTHORIZED
 
     is_staff = has_any_roles(jwt, [
         STAFF_ROLE,

@@ -115,8 +115,8 @@ def get_filings(identifier: str, filing_id: int | None = None):
 
         if auth_v2_denied("authV2Filing", "filing", identifier, jwt, ["view"]):
             return jsonify({"message":
-                            f"You are not allowed to view filing {identifier}."}), \
-                HTTPStatus.FORBIDDEN
+                            f"You are not authorized to view filing {identifier}."}), \
+                HTTPStatus.UNAUTHORIZED
 
         return ListFilingResource.get_single_filing(identifier, filing_id)
 

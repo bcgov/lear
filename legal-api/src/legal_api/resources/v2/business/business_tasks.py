@@ -72,13 +72,8 @@ def get_tasks(identifier):
             }), HTTPStatus.FORBIDDEN
 
     if not business:
-        # Create Incorporate using NR to-do item
-        if is_nr:
-            rv = []
-            rv.append(create_incorporate_nr_todo(nr_response.json(), 1, True))
-        # business does not exist and not an nr so return empty task list
-        else:
-            rv = []
+        # Incorporate using NR to-do item, or an empty task list when not an nr
+        rv = [create_incorporate_nr_todo(nr_response.json(), 1, True)] if is_nr else []
     else:
         rv = construct_task_list(business)
         if not rv and is_nr:

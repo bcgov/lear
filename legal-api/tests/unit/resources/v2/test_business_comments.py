@@ -257,6 +257,6 @@ def test_get_business_comments_authorization(app, session, client, jwt, monkeypa
     rv = client.get(f'/api/v2/businesses/{identifier}/comments' + (f'/{c.id}' if by_id else ''),
                     headers=create_header(jwt, [role]))
 
-    assert rv.status_code == expected
+    assert expected == rv.status_code
     if expected == HTTPStatus.FORBIDDEN:
-        assert rv.json == {'message': f'You are not authorized to view comments for {identifier}.'}
+        assert {'message': f'You are not authorized to view comments for {identifier}.'} == rv.json
