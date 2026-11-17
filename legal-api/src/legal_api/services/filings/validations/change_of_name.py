@@ -22,6 +22,8 @@ from legal_api.errors import Error
 from legal_api.services import namex
 from legal_api.services.utils import get_str
 
+from .common_validations import get_name_request
+
 
 def validate(business: Business, filing: dict) -> Error:
     """Validate the Change of Name filing."""
@@ -35,8 +37,11 @@ def validate(business: Business, filing: dict) -> Error:
     nr_number = get_str(filing, nr__number_path)
 
     if nr_number:
+        nr_response, msg = get_name_request(nr_number, nr__number_path)
+        if msg:
+            return Error(HTTPStatus.BAD_REQUEST, msg)
+
         # ensure NR is approved or conditionally approved
-        nr_response = namex.query_nr_number(nr_number).json()
         validation_result = namex.validate_nr(nr_response)
 
         if not validation_result["is_consumable"]:

@@ -130,7 +130,7 @@ class NameXService:
         is_expired = False
         consent_required = None
         consent_received = None
-        nr_state = nr_json["state"]
+        nr_state = nr_json.get("state")
 
         # Is approved
         if nr_state == NameXService.State.APPROVED.value:
@@ -179,7 +179,7 @@ class NameXService:
         """Get an approved name from nr json, if any."""
         nr_name = None
         state_to_check = None
-        nr_state = nr_json["state"]
+        nr_state = nr_json.get("state")
 
         if nr_state == NameXService.State.APPROVED.value:
             state_to_check = "APPROVED"
