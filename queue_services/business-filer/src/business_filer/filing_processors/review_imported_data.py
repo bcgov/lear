@@ -47,7 +47,6 @@ from business_filer.filing_processors.filing_components.relationships import (
     update_relationship_addresses,
 )
 
-# Ledger text confirmed by the business area (bcgov/entity#34584).
 REGISTRARS_NOTATION_TEXT = (
     "Information was provided by the company through the Migration Validation Process. "
     "The company attested that the information reflects the information that existed "
