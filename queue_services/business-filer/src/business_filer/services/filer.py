@@ -136,6 +136,9 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
         if is_correction:
             filing_meta.correction = {}
 
+        # a processor may create an extra ledger filing (e.g. the reviewImportedData registrars notation)
+        generated_filing = None
+
         for filing in legal_filings:
             filing_type = next(iter(filing))
             match filing_type:
@@ -253,7 +256,7 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
                     restoration.process(business, filing, filing_submission, filing_meta)
 
                 case "reviewImportedData":
-                    review_imported_data.process(business, filing_submission, filing_meta)
+                    generated_filing = review_imported_data.process(business, filing_submission, filing_meta)
 
                 case "specialResolution":
                     special_resolution.process(business, filing, filing_submission)
@@ -266,6 +269,8 @@ def process_filing(filing_message: FilingMessage): # noqa: PLR0915, PLR0912
 
         # Add the current transaction
         filing_submission.transaction_id = transaction_id
+        if generated_filing:
+            generated_filing.transaction_id = transaction_id
 
         if business:
             business.last_modified = filing_submission.completion_date
