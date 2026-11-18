@@ -35,6 +35,7 @@
 from datetime import UTC, datetime
 
 from business_model.models import Business, Filing, PartyRole
+from flask import current_app
 
 from business_filer.exceptions import QueueException
 from business_filer.filing_meta import FilingMeta
@@ -44,6 +45,12 @@ from business_filer.filing_processors.filing_components.offices import (
 from business_filer.filing_processors.filing_components.relationships import (
     _str_to_int,
     update_relationship_addresses,
+)
+
+REGISTRARS_NOTATION_TEXT = (
+    "Information was provided by the company through the Migration Validation Process. "
+    "The company attested that the information reflects the information that existed "
+    "immediately prior to migration from the legacy registry system."
 )
 
 
@@ -70,12 +77,56 @@ def _check_active_directors(business: Business, relationships: list[dict]) -> No
             )
 
 
+def _create_registrars_notation(business: Business, filing_rec: Filing) -> Filing:
+    """Create the completed Registrar's Notation ledger entry that accompanies every review imported data filing.
+
+    The notation is system generated, so it has no submitter and is shown as filed by Registry Staff.
+    It is added to the session only; the filer commits it together with the review imported data filing.
+    """
+    now = datetime.now(UTC)
+    notation = Filing()
+    notation.filing_json = {
+        "filing": {
+            "header": {
+                "name": "registrarsNotation",
+                "date": now.date().isoformat(),
+                "certifiedBy": "system",
+            },
+            "business": {
+                "identifier": business.identifier,
+                "legalType": business.legal_type,
+            },
+            "registrarsNotation": {
+                "orderDetails": REGISTRARS_NOTATION_TEXT,
+            },
+        }
+    }
+    notation.business_id = business.id
+    notation.submitter_roles = "system"
+    notation.source = Filing.Source.LEAR.value
+    notation.filing_date = now
+    notation.effective_date = now
+    notation.details = REGISTRARS_NOTATION_TEXT
+    notation._meta_data = {  # pylint: disable=protected-access
+        "applicationDate": now.isoformat(),
+        "legalFilings": ["registrarsNotation"],
+    }
+    notation.set_processed()
+    notation.save_to_session()
+    current_app.logger.debug(
+        "Created registrars notation for reviewImportedData filing %s on business %s",
+        filing_rec.id,
+        business.identifier,
+    )
+    return notation
+
+
 def process(
     business: Business,
     filing_rec: Filing,
     filing_meta: FilingMeta,
-) -> None:
-    """Apply supplied office and director address changes."""
+) -> Filing:
+    """Apply supplied office and director address changes and return the generated Registrar's Notation."""
     filing_json = filing_rec.filing_json["filing"]["reviewImportedData"]
     offices = filing_json.get("offices", {})
     relationships = filing_json.get("relationships", [])
@@ -93,3 +144,5 @@ def process(
         changed_sections.append("directors")
 
     filing_meta.review_imported_data = {"sectionsChanged": changed_sections}
+
+    return _create_registrars_notation(business, filing_rec)

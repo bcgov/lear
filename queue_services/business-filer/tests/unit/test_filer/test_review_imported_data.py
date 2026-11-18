@@ -19,6 +19,7 @@ from business_model.models import Business, Filing
 from registry_schemas.example_data import FILING_TEMPLATE
 
 from business_filer.common.filing_message import FilingMessage
+from business_filer.filing_processors.review_imported_data import REGISTRARS_NOTATION_TEXT
 from business_filer.services.filer import process_filing
 from tests.unit import create_business, create_filing, create_party, create_party_role
 
@@ -63,6 +64,14 @@ def test_process_filing_review_imported_data_office_addresses(app, session):
     assert registered_office.addresses.filter_by(address_type="delivery").one().street == "New delivery"
     assert registered_office.addresses.filter_by(address_type="mailing").one().street == "New mailing"
     assert updated_business.last_modified == completed_filing.completion_date
+
+    # the generated Registrar's Notation ledger entry is committed with the filing, in the same transaction
+    notation = Filing.query.filter_by(business_id=business.id, _filing_type="registrarsNotation").one()
+    assert notation.status == Filing.Status.COMPLETED.value
+    assert notation.transaction_id == completed_filing.transaction_id
+    assert notation.details == REGISTRARS_NOTATION_TEXT
+    assert notation.submitter_roles == "system"
+    assert notation.filing_date > completed_filing.filing_date
 
 
 def test_process_filing_review_imported_data_director_addresses(app, session):

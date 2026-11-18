@@ -72,6 +72,29 @@ def business(session):
     return create_business("BC1234567", legal_type="BC", legal_name="Example Ltd.")
 
 
+def test_process_creates_registrars_notation(app, session, business):
+    """Create a completed, system-filed Registrar's Notation alongside every review imported data filing."""
+    filing_meta = FilingMeta(application_date=datetime(2026, 1, 2, tzinfo=UTC))
+    payload = {"offices": {"registeredOffice": {"deliveryAddress": _address("New delivery")}}}
+
+    notation = review_imported_data.process(business, _filing(payload), filing_meta)
+
+    assert notation in session
+    assert notation.filing_type == "registrarsNotation"
+    assert notation.status == Filing.Status.COMPLETED.value
+    assert notation.business_id == business.id
+    assert notation.source == Filing.Source.LEAR.value
+    assert notation.submitter_id is None
+    assert notation.submitter_roles == "system"
+    assert notation.details == review_imported_data.REGISTRARS_NOTATION_TEXT
+    assert notation.filing_json["filing"]["registrarsNotation"]["orderDetails"] == \
+        review_imported_data.REGISTRARS_NOTATION_TEXT
+    assert notation.filing_json["filing"]["business"]["identifier"] == business.identifier
+    assert notation.meta_data["legalFilings"] == ["registrarsNotation"]
+    assert notation.effective_date is not None
+    assert notation.completion_date is not None
+
+
 def test_process_offices_only(app, session, business):
     """Update registered office addresses while leaving other business dates unchanged."""
     office = business.offices.filter_by(office_type=OfficeType.REGISTERED).one()
