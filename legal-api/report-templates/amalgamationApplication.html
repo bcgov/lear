@@ -66,17 +66,22 @@
     [[amalgamation/approvalType.html]]
     [[amalgamation/amalgamatingCorp.html]]
     [[amalgamation/amalgamationStmt.html]]
-    <div class="section-header mt-7 pt-4">NOTICE OF ARTICLES</div>
+    <div class="no-page-break">
+      <div class="section-header mt-7 pt-4">NOTICE OF ARTICLES</div>
       <div class="container pt-4">
         [[amalgamation/amalgamationName.html]]
-        {% if business.legalType in ['BEN', 'CC', 'ULC'] %}
-        <div class="separator mt-4"></div>
-        {% endif %}
-        [[common/statement.html]]
-        [[common/addresses.html]]
-        [[common/directors.html]]
-        [[common/resolutionDates.html]]
-        [[common/shareStructure.html]]
+      </div>
+    </div>
+
+    <div class="container">
+      {% if business.legalType in ['BEN', 'CC', 'ULC'] %}
+      <div class="separator mt-4"></div>
+      {% endif %}
+      [[common/statement.html]]
+      [[common/addresses.html]]
+      [[common/directors.html]]
+      [[common/resolutionDates.html]]
+      [[common/shareStructure.html]]
     </div>
     {% endif %}
   </body>
