@@ -39,6 +39,7 @@ from legal_api.services.authz import (
     COLIN_SVC_ROLE,
     CONTACT_CENTRE_STAFF_ROLE,
     MAXIMUS_STAFF_ROLE,
+    SBC_FINANCE_STAFF_ROLE,
     SBC_STAFF_ROLE,
     auth_v2_denied,
     authorized,
@@ -84,6 +85,7 @@ def get_businesses(identifier: str):
         SYSTEM_ROLE,
         COLIN_SVC_ROLE,
         SBC_STAFF_ROLE,
+        SBC_FINANCE_STAFF_ROLE,
         CONTACT_CENTRE_STAFF_ROLE,
         MAXIMUS_STAFF_ROLE,
     ])

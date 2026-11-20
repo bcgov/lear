@@ -42,6 +42,7 @@ SBC_STAFF_ROLE = "sbc_staff"
 STAFF_ROLE = "staff"
 CONTACT_CENTRE_STAFF_ROLE = "contact_centre_staff"
 MAXIMUS_STAFF_ROLE = "maximus_staff"
+SBC_FINANCE_STAFF_ROLE = "sbc_finance_staff"
 BASIC_USER = "basic"
 COLIN_SVC_ROLE = "colin"
 PUBLIC_USER = "public_user"
@@ -130,7 +131,8 @@ def authorized(  # noqa: PLR0911
     # Temporary, until granular permission in authorized_role_permissions table is implemented
     if (jwt.validate_roles(request_ctx.current_user, [MAXIMUS_STAFF_ROLE]) or
         jwt.validate_roles(request_ctx.current_user, [SBC_STAFF_ROLE]) or
-            jwt.validate_roles(request_ctx.current_user, [CONTACT_CENTRE_STAFF_ROLE])):
+        jwt.validate_roles(request_ctx.current_user, [CONTACT_CENTRE_STAFF_ROLE]) or
+            jwt.validate_roles(request_ctx.current_user, [SBC_FINANCE_STAFF_ROLE])):
         return True
 
     # allow IDIM and Competent Authorities view access on everything

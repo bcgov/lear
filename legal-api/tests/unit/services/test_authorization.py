@@ -32,7 +32,7 @@ from business_common.utils.datetime import datetime
 from business_model.models import Business, Filing, RegistrationBootstrap
 from legal_api import create_app
 from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, CONTACT_CENTRE_STAFF_ROLE , MAXIMUS_STAFF_ROLE, \
-    PUBLIC_USER, STAFF_ROLE, SBC_STAFF_ROLE, \
+    PUBLIC_USER, STAFF_ROLE, SBC_STAFF_ROLE, SBC_FINANCE_STAFF_ROLE, \
     authorized, get_auth_identifier, is_allowed, get_allowed, get_allowed_filings, get_allowable_actions, get_allowable_filings_dict, \
     get_staff_draft_bypass_filing_types, has_blocker_filing, is_draft_rebase_scoped_filing
 from legal_api.services.permissions import PermissionService
@@ -626,8 +626,9 @@ def test_authorized_bad_url(monkeypatch, app, jwt):
     [
         ('staff ', [STAFF_ROLE], STAFF_ROLE),
         ('sbc_staff ', [SBC_STAFF_ROLE], SBC_STAFF_ROLE), 
-        ('maximus_staff ', [CONTACT_CENTRE_STAFF_ROLE], CONTACT_CENTRE_STAFF_ROLE),
-        ('contact_centre_staff ', [MAXIMUS_STAFF_ROLE], MAXIMUS_STAFF_ROLE),
+        ('contact_centre_staff ', [CONTACT_CENTRE_STAFF_ROLE], CONTACT_CENTRE_STAFF_ROLE),
+        ('maximus_staff ', [MAXIMUS_STAFF_ROLE], MAXIMUS_STAFF_ROLE),
+        ('sbc_finance_staff ', [SBC_FINANCE_STAFF_ROLE], SBC_FINANCE_STAFF_ROLE),
         ('public_user ', [PUBLIC_USER], PUBLIC_USER),
         ('multiple user roles ', [PUBLIC_USER, STAFF_ROLE], STAFF_ROLE), 
         ('no roles in token ', [], None),
