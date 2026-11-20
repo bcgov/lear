@@ -177,7 +177,7 @@ FILING_ATTACHMENTS = {
             "extraPdfTypes": [],
         },
         "changeOfLiquidators-liquidationReport": {
-            "attachments": ["Receipt"],
+            "attachments": ["Liquidation Report", "Receipt"],
             "extraPdfTypes": [],
         },
         "changeOfReceivers-appointReceiver": {

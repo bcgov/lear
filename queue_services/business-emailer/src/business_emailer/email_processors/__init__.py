@@ -354,7 +354,6 @@ def get_pdfs(  # noqa: PLR0913
     attach_order = 1
     filings_with_unimplemented_outputs = ["agmLocationChange", "amalgamationOut", "consentAmalgamationOut", "continuationOut"]
     receipt_only_sub_filings = [
-        ("changeOfLiquidators", "liquidationReport"),
         ("changeOfReceivers", "appointReceiver"),
         ("changeOfReceivers", "ceaseReceiver"),
         ("changeOfReceivers", "changeAddressReceiver"),
