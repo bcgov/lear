@@ -675,7 +675,8 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
     ]),
     ('changeOfLiquidators', 'liquidationReport', None, 'COMPLETED', False, False, [
-        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '1'},
+        {'fileName': 'Liquidation Report.pdf', 'content': 'pdf_content_filing', 'order': '1'},
+        {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '2'},
     ]),
     ('changeOfReceivers', 'appointReceiver', None, 'COMPLETED', False, False, [
         {'fileName': 'Receipt.pdf', 'content': 'pdf_content_receipt', 'order': '1'},
@@ -716,7 +717,7 @@ def test_maintenance_notification(app, session, mock_pdfs, mock_recipients, mock
     'changeOfLiquidators - appointLiquidator',
     'changeOfLiquidators - ceaseLiquidator',
     'changeOfLiquidators - changeAddressLiquidator',
-    'changeOfLiquidators - liquidationReport (receipt only)',
+    'changeOfLiquidators - liquidationReport',
     'changeOfReceivers - appointReceiver (receipt only)',
     'changeOfReceivers - ceaseReceiver (receipt only)',
     'changeOfReceivers - changeAddressReceiver (receipt only)'
