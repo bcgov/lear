@@ -39,7 +39,7 @@ ENV DBSCHEMA_VERSION=9_7_1
 # DbSchema bundles an outdated JRE (21.0.6) that includes JavaFX, which it requires.
 # Replace it with a patched Liberica Full JRE (includes JavaFX); the launcher uses ${DBSCHEMA_HOME}/jre first.
 ENV JRE_VERSION=21.0.13.1+5
-ENV JRE_SHA1=c94b34e0c82a64cf3354f83728a804efb6c7c65a
+ENV JRE_SHA256=9a23afdf33b37ba66a246c012ad135fb4d193aba7acf60b88429300bc2a08293
 
 RUN set -eux; \
     apt-get update; \
@@ -47,8 +47,8 @@ RUN set -eux; \
     curl --http1.1 -fsSL "https://www.dbschema.com/download/dbschema_unix_9_7_1.tar.gz" -o /tmp/dbschema.tar.gz;\
     tar -xzf /tmp/dbschema.tar.gz -C /opt; \
     rm /tmp/dbschema.tar.gz; \
-    curl -fsSL "https://github.com/bell-sw/Liberica/releases/download/${JRE_VERSION}/bellsoft-jre${JRE_VERSION}-linux-amd64-full.tar.gz" -o /tmp/jre.tar.gz; \
-    echo "${JRE_SHA1}  /tmp/jre.tar.gz" | sha1sum -c -; \
+    curl --proto '=https' --tlsv1.2 -fsSL "https://github.com/bell-sw/Liberica/releases/download/${JRE_VERSION}/bellsoft-jre${JRE_VERSION}-linux-amd64-full.tar.gz" -o /tmp/jre.tar.gz; \
+    echo "${JRE_SHA256}  /tmp/jre.tar.gz" | sha256sum -c -; \
     rm -rf "${DBSCHEMA_HOME}/jre"; \
     mkdir "${DBSCHEMA_HOME}/jre"; \
     tar -xzf /tmp/jre.tar.gz -C "${DBSCHEMA_HOME}/jre" --strip-components=1; \
