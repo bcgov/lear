@@ -36,13 +36,24 @@ RUN set -eux; \
 
 ENV DBSCHEMA_HOME=/opt/DbSchema
 ENV DBSCHEMA_VERSION=9_7_1
+# DbSchema bundles an outdated JRE (21.0.6) that includes JavaFX, which it requires.
+# Replace it with a patched Liberica Full JRE (includes JavaFX); the launcher uses ${DBSCHEMA_HOME}/jre first.
+ENV JRE_VERSION=21.0.13.1+5
+ENV JRE_SHA1=c94b34e0c82a64cf3354f83728a804efb6c7c65a
 
 RUN set -eux; \
     apt-get update; \
-    apt-get install -y --no-install-recommends default-jre-headless curl;\
+    apt-get install -y --no-install-recommends curl;\
     curl --http1.1 -fsSL "https://www.dbschema.com/download/dbschema_unix_9_7_1.tar.gz" -o /tmp/dbschema.tar.gz;\
     tar -xzf /tmp/dbschema.tar.gz -C /opt; \
     rm /tmp/dbschema.tar.gz; \
+    curl -fsSL "https://github.com/bell-sw/Liberica/releases/download/${JRE_VERSION}/bellsoft-jre${JRE_VERSION}-linux-amd64-full.tar.gz" -o /tmp/jre.tar.gz; \
+    echo "${JRE_SHA1}  /tmp/jre.tar.gz" | sha1sum -c -; \
+    rm -rf "${DBSCHEMA_HOME}/jre"; \
+    mkdir "${DBSCHEMA_HOME}/jre"; \
+    tar -xzf /tmp/jre.tar.gz -C "${DBSCHEMA_HOME}/jre" --strip-components=1; \
+    rm /tmp/jre.tar.gz; \
+    "${DBSCHEMA_HOME}/jre/bin/java" -version; \
     mkdir -p "${DBSCHEMA_HOME}/lib"; \
     curl -fsSL "https://repo1.maven.org/maven2/org/testfx/openjfx-monocle/17.0.10/openjfx-monocle-17.0.10.jar" -o "${DBSCHEMA_HOME}/lib/monocle.jar"; \
     ln -sf "${DBSCHEMA_HOME}/DbSchemaCLI" /usr/local/bin/dbschemacli; \
