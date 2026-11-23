@@ -126,7 +126,9 @@ def get_unaffiliated_invite(identifier: str, token: str) -> dict | None:
     url = f'{current_app.config.get("AUTH_URL")}/affiliationInvitations/unaffiliated/{identifier}'
     timeout = int(current_app.config.get("ACCOUNT_SVC_TIMEOUT") or 20)
     try:
-        res = requests.post(url, json={"sendEmail": False}, headers=headers, timeout=timeout)
+        # preset None: link lands on the default login page (all identity providers), not the BCSC-only SAF page
+        payload = {"sendEmail": False, "preset": None}
+        res = requests.post(url, json=payload, headers=headers, timeout=timeout)
         if res.status_code == HTTPStatus.CONFLICT:
             return None
         if res.status_code == HTTPStatus.CREATED:

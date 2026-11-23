@@ -416,7 +416,7 @@ def test_get_recipients_calls_get_recipient_from_auth(app):
 
 UNAFFILIATED_IDENTIFIER = 'BC1234567'
 SAF_INVITE = {
-    'contextUrl': 'https://registry-home/?preset=bcscUser&token=abc',
+    'contextUrl': 'https://registry-home/?token=abc',
     'expiresOn': '2026-11-20T23:59:59+00:00',
     'recipientEmail': 'saf@test.com',
 }
@@ -435,7 +435,7 @@ def test_get_unaffiliated_invite_returns_link_and_recipient(app, auth_url):
         result = get_unaffiliated_invite(UNAFFILIATED_IDENTIFIER, token)
 
         assert result == SAF_INVITE
-        assert m.last_request.json() == {'sendEmail': False}
+        assert m.last_request.json() == {'sendEmail': False, 'preset': None}
         assert m.last_request.headers['Authorization'] == f'Bearer {token}'
         assert m.last_request.headers['Accept'] == 'application/json'
         assert m.last_request.timeout == int(app.config.get('ACCOUNT_SVC_TIMEOUT') or 20)
