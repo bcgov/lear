@@ -63,3 +63,28 @@ def test_director_change_date_hidden_when_not_completed(session):
     """Assert the Director Change Date is hidden while the filing is not yet completed."""
     rendered = _render_cod(status='DRAFT', appointed=_A_DIRECTOR, ceased=[])
     assert 'Director Change Date:' not in rendered
+
+def _render_summary_status(state, in_liquidation):
+    """Render the Company Status value of the common businessDetails part for a business summary."""
+    template = get_template(DETAILS_TEMPLATE)
+    rendered = template.render(
+        reportType='summary',
+        business={'identifier': 'BC1234567', 'legalType': 'BC', 'state': state, 'inLiquidation': in_liquidation},
+        formatted_founding_date_time='August 13, 2026 at 11:53 am Pacific time',
+    )
+    return ' '.join(rendered.split())
+
+
+@pytest.mark.parametrize('test_name, state, in_liquidation, expected, not_expected', [
+    ('active', 'ACTIVE', False, '<span class="capitalize-text">ACTIVE</span>', 'IN LIQUIDATION'),
+    ('in liquidation', 'ACTIVE', True, '<span>IN LIQUIDATION</span>', '<span class="capitalize-text">ACTIVE</span>'),
+    ('historical', 'HISTORICAL', False, '<span class="capitalize-text">HISTORICAL</span>', 'IN LIQUIDATION'),
+    ('historical with stale flag', 'HISTORICAL', True, '<span class="capitalize-text">HISTORICAL</span>',
+     'IN LIQUIDATION'),
+])
+def test_summary_company_status(session, test_name, state, in_liquidation, expected, not_expected):
+    """Assert the summary Company Status shows IN LIQUIDATION only for a non-historical business in liquidation."""
+    rendered = _render_summary_status(state, in_liquidation)
+    assert 'Company Status:' in rendered
+    assert expected in rendered
+    assert not_expected not in rendered
