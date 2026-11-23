@@ -21,7 +21,7 @@ from business_model.models import Business
 from tests.unit import prep_incorp_filing
 
 
-SAF_INVITE = {'contextUrl': 'https://registry-home/?preset=bcscUser&token=abc', 'recipientEmail': 'saf@test.com'}
+SAF_INVITE = {'contextUrl': 'https://registry-home/?token=abc', 'recipientEmail': 'saf@test.com'}
 
 
 @pytest.mark.parametrize('invite', [None, SAF_INVITE], ids=['affiliated', 'unaffiliated'])
