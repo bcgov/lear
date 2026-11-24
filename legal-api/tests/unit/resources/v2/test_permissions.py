@@ -20,7 +20,7 @@ import pytest
 from http import HTTPStatus
 
 from business_model.models import AuthorizedRole, AuthorizedRolePermission, Permission
-from legal_api.services.authz import STAFF_ROLE, PUBLIC_USER
+from legal_api.services.authz import STAFF_ROLE, PUBLIC_USER, SBC_FINANCE_STAFF_ROLE
 
 from tests.unit.services.utils import create_header
 
@@ -70,3 +70,20 @@ def test_get_permissions_with_public_user_role(client, jwt, setup_permissions):
     )
     assert rv.status_code == HTTPStatus.OK
     assert 'STAFF_FILINGS' not in rv.json['authorizedPermissions']
+
+def test_get_permissions_with_sbc_finance_staff_role(client, jwt):
+    """Should return only the read-only permissions for an sbc finance staff user."""
+    rv = client.get(
+        '/api/v2/permissions',
+        headers=create_header(jwt, [SBC_FINANCE_STAFF_ROLE], 'user')
+    )
+    assert rv.status_code == HTTPStatus.OK
+    assert sorted(rv.json['authorizedPermissions']) == [
+        'DOCUMENT_RECORDS',
+        'MANAGE_BUSINESS',
+        'MANAGE_NR',
+        'MANAGE_OTHER_ORGANIZATION',
+        'MANAGE_SOCIETY',
+        'SEARCH_BUSINESS_NR',
+        'STAFF_BREADCRUMBS',
+    ]
