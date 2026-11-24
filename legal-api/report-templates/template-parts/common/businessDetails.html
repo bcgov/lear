@@ -42,7 +42,11 @@
                     {% endif %}
                  </div>
                  <div class="pt-2">
-                     <span class="capitalize-text">{{business.state}}</span>
+                     {% if business.inLiquidation and business.state != 'HISTORICAL' %}
+                        <span>IN LIQUIDATION</span>
+                     {% else %}
+                        <span class="capitalize-text">{{business.state}}</span>
+                     {% endif %}
                      {% if business.state in ('HISTORICAL', 'LIQUIDATION') and (stateFilings or amalgamationOut) %}
                          {% if business.state == 'HISTORICAL' %}
                            <span> - </span>

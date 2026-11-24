@@ -21,7 +21,7 @@
                <div>
                   <span class="section-sub-title">Mailing Address</span>
                   {% if offices.businessOffice and offices.businessOffice.mailingAddress.hasCorrected %}
-                     <span class="chip">CORRECTED</span>
+                     <span class="chip chip-change">CORRECTED</span>
                   {% endif %}
                </div>
                 {% if offices.businessOffice %}
@@ -52,7 +52,7 @@
                <div>
                   <span class="section-sub-title">Delivery Address</span>
                   {% if offices.businessOffice and offices.businessOffice.deliveryAddress.hasCorrected %}
-                     <span class="chip">CORRECTED</span>
+                     <span class="chip chip-change">CORRECTED</span>
                   {% endif %}
                </div>
                 {% if offices.businessOffice %}
