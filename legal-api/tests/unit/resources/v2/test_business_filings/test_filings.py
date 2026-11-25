@@ -1082,7 +1082,8 @@ def test_update_annual_report_to_a_business(session, client, jwt):
 
 
 @integration_payment
-def test_payment_failed(session, client, jwt):
+@pytest.mark.parametrize('pay_status', [HTTPStatus.BAD_REQUEST, HTTPStatus.PAYMENT_REQUIRED])
+def test_payment_failed(session, client, jwt, pay_status):
     """Assert that a failed call to a BCOL payment returns an error code and message."""
     identifier = 'CP7654321'
     business = factory_business(identifier,
@@ -1094,7 +1095,7 @@ def test_payment_failed(session, client, jwt):
     ar['filing']['annualReport']['annualGeneralMeetingDate'] = datetime.now(UTC).date().isoformat()
 
     old_svc = current_app.config.get('PAYMENT_SVC_URL')
-    current_app.config['PAYMENT_SVC_URL'] = old_svc + '?__code=400'
+    current_app.config['PAYMENT_SVC_URL'] = old_svc + f'?__code={pay_status.value}'
 
     rv = client.post(f'/api/v2/businesses/{identifier}/filings',
                      json=ar,
