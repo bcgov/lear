@@ -19,10 +19,16 @@ import pytest
 from registry_schemas.example_data import COURT_ORDER_FILING_TEMPLATE
 from reportlab.lib.pagesizes import letter
 
+from legal_api.services.filings.validations import common_validations
+from legal_api.services.filings.validations.common_validations import (
+    MAX_COURT_ORDER_FILE_SIZE,
+    MAX_FILE_SIZE,
+    validate_pdf,
+)
 from legal_api.services.filings.validations.court_order import validate
 
 from tests.unit.models import factory_business
-from tests.unit.services.filings.test_utils import _upload_file, mock_drs_get_document
+from tests.unit.services.filings.test_utils import _create_pdf_file, _upload_file, mock_drs_get_document
 from tests.unit.services.filings.validations import lists_are_equal
 
 
@@ -103,3 +109,54 @@ def test_court_order_file(session, monkeypatch, test_name, expected_code, expect
         assert lists_are_equal(err.msg, expected_msg)
     else:
         assert err is None
+
+
+def _mock_file_size(monkeypatch, file_size):
+    """Serve a valid letter-size PDF that reports the given size."""
+    pdf_data = _create_pdf_file(letter, invalid=False).read()
+    monkeypatch.setattr(common_validations, '_get_file_data', lambda _file_key: (pdf_data, file_size))
+
+
+@pytest.mark.parametrize('is_file_key', [True, False])
+@pytest.mark.parametrize(
+    'file_size, expected_code',
+    [
+        (MAX_FILE_SIZE + 1, None),
+        (MAX_COURT_ORDER_FILE_SIZE, None),
+        (MAX_COURT_ORDER_FILE_SIZE + 1, HTTPStatus.BAD_REQUEST),
+    ])
+def test_court_order_file_size(session, monkeypatch, file_size, expected_code, is_file_key):
+    """Assert court order files are accepted up to the court order size limit."""
+    _mock_file_size(monkeypatch, file_size)
+    business = factory_business('BC1234567')
+    filing = copy.deepcopy(COURT_ORDER_FILING_TEMPLATE)
+    expected_path = file_key_path
+
+    if not is_file_key:
+        file_key = filing['filing']['courtOrder'].pop('fileKey')
+        filing['filing']['courtOrder']['files'] = [
+            {'fileName': 'test_file.pdf', 'fileKey': file_key, 'documentType': 'court_order'}
+        ]
+        expected_path = '/filing/courtOrder/files/0/fileKey'
+
+    err = validate(business, filing)
+
+    if expected_code:
+        assert err.code == expected_code
+        assert lists_are_equal(err.msg, [{'error': 'File exceeds maximum size.', 'path': expected_path}])
+    else:
+        assert err is None
+
+
+@pytest.mark.parametrize(
+    'file_size, expected_msg',
+    [
+        (MAX_FILE_SIZE, []),
+        (MAX_FILE_SIZE + 1, [{'error': 'File exceeds maximum size.', 'path': file_key_path}]),
+    ])
+def test_validate_pdf_default_file_size(app, monkeypatch, file_size, expected_msg):
+    """Assert the default size limit still applies to other uploads."""
+    _mock_file_size(monkeypatch, file_size)
+
+    with app.app_context():
+        assert validate_pdf('COOP-DS1234567890', file_key_path) == expected_msg
