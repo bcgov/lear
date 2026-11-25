@@ -78,28 +78,23 @@ def colin_oracle_init(config):
 def lear_init(config):
     try:
         engine = create_engine(
-                "postgresql+pg8000://", creator=lambda: get_colin_mig_conn(config)
+            "postgresql+pg8000://",
+            creator=lambda: get_colin_mig_conn(config),
+            **config.SQLALCHEMY_ENGINE_OPTIONS
             )
         check_postgres_connection(engine)
         return engine
     except Exception as e:
         raise Exception('Failed to create engine for LEAR DB') from e
-    # try:
-    #     engine = create_engine(
-    #         config.SQLALCHEMY_DATABASE_URI,
-    #         **config.SQLALCHEMY_ENGINE_OPTIONS
-    #     )
-    #     check_postgres_connection(engine)
-    #     return engine
-    # except Exception as e:
-    #     raise Exception('Failed to create engine for LEAR DB') from e
 
 
 @task(cache_policy=NO_CACHE)
 def auth_init(config):
     try:
         engine = create_engine(
-                    "postgresql+pg8000://", creator=lambda: get_colin_mig_conn_auth(config)
+                    "postgresql+pg8000://",
+                    creator=lambda: get_colin_mig_conn_auth(config),
+                    **config.SQLALCHEMY_ENGINE_OPTIONS
                 )
         check_postgres_connection(engine)
         return engine
