@@ -58,6 +58,14 @@ BC_BEN_LEGAL_TYPES: Final = [
     Business.LegalTypes.BCOMP.value,
 ]
 
+# a company continued into BC counts as its BC equivalent (C=BC, CBEN=BEN, CUL=ULC, CCC=CC)
+CONTINUED_IN_TO_BC_LEGAL_TYPE: Final = {
+    Business.LegalTypes.CONTINUE_IN.value: Business.LegalTypes.COMP.value,
+    Business.LegalTypes.BCOMP_CONTINUE_IN.value: Business.LegalTypes.BCOMP.value,
+    Business.LegalTypes.ULC_CONTINUE_IN.value: Business.LegalTypes.BC_ULC_COMPANY.value,
+    Business.LegalTypes.CCC_CONTINUE_IN.value: Business.LegalTypes.BC_CCC.value,
+}
+
 # COLIN corps not loaded in LEAR that can amalgamate
 COLIN_AMALGAMATION_LEGAL_TYPES: Final = [
     Business.LegalTypes.COMP.value,
@@ -198,8 +206,10 @@ def _augment_with_source_update_hint(errors: list, amalgamation_type: str) -> li
 def _is_name_adoptable(legal_type: str, ting_legal_type: str) -> bool:
     """Return whether the resulting business may adopt the name of an amalgamating business of this type.
 
-    A BC or BEN resulting business may adopt a BC or BEN name (the resulting business type can be changed).
+    A continued-in business counts as its BC equivalent. A BC or BEN resulting business may adopt
+    a BC or BEN name (the resulting business type can be changed).
     """
+    ting_legal_type = CONTINUED_IN_TO_BC_LEGAL_TYPE.get(ting_legal_type, ting_legal_type)
     if legal_type in BC_BEN_LEGAL_TYPES:
         return ting_legal_type in BC_BEN_LEGAL_TYPES
     return legal_type == ting_legal_type
@@ -224,6 +234,9 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
         Business.LegalTypes.BC_CCC.value: False,
         Business.LegalTypes.BC_ULC_COMPANY.value: False,
         Business.LegalTypes.ULC_CONTINUE_IN.value: False,
+        Business.LegalTypes.CONTINUE_IN.value: False,
+        Business.LegalTypes.BCOMP_CONTINUE_IN.value: False,
+        Business.LegalTypes.CCC_CONTINUE_IN.value: False,
         Business.LegalTypes.COOP.value: False
     }
     is_any_expro_a = False
@@ -276,6 +289,9 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
 
         # aggregate bookkeeping (CC/ULC mixes, name adoption, type match) shared by LEAR and COLIN TINGs
         is_any_business[ting_legal_type] = True
+        bc_legal_type = CONTINUED_IN_TO_BC_LEGAL_TYPE.get(ting_legal_type)
+        if bc_legal_type:
+            is_any_business[bc_legal_type] = True
         if _is_name_adoptable(legal_type, ting_legal_type):
             adoptable_names.append(ting_legal_name)
         if amalgamating_business_json["role"] in [AmalgamatingBusiness.Role.primary.name,
@@ -357,14 +373,8 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
         })
 
     if primary_or_holding_legal_type:
-        continued_types_map = {
-            Business.LegalTypes.CONTINUE_IN.value: Business.LegalTypes.COMP.value,
-            Business.LegalTypes.BCOMP_CONTINUE_IN.value: Business.LegalTypes.BCOMP.value,
-            Business.LegalTypes.ULC_CONTINUE_IN.value: Business.LegalTypes.BC_ULC_COMPANY.value,
-            Business.LegalTypes.CCC_CONTINUE_IN.value: Business.LegalTypes.BC_CCC.value
-        }
-        legal_type_to_compare = continued_types_map.get(primary_or_holding_legal_type,
-                                                        primary_or_holding_legal_type)
+        legal_type_to_compare = CONTINUED_IN_TO_BC_LEGAL_TYPE.get(primary_or_holding_legal_type,
+                                                                  primary_or_holding_legal_type)
         if legal_type_to_compare != legal_type:
             msg.append({
                 "error": "Legal type should be same as the legal type in primary or holding business.",
