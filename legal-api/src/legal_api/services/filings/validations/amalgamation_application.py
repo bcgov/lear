@@ -234,6 +234,9 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
         Business.LegalTypes.BC_CCC.value: False,
         Business.LegalTypes.BC_ULC_COMPANY.value: False,
         Business.LegalTypes.ULC_CONTINUE_IN.value: False,
+        Business.LegalTypes.CONTINUE_IN.value: False,
+        Business.LegalTypes.BCOMP_CONTINUE_IN.value: False,
+        Business.LegalTypes.CCC_CONTINUE_IN.value: False,
         Business.LegalTypes.COOP.value: False
     }
     is_any_expro_a = False
@@ -286,6 +289,9 @@ def validate_amalgamating_businesses(  # noqa: PLR0912, PLR0915
 
         # aggregate bookkeeping (CC/ULC mixes, name adoption, type match) shared by LEAR and COLIN TINGs
         is_any_business[ting_legal_type] = True
+        bc_legal_type = CONTINUED_IN_TO_BC_LEGAL_TYPE.get(ting_legal_type)
+        if bc_legal_type:
+            is_any_business[bc_legal_type] = True
         if _is_name_adoptable(legal_type, ting_legal_type):
             adoptable_names.append(ting_legal_name)
         if amalgamating_business_json["role"] in [AmalgamatingBusiness.Role.primary.name,

@@ -1260,24 +1260,24 @@ def test_amalgamating_foreign_business_with_bc_company_to_ulc(mocker, app, sessi
 
 
 @pytest.mark.parametrize(
-    'test_status, role, expected_code, expected_msg',
+    'test_status, role, ting_legal_type, expected_code, expected_msg',
     [
-        ('FAIL', STAFF_ROLE, HTTPStatus.BAD_REQUEST,
+        ('FAIL', STAFF_ROLE, Business.LegalTypes.BC_ULC_COMPANY.value, HTTPStatus.BAD_REQUEST,
          'A BC Unlimited Liability Company cannot amalgamate with a foreign company Foreign Co..'),
-        ('SUCCESS', STAFF_ROLE, None, None)
+        ('FAIL', STAFF_ROLE, Business.LegalTypes.ULC_CONTINUE_IN.value, HTTPStatus.BAD_REQUEST,
+         'A BC Unlimited Liability Company cannot amalgamate with a foreign company Foreign Co..'),
+        ('SUCCESS', STAFF_ROLE, Business.LegalTypes.BCOMP.value, None, None)
     ]
 )
 def test_amalgamating_foreign_business_with_ulc_company(mocker, app, session, jwt,
-                                                        test_status, role, expected_code, expected_msg):
+                                                        test_status, role, ting_legal_type, expected_code, expected_msg):
     """Assert valid amalgamating foreign business with ulc company."""
     account_id = '123456'
     filing = _get_amalg_template()
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
 
     def mock_find_by_identifier(identifier):
-        return Business(identifier=identifier,
-                        legal_type=Business.LegalTypes.BC_ULC_COMPANY.value
-                        if test_status == 'FAIL' else Business.LegalTypes.BCOMP.value)
+        return Business(identifier=identifier, legal_type=ting_legal_type)
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
                  return_value=[])
@@ -1299,15 +1299,16 @@ def test_amalgamating_foreign_business_with_ulc_company(mocker, app, session, jw
 
 
 @pytest.mark.parametrize(
-    'test_status, expected_code, expected_msg',
+    'test_status, ting_legal_type, expected_code, expected_msg',
     [
-        ('FAIL', HTTPStatus.BAD_REQUEST,
+        ('FAIL', Business.LegalTypes.BCOMP.value, HTTPStatus.BAD_REQUEST,
          'A BC Community Contribution Company must amalgamate to form a new BC Community Contribution Company.'),
-        ('SUCCESS', None, None)
+        ('SUCCESS_CC', Business.LegalTypes.BC_CCC.value, None, None),
+        ('SUCCESS_CONTINUED_IN', Business.LegalTypes.CCC_CONTINUE_IN.value, None, None)
     ]
 )
 def test_amalgamating_cc_to_cc(mocker, app, session, jwt,
-                               test_status, expected_code, expected_msg):
+                               test_status, ting_legal_type, expected_code, expected_msg):
     """Assert valid amalgamating cc to cc."""
     account_id = '123456'
     filing = _get_amalg_template()
@@ -1315,9 +1316,7 @@ def test_amalgamating_cc_to_cc(mocker, app, session, jwt,
     filing['filing']['amalgamationApplication']['nameRequest']['nrNumber'] = 'NR 1234567'
 
     def mock_find_by_identifier(identifier):
-        return Business(identifier=identifier,
-                        legal_type=Business.LegalTypes.BCOMP.value
-                        if test_status == 'FAIL' else Business.LegalTypes.BC_CCC.value)
+        return Business(identifier=identifier, legal_type=ting_legal_type)
 
     mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
                  return_value=[])
@@ -1331,7 +1330,7 @@ def test_amalgamating_cc_to_cc(mocker, app, session, jwt,
         err = validate(None, filing, account_id)
 
     # validate outcomes
-    if test_status == 'SUCCESS':
+    if test_status.startswith('SUCCESS'):
         assert not err
     else:
         assert expected_code == err.code
@@ -1515,7 +1514,7 @@ def test_regular_amalgamation_adoptable_name(mocker, app, session, jwt, test_sta
 @pytest.mark.parametrize(
     'test_status, legal_type, adopted_ting_legal_type, other_ting_legal_type',
     [
-        # a continued-in company counts as its BC equivalent: C=BC, CBEN=BEN, CUL=ULC
+        # a continued-in company counts as its BC equivalent: C=BC, CBEN=BEN, CUL=ULC, CCC=CC
         ('SUCCESS_BC_ADOPT_CBEN_WITH_BC', Business.LegalTypes.COMP.value,
          Business.LegalTypes.BCOMP_CONTINUE_IN.value, Business.LegalTypes.COMP.value),
         ('SUCCESS_BC_ADOPT_C_WITH_BC', Business.LegalTypes.COMP.value,
@@ -1526,6 +1525,8 @@ def test_regular_amalgamation_adoptable_name(mocker, app, session, jwt, test_sta
          Business.LegalTypes.CONTINUE_IN.value, Business.LegalTypes.COMP.value),
         ('SUCCESS_ULC_ADOPT_CUL_WITH_ULC', Business.LegalTypes.BC_ULC_COMPANY.value,
          Business.LegalTypes.ULC_CONTINUE_IN.value, Business.LegalTypes.BC_ULC_COMPANY.value),
+        ('SUCCESS_CC_ADOPT_CCC_WITH_CC', Business.LegalTypes.BC_CCC.value,
+         Business.LegalTypes.CCC_CONTINUE_IN.value, Business.LegalTypes.COMP.value),
         # a continued-in ULC is still a ULC - its name is not adoptable by a BC or BEN
         ('FAIL_BC_ADOPT_CUL_WITH_BC', Business.LegalTypes.COMP.value,
          Business.LegalTypes.ULC_CONTINUE_IN.value, Business.LegalTypes.COMP.value),
@@ -2265,8 +2266,10 @@ def _mock_expro_snapshot_response(**overrides):
         ('NOT_GOOD_STANDING_IGNORED', None),
         ('HORIZONTAL', 'A foreign corporation or extra-Pro cannot be part of a Horizontal amalgamation.'),
         ('HOLDING_ROLE', 'A EXPRO TEST COMPANY LTD. foreign corporation cannot be marked as Primary or Holding.'),
-        ('ULC_TING', 'A BC Unlimited Liability Company cannot amalgamate with '
-                     'a foreign company EXPRO TEST COMPANY LTD..'),
+        ('ULC_TING', 'A BC Unlimited Liability Company cannot amalgamate with a foreign company '
+                    'EXPRO TEST COMPANY LTD..'),
+        ('ULC_CONTINUED_IN_TING', 'A BC Unlimited Liability Company cannot amalgamate with a foreign company '
+                                'EXPRO TEST COMPANY LTD..'),
     ]
 )
 def test_expro_amalgamating_business(mocker, app, session, jwt, test_status, expected_msg):
@@ -2290,6 +2293,7 @@ def test_expro_amalgamating_business(mocker, app, session, jwt, test_status, exp
         if identifier == EXPRO_IDENTIFIER:
             return None
         legal_type = (Business.LegalTypes.BC_ULC_COMPANY.value if test_status == 'ULC_TING'
+                      else Business.LegalTypes.ULC_CONTINUE_IN.value if test_status == 'ULC_CONTINUED_IN_TING'
                       else Business.LegalTypes.BCOMP.value)
         return Business(identifier=identifier,
                         founding_date=datetime.now(timezone.utc),
