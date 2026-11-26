@@ -770,7 +770,14 @@ def format_in_dissolution_data(data: dict, config=None) -> dict:
         'importFromColin': True,
         'colinDissolutionState': corp_state,
     }
-
+    colin_event_id = in_dissolution_data['e_event_id']
+    colin_event_metadata = {
+        'colinStartEventId': int(colin_event_id) if colin_event_id is not None else None,
+        'colinStartEventType': in_dissolution_data['e_event_type_cd'],
+        'colinStageEnteredAt': in_dissolution_data['e_event_dt_str'],
+    }
+    batch_processiong['meta_data'].update(colin_event_metadata)
+    furnishing['meta_data'].update(colin_event_metadata)
     if corp_state in ('D1F', 'D1T'):
         # stage 1
         batch_processiong['step'] = 'WARNING_LEVEL_1'
