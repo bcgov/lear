@@ -256,8 +256,8 @@ def _rollback_unused_bootstrap(bootstrap: RegistrationBootstrap):
         if RegistrationBootstrapService.deregister_bootstrap(bootstrap) != HTTPStatus.OK:
             current_app.logger.error(f"Unable to deregister unused temp reg: {bootstrap.identifier}")
         RegistrationBootstrapService.delete_bootstrap(bootstrap)
-    except Exception as err:  # pylint: disable=broad-exception-caught
-        current_app.logger.error(f"Unable to roll back unused temp reg {bootstrap.identifier}: {err!r}")
+    except Exception:  # pylint: disable=broad-exception-caught
+        current_app.logger.exception(f"Unable to roll back unused temp reg {bootstrap.identifier}")
 
 
 @bp.route("/<string:identifier>/ar-reminder", methods=["GET"])
