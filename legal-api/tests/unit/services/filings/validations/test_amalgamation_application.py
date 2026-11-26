@@ -1513,6 +1513,68 @@ def test_regular_amalgamation_adoptable_name(mocker, app, session, jwt, test_sta
 
 
 @pytest.mark.parametrize(
+    'test_status, legal_type, adopted_ting_legal_type, other_ting_legal_type',
+    [
+        # a continued-in company counts as its BC equivalent: C=BC, CBEN=BEN, CUL=ULC
+        ('SUCCESS_BC_ADOPT_CBEN_WITH_BC', Business.LegalTypes.COMP.value,
+         Business.LegalTypes.BCOMP_CONTINUE_IN.value, Business.LegalTypes.COMP.value),
+        ('SUCCESS_BC_ADOPT_C_WITH_BC', Business.LegalTypes.COMP.value,
+         Business.LegalTypes.CONTINUE_IN.value, Business.LegalTypes.COMP.value),
+        ('SUCCESS_BEN_ADOPT_CBEN_WITH_BC', Business.LegalTypes.BCOMP.value,
+         Business.LegalTypes.BCOMP_CONTINUE_IN.value, Business.LegalTypes.COMP.value),
+        ('SUCCESS_BEN_ADOPT_C_WITH_BC', Business.LegalTypes.BCOMP.value,
+         Business.LegalTypes.CONTINUE_IN.value, Business.LegalTypes.COMP.value),
+        ('SUCCESS_ULC_ADOPT_CUL_WITH_ULC', Business.LegalTypes.BC_ULC_COMPANY.value,
+         Business.LegalTypes.ULC_CONTINUE_IN.value, Business.LegalTypes.BC_ULC_COMPANY.value),
+        # a continued-in ULC is still a ULC - its name is not adoptable by a BC or BEN
+        ('FAIL_BC_ADOPT_CUL_WITH_BC', Business.LegalTypes.COMP.value,
+         Business.LegalTypes.ULC_CONTINUE_IN.value, Business.LegalTypes.COMP.value),
+        ('FAIL_BEN_ADOPT_CUL_WITH_BC', Business.LegalTypes.BCOMP.value,
+         Business.LegalTypes.ULC_CONTINUE_IN.value, Business.LegalTypes.COMP.value),
+    ]
+)
+def test_regular_amalgamation_adopt_continued_in_name(mocker, app, session, jwt, test_status, legal_type,
+                                                      adopted_ting_legal_type, other_ting_legal_type):
+    """Assert the name of a continued-in amalgamating business is adoptable as its BC equivalent."""
+    account_id = '123456'
+    filing = _get_amalg_template()
+    filing['filing']['amalgamationApplication']['nameRequest']['legalType'] = legal_type
+    filing['filing']['amalgamationApplication']['nameRequest']['legalName'] = 'CONTINUED IN TEST LTD.'
+    filing['filing']['amalgamationApplication']['amalgamatingBusinesses'] = [
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'C1234567'},
+        {'role': AmalgamatingBusiness.Role.amalgamating.name, 'identifier': 'BC1234568'}
+    ]
+
+    def mock_find_by_identifier(identifier):
+        if identifier == 'C1234567':
+            return Business(identifier=identifier,
+                            legal_name='CONTINUED IN TEST LTD.',
+                            legal_type=adopted_ting_legal_type)
+        return Business(identifier=identifier,
+                        legal_name='OTHER TEST LTD.',
+                        legal_type=other_ting_legal_type)
+
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application.validate_name_request',
+                 return_value=[])
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._has_pending_filing',
+                 return_value=False)
+    mocker.patch('legal_api.services.filings.validations.amalgamation_application._is_business_affliated',
+                 return_value=True)
+    mocker.patch('business_model.models.business.Business.find_by_identifier', side_effect=mock_find_by_identifier)
+
+    with jwt_request_context(app, jwt, [STAFF_ROLE], 'staff-user', account_id):
+        err = validate(None, filing, account_id)
+
+    # validate outcomes
+    expected_msg = 'Adopt a name that have the same business type as the resulting business.'
+    if test_status.startswith('SUCCESS'):
+        assert not err, err.msg
+    else:
+        assert HTTPStatus.BAD_REQUEST == err.code
+        assert next((x for x in err.msg if x['error'] == expected_msg), None)
+
+
+@pytest.mark.parametrize(
     'test_status, amalgamating_businesses, expected_code, expected_msg',
     [
         ('FAIL_BC', [
@@ -2885,3 +2947,4 @@ def test_amalgamation_entity_not_enabled(mocker, app, session, jwt, flag_value):
 
     assert err.code == HTTPStatus.FORBIDDEN
     assert err.msg[0]['error'] == 'CP is not enabled for amalgamation entities.'
+    
