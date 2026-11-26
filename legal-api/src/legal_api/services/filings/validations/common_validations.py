@@ -564,7 +564,8 @@ def validate_share_currency(filing_json, filing_type, business=None):
 def validate_court_order(
     court_order_path: str,
     court_order: dict,
-    is_file_or_details_required: bool = False
+    is_file_or_details_required: bool = False,
+    is_file_and_details_required: bool = False
 ) -> list[dict]:
     """Validate the courtOrder data of the filing."""
     msg = []
@@ -577,8 +578,8 @@ def validate_court_order(
         if court_order_date.timestamp() > datetime.now(UTC).timestamp():
             msg.append({"error": "Court order date cannot be in the future.", "path": f"{court_order_path}/orderDate"})
 
-    if is_file_or_details_required:
-        msg.extend(_validate_court_order_documents(court_order_path, court_order))
+    if is_file_or_details_required or is_file_and_details_required:
+        msg.extend(_validate_court_order_documents(court_order_path, court_order, is_file_and_details_required))
 
     if flags.is_on("enabled-deeper-permission-action"):
         required_permission = ListActionsPermissionsAllowed.COURT_ORDER_POA.value
@@ -590,7 +591,7 @@ def validate_court_order(
     return msg
 
 
-def _validate_court_order_documents(court_order_path, court_order):
+def _validate_court_order_documents(court_order_path, court_order, is_file_and_details_required=False):
     msg = []
     file_key = court_order.get("fileKey")
     files = court_order.get("files", [])
@@ -600,7 +601,13 @@ def _validate_court_order_documents(court_order_path, court_order):
         filing = Filing.find_by_id(filing_id)
         existing_file_keys = [document.file_key for document in filing.documents.all()]
 
-    if not court_order.get("orderDetails") and not file_key and not files:
+    has_details = bool((court_order.get("orderDetails") or "").strip())
+    if is_file_and_details_required:
+        if not has_details:
+            msg.append({"error": _("Court Order details are required."), "path": f"{court_order_path}/orderDetails"})
+        if not file_key and not files:
+            msg.append({"error": _("Court Order document is required."), "path": f"{court_order_path}/files"})
+    elif not has_details and not file_key and not files:
         msg.append({"error": _("Court Order is required (in orderDetails/fileKey/files)."), "path": court_order_path})
 
     if file_key:
