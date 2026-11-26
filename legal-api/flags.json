@@ -12,6 +12,7 @@
     "enable-new-feature": [
       "reviewImportedData",
       "draftRebaseChecks",
+      "migratedCourtOrder",
       "authV2Business",
       "authV2Filing",
       "authV2Tasks",

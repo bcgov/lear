@@ -55,6 +55,7 @@ MAX_PUBLIC_USER_DOD_FILINGS = 2
 FILE_OVER_EXISTING_DRAFT_PERMISSION = "FILE_OVER_EXISTING_DRAFT"
 STAFF_DRAFT_FILING_BYPASS_FLAG = "enable-staff-draft-filing-bypass"
 DRAFT_REBASE_CHECKS_FEATURE = "draftRebaseChecks"  # a value inside the enable-new-feature flag
+MIGRATED_COURT_ORDER_FEATURE = "migratedCourtOrder"  # a value inside the enable-new-feature flag
 
 
 class BusinessBlocker(str, Enum):
