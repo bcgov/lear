@@ -897,7 +897,10 @@ def get_in_dissolution_query(corp_num):
         e.event_type_cd     as e_event_type_cd,
         to_char(
             e.trigger_dts::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM'
-        )                   as e_trigger_dts_str
+        )                   as e_trigger_dts_str,
+        to_char(
+                    e.event_timerstamp::timestamptz at time zone 'UTC', 'YYYY-MM-DD HH24:MI:SSTZH:TZM'
+                )                   as e_event_dts_str
     from corp_state cs
     join event e on e.event_id = cs.start_event_id
     where 1 = 1
