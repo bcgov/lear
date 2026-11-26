@@ -22,7 +22,7 @@ colin_query = f"""
 """
 
 lear_query = f"""
-    SELECT colin_corps.identifier FROM UNNEST(ARRAY[:identifiers]) AS colin_corps(identifier)
+    SELECT colin_corps.identifier FROM UNNEST(CAST(:identifiers AS text[])) AS colin_corps(identifier)
     LEFT JOIN businesses b on colin_corps.identifier = b.identifier
     WHERE b.identifier IS NULL
 """

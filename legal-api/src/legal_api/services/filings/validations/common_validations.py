@@ -93,6 +93,8 @@ FILINGS_REQUIRING_AUTHORIZATION = {
     CoreFiling.FilingTypes.RESTORATION,
 }
 DRS_KEY_PATTERN = re.compile(r"^([A-Z]+)-(DS\d+)$")
+MAX_FILE_SIZE: Final = 30 * 1024 * 1024  # 30 MB
+MAX_COURT_ORDER_FILE_SIZE: Final = 50 * 1024 * 1024  # 50 MB
 
 FILING_TYPES_WITH_NR = [
     CoreFiling.FilingTypes.INCORPORATIONAPPLICATION,
@@ -562,7 +564,8 @@ def validate_share_currency(filing_json, filing_type, business=None):
 def validate_court_order(
     court_order_path: str,
     court_order: dict,
-    is_file_or_details_required: bool = False
+    is_file_or_details_required: bool = False,
+    is_file_and_details_required: bool = False
 ) -> list[dict]:
     """Validate the courtOrder data of the filing."""
     msg = []
@@ -575,8 +578,8 @@ def validate_court_order(
         if court_order_date.timestamp() > datetime.now(UTC).timestamp():
             msg.append({"error": "Court order date cannot be in the future.", "path": f"{court_order_path}/orderDate"})
 
-    if is_file_or_details_required:
-        msg.extend(_validate_court_order_documents(court_order_path, court_order))
+    if is_file_or_details_required or is_file_and_details_required:
+        msg.extend(_validate_court_order_documents(court_order_path, court_order, is_file_and_details_required))
 
     if flags.is_on("enabled-deeper-permission-action"):
         required_permission = ListActionsPermissionsAllowed.COURT_ORDER_POA.value
@@ -588,7 +591,7 @@ def validate_court_order(
     return msg
 
 
-def _validate_court_order_documents(court_order_path, court_order):
+def _validate_court_order_documents(court_order_path, court_order, is_file_and_details_required=False):
     msg = []
     file_key = court_order.get("fileKey")
     files = court_order.get("files", [])
@@ -598,11 +601,17 @@ def _validate_court_order_documents(court_order_path, court_order):
         filing = Filing.find_by_id(filing_id)
         existing_file_keys = [document.file_key for document in filing.documents.all()]
 
-    if not court_order.get("orderDetails") and not file_key and not files:
+    has_details = bool((court_order.get("orderDetails") or "").strip())
+    if is_file_and_details_required:
+        if not has_details:
+            msg.append({"error": _("Court Order details are required."), "path": f"{court_order_path}/orderDetails"})
+        if not file_key and not files:
+            msg.append({"error": _("Court Order document is required."), "path": f"{court_order_path}/files"})
+    elif not has_details and not file_key and not files:
         msg.append({"error": _("Court Order is required (in orderDetails/fileKey/files)."), "path": court_order_path})
 
     if file_key:
-        msg.extend(validate_pdf(file_key, f"{court_order_path}/fileKey"))
+        msg.extend(validate_pdf(file_key, f"{court_order_path}/fileKey", max_file_size=MAX_COURT_ORDER_FILE_SIZE))
     elif files:
         msg.extend(_validate_court_order_documents_list(f"{court_order_path}/files", files, existing_file_keys))
 
@@ -620,7 +629,9 @@ def _validate_court_order_documents_list(files_path, files, existing_file_keys):
         if file.get("fileKey") in existing_file_keys:
             continue  # don't validate existing file keys
 
-        msg.extend(validate_pdf(file.get("fileKey"), f"{files_path}/{file_index}/fileKey"))
+        msg.extend(validate_pdf(file.get("fileKey"),
+                                f"{files_path}/{file_index}/fileKey",
+                                max_file_size=MAX_COURT_ORDER_FILE_SIZE))
 
     if court_order_document_count == 0: # if only supporting documents and no court order documents were found
         msg.append({"error": _("At least one Court Order document is required."), "path": files_path})
@@ -643,7 +654,10 @@ def check_good_standing_permission(business: Business) -> Error | None:
     return PermissionService.check_user_permission(required_permission, message=message)
 
 
-def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = True) -> list:
+def validate_pdf(file_key: str,
+                 file_key_path: str,
+                 verify_paper_size: bool = True,
+                 max_file_size: int = MAX_FILE_SIZE) -> list:
     """Validate the PDF file."""
     msg = []
     try:
@@ -661,7 +675,6 @@ def validate_pdf(file_key: str, file_key_path: str, verify_paper_size: bool = Tr
             msg.append({"error": _("Document must be set to fit onto 8.5” x 11” letter-size paper."),
                         "path": file_key_path})
 
-        max_file_size: Final = 30000000
         if file_size > max_file_size:
             msg.append({"error": _("File exceeds maximum size."), "path": file_key_path})
 

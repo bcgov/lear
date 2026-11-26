@@ -23,7 +23,7 @@ from flask_babel import _ as babel
 from flask_cors import cross_origin
 
 from business_account import AccountService
-from business_model.models import Business, Filing, RegistrationBootstrap
+from business_model.models import Business, Filing, RegistrationBootstrap, db
 from legal_api.core import Filing as CoreFiling
 from legal_api.resources.v2.business.business_filings import saving_filings
 from legal_api.services import (
@@ -39,6 +39,7 @@ from legal_api.services.authz import (
     COLIN_SVC_ROLE,
     CONTACT_CENTRE_STAFF_ROLE,
     MAXIMUS_STAFF_ROLE,
+    SBC_FINANCE_STAFF_ROLE,
     SBC_STAFF_ROLE,
     auth_v2_denied,
     authorized,
@@ -84,6 +85,7 @@ def get_businesses(identifier: str):
         SYSTEM_ROLE,
         COLIN_SVC_ROLE,
         SBC_STAFF_ROLE,
+        SBC_FINANCE_STAFF_ROLE,
         CONTACT_CENTRE_STAFF_ROLE,
         MAXIMUS_STAFF_ROLE,
     ])
@@ -197,7 +199,6 @@ def post_businesses():
         else:
             filing_title = Filing.FILINGS[filing_type]["title"]
 
-    # @TODO rollback bootstrap if there is A failure, awaiting changes in the affiliation service
     bootstrap = RegistrationBootstrapService.create_bootstrap(filing_account_id)
     if not isinstance(bootstrap, RegistrationBootstrap):
         return {"error": babel(f"Unable to create {filing_title} Filing.")}, \
@@ -233,7 +234,30 @@ def post_businesses():
         "identifier": bootstrap.identifier
     }
 
-    return saving_filings(identifier=bootstrap.identifier)  # pylint: disable=no-value-for-parameter
+    try:
+        response = saving_filings(identifier=bootstrap.identifier)  # pylint: disable=no-value-for-parameter
+    except Exception:
+        db.session.rollback()
+        _rollback_unused_bootstrap(bootstrap)
+        raise
+    _rollback_unused_bootstrap(bootstrap)
+    return response
+
+
+def _rollback_unused_bootstrap(bootstrap: RegistrationBootstrap):
+    """Remove the temp identifier and its account affiliation when no filing was saved against it.
+
+    Covers only_validate, rejected filings and errors before the save. A filing saved before a later
+    failure (eg: payment) keeps its temp identifier so the draft can still be opened or deleted.
+    """
+    try:
+        if Filing.query.filter(Filing.temp_reg == bootstrap.identifier).first():
+            return
+        if RegistrationBootstrapService.deregister_bootstrap(bootstrap) != HTTPStatus.OK:
+            current_app.logger.error(f"Unable to deregister unused temp reg: {bootstrap.identifier}")
+        RegistrationBootstrapService.delete_bootstrap(bootstrap)
+    except Exception:  # pylint: disable=broad-exception-caught
+        current_app.logger.exception(f"Unable to roll back unused temp reg {bootstrap.identifier}")
 
 
 @bp.route("/<string:identifier>/ar-reminder", methods=["GET"])

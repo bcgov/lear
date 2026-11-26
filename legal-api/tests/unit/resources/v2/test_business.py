@@ -34,6 +34,7 @@ from legal_api.services.authz import (
     CONTACT_CENTRE_STAFF_ROLE,
     MAXIMUS_STAFF_ROLE,
     PUBLIC_USER,
+    SBC_FINANCE_STAFF_ROLE,
     SBC_STAFF_ROLE,
     STAFF_ROLE,
     SYSTEM_ROLE,
@@ -153,7 +154,9 @@ def test_create_one_shot_only_validate(session, client, jwt, test_name, business
     """Assert POST /businesses validates a one-shot filing, using the temp identifier the API just created."""
     filing = _one_shot_incorporation(business_block)
 
-    with patch.object(RegistrationBootstrapService, 'register_bootstrap', return_value=HTTPStatus.OK):
+    with patch.object(RegistrationBootstrapService, 'register_bootstrap', return_value=HTTPStatus.OK), \
+            patch.object(RegistrationBootstrapService, 'deregister_bootstrap',
+                         return_value=HTTPStatus.OK) as mock_deregister:
         rv = client.post('/api/v2/businesses?only_validate=true',
                          json=filing,
                          headers=create_header(jwt, [STAFF_ROLE], None))
@@ -162,8 +165,50 @@ def test_create_one_shot_only_validate(session, client, jwt, test_name, business
     assert not rv.json.get('errors')
     temp_identifier = rv.json['filing']['business']['identifier']
     assert temp_identifier.startswith('T')
-    assert RegistrationBootstrap.find_by_identifier(temp_identifier)
     assert rv.json['filing']['header']['name'] == 'incorporationApplication'
+    # nothing was saved, so the temp identifier and its affiliation are rolled back
+    mock_deregister.assert_called_once()
+    assert not RegistrationBootstrap.find_by_identifier(temp_identifier)
+
+
+def test_create_one_shot_rejected_rolls_back_bootstrap(session, client, jwt):
+    """Assert a rejected one-shot POST /businesses leaves no temp identifier or affiliation behind."""
+    filing = _one_shot_incorporation({'identifier': '{{temp_identifier}}'})
+    filing['filing']['incorporationApplication'].pop('offices')
+
+    with patch.object(RegistrationBootstrapService, 'register_bootstrap', return_value=HTTPStatus.OK), \
+            patch.object(RegistrationBootstrapService, 'deregister_bootstrap',
+                         return_value=HTTPStatus.OK) as mock_deregister:
+        rv = client.post('/api/v2/businesses',
+                         json=filing,
+                         headers=create_header(jwt, [STAFF_ROLE], None))
+
+    assert rv.status_code in (HTTPStatus.BAD_REQUEST, HTTPStatus.UNPROCESSABLE_ENTITY), rv.json
+    assert rv.json.get('errors')
+    temp_identifier = rv.json['filing']['business']['identifier']
+    mock_deregister.assert_called_once()
+    assert not RegistrationBootstrap.find_by_identifier(temp_identifier)
+
+
+def test_create_one_shot_payment_failure_keeps_bootstrap(app, session, client, jwt, requests_mock):
+    """Assert a one-shot filing saved before a payment failure keeps its temp identifier and affiliation."""
+    filing = _one_shot_incorporation({'identifier': '{{temp_identifier}}'})
+    requests_mock.post(app.config.get('PAYMENT_SVC_URL'),
+                       json={'type': 'INVALID_PAYMENT_METHOD', 'title': 'payment refused'},
+                       status_code=HTTPStatus.BAD_REQUEST)
+
+    with patch.object(RegistrationBootstrapService, 'register_bootstrap', return_value=HTTPStatus.OK), \
+            patch.object(RegistrationBootstrapService, 'deregister_bootstrap',
+                         return_value=HTTPStatus.OK) as mock_deregister:
+        rv = client.post('/api/v2/businesses',
+                         json=filing,
+                         headers=create_header(jwt, [STAFF_ROLE], None))
+
+    assert rv.status_code != HTTPStatus.CREATED, rv.json
+    temp_identifier = rv.json['filing']['business']['identifier']
+    assert Filing.get_temp_reg_filing(temp_identifier)
+    mock_deregister.assert_not_called()
+    assert RegistrationBootstrap.find_by_identifier(temp_identifier)
 
 
 def test_create_one_shot_incorporation(app, session, client, jwt, requests_mock):
@@ -173,12 +218,15 @@ def test_create_one_shot_incorporation(app, session, client, jwt, requests_mock)
                        json={'id': 21322, 'statusCode': 'CREATED', 'isPaymentActionRequired': False},
                        status_code=HTTPStatus.CREATED)
 
-    with patch.object(RegistrationBootstrapService, 'register_bootstrap', return_value=HTTPStatus.OK):
+    with patch.object(RegistrationBootstrapService, 'register_bootstrap', return_value=HTTPStatus.OK), \
+            patch.object(RegistrationBootstrapService, 'deregister_bootstrap',
+                         return_value=HTTPStatus.OK) as mock_deregister:
         rv = client.post('/api/v2/businesses',
                          json=filing,
                          headers=create_header(jwt, [STAFF_ROLE], None))
 
     assert rv.status_code == HTTPStatus.CREATED, rv.json
+    mock_deregister.assert_not_called()
     assert not rv.json.get('errors')
     temp_identifier = rv.json['filing']['business']['identifier']
     assert temp_identifier.startswith('T')
@@ -351,6 +399,7 @@ def test_get_business_info(app, session, client, jwt, requests_mock, test_name, 
     (SYSTEM_ROLE, True),
     (COLIN_SVC_ROLE, True),
     (SBC_STAFF_ROLE, True),
+    (SBC_FINANCE_STAFF_ROLE, True),
     (CONTACT_CENTRE_STAFF_ROLE, True),
     (MAXIMUS_STAFF_ROLE, True),
     (PUBLIC_USER, False),

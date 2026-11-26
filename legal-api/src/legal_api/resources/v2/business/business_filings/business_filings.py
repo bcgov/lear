@@ -1191,7 +1191,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
             filing.save()
             return {"isPaymentActionRequired": rv.json().get("isPaymentActionRequired", False)}, HTTPStatus.CREATED
 
-        if rv.status_code == HTTPStatus.BAD_REQUEST:
+        if rv.status_code in (HTTPStatus.BAD_REQUEST, HTTPStatus.PAYMENT_REQUIRED):
             # Set payment error type used to retrieve error messages from pay-api
             error_type = rv.json().get("type")
             filing.payment_status_code = error_type

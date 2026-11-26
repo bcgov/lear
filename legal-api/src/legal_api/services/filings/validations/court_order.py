@@ -18,6 +18,7 @@ from flask_babel import _ as babel
 
 from business_model.models import Business
 from legal_api.errors import Error
+from legal_api.services.authz import MIGRATED_COURT_ORDER_FEATURE, is_new_feature_enabled
 from legal_api.services.filings.validations.common_validations import validate_court_order
 
 
@@ -26,10 +27,13 @@ def validate(business: Business, court_order: dict) -> Error | None:
     if not business or not court_order:
         return Error(HTTPStatus.BAD_REQUEST, [{"error": babel("A valid business and filing are required.")}])
 
+    # the migrated court order page requires details and a document, the legacy page details or a document
+    is_migrated = is_new_feature_enabled(MIGRATED_COURT_ORDER_FEATURE)
     msg = validate_court_order(
         "/filing/courtOrder",
         court_order["filing"]["courtOrder"],
-        is_file_or_details_required=True
+        is_file_or_details_required=not is_migrated,
+        is_file_and_details_required=is_migrated
     )
 
     if msg:
