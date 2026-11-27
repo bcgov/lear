@@ -144,10 +144,8 @@ file_key_path = '/filing/courtOrder/fileKey'
     'test_name, expected_code, expected_msg',
     [
         ('SUCCESS', None, None),
-        ('FAIL_INVALID_FILE_KEY', HTTPStatus.BAD_REQUEST, [{'error': 'Invalid file.', 'path': file_key_path}]),
-        ('FAIL_INVALID_FILE_KEY_SIZE', HTTPStatus.BAD_REQUEST, [{
-            'error': 'Document must be set to fit onto 8.5” x 11” letter-size paper.',
-            'path': file_key_path}])
+        ('SUCCESS_NON_LETTER_PAGE_SIZE', None, None),
+        ('FAIL_INVALID_FILE_KEY', HTTPStatus.BAD_REQUEST, [{'error': 'Invalid file.', 'path': file_key_path}])
     ])
 def test_court_order_file(session, monkeypatch, test_name, expected_code, expected_msg, is_file_key):
     """Assert valid court order."""
@@ -158,7 +156,8 @@ def test_court_order_file(session, monkeypatch, test_name, expected_code, expect
     if is_file_key:
         if test_name == 'SUCCESS':
             filing['filing']['courtOrder']['fileKey'] = _upload_file(letter, invalid=False)
-        elif test_name == 'FAIL_INVALID_FILE_KEY_SIZE':
+        elif test_name == 'SUCCESS_NON_LETTER_PAGE_SIZE':
+            # court order documents are accepted at any page size (legal size is common for court documents)
             filing['filing']['courtOrder']['fileKey'] = _upload_file(letter, invalid=True)
     else:
         files = []
@@ -171,7 +170,7 @@ def test_court_order_file(session, monkeypatch, test_name, expected_code, expect
         else:
             files.append({
                 "fileName": "test_file.pdf",
-                "fileKey": _upload_file(letter, invalid=(test_name == 'FAIL_INVALID_FILE_KEY_SIZE')),
+                "fileKey": _upload_file(letter, invalid=(test_name == 'SUCCESS_NON_LETTER_PAGE_SIZE')),
                 "documentType": "court_order"
             })
         del filing['filing']['courtOrder']['fileKey']

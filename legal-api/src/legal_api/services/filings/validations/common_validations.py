@@ -611,7 +611,10 @@ def _validate_court_order_documents(court_order_path, court_order, is_file_and_d
         msg.append({"error": _("Court Order is required (in orderDetails/fileKey/files)."), "path": court_order_path})
 
     if file_key:
-        msg.extend(validate_pdf(file_key, f"{court_order_path}/fileKey", max_file_size=MAX_COURT_ORDER_FILE_SIZE))
+        msg.extend(validate_pdf(file_key,
+                                f"{court_order_path}/fileKey",
+                                verify_paper_size=False,
+                                max_file_size=MAX_COURT_ORDER_FILE_SIZE))
     elif files:
         msg.extend(_validate_court_order_documents_list(f"{court_order_path}/files", files, existing_file_keys))
 
@@ -631,6 +634,7 @@ def _validate_court_order_documents_list(files_path, files, existing_file_keys):
 
         msg.extend(validate_pdf(file.get("fileKey"),
                                 f"{files_path}/{file_index}/fileKey",
+                                verify_paper_size=False,
                                 max_file_size=MAX_COURT_ORDER_FILE_SIZE))
 
     if court_order_document_count == 0: # if only supporting documents and no court order documents were found
