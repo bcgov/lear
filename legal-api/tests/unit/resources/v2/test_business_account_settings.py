@@ -27,11 +27,13 @@
 """Tests to assure the BusinessAccountSettings endpoints."""
 from http import HTTPStatus
 
+import pytest
+
 from business_model.models import BusinessAccountSettings
 from legal_api.services.authz import PUBLIC_USER
 
 from tests.unit.models import factory_business
-from tests.unit.services.utils import create_header
+from tests.unit.services.utils import create_header, mock_new_feature
 
 
 def test_get_business_account_settings(app, session, client, jwt, requests_mock):
@@ -44,6 +46,7 @@ def test_get_business_account_settings(app, session, client, jwt, requests_mock)
 
     # mock response from auth to give view access
     requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/orgs/{account_id}/products?include_hidden=true", json=[{'code': 'product'}])
 
     # test
     rv = client.get(f'/api/v2/businesses/settings/{account_id}/{identifier}',
@@ -63,6 +66,7 @@ def test_get_business_account_settings_default(app, session, client, jwt, reques
 
     # mock response from auth to give view access
     requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/orgs/{account_id}/products?include_hidden=true", json=[{'code': 'product'}])
 
     # verify setup
     assert not BusinessAccountSettings.find_by_business_account(business.id, account_id)
@@ -85,6 +89,7 @@ def test_get_business_account_settings_default_exists(app, session, client, jwt,
 
     # mock response from auth to give view access
     requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['view']})
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/orgs/{account_id}/products?include_hidden=true", json=[{'code': 'product'}])
 
     # verify setup
     assert BusinessAccountSettings.find_by_business_account(business.id, account_id)
@@ -134,6 +139,7 @@ def test_create_business_account_settings(app, session, client, jwt, requests_mo
 
     # mock response from auth to give edit access
     requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['edit']})
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/orgs/{account_id}/products?include_hidden=true", json=[{'code': 'product'}])
 
     # verify setup
     assert not BusinessAccountSettings.find_by_business_account(business.id, account_id)
@@ -168,6 +174,7 @@ def test_update_business_account_settings(app, session, client, jwt, requests_mo
 
     # mock response from auth to give edit access
     requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['edit']})
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/orgs/{account_id}/products?include_hidden=true", json=[{'code': 'product'}])
 
     # verify setup
     assert initial_email == (BusinessAccountSettings.find_by_business_account(business.id, account_id)).json['email']
@@ -191,6 +198,7 @@ def test_delete_business_account_settings(app, session, client, jwt, requests_mo
 
     # mock response from auth to give edit access
     requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': ['edit']})
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/orgs/{account_id}/products?include_hidden=true", json=[{'code': 'product'}])
 
     # verify setup
     assert BusinessAccountSettings.find_by_business_account(business.id, account_id)
@@ -200,3 +208,29 @@ def test_delete_business_account_settings(app, session, client, jwt, requests_mo
     # check
     assert rv.status_code == HTTPStatus.OK
     assert not BusinessAccountSettings.find_by_business_account(business.id, account_id)
+
+
+@pytest.mark.parametrize('test_name, gate_on, expected', [
+    ('gate_on', True, HTTPStatus.FORBIDDEN),
+    ('gate_off', False, HTTPStatus.OK),
+])
+@pytest.mark.parametrize('method', ['get', 'delete'])
+def test_business_account_settings_other_account(app, session, client, jwt, requests_mock, monkeypatch,
+                                                 method, test_name, gate_on, expected):
+    """Assert that settings of an account the caller does not belong to are refused when the gate is on."""
+    identifier = 'BC1234567'
+    account_id = 1
+    business = factory_business(identifier)
+    BusinessAccountSettings.create_or_update(business.id, account_id, {})
+    mock_new_feature(monkeypatch, 'authV2Settings', gate_on)
+
+    # the caller can edit the business, but auth refuses the account in the path
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations",
+                      json={'roles': ['view', 'edit']})
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/orgs/{account_id}/products?include_hidden=true",
+                      status_code=HTTPStatus.FORBIDDEN)
+
+    rv = getattr(client, method)(f'/api/v2/businesses/settings/{account_id}/{identifier}',
+                                 headers=create_header(jwt, [PUBLIC_USER], identifier))
+
+    assert rv.status_code == expected

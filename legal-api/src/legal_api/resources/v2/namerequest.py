@@ -21,12 +21,25 @@ from flask import Blueprint, current_app, jsonify, make_response, request
 from flask_cors import cross_origin
 
 from business_account import AccountService
-from legal_api.services import flags, namex
+from legal_api.services import authorized, flags, namex
+from legal_api.services.authz import AuthServiceUnavailableError, is_new_feature_enabled
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.utils.auth import jwt
 from legal_api.utils.formatting import normalize_phone
 
 bp = Blueprint("NAMEREQUEST2", __name__, url_prefix="/api/v2/nameRequests")
+
+
+def _is_affiliated(identifier: str) -> bool:
+    """Return True when the caller can reach the NR through an affiliation.
+
+    - authV2NameRequests on: the caller is authorized to view the NR
+    - off: the NR is affiliated to any account
+    """
+    if is_new_feature_enabled("authV2NameRequests"):
+        return authorized(identifier, jwt, ["view"])
+    orgs_response = AccountService.get_account_by_affiliated_identifier(identifier, flags)
+    return bool(orgs_response and orgs_response.get("orgs"))
 
 
 @bp.route("/<string:identifier>/validate", methods=["GET"])
@@ -51,11 +64,7 @@ def validate_with_contact_info(identifier): # noqa: PLR0911
         if allowed_permission in authorized_permissions:
             return jsonify(nr_json)
 
-        # Check the NR is affiliated with this account
-        orgs_response = AccountService.get_account_by_affiliated_identifier(identifier, flags)
-               
-         # If affiliated with the account, return the NR
-        if len(orgs_response["orgs"]):
+        if _is_affiliated(identifier):
             return jsonify(nr_json)
 
         # The request must include email or phone number
@@ -71,6 +80,8 @@ def validate_with_contact_info(identifier): # noqa: PLR0911
             return make_response(jsonify(message="Invalid email or phone number."), 400)
 
         return jsonify(nr_json)
+    except AuthServiceUnavailableError:
+        raise
     except Exception as err:
         current_app.logger.error(err)
         return jsonify(

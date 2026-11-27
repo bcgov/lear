@@ -24,24 +24,24 @@ from tests.unit.services.utils import create_header
 ENDPOINT_PATH = "/api/v2/businesses/{identifier}/filings/validate-section"
 
 
-def test_validate_sections_unauthorized(app, session, client, jwt):
+def test_validate_sections_unauthorized(app, session, client, jwt, requests_mock):
     """Test 403 Forbidden when an unauthorized user attempts to validate."""
     identifier = "BC1234567"
     factory_business(identifier, entity_type="BC")
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={"roles": []})
 
-    with patch("legal_api.services.authorized", return_value=False):
-        rv = client.post(
-            ENDPOINT_PATH.format(identifier=identifier),
-            headers=create_header(jwt, [PUBLIC_USER], identifier),
-            json={
-                "filingType": "correction",
-                "section": "nameRequest",
-                "data": {"legalName": "SAMPLE LTD."},
-            },
-        )
+    rv = client.post(
+        ENDPOINT_PATH.format(identifier=identifier),
+        headers=create_header(jwt, [PUBLIC_USER], identifier),
+        json={
+            "filingType": "correction",
+            "section": "nameRequest",
+            "data": {"legalName": "SAMPLE LTD."},
+        },
+    )
 
-        assert rv.status_code == HTTPStatus.FORBIDDEN
-        assert "Not Authorized" in rv.json.get("message", "")
+    assert rv.status_code == HTTPStatus.FORBIDDEN
+    assert "Not Authorized" in rv.json.get("message", "")
 
 
 def test_validate_sections_missing_required_params(app, session, client, jwt):

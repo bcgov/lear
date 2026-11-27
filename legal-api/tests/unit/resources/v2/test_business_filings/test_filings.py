@@ -46,7 +46,17 @@ from business_model.models import (
 )
 from legal_api.resources.v2.business.business_filings.business_filings import ListFilingResource
 from legal_api.services import flags
-from legal_api.services.authz import BASIC_USER, PUBLIC_USER, STAFF_ROLE
+from legal_api.services.authz import (
+    BASIC_USER,
+    COLIN_SVC_ROLE,
+    CONTACT_CENTRE_STAFF_ROLE,
+    MAXIMUS_STAFF_ROLE,
+    PUBLIC_USER,
+    SBC_FINANCE_STAFF_ROLE,
+    SBC_STAFF_ROLE,
+    STAFF_ROLE,
+    SYSTEM_ROLE,
+)
 from legal_api.services.bootstrap import RegistrationBootstrapService
 from registry_schemas.example_data import (
     ALTERATION_FILING_TEMPLATE,
@@ -446,6 +456,27 @@ def test_get_one_business_filing_by_id_raw_json(session, client, jwt):
     assert rv.json['filing']['business'] == ANNUAL_REPORT['filing']['business']
 
 
+@pytest.mark.parametrize('test_name, url_identifier, is_state_filing, expected', [
+    ('own_filing', 'CP7654321', False, HTTPStatus.OK),
+    ('other_business', 'CP1111111', False, HTTPStatus.NOT_FOUND),
+    ('other_business_state_filing', 'CP1111111', True, HTTPStatus.OK),
+    ('unknown_business', 'CP9999999', False, HTTPStatus.NOT_FOUND),
+])
+def test_get_public_filing_scoped_to_business(session, client, jwt, test_name, url_identifier, is_state_filing,
+                                              expected):
+    """Assert that ?public=true only returns a filing of the business in the URL, or its state filing."""
+    filing = factory_filing(factory_business('CP7654321'), ANNUAL_REPORT)
+    other_business = factory_business('CP1111111')
+    if is_state_filing:
+        other_business.state_filing_id = filing.id
+        other_business.save()
+
+    rv = client.get(f'/api/v2/businesses/{url_identifier}/filings/{filing.id}?public=true',
+                    headers=create_header(jwt, [PUBLIC_USER], url_identifier))
+
+    assert rv.status_code == expected
+
+
 @pytest.mark.parametrize(
     'test_name, filing_name, filing',
     [
@@ -604,10 +635,11 @@ def test_post_authorized_draft_ar(session, client, jwt):
     assert rv.status_code == HTTPStatus.CREATED
 
 
-def test_post_not_authorized_draft_ar(session, client, jwt):
+def test_post_not_authorized_draft_ar(app, session, client, jwt, requests_mock):
     """Assert that a unpaid filing can be posted."""
     identifier = 'CP7654321'
     factory_business(identifier)
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
     data = get_filing_template('annualReport', identifier)
     rv = client.post(f'/api/v2/businesses/{identifier}/filings?draft=true',
                      json=data,
@@ -617,10 +649,11 @@ def test_post_not_authorized_draft_ar(session, client, jwt):
     assert rv.status_code == HTTPStatus.UNAUTHORIZED
 
 
-def test_post_not_allowed_historical(session, client, jwt):
+def test_post_not_allowed_historical(app, session, client, jwt, requests_mock):
     """Assert that a filing is not allowed for historical business."""
     identifier = 'CP7654321'
     factory_business(identifier, state=Business.State.HISTORICAL)
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
     data = get_filing_template('annualReport', identifier)
     rv = client.post(f'/api/v2/businesses/{identifier}/filings',
                      json=data,
@@ -1936,6 +1969,54 @@ def test_create_invoice_forwards_account_linking_key(session, requests_mock, cli
 
     assert rv.status_code == HTTPStatus.CREATED
     assert pay_mock.last_request.headers.get('Account-Linking-Key') == 'test-linking-key'
+
+
+@pytest.mark.parametrize('test_name, role, feature_on, account_id, linking_key, expected_account', [
+    ('public_user', PUBLIC_USER, True, '12345', None, '12345'),
+    ('public_user_feature_off', PUBLIC_USER, False, '12345', None, None),
+    ('public_user_linking_key', PUBLIC_USER, True, '12345', 'test-linking-key', None),
+    ('public_user_placeholder_account', PUBLIC_USER, True, '0', None, None),
+    ('staff', STAFF_ROLE, True, '12345', None, None),
+    ('system', SYSTEM_ROLE, True, '12345', None, None),
+    ('colin', COLIN_SVC_ROLE, True, '12345', None, None),
+    ('sbc_staff', SBC_STAFF_ROLE, True, '12345', None, None),
+    ('maximus_staff', MAXIMUS_STAFF_ROLE, True, '12345', None, None),
+    ('contact_centre_staff', CONTACT_CENTRE_STAFF_ROLE, True, '12345', None, None),
+    ('sbc_finance_staff', SBC_FINANCE_STAFF_ROLE, True, '12345', None, None),
+])
+def test_create_invoice_forwards_account_id(session, requests_mock, client, jwt, monkeypatch,
+                                            test_name, role, feature_on, account_id, linking_key, expected_account):
+    """Assert that create_invoice forwards a real Account-Id to pay-api only for callers authorized through auth."""
+    mock_new_feature(monkeypatch, 'authV2AccountId', feature_on)
+    identifier = 'CP1234567'
+    coa = copy.deepcopy(FILING_HEADER)
+    coa['filing']['header']['name'] = 'changeOfAddress'
+    coa['filing']['changeOfAddress'] = copy.deepcopy(CHANGE_OF_ADDRESS)
+    coa['filing']['changeOfAddress']['offices']['registeredOffice']['deliveryAddress']['addressCountry'] = 'CA'
+    coa['filing']['changeOfAddress']['offices']['registeredOffice']['mailingAddress']['addressCountry'] = 'CA'
+    coa['filing']['business']['identifier'] = identifier
+
+    b = factory_business(identifier, (datetime.now(UTC) - datedelta.YEAR), None, Business.LegalTypes.COOP.value)
+    factory_business_mailing_address(b)
+
+    requests_mock.get(f"{current_app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations",
+                      json={'roles': ['edit', 'view']})
+    pay_mock = requests_mock.post(current_app.config.get('PAYMENT_SVC_URL'),
+                                  json={'id': 21322, 'statusCode': 'COMPLETED', 'isPaymentActionRequired': False},
+                                  status_code=HTTPStatus.CREATED)
+    extra_headers = {'Account-Id': account_id}
+    if linking_key:
+        extra_headers['Account-Linking-Key'] = linking_key
+
+    business_filings_module = 'legal_api.resources.v2.business.business_filings.business_filings'
+    with patch(f'{business_filings_module}.is_allowed', return_value=True), \
+            patch(f'{business_filings_module}.validate', return_value=None):
+        rv = client.post(f'/api/v2/businesses/{identifier}/filings',
+                         json=coa,
+                         headers=create_header(jwt, [role], identifier, **extra_headers))
+
+    assert rv.status_code == HTTPStatus.CREATED
+    assert pay_mock.last_request.headers.get('Account-Id') == expected_account
 
 
 @pytest.mark.parametrize(

@@ -370,15 +370,47 @@ def test_nr_success_public_user(session, mocker, client, jwt):
                       'query_nr_number',
                       return_value=MagicMock(status_code=200,
                                              json=MagicMock(return_value=nr_approved))):
-        mocker.patch('legal_api.resources.v2.namerequest.AccountService.get_account_by_affiliated_identifier',
-                 return_value={'orgs': [{'id': 123456}]})
+        mocker.patch('legal_api.resources.v2.namerequest.authorized', return_value=True)
         rv = client.get('/api/v2/nameRequests/NR 1234567/validate', 
                         headers=create_header(jwt, [UserRoles.public_user]))
         assert rv.status_code == 200
 
 
-def test_nr_not_affiliated_public_user(session, mocker, client, jwt):
+def test_nr_affiliated_to_another_account_public_user(session, mocker, client, jwt):
+    """Test NR for public user role: an affiliation the caller cannot view does not return the NR."""
+    with patch.object(namex,
+                      'query_nr_number',
+                      return_value=MagicMock(status_code=200,
+                                             json=MagicMock(return_value=nr_approved))):
+        affiliated = mocker.patch(
+            'legal_api.resources.v2.namerequest.AccountService.get_account_by_affiliated_identifier',
+            return_value={'orgs': [{'id': 123456}]})
+        mocker.patch('legal_api.resources.v2.namerequest.authorized', return_value=False)
+        rv = client.get('/api/v2/nameRequests/NR 1234567/validate',
+                        headers=create_header(jwt, [UserRoles.public_user]))
+        assert rv.status_code == 403
+        assert rv.json == {'message': 'The request must include email or phone number.'}
+        affiliated.assert_not_called()
+
+
+def test_nr_affiliation_lookup_fails_gate_off(session, mocker, client, jwt):
+    """Test NR for public user role, gate off: a failed affiliation lookup falls through to the contact check."""
+    with patch.object(namex,
+                      'query_nr_number',
+                      return_value=MagicMock(status_code=200,
+                                             json=MagicMock(return_value=nr_approved))):
+        mocker.patch('legal_api.resources.v2.namerequest.is_new_feature_enabled', return_value=False)
+        mocker.patch('legal_api.resources.v2.namerequest.AccountService.get_account_by_affiliated_identifier',
+                     return_value=None)
+        rv = client.get('/api/v2/nameRequests/NR 1234567/validate',
+                        headers=create_header(jwt, [UserRoles.public_user]))
+        assert rv.status_code == 403
+        assert rv.json == {'message': 'The request must include email or phone number.'}
+
+
+def test_nr_not_affiliated_public_user(app, session, mocker, client, jwt, requests_mock):
     """Test NR for public user role, NR not affiliated, email or phone is required."""
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/NR 1234567/authorizations", json={'roles': []})
     with patch.object(namex,
                       'query_nr_number',
                       return_value=MagicMock(status_code=200,
@@ -390,8 +422,9 @@ def test_nr_not_affiliated_public_user(session, mocker, client, jwt):
         assert rv.status_code == 403
         assert rv.json == {'message': 'The request must include email or phone number.'}
         
-def test_nr_valid_contact_public_user(session, mocker, client, jwt):
+def test_nr_valid_contact_public_user(app, session, mocker, client, jwt, requests_mock):
     """Test NR for public user role, NR not affiliated, valid email or phone."""
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/NR 1234567/authorizations", json={'roles': []})
     with patch.object(namex,
                       'query_nr_number',
                       return_value=MagicMock(status_code=200,

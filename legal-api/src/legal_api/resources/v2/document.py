@@ -13,18 +13,32 @@
 # limitations under the License.
 """Module for maintaining client documents."""
 
+import re
 from http import HTTPStatus
 
 from flask import Blueprint, current_app, jsonify, request
 from flask_cors import cross_origin
+from sqlalchemy import or_
 
-from business_model.models import Document, Filing
-from legal_api.services import doc_service
+from business_model.models import Business, Document, Filing
+from legal_api.services import authorized, doc_service
+from legal_api.services.authz import (
+    STAFF_ROLE,
+    SYSTEM_ROLE,
+    AuthServiceUnavailableError,
+    has_any_roles,
+    is_new_feature_enabled,
+    log_unauthorized_request,
+)
 from legal_api.utils.auth import jwt
 
 bp = Blueprint("DOCUMENTS2", __name__, url_prefix="/api/v2/documents")
 
+CLIENT_DOCUMENTS_FEATURE = "authV2ClientDocuments"  # a value inside the enable-new-feature flag
+
 DOCUMENT_CLASS_DEFAULT = "CORP"
+# DRS class-DRS id, or a bare DRS id: anything else can reach DRS as a different id than the one checked here
+DOCUMENT_KEY_PATTERN = re.compile(r"(?:[A-Z_]+-)?DS[0-9A-Z]+")
 DOCUMENT_TYPE_DEFAULT = "COSD"
 HEADER_ACCEPT = "Accept"
 PARAM_FILENAME = "filename"
@@ -89,13 +103,76 @@ DRS_MAPPING_DOC_TYPE = {
 
 
 
+def _find_linked_documents(document_key: str) -> list[Document]:
+    """Return the documents rows for the DRS document the key resolves to.
+
+    - the DRS calls use only the id part of the key, so every spelling of a key must find the same rows
+    """
+    drs_ids = {get_drs_id_from_key(document_key), doc_service.get_drs_id(Document(file_key=document_key))}
+    filters = [Document.file_key == document_key]
+    for drs_id in drs_ids:
+        filters.extend([Document.file_key == drs_id, Document.file_key.endswith(f"-{drs_id}", autoescape=True)])
+    candidates = Document.query.filter(or_(*filters)).all()
+    return [doc for doc in candidates if doc.file_key == document_key or doc_service.get_drs_id(doc) in drs_ids]
+
+
 def is_draft_filing(file_key: str) -> bool:
     """Check if the filing is a draft filing."""
-    document = Document.find_by_file_key(file_key)
-    if not document:
-        return True
-    filing = Filing.find_by_id(document.filing_id)
-    return filing and filing.status == Filing.Status.DRAFT.value
+    for document in _find_linked_documents(file_key):
+        filing = Filing.find_by_id(document.filing_id)
+        if not filing or filing.status != Filing.Status.DRAFT.value:
+            return False
+    return True
+
+
+def _get_linked_identifier(document: Document) -> str | None:
+    """Return the business (or temp registration) identifier the document row belongs to."""
+    if document.business_id and (business := Business.find_by_internal_id(document.business_id)):
+        return business.identifier
+    if document.filing_id and (filing := Filing.find_by_id(document.filing_id)):
+        if filing.business_id and (business := Business.find_by_internal_id(filing.business_id)):
+            return business.identifier
+        return filing.temp_reg
+    return None
+
+
+def _is_client_document_denied(document_key: str, action: str) -> bool:
+    """Return True (and log) when the authV2ClientDocuments gate is on and the caller cannot access the document.
+
+    - no documents row for the key (upload not yet linked to a filing): allowed
+    - row with no resolvable business: staff / system only
+    """
+    if not is_new_feature_enabled(CLIENT_DOCUMENTS_FEATURE):
+        return False
+    for document in _find_linked_documents(document_key):
+        if identifier := _get_linked_identifier(document):
+            is_allowed = authorized(identifier, jwt, [action])
+        else:
+            is_allowed = has_any_roles(jwt, [STAFF_ROLE, SYSTEM_ROLE])
+        if not is_allowed:
+            log_unauthorized_request("client document", document_key)
+            return True
+    return False
+
+
+def _is_client_document_update_denied(document_key: str) -> bool:
+    """Return True (and log) when the authV2ClientDocuments gate is on and the caller is not staff / system."""
+    if not is_new_feature_enabled(CLIENT_DOCUMENTS_FEATURE) or has_any_roles(jwt, [STAFF_ROLE, SYSTEM_ROLE]):
+        return False
+    log_unauthorized_request("client document", document_key)
+    return True
+
+
+def _invalid_key_response(document_key: str):
+    """Return the 400 for a document key that is not a DRS class-DRS id, or None when the key is well formed."""
+    if DOCUMENT_KEY_PATTERN.fullmatch(document_key):
+        return None
+    return jsonify(message="Invalid document key."), HTTPStatus.BAD_REQUEST
+
+
+def _forbidden_response():
+    """Return the 403 for a denied client document request."""
+    return jsonify(message="You are not authorized to access this document."), HTTPStatus.FORBIDDEN
 
 
 
@@ -166,7 +243,11 @@ def delete_client_document(document_key):
             INTERNAL_SERVER_ERROR: default when any exception.
             Any response code returned from the DRS API, typically NOT_FOUND.
     """
+    if invalid_key := _invalid_key_response(document_key):
+        return invalid_key
     try:
+        if _is_client_document_denied(document_key, "edit"):
+            return _forbidden_response()
         if is_draft_filing(document_key):
             bus_doc: Document = Document(file_key=document_key)
             response = doc_service.delete_document(bus_doc)
@@ -178,6 +259,8 @@ def delete_client_document(document_key):
                 message=f"Error deleting file {document_key}."
             ), response.status_code
         return jsonify({"message": "Filing is not a draft."}), HTTPStatus.FORBIDDEN
+    except AuthServiceUnavailableError:
+        raise
     except Exception as e:
         current_app.logger.error(f"Error deleting file {document_key}: {e}")
         return jsonify(
@@ -201,7 +284,11 @@ def get_client_document(document_key):
             Any response code returned from the DRS API, typically NOT_FOUND.
             INTERNAL_SERVER_ERROR: default when any exception.
     """
+    if invalid_key := _invalid_key_response(document_key):
+        return invalid_key
     try:
+        if _is_client_document_denied(document_key, "view"):
+            return _forbidden_response()
         doc_class = get_drs_class_from_key(document_key)
         drs_id = get_drs_id_from_key(document_key)
         accept = request.headers.get(HEADER_ACCEPT)
@@ -220,6 +307,8 @@ def get_client_document(document_key):
         return jsonify(
             message=f"Error getting file {document_key}."
         ), response.status_code
+    except AuthServiceUnavailableError:
+        raise
     except Exception as e:
         current_app.logger.error(f"Error getting file {document_key}: {e}")
         return jsonify(
@@ -242,7 +331,11 @@ def replace_client_document(document_key):
             INTERNAL_SERVER_ERROR: default when any exception.
             Any response code returned from the DRS API.
     """
+    if invalid_key := _invalid_key_response(document_key):
+        return invalid_key
     try:
+        if _is_client_document_denied(document_key, "edit"):
+            return _forbidden_response()
         if is_draft_filing(document_key):
             bus_doc: Document = Document(file_key=document_key)
             response = doc_service.add_replace_document(bus_doc, request.get_data(), content_type=request.content_type)
@@ -254,6 +347,8 @@ def replace_client_document(document_key):
                 message=f"Error replacing file {document_key}."
             ), response.status_code
         return jsonify({"message": "Cannot replace when filing is not a draft."}), HTTPStatus.FORBIDDEN
+    except AuthServiceUnavailableError:
+        raise
     except Exception as e:
         current_app.logger.error(f"Error replacing file {document_key}: {e}")
         return jsonify(
@@ -279,7 +374,11 @@ def update_client_document_info(document_key):
             INTERNAL_SERVER_ERROR: default when any exception.
             Any response code returned from the DRS API.
     """
+    if invalid_key := _invalid_key_response(document_key):
+        return invalid_key
     try:
+        if _is_client_document_update_denied(document_key):
+            return _forbidden_response()
         bus_doc: Document = Document(file_key=document_key)
         request_json: dict = request.get_json()
         update_payload: dict = {}

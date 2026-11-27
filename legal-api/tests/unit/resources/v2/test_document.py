@@ -21,11 +21,14 @@ from http import HTTPStatus
 
 import pytest
 from flask import current_app
+from requests import exceptions
 
+from business_model.models import Document
 from legal_api.resources.v2 import document
-from legal_api.services.authz import STAFF_ROLE
+from legal_api.services.authz import PUBLIC_USER, STAFF_ROLE
 
-from tests.unit.services.utils import create_header
+from tests.unit.models import factory_business, factory_completed_filing, factory_filing
+from tests.unit.services.utils import create_header, mock_new_feature
 
 
 MOCK_DRS_URL = "https://test.api.connect.gov.bc.ca/mockTarget/doc/api/v1"
@@ -250,3 +253,143 @@ def test_get_drs_class(session, jwt, filekey, doc_class):
     """Assert that extracting the DRS doc class from a business documents record filekey produces the expected result."""
     result = document.get_drs_class_from_key(filekey)
     assert result == doc_class
+
+
+LINKED_FILE_KEY = 'CORP-DS0100001000'
+
+
+def _link_client_document(identifier: str, completed: bool = False):
+    """Link LINKED_FILE_KEY to a court order filing of a new business."""
+    business = factory_business(identifier)
+    filing_json = {'filing': {'header': {'name': 'courtOrder'}}}
+    filing = factory_completed_filing(business, filing_json) if completed else factory_filing(business, filing_json)
+    Document(type='court_order', file_key=LINKED_FILE_KEY, filing_id=filing.id, business_id=business.id).save()
+
+
+def _mock_drs(mocker):
+    """Mock every DRS call the client document routes make, returning the mocks by name."""
+    drs_response = mocker.MagicMock(ok=True, status_code=HTTPStatus.OK, content=b'pdf')
+    return {drs_call: mocker.patch.object(document.doc_service, drs_call, return_value=drs_response)
+            for drs_call in ('get_document', 'add_replace_document', 'delete_document', 'update_document_record')}
+
+
+@pytest.mark.parametrize('test_name, gate_on, linked, method, url_key, role, auth_roles, expected', [
+    ('get_linked', True, True, 'get', LINKED_FILE_KEY, PUBLIC_USER, [], HTTPStatus.FORBIDDEN),
+    ('put_linked', True, True, 'put', LINKED_FILE_KEY, PUBLIC_USER, [], HTTPStatus.FORBIDDEN),
+    ('delete_linked', True, True, 'delete', LINKED_FILE_KEY, PUBLIC_USER, [], HTTPStatus.FORBIDDEN),
+    ('get_linked_other_class', True, True, 'get', 'FIRM-DS0100001000', PUBLIC_USER, [], HTTPStatus.FORBIDDEN),
+    ('get_linked_bare_id', True, True, 'get', 'DS0100001000', PUBLIC_USER, [], HTTPStatus.FORBIDDEN),
+    ('get_linked_encoded_hyphen', True, True, 'get', 'CORP%2DDS0100001000', PUBLIC_USER, [], HTTPStatus.FORBIDDEN),
+    ('get_linked_ds_class', True, True, 'get', 'DSX-DS0100001000', PUBLIC_USER, [], HTTPStatus.FORBIDDEN),
+    ('delete_linked_ds_class', True, True, 'delete', 'DSX-DS0100001000', PUBLIC_USER, [], HTTPStatus.FORBIDDEN),
+    ('get_linked_view_only', True, True, 'get', LINKED_FILE_KEY, PUBLIC_USER, ['view'], HTTPStatus.OK),
+    ('put_linked_view_only', True, True, 'put', LINKED_FILE_KEY, PUBLIC_USER, ['view'], HTTPStatus.FORBIDDEN),
+    ('put_linked_affiliated', True, True, 'put', LINKED_FILE_KEY, PUBLIC_USER, ['view', 'edit'], HTTPStatus.OK),
+    ('delete_linked_affiliated', True, True, 'delete', LINKED_FILE_KEY, PUBLIC_USER, ['view', 'edit'], HTTPStatus.OK),
+    ('get_linked_staff', True, True, 'get', LINKED_FILE_KEY, STAFF_ROLE, [], HTTPStatus.OK),
+    ('get_unlinked', True, False, 'get', LINKED_FILE_KEY, PUBLIC_USER, [], HTTPStatus.OK),
+    ('patch_public', True, False, 'patch', LINKED_FILE_KEY, PUBLIC_USER, [], HTTPStatus.FORBIDDEN),
+    ('patch_staff', True, False, 'patch', LINKED_FILE_KEY, STAFF_ROLE, [], HTTPStatus.OK),
+    ('get_linked_gate_off', False, True, 'get', LINKED_FILE_KEY, PUBLIC_USER, [], HTTPStatus.OK),
+    ('patch_public_gate_off', False, False, 'patch', LINKED_FILE_KEY, PUBLIC_USER, [], HTTPStatus.OK),
+])
+def test_client_document_authorization(app, session, client, jwt, requests_mock, monkeypatch, mocker,
+                                       test_name, gate_on, linked, method, url_key, role, auth_roles, expected):
+    """Assert a linked document needs access to its business under any spelling of its key when the gate is on."""
+    identifier = 'BC7654321'
+    if linked:
+        _link_client_document(identifier)
+    mock_new_feature(monkeypatch, 'authV2ClientDocuments', gate_on)
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations",
+                      json={'roles': auth_roles})
+    drs_calls = _mock_drs(mocker)
+
+    rv = getattr(client, method)(f'/api/v2/documents/client/{url_key}',
+                                 headers=create_header(jwt, [role], identifier),
+                                 json={} if method == 'patch' else None)
+
+    assert rv.status_code == expected
+    assert any(drs_call.called for drs_call in drs_calls.values()) is (expected == HTTPStatus.OK)
+
+
+@pytest.mark.parametrize('test_name, method, url_key', [
+    ('delete_exact_key', 'delete', LINKED_FILE_KEY),
+    ('put_bare_id', 'put', 'DS0100001000'),
+])
+def test_client_document_completed_filing_not_draft(app, session, client, jwt, monkeypatch, mocker,
+                                                    test_name, method, url_key):
+    """Assert a document of a completed filing cannot be replaced or deleted under any spelling of its key."""
+    identifier = 'BC7654321'
+    _link_client_document(identifier, completed=True)
+    mock_new_feature(monkeypatch, 'authV2ClientDocuments', False)
+    drs_calls = _mock_drs(mocker)
+
+    rv = getattr(client, method)(f'/api/v2/documents/client/{url_key}',
+                                 headers=create_header(jwt, [STAFF_ROLE], identifier))
+
+    assert rv.status_code == HTTPStatus.FORBIDDEN
+    assert not any(drs_call.called for drs_call in drs_calls.values())
+
+
+@pytest.mark.parametrize('test_name, method, url_key', [
+    ('get_fragment', 'get', f'{LINKED_FILE_KEY}%23x'),
+    ('get_query_separator', 'get', f'{LINKED_FILE_KEY}&x'),
+    ('get_lowercase', 'get', LINKED_FILE_KEY.lower()),
+    ('get_wildcard', 'get', 'CORP-DS010000100%25'),
+    ('get_suffix', 'get', f'{LINKED_FILE_KEY}-x'),
+    ('delete_suffix', 'delete', f'{LINKED_FILE_KEY}-x'),
+    ('delete_fragment', 'delete', f'{LINKED_FILE_KEY}%23x'),
+    ('delete_query', 'delete', 'DS0100001000%3Fx'),
+    ('put_fragment', 'put', 'DS0100001000%23x'),
+    ('patch_fragment', 'patch', f'{LINKED_FILE_KEY}%23x'),
+    ('get_trailing_newline', 'get', f'{LINKED_FILE_KEY}%0A'),
+    ('get_trailing_space', 'get', f'{LINKED_FILE_KEY}%20'),
+    ('get_double_encoded', 'get', f'{LINKED_FILE_KEY}%2523x'),
+    ('get_fullwidth_digit', 'get', 'CORP-DS%EF%BC%91'),
+])
+def test_client_document_malformed_key(app, session, client, jwt, monkeypatch, mocker, test_name, method, url_key):
+    """Assert a key DRS could read as another document's id is rejected before any check or DRS call."""
+    identifier = 'BC7654321'
+    _link_client_document(identifier)
+    mock_new_feature(monkeypatch, 'authV2ClientDocuments', False)
+    drs_calls = _mock_drs(mocker)
+
+    rv = getattr(client, method)(f'/api/v2/documents/client/{url_key}',
+                                 headers=create_header(jwt, [STAFF_ROLE], identifier),
+                                 json={} if method == 'patch' else None)
+
+    assert rv.status_code == HTTPStatus.BAD_REQUEST
+    assert not any(drs_call.called for drs_call in drs_calls.values())
+
+
+@pytest.mark.parametrize('test_name, url_key', [
+    ('longer_id', 'CORP-DS01000010001'),
+    ('shorter_id', 'CORP-DS010000100'),
+])
+def test_client_document_similar_key_is_unlinked(app, session, client, jwt, requests_mock, monkeypatch, mocker,
+                                                 test_name, url_key):
+    """Assert a key whose id only resembles a linked document's is treated as its own, unlinked document."""
+    identifier = 'BC7654321'
+    _link_client_document(identifier)
+    mock_new_feature(monkeypatch, 'authV2ClientDocuments', True)
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations", json={'roles': []})
+    drs_calls = _mock_drs(mocker)
+
+    rv = client.get(f'/api/v2/documents/client/{url_key}', headers=create_header(jwt, [PUBLIC_USER], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert drs_calls['get_document'].called
+
+
+def test_client_document_auth_unavailable(app, session, client, jwt, requests_mock, mocker):
+    """Assert an auth outage on a linked document is a 503, not the route's generic 500."""
+    identifier = 'BC7654321'
+    _link_client_document(identifier)
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations",
+                      exc=exceptions.ConnectionError)
+    _mock_drs(mocker)
+
+    rv = client.get(f'/api/v2/documents/client/{LINKED_FILE_KEY}',
+                    headers=create_header(jwt, [PUBLIC_USER], identifier))
+
+    assert rv.status_code == HTTPStatus.SERVICE_UNAVAILABLE

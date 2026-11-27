@@ -60,7 +60,7 @@ from tests.unit.models import (  # noqa:E501,I001
     factory_completed_filing,
     factory_filing,
 )
-from tests.unit.services.utils import create_header, helper_create_jwt
+from tests.unit.services.utils import create_header, mock_new_feature
 
 ADMIN_DISSOLUTION = copy.deepcopy(DISSOLUTION)
 ADMIN_DISSOLUTION['dissolutionType'] = 'administrative'
@@ -1032,3 +1032,30 @@ def test_admin_dissolution_firm_documents_no_certificate(app, session, client, j
     assert 'certificateOfDissolution' not in documents
     assert {'dissolution': f'{base_url}/api/v2/businesses/{identifier}/filings/{filing.id}/documents/dissolution'} \
         in documents['legalFilings']
+
+
+@pytest.mark.parametrize('test_name, gate_on, drs_id, expected', [
+    ('own_drs_id', True, 'DS0000100001', HTTPStatus.OK),
+    ('other_filing_drs_id', True, 'DS0000999999', HTTPStatus.FORBIDDEN),
+    ('other_filing_drs_id_gate_off', False, 'DS0000999999', HTTPStatus.OK),
+])
+def test_get_drs_document_of_another_filing(session, client, jwt, mocker, monkeypatch,
+                                            test_name, gate_on, drs_id, expected):
+    """Assert a drsId that is not one of the filing's DRS documents is refused when the gate is on."""
+    from legal_api.resources.v2.business.business_filings import business_documents
+
+    identifier = 'CP7654321'
+    business = factory_business(identifier)
+    filing = factory_filing(business, copy.deepcopy(FILING_HEADER))
+    mock_new_feature(monkeypatch, 'authV2FilingDocuments', gate_on)
+    mocker.patch.object(business_documents, '_is_document_available', return_value=True)
+    mocker.patch.object(business_documents.DocumentService, 'get_documents_by_filing_id',
+                        return_value=[{'identifier': 'DS0000100001', 'reportType': 'RECEIPT'}])
+    mocker.patch.object(business_documents, '_get_drs_documents',
+                        return_value=(b'drs-pdf', HTTPStatus.OK, business_documents.CONTENT_PDF))
+
+    rv = client.get(f'/api/v2/businesses/{identifier}/filings/{filing.id}/documents/receipt'
+                    f'?reportType=RECEIPT&drsId={drs_id}',
+                    headers=create_header(jwt, [STAFF_ROLE], identifier, **{'accept': 'application/pdf'}))
+
+    assert rv.status_code == expected

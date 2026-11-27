@@ -333,6 +333,22 @@ def test_put_comment_error(session, client, jwt):
     assert HTTPStatus.METHOD_NOT_ALLOWED == rv.status_code
 
 
+def test_post_comment_by_id_error(session, client, jwt):
+    """Assert that the POST endpoint isn't allowed on a comment id."""
+    b = factory_business('CP1111111')
+    f = factory_filing(b, ANNUAL_REPORT)
+    c = factory_comment(b, f)
+
+    json_data = copy.deepcopy(SAMPLE_JSON_DATA)
+    json_data['comment']['filingId'] = f.id
+
+    rv = client.post(f'/api/v2/businesses/{b.identifier}/filings/{f.id}/comments/{c.id}',
+                     json=json_data,
+                     headers=create_header(jwt, [STAFF_ROLE]))
+
+    assert HTTPStatus.METHOD_NOT_ALLOWED == rv.status_code
+
+
 def test_delete_comment_error(session, client, jwt):
     """Assert that the DELETE endpoint isn't allowed."""
     b = factory_business('CP1111111')

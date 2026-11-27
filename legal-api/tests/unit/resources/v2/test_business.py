@@ -190,6 +190,35 @@ def test_create_one_shot_rejected_rolls_back_bootstrap(session, client, jwt):
     assert not RegistrationBootstrap.find_by_identifier(temp_identifier)
 
 
+@pytest.mark.parametrize('test_name, gate_on, role, is_member, expected_denied', [
+    ('not_a_member', True, PUBLIC_USER, False, True),
+    ('member', True, PUBLIC_USER, True, False),
+    ('staff_not_a_member', True, STAFF_ROLE, False, False),
+    ('system_not_a_member', True, SYSTEM_ROLE, False, False),
+    ('not_a_member_gate_off', False, PUBLIC_USER, False, False),
+])
+def test_create_business_for_another_account(app, session, client, jwt, requests_mock, monkeypatch,
+                                             test_name, gate_on, role, is_member, expected_denied):
+    """Assert POST /businesses refuses an accountId the caller does not belong to, before any temp identifier."""
+    filing = _one_shot_incorporation({'identifier': '{{temp_identifier}}'})
+    account_id = filing['filing']['header']['accountId']
+    mock_new_feature(monkeypatch, 'authV2BusinessCreate', gate_on)
+    products_url = f"{app.config.get('AUTH_SVC_URL')}/orgs/{account_id}/products?include_hidden=true"
+    if is_member:
+        requests_mock.get(products_url, json=[])
+    else:
+        requests_mock.get(products_url, status_code=HTTPStatus.FORBIDDEN)
+
+    with patch.object(RegistrationBootstrapService, 'create_bootstrap',
+                      return_value={'error': 'stop here'}) as mock_create:
+        rv = client.post('/api/v2/businesses?draft=true',
+                         json=filing,
+                         headers=create_header(jwt, [role], test_name))
+
+    assert (rv.status_code == HTTPStatus.FORBIDDEN) is expected_denied
+    assert mock_create.called is not expected_denied
+
+
 def test_create_one_shot_payment_failure_keeps_bootstrap(app, session, client, jwt, requests_mock):
     """Assert a one-shot filing saved before a payment failure keeps its temp identifier and affiliation."""
     filing = _one_shot_incorporation({'identifier': '{{temp_identifier}}'})
@@ -1515,3 +1544,50 @@ def test_ar_reminder_authorization(app, session, client, jwt, monkeypatch, reque
 
     assert rv.status_code == expected
     assert Business.find_by_identifier(identifier).send_ar_ind is not (method == 'put' and expected == HTTPStatus.OK)
+
+
+@pytest.mark.parametrize('test_name, role, expected_account_id', [
+    ('system', SYSTEM_ROLE, '2468'),
+    ('account_identity', ACCOUNT_IDENTITY, '2468'),
+    ('staff', STAFF_ROLE, None),
+    ('public_user', PUBLIC_USER, None),
+])
+def test_get_business_account_lookup_roles(app, session, client, jwt, requests_mock,
+                                           test_name, role, expected_account_id):
+    """Assert that ?account= only returns accountId to a system or account identity caller."""
+    identifier = 'CP7654321'
+    factory_business_model(legal_name='legal_name',
+                           identifier=identifier,
+                           founding_date=datetime.fromtimestamp(0, UTC),
+                           last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
+                           last_modified=datetime.fromtimestamp(0, UTC))
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations",
+                      json={'roles': ['view']})
+
+    with patch('legal_api.resources.v2.business.business.AccountService.get_account_by_affiliated_identifier',
+               return_value={'orgs': [{'id': 2468}]}) as account_lookup:
+        rv = client.get(f'/api/v2/businesses/{identifier}?account=2468',
+                        headers=create_header(jwt, [role], identifier))
+
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json['business'].get('accountId') == expected_account_id
+    assert account_lookup.called is bool(expected_account_id)
+
+
+def test_get_business_auth_unavailable_unversioned_path(app, session, client, jwt, requests_mock):
+    """Assert that an auth outage is a 503, not an unauthorized response, through the unversioned /api path."""
+    identifier = 'CP7654321'
+    factory_business_model(legal_name='legal_name',
+                           identifier=identifier,
+                           founding_date=datetime.fromtimestamp(0, UTC),
+                           last_ledger_timestamp=datetime.fromtimestamp(0, UTC),
+                           last_modified=datetime.fromtimestamp(0, UTC))
+    requests_mock.get(f"{app.config.get('AUTH_SVC_URL')}/entities/{identifier}/authorizations",
+                      exc=exceptions.ConnectionError)
+
+    rv = client.get(f'/api/businesses/{identifier}',
+                    headers=create_header(jwt, [PUBLIC_USER], identifier),
+                    follow_redirects=True)
+
+    assert rv.status_code == HTTPStatus.SERVICE_UNAVAILABLE
+    assert rv.json == {'message': 'Authorization service is unavailable, please try again later.'}
