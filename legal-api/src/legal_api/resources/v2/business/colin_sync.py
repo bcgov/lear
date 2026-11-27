@@ -471,14 +471,14 @@ def get_colin_event_id(colin_id=None):
 def get_last_event_id(identifier):
     """Get the last colin event id for the identifier."""
     query = db.session.execute(text(
-        f"""
+        """
         select max(colin_event_id) from colin_event_ids
             join filings on filings.id = colin_event_ids.filing_id
             join businesses on businesses.id = filings.business_id
-        where businesses.identifier = '{identifier}'
+        where businesses.identifier = :identifier
         limit 1
         """
-    ))
+    ), {"identifier": identifier})
     last_event_id = query.scalar()
     if not last_event_id:
         return {"message": "No colin ids found"}, HTTPStatus.NOT_FOUND
@@ -493,17 +493,17 @@ def update_colin_event_id(colin_id):
     """Add a row to the colin_last_update table."""
     try:
         db.session.execute(text(
-            f"""
-            insert into colin_last_update (last_update, last_event_id)
-            values (current_timestamp, {colin_id})
             """
-        ))
+            insert into colin_last_update (last_update, last_event_id)
+            values (current_timestamp, :colin_id)
+            """
+        ), {"colin_id": colin_id})
         db.session.commit()
         return get_colin_event_id()
 
     except Exception as err:  # pylint: disable=broad-except
         current_app.logger.error(f"Error updating colin_last_update table in legal db: {err}")
-        return {"message: failed to update colin_last_update.", 500}
+        return {"message": "failed to update colin_last_update."}, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @bp.route("/internal/tax_ids", methods=["GET"])

@@ -69,8 +69,11 @@ from legal_api.services import (
     namex,
 )
 from legal_api.services.authz import (
+    ROLES_AUTHORIZED_BY_ROLE,
     auth_v2_denied,
     business_blocker_check,
+    get_scoped_account_id,
+    has_any_roles,
     is_allowed,
     is_draft_rebase_checks_enabled,
     is_draft_rebase_scoped_filing,
@@ -111,7 +114,7 @@ def get_filings(identifier: str, filing_id: int | None = None):
     """Return a JSON object with meta information about the Filing Submission."""
     if filing_id or is_temp_reg_identifier(identifier):
         if str(request.args.get("public", None)).lower() == "true":
-            return ListFilingResource.get_single_filing_public_json(filing_id)
+            return ListFilingResource.get_single_filing_public_json(identifier, filing_id)
 
         if auth_v2_denied("authV2Filing", "filing", identifier, jwt, ["view"]):
             return jsonify({"message":
@@ -361,14 +364,40 @@ def get_single_filing_by_filing_id(filing_id):
         return {"error": "Unable to retrieve filing data."}, HTTPStatus.INTERNAL_SERVER_ERROR
 
 
+def _pay_account_header() -> dict:
+    """Return the Account-Id header for pay-api, so the invoice is billed to the account authorized() verified.
+
+    - caller authorized() passes by role (staff types, system, colin): none, pay-api resolves the account
+    - request not scoped to an account (get_scoped_account_id): none
+    """
+    if has_any_roles(jwt, ROLES_AUTHORIZED_BY_ROLE):
+        return {}
+    account_id = get_scoped_account_id()
+    return {"Account-Id": account_id} if account_id else {}
+
+
 class ListFilingResource:  # pylint: disable=too-many-public-methods
     """Business Filings service."""
 
     @staticmethod
-    def get_single_filing_public_json(filing_id: int):
+    def is_filing_of_identifier(identifier: str, filing: Filing) -> bool:
+        """Return True when the filing is reachable under the identifier.
+
+        - temp identifier: the filing's own temp registration
+        - business: one of its filings, or its state filing (an amalgamating business's is the new business's)
+        """
+        if is_temp_reg_identifier(identifier):
+            return filing.temp_reg == identifier
+        if not (business := Business.find_by_identifier(identifier)):
+            return False
+        return filing.id == business.state_filing_id or filing.business_id == business.id
+
+    @staticmethod
+    def get_single_filing_public_json(identifier: str, filing_id: int):
         """Return public details of a filing."""
         filing: Filing = Filing.find_by_id(filing_id)
-        if not filing or not (filing_name := filing.filing_type):
+        if (not filing or not (filing_name := filing.filing_type)
+                or not ListFilingResource.is_filing_of_identifier(identifier, filing)):
             return jsonify({"message": f"Filing {filing_id} not found"}), HTTPStatus.NOT_FOUND
 
         filing_json = {"header": {"name": filing_name}, filing_name: {}}
@@ -1167,6 +1196,7 @@ class ListFilingResource:  # pylint: disable=too-many-public-methods
             headers = {"Authorization": "Bearer " + token,
                        "Content-Type": "application/json"}
             add_account_linking_key_header(headers)
+            headers.update(_pay_account_header())
             current_app.logger.debug(f"Pay api call - url: {payment_svc_url}, payload: {payload}")
             rv = requests.post(url=payment_svc_url,
                                json=payload,

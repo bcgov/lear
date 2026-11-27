@@ -18,7 +18,15 @@
       "authV2Tasks",
       "authV2ArReminder",
       "authV2Comments",
-      "authV2FilingComments"
+      "authV2FilingComments",
+      "authV2AccountId",
+      "authV2FilingDocuments",
+      "authV2ClientDocuments",
+      "authV2NameRequests",
+      "authV2BusinessCreate",
+      "authV2Settings",
+      "authV2DigitalCredentials",
+      "authV2UserRoles"
     ],
     "enable-staff-draft-filing-bypass": [
       "agmLocationChange",

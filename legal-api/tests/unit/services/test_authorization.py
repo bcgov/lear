@@ -23,6 +23,7 @@ from enum import Enum
 from http import HTTPStatus
 
 import pytest
+import requests
 from datedelta import datedelta
 from unittest.mock import patch, PropertyMock
 from flask import g, jsonify
@@ -32,7 +33,7 @@ from business_common.utils.datetime import datetime
 from business_model.models import Business, Filing, RegistrationBootstrap
 from legal_api import create_app
 from legal_api.services.authz import BASIC_USER, COLIN_SVC_ROLE, CONTACT_CENTRE_STAFF_ROLE , MAXIMUS_STAFF_ROLE, \
-    PUBLIC_USER, STAFF_ROLE, SBC_STAFF_ROLE, SBC_FINANCE_STAFF_ROLE, \
+    PUBLIC_USER, STAFF_ROLE, SBC_STAFF_ROLE, SBC_FINANCE_STAFF_ROLE, AuthServiceUnavailableError, \
     authorized, get_auth_identifier, is_allowed, get_allowed, get_allowed_filings, get_allowable_actions, get_allowable_filings_dict, \
     get_staff_draft_bypass_filing_types, has_blocker_filing, is_draft_rebase_scoped_filing
 from legal_api.services.permissions import PermissionService
@@ -58,7 +59,8 @@ from registry_schemas.example_data import (
 )
 from tests import integration_authorization, not_github_ci
 from tests.unit.models import factory_batch, factory_batch_processing, factory_business, factory_filing, factory_incomplete_statuses, factory_completed_filing
-from tests.unit.services.utils import create_business, create_header, helper_create_jwt, jwt_request_context
+from tests.unit.services.utils import create_business, create_header, helper_create_jwt, jwt_request_context, \
+    mock_new_feature
 
 
 DELAY_DISSOLUTION = {
@@ -560,7 +562,7 @@ def test_authorized_temp_reg_identifier(monkeypatch, app, session, jwt, test_nam
 
     called_paths = []
 
-    def mock_call_auth_api(path, token):  # pylint: disable=unused-argument
+    def mock_call_auth_api(path, token, account_id=None):  # pylint: disable=unused-argument
         called_paths.append(path)
         resp = Response()
         resp.status_code = HTTPStatus.OK
@@ -607,19 +609,14 @@ def test_call_auth_api_forwards_account_linking_key(app, jwt, requests_mock):
 
 
 def test_authorized_bad_url(monkeypatch, app, jwt):
-    """Assert that an invalid auth service URL returns False."""
+    """Assert that an unreachable auth service URL raises a 503 instead of reading as not authorized."""
     identifier = 'CP1234567'
     username = 'username'
     roles = [BASIC_USER]
-    with jwt_request_context(app, jwt, roles=roles, username=username):
-        auth_svc_url = app.config['AUTH_SVC_URL']
-        app.config['AUTH_SVC_URL'] = 'http://no.way.this.works/dribble'
-
-        rv = authorized(identifier, jwt, ['view'])
-
-        app.config['AUTH_SVC_URL'] = auth_svc_url
-
-    assert not rv
+    monkeypatch.setitem(app.config, 'AUTH_SVC_URL', 'http://no.way.this.works/dribble')
+    with jwt_request_context(app, jwt, roles=roles, username=username), \
+            pytest.raises(AuthServiceUnavailableError):
+        authorized(identifier, jwt, ['view'])
 
 @pytest.mark.parametrize(
     "test_name, roles_in_token, expected_role",
@@ -4330,3 +4327,123 @@ def test_auth_v2_denied(monkeypatch, app, jwt, caplog, test_name, flag_on, is_au
         assert authz.auth_v2_denied('authV2Tasks', 'tasks', 'CP7654321', jwt, ['view']) is expected
 
     assert ('Unauthorized request for tasks: CP7654321' in caplog.text) is expected
+
+
+@pytest.mark.parametrize('test_name, flag_on, account_id, linking_key, expected_header', [
+    ('gate_on_account_sent', True, '2468', None, '2468'),
+    ('gate_off_account_sent', False, '2468', None, None),
+    ('gate_on_no_account', True, '', None, None),
+    ('gate_on_placeholder_zero', True, '0', None, None),
+    ('gate_on_placeholder_undefined', True, 'undefined', None, None),
+    ('gate_on_placeholder_null', True, 'null', None, None),
+    ('gate_on_linking_key', True, '2468', 'test-linking-key', None),
+])
+def test_authorized_scopes_to_account(monkeypatch, app, jwt, requests_mock,
+                                      test_name, flag_on, account_id, linking_key, expected_header):
+    """Assert that only a real Account-Id reaches auth, with the gate on and no linking key."""
+    from legal_api.services import authz
+    monkeypatch.setattr(authz, 'is_new_feature_enabled', lambda feature: flag_on)
+    auth_mock = requests_mock.get(f"{app.config['AUTH_SVC_URL']}/entities/CP7654321/authorizations",
+                                  json={'roles': ['view', 'edit']})
+    extra_headers = {'Account-Linking-Key': linking_key} if linking_key else {}
+    with jwt_request_context(app, jwt, roles=[PUBLIC_USER], account_id=account_id, **extra_headers):
+        assert authz.authorized('CP7654321', jwt, ['edit'])
+
+    assert auth_mock.last_request.headers.get('Account-Id') == expected_header
+
+
+@pytest.mark.parametrize('test_name, flag_on, expected_log', [
+    ('gate_on', True, True),
+    ('gate_off', False, False),
+])
+def test_authorized_account_denied(monkeypatch, app, jwt, requests_mock, caplog, test_name, flag_on, expected_log):
+    """Assert that an account without the roles is denied, and logged when the account-scoped gate is on."""
+    from legal_api.services import authz
+    monkeypatch.setattr(authz, 'is_new_feature_enabled', lambda feature: flag_on)
+    requests_mock.get(f"{app.config['AUTH_SVC_URL']}/entities/CP7654321/authorizations", json={})
+    with jwt_request_context(app, jwt, roles=[PUBLIC_USER], account_id='2468'), caplog.at_level('WARNING'):
+        assert not authz.authorized('CP7654321', jwt, ['edit'])
+
+    assert ('Unauthorized request for account-scoped entity access: CP7654321' in caplog.text) is expected_log
+
+
+def test_account_products_cached_per_caller(app, jwt, requests_mock):
+    """Assert one member's cached products are not served to another caller sending the same Account-Id."""
+    from legal_api.services.authz import get_account_products
+    products_url = f"{app.config['AUTH_SVC_URL']}/orgs/2468/products?include_hidden=true"
+
+    requests_mock.get(products_url, json=[{'code': 'CA_SEARCH', 'subscriptionStatus': 'ACTIVE'}])
+    with jwt_request_context(app, jwt, roles=[PUBLIC_USER], username='member', account_id='2468'):
+        assert get_account_products(jwt.get_token_auth_header())
+
+    requests_mock.get(products_url, status_code=HTTPStatus.FORBIDDEN)
+    with jwt_request_context(app, jwt, roles=[PUBLIC_USER], username='not-a-member', account_id='2468',
+                             extra_claims={'sub': 'a-different-caller'}):
+        assert get_account_products(jwt.get_token_auth_header()) is None
+
+
+@pytest.mark.parametrize('test_name, auth_response', [
+    ('connection_error', {'exc': requests.exceptions.ConnectionError}),
+    ('timeout', {'exc': requests.exceptions.Timeout}),
+    ('server_error', {'status_code': HTTPStatus.BAD_GATEWAY}),
+])
+def test_authorized_auth_unavailable(app, jwt, requests_mock, test_name, auth_response):
+    """Assert that an auth outage raises a 503 instead of reading as not authorized."""
+    requests_mock.get(f"{app.config['AUTH_SVC_URL']}/entities/CP7654321/authorizations", **auth_response)
+    with jwt_request_context(app, jwt, roles=[PUBLIC_USER], account_id=''), \
+            pytest.raises(AuthServiceUnavailableError) as excinfo:
+        authorized('CP7654321', jwt, ['edit'])
+
+    assert excinfo.value.code == HTTPStatus.SERVICE_UNAVAILABLE
+
+
+def test_authorized_auth_denial_is_not_an_outage(app, jwt, requests_mock):
+    """Assert that a 4xx from auth still reads as not authorized."""
+    requests_mock.get(f"{app.config['AUTH_SVC_URL']}/entities/CP7654321/authorizations",
+                      status_code=HTTPStatus.FORBIDDEN)
+    with jwt_request_context(app, jwt, roles=[PUBLIC_USER], account_id=''):
+        assert not authorized('CP7654321', jwt, ['edit'])
+
+
+def test_has_product_auth_unavailable(app, jwt, requests_mock):
+    """Assert that an auth outage reads as no product, so the CA_SEARCH pass never fails a request."""
+    from legal_api.services.authz import has_product
+    requests_mock.get(f"{app.config['AUTH_SVC_URL']}/orgs/1357/products?include_hidden=true",
+                      exc=requests.exceptions.ConnectionError)
+    with jwt_request_context(app, jwt, roles=[PUBLIC_USER], account_id='1357'):
+        assert not has_product('CA_SEARCH', jwt.get_token_auth_header())
+
+
+def test_is_account_member_auth_unavailable_not_cached(app, jwt, requests_mock):
+    """Assert that an auth outage raises a 503 for a membership check and is not cached as a denial."""
+    from legal_api.services.authz import is_account_member
+    products_url = f"{app.config['AUTH_SVC_URL']}/orgs/1359/products?include_hidden=true"
+
+    with jwt_request_context(app, jwt, roles=[PUBLIC_USER], account_id='1359'):
+        requests_mock.get(products_url, exc=requests.exceptions.ConnectionError)
+        with pytest.raises(AuthServiceUnavailableError):
+            is_account_member(jwt, '1359')
+
+        requests_mock.get(products_url, json=[])
+        assert is_account_member(jwt, '1359')
+
+
+@pytest.mark.parametrize('test_name, roles, flag_on, expected, calls_auth', [
+    ('public_user_gate_on', [PUBLIC_USER], True, True, True),
+    ('basic_gate_on', [BASIC_USER], True, True, True),
+    ('other_role_gate_on', ['NONE'], True, False, False),
+    ('no_roles_gate_on', [], True, False, False),
+    ('other_role_gate_off', ['NONE'], False, True, True),
+])
+def test_authorized_user_roles(monkeypatch, app, jwt, requests_mock, caplog,
+                               test_name, roles, flag_on, expected, calls_auth):
+    """Assert that a caller without a basic / public user role never reaches auth when authV2UserRoles is on."""
+    mock_new_feature(monkeypatch, 'authV2UserRoles', flag_on)
+    auth_mock = requests_mock.get(f"{app.config['AUTH_SVC_URL']}/entities/CP7654321/authorizations",
+                                  json={'roles': ['view', 'edit']})
+    with jwt_request_context(app, jwt, roles=roles, account_id=''), caplog.at_level('WARNING'):
+        assert authorized('CP7654321', jwt, ['edit']) is expected
+
+    assert auth_mock.called is calls_auth
+    assert ('Unauthorized request for entity access without a basic or public user role: CP7654321'
+            in caplog.text) is not expected

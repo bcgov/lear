@@ -21,12 +21,14 @@ from datetime import datetime, timezone
 from http import HTTPStatus
 from unittest.mock import patch
 
+import pytest
+
 from business_model.models import DCConnection, DCDefinition, User
 from business_registry_digital_credentials import DigitalCredentialsService
 from legal_api.services.authz import BASIC_USER
 
-from tests.unit.models import create_dc_business_user, create_dc_connection, create_dc_credential, create_dc_definition, factory_business
-from tests.unit.services.utils import create_header, helper_create_jwt_json_token_claims
+from tests.unit.models import create_dc_business_user, create_dc_connection, create_dc_credential, create_dc_definition, factory_business, factory_user
+from tests.unit.services.utils import create_header, helper_create_jwt_json_token_claims, mock_new_feature
 
 
 content_type = 'application/json'
@@ -303,3 +305,92 @@ def test_webhook_connection_attest_notification(app, session, client, jwt):
     assert rv.json.get('connections')[0].get('isAttested') == True
     assert rv.json.get('connections')[0].get('lastAttested') != ''
     assert rv.json.get('connections')[0].get('connectionState') == connection.connection_state
+
+
+@pytest.mark.parametrize('test_name, gate_on, expected', [
+    ('gate_on', True, HTTPStatus.FORBIDDEN),
+    ('gate_off', False, HTTPStatus.OK),
+])
+@patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
+def test_attest_connection_of_another_user(mock_allowed, app, session, client, jwt, monkeypatch,
+                                           test_name, gate_on, expected):
+    """Assert a connection that belongs to another user is refused when the gate is on."""
+    identifier = 'FM1234567'
+    other_business_user = create_dc_business_user(factory_business(identifier), factory_user('other-user'))
+    connection = create_dc_connection(other_business_user)
+    mock_new_feature(monkeypatch, 'authV2DigitalCredentials', gate_on)
+
+    with patch.object(DigitalCredentialsService, 'attest_connection', return_value={}):
+        rv = client.post(
+            f'/api/v2/businesses/{identifier}/digitalCredentials/connections/{connection.connection_id}/attest',
+            headers=create_header(jwt, test_roles, test_user), content_type=content_type)
+
+    assert rv.status_code == expected
+
+
+@pytest.mark.parametrize('test_name, gate_on, expected', [
+    ('gate_on', True, HTTPStatus.FORBIDDEN),
+    ('gate_off', False, HTTPStatus.OK),
+])
+@patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
+def test_delete_credential_of_another_user(mock_allowed, app, session, client, jwt, monkeypatch,
+                                           test_name, gate_on, expected):
+    """Assert a credential that belongs to another user is refused when the gate is on."""
+    identifier = 'FM1234567'
+    credential = create_dc_credential(factory_business(identifier), factory_user('other-user'))
+    credential.credential_id = '123456'
+    credential.save()
+    mock_new_feature(monkeypatch, 'authV2DigitalCredentials', gate_on)
+
+    with patch.object(DigitalCredentialsService, 'fetch_credential_exchange_record', return_value=None):
+        rv = client.delete(f'/api/v2/businesses/{identifier}/digitalCredentials/{credential.credential_id}',
+                           headers=create_header(jwt, test_roles, test_user), content_type=content_type)
+
+    assert rv.status_code == expected
+
+
+@pytest.mark.parametrize('test_name, gate_on, expected', [
+    ('gate_on', True, HTTPStatus.FORBIDDEN),
+    ('gate_off', False, HTTPStatus.OK),
+])
+@patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
+def test_delete_connection_of_another_user(mock_allowed, app, session, client, jwt, monkeypatch,
+                                           test_name, gate_on, expected):
+    """Assert deleting a connection that belongs to another user is refused when the gate is on."""
+    identifier = 'FM1234567'
+    other_business_user = create_dc_business_user(factory_business(identifier), factory_user('other-user'))
+    connection = create_dc_connection(other_business_user)
+    mock_new_feature(monkeypatch, 'authV2DigitalCredentials', gate_on)
+
+    rv = client.delete(f'/api/v2/businesses/{identifier}/digitalCredentials/connections/{connection.connection_id}',
+                       headers=create_header(jwt, test_roles, test_user), content_type=content_type)
+
+    assert rv.status_code == expected
+    assert bool(DCConnection.find_by_id(connection.id)) is gate_on
+
+
+@pytest.mark.parametrize('test_name, gate_on, expected', [
+    ('gate_on', True, HTTPStatus.FORBIDDEN),
+    ('gate_off', False, HTTPStatus.OK),
+])
+@patch('legal_api.decorators.are_digital_credentials_allowed', return_value=True)
+def test_revoke_credential_of_another_user(mock_allowed, app, session, client, jwt, monkeypatch,
+                                           test_name, gate_on, expected):
+    """Assert revoking a credential that belongs to another user is refused when the gate is on."""
+    identifier = 'FM1234567'
+    business = factory_business(identifier)
+    caller = User.get_or_create_user_by_jwt(helper_create_jwt_json_token_claims(test_roles, test_user))
+    caller_connection = create_dc_connection(create_dc_business_user(business, caller), is_active=True)
+    caller_connection.connection_id = 'the-callers-own-connection'
+    caller_connection.save()
+    credential = create_dc_credential(business, factory_user('other-user'))
+    credential.credential_id = '123456'
+    credential.save()
+    mock_new_feature(monkeypatch, 'authV2DigitalCredentials', gate_on)
+
+    with patch.object(DigitalCredentialsService, 'revoke_credential', return_value={}) as mock_revoke:
+        rv = client.post(f'/api/v2/businesses/{identifier}/digitalCredentials/{credential.credential_id}/revoke',
+                         headers=create_header(jwt, test_roles, test_user), json={})
+
+    assert rv.status_code == expected
+    assert mock_revoke.called is not gate_on

@@ -32,7 +32,8 @@ from legal_api.utils.util import is_temp_reg_identifier
 from .bp import bp
 
 
-@bp.route("/<string:identifier>/filings/<int:filing_id>/comments/<int:comment_id>", methods=["PUT", "PATCH", "DELETE"])
+@bp.route("/<string:identifier>/filings/<int:filing_id>/comments/<int:comment_id>",
+          methods=["POST", "PUT", "PATCH", "DELETE"])
 @cross_origin()
 @jwt.requires_auth
 def not_allowed_filing_comments(identifier, filing_id, comment_id=None):  # pylint: disable=W0613; matching signature
@@ -73,7 +74,6 @@ def get_filing_comments(identifier, filing_id, comment_id=None):
 
 
 @bp.route("/<string:identifier>/filings/<int:filing_id>/comments", methods=["POST"])
-@bp.route("/<string:identifier>/filings/<int:filing_id>/comments/<int:comment_id>", methods=["POST"])
 @cross_origin()
 @jwt.requires_auth
 def post_filing_comments(identifier, filing_id):

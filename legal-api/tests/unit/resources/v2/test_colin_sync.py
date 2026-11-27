@@ -188,6 +188,26 @@ def test_get_colin_last_update(session, client, jwt):
     assert rv.json == {'maxId': colin_id}
 
 
+def test_get_last_event_id(session, client, jwt):
+    """Assert the internal/last-event-id endpoint only matches the exact identifier."""
+    identifier = 'CP7654321'
+    b = factory_business(identifier)
+    filing = factory_completed_filing(b, ANNUAL_REPORT)
+    colin_event_id = ColinEventId()
+    colin_event_id.colin_event_id = 1234
+    filing.colin_event_ids.append(colin_event_id)
+    filing.save()
+
+    rv = client.get(f'/api/v2/businesses/internal/last-event-id/{identifier}',
+                    headers=create_header(jwt, [COLIN_SVC_ROLE]))
+    assert rv.status_code == HTTPStatus.OK
+    assert rv.json == {'maxId': 1234}
+
+    rv = client.get("/api/v2/businesses/internal/last-event-id/x' or '1'='1",
+                    headers=create_header(jwt, [COLIN_SVC_ROLE]))
+    assert rv.status_code == HTTPStatus.NOT_FOUND
+
+
 def test_post_colin_last_update(session, client, jwt):
     """Assert the internal/filings/colin_id post endpoint updates the colin_last_update table."""
     colin_id = 1234

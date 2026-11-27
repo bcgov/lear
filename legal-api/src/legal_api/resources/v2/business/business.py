@@ -47,6 +47,9 @@ from legal_api.services.authz import (
     get_allowed,
     get_could_files,
     has_any_roles,
+    is_account_member,
+    is_new_feature_enabled,
+    log_unauthorized_request,
 )
 from legal_api.services.permissions import ListActionsPermissionsAllowed, PermissionService
 from legal_api.services.search_service import AffiliationSearchDetails, BusinessSearchService
@@ -109,7 +112,7 @@ def get_businesses(identifier: str):
 
     q_account = request.args.get("account")
     current_app.logger.info("account info request, for account: %s", q_account)
-    if q_account and jwt.has_one_of_roles([SYSTEM_ROLE, ACCOUNT_IDENTITY]):
+    if q_account and has_any_roles(jwt, [SYSTEM_ROLE, ACCOUNT_IDENTITY]):
         account_response = AccountService.get_account_by_affiliated_identifier(identifier, flags)
         current_app.logger.info("VALID account request, for accountId: %s, by: %s, jwt: %s, for org account: %s",
                                 q_account,
@@ -198,6 +201,12 @@ def post_businesses():
             filing_title = Filing.FILINGS[filing_type][filing_sub_type]["title"]
         else:
             filing_title = Filing.FILINGS[filing_type]["title"]
+
+    is_create_gate_on = is_new_feature_enabled("authV2BusinessCreate")
+    if is_create_gate_on and not is_account_member(jwt, filing_account_id):
+        log_unauthorized_request("business create", filing_account_id)
+        return {"message": babel("You are not authorized to create a business for this account.")}, \
+            HTTPStatus.FORBIDDEN
 
     bootstrap = RegistrationBootstrapService.create_bootstrap(filing_account_id)
     if not isinstance(bootstrap, RegistrationBootstrap):

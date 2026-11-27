@@ -33,21 +33,30 @@ from flask import jsonify, request
 from flask_cors import cross_origin
 
 from business_model.models import Business, BusinessAccountSettings
-from legal_api.services.authz import authorized, get_account_products
+from legal_api.services.authz import account_membership_denied, authorized, get_account_products
 from legal_api.utils.auth import jwt
 
 from .bp import bp
+
+SETTINGS_FEATURE = "authV2Settings"  # a value inside the enable-new-feature flag
+
+
+def _account_forbidden_response():
+    """Return the 403 for a caller who does not belong to the account in the path."""
+    return jsonify({"message": "Not authorized to access business settings for this account."}), HTTPStatus.FORBIDDEN
 
 
 @bp.route("/settings/<string:account_id>", methods=["GET"])
 @bp.route("/settings/<string:account_id>/<string:identifier>", methods=["GET"])
 @cross_origin()
 @jwt.requires_auth
-def get_business_account_settings(account_id: str, identifier: str | None = None):
+def get_business_account_settings(account_id: str, identifier: str | None = None):  # noqa: PLR0911
     """Return a JSON object containing the settings information for the business and account combination."""
     if identifier:
         if not authorized(identifier, jwt, action=["view"]):
             return jsonify({"message": f"You are not authorized to view business {identifier} settings."}), HTTPStatus.UNAUTHORIZED
+        if account_membership_denied(SETTINGS_FEATURE, "settings", account_id, jwt):
+            return _account_forbidden_response()
 
         business = Business.find_by_identifier(identifier)
         if not business:
@@ -77,9 +86,10 @@ def get_business_account_settings(account_id: str, identifier: str | None = None
 @jwt.requires_auth
 def update_business_account_settings(account_id: str, identifier: str):
     """Update the settings information for the business and account combination."""
-    # FUTURE: Verify they are allowed to update the account - #30992
     if not authorized(identifier, jwt, action=["edit"]):
         return jsonify({"message": f"You are not authorized to edit business {identifier} settings."}), HTTPStatus.UNAUTHORIZED
+    if account_membership_denied(SETTINGS_FEATURE, "settings", account_id, jwt):
+        return _account_forbidden_response()
 
     business = Business.find_by_identifier(identifier)
     if not business:
@@ -95,9 +105,10 @@ def update_business_account_settings(account_id: str, identifier: str):
 @jwt.requires_auth
 def delete_business_account_settings(account_id: str, identifier: str):
     """Update the settings information for the business and account combination."""
-    # FUTURE: Verify they are allowed to update the account - #30992
     if not authorized(identifier, jwt, action=["edit"]):
         return jsonify({"message": f"You are not authorized to remove business {identifier} settings."}), HTTPStatus.UNAUTHORIZED
+    if account_membership_denied(SETTINGS_FEATURE, "settings", account_id, jwt):
+        return _account_forbidden_response()
 
     business = Business.find_by_identifier(identifier)
     if not business:

@@ -37,6 +37,7 @@ from business_registry_digital_credentials.digital_credentials_helpers import (
 )
 from legal_api.decorators import can_access_digital_credentials
 from legal_api.services import digital_credentials
+from legal_api.services.authz import is_new_feature_enabled, log_unauthorized_request
 from legal_api.utils.auth import jwt
 
 from .bp import bp
@@ -59,6 +60,25 @@ def get_business_user(identifier) -> tuple[DCBusinessUser | None, dict | None, H
         return None, jsonify({"message": "Business User not found"}), HTTPStatus.NOT_FOUND
 
     return business_user, None, None
+
+
+def _is_owner_denied(identifier: str, record: DCConnection | DCCredential) -> bool:
+    """Return True (and log) when the authV2DigitalCredentials gate is on and the record is not the caller's."""
+    if not is_new_feature_enabled("authV2DigitalCredentials"):
+        return False
+    business_user, _, _ = get_business_user(identifier)
+    # older credentials have no business user of their own, so fall back to their connection's
+    owner_id = record.business_user_id or getattr(getattr(record, "connection", None), "business_user_id", None)
+    if business_user and owner_id == business_user.id:
+        return False
+    log_unauthorized_request("digital credentials", identifier)
+    return True
+
+
+def _not_owner_response(identifier: str):
+    """Return the 403 for a connection or credential that belongs to another user or business."""
+    return jsonify({"message": f"You are not authorized to change this record for {identifier}."}), \
+        HTTPStatus.FORBIDDEN
 
 
 @bp.route("/<string:identifier>/digitalCredentials/invitation", methods=["POST"], strict_slashes=False)
@@ -141,6 +161,9 @@ def attest_connection(identifier, connection_id):
     if not (connection := DCConnection.find_by_connection_id(connection_id=connection_id)):
         return jsonify({"message": f"{identifier} connection not found."}), HTTPStatus.NOT_FOUND
 
+    if _is_owner_denied(identifier, connection):
+        return _not_owner_response(identifier)
+
     if digital_credentials.attest_connection(connection_id=connection.connection_id) is None:
         return jsonify({"message": "Unable to request connection attestation."}), HTTPStatus.INTERNAL_SERVER_ERROR
 
@@ -159,6 +182,9 @@ def delete_connection(identifier, connection_id):
 
     if not (connection := DCConnection.find_by_connection_id(connection_id=connection_id)):
         return jsonify({"message": f"{identifier} connection not found."}), HTTPStatus.NOT_FOUND
+
+    if _is_owner_denied(identifier, connection):
+        return _not_owner_response(identifier)
 
     if (connection.connection_state != DCConnection.State.INVITATION_SENT.value and
             digital_credentials.remove_connection_record(connection_id=connection.connection_id) is None):
@@ -299,6 +325,9 @@ def revoke_credential(identifier, credential_id):
     if not credential or credential.is_revoked:
         return jsonify({"message": f"{identifier} issued credential not found."}), HTTPStatus.NOT_FOUND
 
+    if _is_owner_denied(identifier, credential):
+        return _not_owner_response(identifier)
+
     reissue = request.get_json().get("reissue", False)
     reason = DCRevocationReason.SELF_REISSUANCE if reissue else DCRevocationReason.SELF_REVOCATION
 
@@ -325,6 +354,9 @@ def delete_credential(identifier, credential_id):
 
     if not (credential := DCCredential.find_by_credential_id(credential_id=credential_id)):
         return jsonify({"message": f"{identifier} issued credential not found."}), HTTPStatus.NOT_FOUND
+
+    if _is_owner_denied(identifier, credential):
+        return _not_owner_response(identifier)
 
     if (digital_credentials.fetch_credential_exchange_record(credential.credential_exchange_id) is not None and
             digital_credentials.remove_credential_exchange_record(credential.credential_exchange_id) is None):

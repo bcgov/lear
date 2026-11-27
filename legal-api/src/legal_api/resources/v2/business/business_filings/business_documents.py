@@ -37,6 +37,7 @@ from legal_api.reports.document_service import DocumentService
 from legal_api.resources.v2.business.bp import bp
 from legal_api.services import authorized
 from legal_api.services import doc_service as client_doc_service
+from legal_api.services.authz import is_new_feature_enabled, log_unauthorized_request
 from legal_api.services.request_context import add_account_linking_key_header
 from legal_api.utils.auth import jwt
 from legal_api.utils.util import cors_preflight, is_temp_reg_identifier
@@ -57,7 +58,7 @@ CONTENT_PDF: Final = {"Content-Type": APP_PDF}
 @bp.route(DOCUMENTS_BASE_ROUTE + "/static/<string:file_key>", methods=["GET", "OPTIONS"])
 @cross_origin()
 @jwt.requires_auth
-def get_documents(identifier: str, # noqa: PLR0911, PLR0912
+def get_documents(identifier: str,
                   filing_id: int,
                   legal_filing_name: str | None = None,
                   file_key: str | None = None):
@@ -67,37 +68,13 @@ def get_documents(identifier: str, # noqa: PLR0911, PLR0912
         return jsonify(
             message=get_error_message(ErrorCode.NOT_AUTHORIZED, identifier=identifier)
         ), HTTPStatus.UNAUTHORIZED
-    is_temp_reg = is_temp_reg_identifier(identifier)
-    if is_temp_reg:
-        filing_model = FilingModel.get_temp_reg_filing(identifier)
-        business = Business.find_by_internal_id(filing_model.business_id)
-    else:
-        business = Business.find_by_identifier(identifier)
 
-    if not business and not is_temp_reg:
-        return jsonify(
-            message=get_error_message(ErrorCode.MISSING_BUSINESS, identifier=identifier)
-        ), HTTPStatus.NOT_FOUND
-
-    filing = Filing.get(identifier, filing_id)
-    if filing and is_temp_reg and filing.id != filing_id:
-        withdrawn_filing = Filing.get_by_withdrawn_filing_id(filing_id=filing_id,
-                                                             withdrawn_filing_id=filing.id,
-                                                             filing_type=Filing.FilingTypes.NOTICEOFWITHDRAWAL)
-        if withdrawn_filing:
-            filing = withdrawn_filing
-
-    if not filing:
-        return jsonify(
-            message=get_error_message(ErrorCode.FILING_NOT_FOUND,
-                                      filing_id=filing_id, identifier=identifier)
-        ), HTTPStatus.NOT_FOUND
+    business, filing, not_found = _find_business_and_filing(identifier, filing_id)
+    if not_found:
+        return not_found
 
     if not legal_filing_name and not file_key:
-        if is_temp_reg and filing.status == Filing.Status.COMPLETED and \
-                filing.filing_type != Filing.FilingTypes.NOTICEOFWITHDRAWAL:
-            return {"documents": {}}, HTTPStatus.OK
-        return _get_document_list(business, filing)
+        return _get_filing_document_list(identifier, business, filing)
 
     if APP_PDF in request.accept_mimetypes:
         file_name = (legal_filing_name or file_key)
@@ -106,32 +83,92 @@ def get_documents(identifier: str, # noqa: PLR0911, PLR0912
                 message=get_error_message(ErrorCode.DOCUMENT_NOT_FOUND,
                                           file_name=file_name, filing_id=filing_id, identifier=identifier)
             ), HTTPStatus.NOT_FOUND
-
-        if _should_regenerate(legal_filing_name):
-            if jwt.contains_role(request_ctx.current_user, [UserRoles.staff, UserRoles.system]):
-                return get_pdf(filing.storage, legal_filing_name, True)
-            else:
-                return jsonify(
-                    message="Unauthorized to regenerate"
-                ), HTTPStatus.UNAUTHORIZED
-
-        if drs_params := _get_drs_params():
-            return _get_drs_documents(drs_params)
-
-        if legal_filing_name:
-            if legal_filing_name.lower().startswith("receipt"):
-                return _get_receipt(business, filing)
-
-            return get_pdf(filing.storage, legal_filing_name)
-        elif file_key and (match := re.match(r"^([A-Z]+)-(DS\d+)$", file_key)):
-            drs_response = client_doc_service.get_document(match.group(2), match.group(1), doc_binary=True)
-            return current_app.response_class(
-                response=drs_response.content,
-                status=drs_response.status_code,
-                mimetype=APP_PDF
-            )
+        return _get_document_pdf(identifier, business, filing, legal_filing_name, file_key)
 
     return {}, HTTPStatus.NOT_FOUND
+
+
+def _find_business_and_filing(identifier: str, filing_id: int) -> tuple:
+    """Return the business, the filing, and the 404 response when either is missing.
+
+    - temp registration: the business is the one its filing created, if any
+    - temp registration whose filing was withdrawn: the notice of withdrawal filing, when that is the one asked for
+    """
+    is_temp_reg = is_temp_reg_identifier(identifier)
+    if is_temp_reg:
+        filing_model = FilingModel.get_temp_reg_filing(identifier)
+        business = Business.find_by_internal_id(filing_model.business_id)
+    else:
+        business = Business.find_by_identifier(identifier)
+
+    if not business and not is_temp_reg:
+        return None, None, (jsonify(
+            message=get_error_message(ErrorCode.MISSING_BUSINESS, identifier=identifier)
+        ), HTTPStatus.NOT_FOUND)
+
+    filing = Filing.get(identifier, filing_id)
+    if filing and is_temp_reg and filing.id != filing_id:
+        filing = Filing.get_by_withdrawn_filing_id(filing_id=filing_id,
+                                                   withdrawn_filing_id=filing.id,
+                                                   filing_type=Filing.FilingTypes.NOTICEOFWITHDRAWAL) or filing
+
+    if not filing:
+        return None, None, (jsonify(
+            message=get_error_message(ErrorCode.FILING_NOT_FOUND,
+                                      filing_id=filing_id, identifier=identifier)
+        ), HTTPStatus.NOT_FOUND)
+
+    return business, filing, None
+
+
+def _get_filing_document_list(identifier: str, business: Business, filing: Filing):
+    """Return the document list, empty for a completed temp registration filing that is not a notice of withdrawal."""
+    if is_temp_reg_identifier(identifier) and filing.status == Filing.Status.COMPLETED and \
+            filing.filing_type != Filing.FilingTypes.NOTICEOFWITHDRAWAL:
+        return {"documents": {}}, HTTPStatus.OK
+    return _get_document_list(business, filing)
+
+
+def _get_document_pdf(identifier: str,  # noqa: PLR0911
+                      business: Business,
+                      filing: Filing,
+                      legal_filing_name: str | None,
+                      file_key: str | None):
+    """Return one available document of the filing as a PDF."""
+    if _should_regenerate(legal_filing_name):
+        return _get_regenerated_pdf(filing, legal_filing_name)
+
+    if drs_params := _get_drs_params():
+        if _is_drs_id_denied(business, filing, drs_params.get(PARAM_DRS_ID), identifier):
+            return jsonify(
+                message=get_error_message(ErrorCode.NOT_AUTHORIZED, identifier=identifier)
+            ), HTTPStatus.FORBIDDEN
+        return _get_drs_documents(drs_params)
+
+    if legal_filing_name:
+        if legal_filing_name.lower().startswith("receipt"):
+            return _get_receipt(business, filing)
+
+        return get_pdf(filing.storage, legal_filing_name)
+
+    if file_key and (match := re.match(r"^([A-Z]+)-(DS\d+)$", file_key)):
+        drs_response = client_doc_service.get_document(match.group(2), match.group(1), doc_binary=True)
+        return current_app.response_class(
+            response=drs_response.content,
+            status=drs_response.status_code,
+            mimetype=APP_PDF
+        )
+
+    return {}, HTTPStatus.NOT_FOUND
+
+
+def _get_regenerated_pdf(filing: Filing, legal_filing_name: str):
+    """Return the regenerated report, staff / system only."""
+    if jwt.contains_role(request_ctx.current_user, [UserRoles.staff, UserRoles.system]):
+        return get_pdf(filing.storage, legal_filing_name, True)
+    return jsonify(
+        message="Unauthorized to regenerate"
+    ), HTTPStatus.UNAUTHORIZED
 
 
 def _get_drs_params() -> dict:
@@ -186,23 +223,38 @@ def _is_document_available(business, filing, file_name):
     return file_name in documents
 
 
+def _get_drs_filing_documents(business: Business, filing: Filing) -> list:
+    """Return the DRS reports/documents stored for the filing."""
+    storage: FilingModel = filing.storage
+    if not storage or storage.paper_only:
+        return []
+    drs_filing_id: int = storage.id
+    if storage.source and storage.source == storage.Source.COLIN.value and storage.meta_data:
+        meta_data = storage.meta_data
+        if meta_data and meta_data.get("colinFilingInfo") and meta_data["colinFilingInfo"].get("eventId"):
+            drs_filing_id = meta_data["colinFilingInfo"].get("eventId")
+    identifier = business.identifier if business else storage.temp_reg
+    return DocumentService().get_documents_by_filing_id(identifier, drs_filing_id)
+
+
+def _is_drs_id_denied(business: Business, filing: Filing, drs_id: str, identifier: str) -> bool:
+    """Return True (and log) when the authV2FilingDocuments gate is on and the drsId is not one of the filing's."""
+    if not drs_id or not is_new_feature_enabled("authV2FilingDocuments"):
+        return False
+    if any(str(doc.get("identifier")) == drs_id for doc in _get_drs_filing_documents(business, filing)):
+        return False
+    log_unauthorized_request("filing documents", identifier)
+    return True
+
+
 def _get_document_list(business: Business, filing: Filing):
     """Get list of document outputs."""
     document_list = Filing.get_document_list(business, filing, jwt)
     if not (document_list):
         return {}, HTTPStatus.NOT_FOUND
-    storage: FilingModel = filing.storage
     # If DRS reports/documents exist add the DRS download info to the document URLs.
-    if storage and not storage.paper_only:
-        drs_filing_id: int = storage.id
-        if storage.source and storage.source == storage.Source.COLIN.value and storage.meta_data:
-            meta_data = storage.meta_data
-            if meta_data and meta_data.get("colinFilingInfo") and meta_data["colinFilingInfo"].get("eventId"):
-                drs_filing_id = meta_data["colinFilingInfo"].get("eventId")
-        identifier = business.identifier if business else storage.temp_reg
-        doc_service: DocumentService = DocumentService()
-        drs_docs: list = doc_service.get_documents_by_filing_id(identifier, drs_filing_id)
-        document_list = doc_service.update_document_list(drs_docs, document_list, filing)
+    drs_docs: list = _get_drs_filing_documents(business, filing)
+    document_list = DocumentService().update_document_list(drs_docs, document_list, filing)
     return jsonify(document_list), HTTPStatus.OK
 
 

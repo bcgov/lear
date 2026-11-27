@@ -23,6 +23,7 @@ from flask.globals import request_ctx
 from requests import Session, exceptions
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+from werkzeug.exceptions import ServiceUnavailable
 
 from business_common.utils.legislation_datetime import LegislationDatetime
 from business_model.models import Business, Filing, UserRoles
@@ -56,6 +57,14 @@ FILE_OVER_EXISTING_DRAFT_PERMISSION = "FILE_OVER_EXISTING_DRAFT"
 STAFF_DRAFT_FILING_BYPASS_FLAG = "enable-staff-draft-filing-bypass"
 DRAFT_REBASE_CHECKS_FEATURE = "draftRebaseChecks"  # a value inside the enable-new-feature flag
 MIGRATED_COURT_ORDER_FEATURE = "migratedCourtOrder"  # a value inside the enable-new-feature flag
+ACCOUNT_SCOPED_AUTH_FEATURE = "authV2AccountId"  # a value inside the enable-new-feature flag
+USER_ROLES_FEATURE = "authV2UserRoles"  # a value inside the enable-new-feature flag
+
+# roles authorized() passes before any auth api call
+ROLES_AUTHORIZED_BY_ROLE = [STAFF_ROLE, SYSTEM_ROLE, COLIN_SVC_ROLE, MAXIMUS_STAFF_ROLE, SBC_STAFF_ROLE,
+                            CONTACT_CENTRE_STAFF_ROLE, SBC_FINANCE_STAFF_ROLE]
+# Account-Id values UIs send when no account is selected
+PLACEHOLDER_ACCOUNT_IDS = ["0", "undefined", "null"]
 
 
 class BusinessBlocker(str, Enum):
@@ -85,8 +94,18 @@ class BusinessRequirement(str, Enum):
     NO_RESTRICTION = "NO_RESTRICTION"
 
 
-def _call_auth_api(path: str, token: str) -> Response:
-    """Return the auth api response for the given endpoint path."""
+class AuthServiceUnavailableError(ServiceUnavailable):
+    """Auth api gave no usable answer, so access can be neither granted nor denied (503)."""
+
+    description = "Authorization service is unavailable, please try again later."
+
+
+def _call_auth_api(path: str, token: str, account_id: str | None = None) -> Response:
+    """Return the auth api response for the given endpoint path.
+
+    - account_id given: sent as Account-Id, so auth scopes the lookup to that account
+    - no answer or a 5xx: raises AuthServiceUnavailableError
+    """
     if not token:
         return None
 
@@ -97,6 +116,8 @@ def _call_auth_api(path: str, token: str) -> Response:
 
     headers = {"Authorization": "Bearer " + token}
     add_account_linking_key_header(headers)
+    if account_id:
+        headers["Account-Id"] = account_id
     try:
         http = Session()
         retries = Retry(total=5,
@@ -106,7 +127,6 @@ def _call_auth_api(path: str, token: str) -> Response:
         http.mount("https://", HTTPAdapter(max_retries=retries))
         resp = http.get(url=auth_url, headers=headers)
         current_app.logger.debug(f"Auth get {path} response status: {resp.status_code!s}")
-        return resp
 
     except (exceptions.ConnectionError,  # pylint: disable=broad-except
             exceptions.Timeout,
@@ -114,7 +134,12 @@ def _call_auth_api(path: str, token: str) -> Response:
             Exception) as err:
         current_app.logger.debug(err.with_traceback(None))
         current_app.logger.error(f"Auth connection failure, url: {auth_url}")
-        return None
+        raise AuthServiceUnavailableError from err
+
+    if resp.status_code >= HTTPStatus.INTERNAL_SERVER_ERROR:
+        current_app.logger.error(f"Auth server error {resp.status_code!s}, url: {auth_url}")
+        raise AuthServiceUnavailableError
+    return resp
 
 
 def authorized(  # noqa: PLR0911
@@ -146,19 +171,49 @@ def authorized(  # noqa: PLR0911
     ):
         return True
 
-    if jwt.has_one_of_roles([BASIC_USER, PUBLIC_USER]):
+    if not has_any_roles(jwt, [BASIC_USER, PUBLIC_USER]) and is_new_feature_enabled(USER_ROLES_FEATURE):
+        log_unauthorized_request("entity access without a basic or public user role", identifier)
+        return False
 
-        # disallow - only staff are allowed
-        staff_only_actions = ["add_comment"]
-        if any(elem in action for elem in staff_only_actions):
-            return False
+    # disallow - only staff are allowed
+    staff_only_actions = ["add_comment"]
+    if any(elem in action for elem in staff_only_actions):
+        return False
 
-        auth_identifier = get_auth_identifier(identifier)
-        rv = _call_auth_api(f"entities/{auth_identifier}/authorizations", jwt.get_token_auth_header())
-        if rv and rv.status_code == HTTPStatus.OK and (roles := rv.json().get("roles")):
-            return all(elem.lower() in roles for elem in action)
+    return _has_entity_roles(identifier, jwt, action)
 
+
+def _has_entity_roles(identifier: str, jwt: JwtManager, action: list[str]) -> bool:
+    """Return True when auth grants the caller every action on the entity.
+
+    - request scoped to an account (get_scoped_account_id): the caller must hold the roles through that account
+    - otherwise: any account the caller belongs to counts
+    """
+    account_id = get_scoped_account_id()
+    auth_identifier = get_auth_identifier(identifier)
+    rv = _call_auth_api(f"entities/{auth_identifier}/authorizations", jwt.get_token_auth_header(), account_id)
+    roles = rv.json().get("roles") if rv and rv.status_code == HTTPStatus.OK else None
+    if roles and all(elem.lower() in roles for elem in action):
+        return True
+
+    if account_id:
+        log_unauthorized_request("account-scoped entity access", identifier)
     return False
+
+
+def get_scoped_account_id() -> str | None:
+    """Return the Account-Id header when auth and pay lookups must be scoped to that account.
+
+    - header missing or a UI placeholder: None
+    - Account-Linking-Key sent: None, the linking key path is left as it was
+    - authV2AccountId off: None
+    """
+    account_id = (request.headers.get("Account-Id") or "").strip()
+    if not account_id or account_id.lower() in PLACEHOLDER_ACCOUNT_IDS:
+        return None
+    if request.headers.get("Account-Linking-Key"):
+        return None
+    return account_id if is_new_feature_enabled(ACCOUNT_SCOPED_AUTH_FEATURE) else None
 
 
 def get_auth_identifier(identifier: str) -> str:
@@ -1023,6 +1078,21 @@ def auth_v2_denied(feature: str, subject: str, identifier: str, jwt: JwtManager,
     return False
 
 
+def is_account_member(jwt: JwtManager, account_id: str) -> bool:
+    """Return True when the caller is staff / system or belongs to the account."""
+    if has_any_roles(jwt, [STAFF_ROLE, SYSTEM_ROLE]):
+        return True
+    return get_account_products(jwt.get_token_auth_header(), str(account_id)) is not None
+
+
+def account_membership_denied(feature: str, subject: str, account_id: str, jwt: JwtManager) -> bool:
+    """Return True (and log) when the auth-v2 gate is on and the caller does not belong to the account."""
+    if is_new_feature_enabled(feature) and not is_account_member(jwt, account_id):
+        log_unauthorized_request(subject, account_id)
+        return True
+    return False
+
+
 def is_draft_rebase_checks_enabled() -> bool:
     """Return True when draftRebaseChecks is in the enable-new-feature flag."""
     return is_new_feature_enabled(DRAFT_REBASE_CHECKS_FEATURE)
@@ -1389,12 +1459,14 @@ def add_allowable_filing_type(is_allowable: bool = False,
     return allowable_filing_types
 
 
-def get_account_id(_, account_id: str | None = None) -> str:
-    """Return the account id."""
-    return account_id or request.headers.get("Account-Id", None)
+def _account_products_cache_key(_, account_id: str | None = None) -> str:
+    """Return the cache key: account plus caller, so one member's result is never served to another caller."""
+    account_id = account_id or request.headers.get("Account-Id", None)
+    caller = (getattr(g, "jwt_oidc_token_info", None) or {}).get("sub")
+    return f"account_products_{account_id}_{caller}"
 
 
-@cache.cached(timeout=600, make_cache_key=get_account_id, cache_none=True)
+@cache.cached(timeout=600, make_cache_key=_account_products_cache_key, cache_none=True)
 def get_account_products(token: str, account_id: str | None = None) -> list:
     """Return the account products of the org identified by the account id."""
     account_id = account_id or request.headers.get("Account-Id", None)
@@ -1405,8 +1477,14 @@ def get_account_products(token: str, account_id: str | None = None) -> list:
 
 
 def has_product(code: str, token: str) -> bool:
-    """Return if the user has the active product subscription for the given code."""
-    user_products = get_account_products(token)
+    """Return if the user has the active product subscription for the given code.
+
+    - auth unavailable: False, a product pass is only ever an extra grant
+    """
+    try:
+        user_products = get_account_products(token)
+    except AuthServiceUnavailableError:
+        return False
     if not user_products or not isinstance(user_products, list):
         return False
 
